@@ -1,0 +1,71 @@
+{
+    "name": "ib-utilities",
+    "displayName": "IrishBruse's Utilities",
+    "description": "A collection of utilities made by me",
+    "icon": "logo.png",
+    "repository": {
+        "url": "https://github.com/IrishBruse/irishbruse-utilities"
+    },
+    "publisher": "irishbruse",
+    "author": "Ethan Conneely",
+    "version": "0.0.2",
+    "license": "MIT",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Other"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "ib-utilities.runExternalCommand",
+                "title": "IB: Run External Command",
+                "shortTitle": "Run External Command"
+            },
+            {
+                "command": "ib-utilities.relativeGoTo",
+                "title": "IB: Relative GoTo",
+                "shortTitle": "Relative GoTo"
+            }
+        ],
+        "configuration": {
+            "properties": {
+                "ib-utilities.externalTerminalCommand": {
+                    "type": "string",
+                    "default": "wezterm start --cwd ${workspaceFolder} --",
+                    "description": "External terminal command and args to run"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "vscode:prepublish": "npm run package",
+        "compile": "webpack",
+        "watch": "webpack --watch",
+        "package": "webpack --mode production --devtool hidden-source-map",
+        "compile-tests": "tsc -p . --outDir out",
+        "watch-tests": "tsc -p . -w --outDir out",
+        "pretest": "npm run compile-tests && npm run compile && npm run lint",
+        "lint": "eslint src --ext ts",
+        "test": "vscode-test"
+    },
+    "devDependencies": {
+        "@types/vscode": "^1.85.0",
+        "@types/mocha": "^10.0.6",
+        "@types/node": "18.x",
+        "@typescript-eslint/eslint-plugin": "^6.15.0",
+        "@typescript-eslint/parser": "^6.15.0",
+        "eslint": "^8.56.0",
+        "typescript": "^5.3.3",
+        "ts-loader": "^9.5.1",
+        "webpack": "^5.89.0",
+        "webpack-cli": "^5.1.4",
+        "@vscode/test-cli": "^0.0.4",
+        "@vscode/test-electron": "^2.3.8"
+    }
+}

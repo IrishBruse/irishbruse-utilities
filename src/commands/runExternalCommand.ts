@@ -6,14 +6,9 @@ type CommandArgs = {
     command: string;
 };
 
-export async function runExternalCommand(args: CommandArgs) {
-    if (!args.command) {
-        window.showErrorMessage("No command provided.");
-        return;
-    }
-
+export async function runExternalCommand(args?: CommandArgs) {
     if (!workspace.workspaceFolders || !workspace.workspaceFolders[0].uri.fsPath) {
-        window.showErrorMessage("No workspace folders open.");
+        window.showErrorMessage("No workspace folder open.");
         return;
     }
 
@@ -25,7 +20,7 @@ export async function runExternalCommand(args: CommandArgs) {
         terminalCommand = terminalCommand?.replaceAll("${workspaceFolder}", workspace.workspaceFolders[0].uri.fsPath);
     }
 
-    let command = terminalCommand + " " + args.command;
+    let command = terminalCommand + " " + args?.command;
 
     exec(command, (err, stdout, stderr) => {
         if (stdout) {

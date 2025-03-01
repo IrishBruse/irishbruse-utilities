@@ -23,24 +23,25 @@
     "contributes": {
         "commands": [
             {
-                "command": "ib-utilities.runExternalCommand",
-                "title": "IB: Run External Command",
-                "shortTitle": "Run External Command"
-            },
-            {
                 "command": "ib-utilities.relativeGoTo",
                 "title": "IB: Relative GoTo",
                 "shortTitle": "Relative GoTo"
+            },
+            {
+                "command": "ib-utilities.openPR",
+                "title": "Open Pull Request",
+                "shortTitle": "Open PR",
+                "icon": "$(github)"
             }
         ],
-        "configuration": {
-            "properties": {
-                "ib-utilities.externalTerminalCommand": {
-                    "type": "string",
-                    "default": "wezterm start --cwd ${workspaceFolder} --",
-                    "description": "External terminal command and args to run"
+        "menus": {
+            "scm/title": [
+                {
+                    "command": "ib-utilities.openPR",
+                    "when": "scmProvider == git",
+                    "group": "navigation"
                 }
-            }
+            ]
         }
     },
     "scripts": {

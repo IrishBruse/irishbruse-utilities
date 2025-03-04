@@ -1,9 +1,12 @@
 # Changelog
 
-All notable changes to the "irishbruse-utilities" extension will be documented in this file.
+## 0.2
 
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
+-   Added Empty Dark Theme
 
-## [Unreleased]
+## 0.1
 
-- Initial release
+Initial Release
+
+-   Added Open PR button
+-   Added Relative goto Command

@@ -17,9 +17,13 @@ jobs:
             - name: Check if version changed
               id: version_check
               run: |
-                  VERSION_CHANGED=$(git diff HEAD~1 HEAD -- package.json | grep '"version":')
-                  if [ -n "$VERSION_CHANGED" ]; then
-                      echo "VERSION_BUMPED=true" >> $GITHUB_ENV
+                  if git log -n 2 --format=%H | wc -l | grep -q "2"; then
+                      VERSION_CHANGED=$(git diff HEAD~1 HEAD -- package.json | grep '"version":')
+                      if [ -n "$VERSION_CHANGED" ]; then
+                          echo "VERSION_BUMPED=true" >> $GITHUB_ENV
+                      else
+                          echo "VERSION_BUMPED=false" >> $GITHUB_ENV
+                      fi
                   else
                       echo "VERSION_BUMPED=false" >> $GITHUB_ENV
                   fi

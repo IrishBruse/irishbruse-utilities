@@ -15,15 +15,10 @@ jobs:
             - run: npm ci
 
             - name: Check if version changed
-              id: version_check
+              id: check_version
               run: |
-                  if git log -n 2 --format=%H | wc -l | grep -q "2"; then
-                      VERSION_CHANGED=$(git diff HEAD~1 HEAD -- package.json | grep '"version":')
-                      if [ -n "$VERSION_CHANGED" ]; then
-                          echo "VERSION_BUMPED=true" >> $GITHUB_ENV
-                      else
-                          echo "VERSION_BUMPED=false" >> $GITHUB_ENV
-                      fi
+                  if git diff HEAD^ HEAD -- package.json | grep '"version":'; then
+                      echo "VERSION_BUMPED=true" >> $GITHUB_ENV
                   else
                       echo "VERSION_BUMPED=false" >> $GITHUB_ENV
                   fi

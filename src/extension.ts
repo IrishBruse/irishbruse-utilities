@@ -1,14 +1,20 @@
-import { ExtensionContext, commands } from "vscode";
+import { ExtensionContext } from "vscode";
 import { relativeGoTo } from "./commands/relativeGoTo";
 import { openPR } from "./commands/openPR";
+import { SnippetViewProvider } from "./views/SnippetView";
+import path from "path";
+import { registerCommandIB } from "./utils/vscode";
+import { Commands } from "./Contributes";
 
-export const CommandNamespace = "ib-utilities";
+export let UserPath: string = null!;
 
 export function activate(context: ExtensionContext) {
-    context.subscriptions.push(
-        commands.registerCommand(CommandNamespace + ".relativeGoTo", relativeGoTo),
-        commands.registerCommand(CommandNamespace + ".openPR", openPR)
-    );
+    UserPath = path.join(context.globalStorageUri.path, "../../");
+
+    registerCommandIB(Commands.RelativeGoTo, relativeGoTo, context);
+    registerCommandIB(Commands.OpenPR, openPR, context);
+
+    SnippetViewProvider.activate(context);
 }
 
 export function deactivate() {}

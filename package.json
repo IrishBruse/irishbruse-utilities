@@ -19,8 +19,49 @@
     "activationEvents": [
         "onStartupFinished"
     ],
+    "scripts": {
+        "vscode:prepublish": "npm run package",
+        "esbuild": "node esbuild.mjs",
+        "watch": "node esbuild.mjs --watch",
+        "package": "node esbuild.mjs --production",
+        "lint": "eslint src --ext ts",
+        "test": "vscode-test",
+        "gen:constant": "NODE_NO_WARNINGS=1 node --watch --experimental-transform-types generator.mts"
+    },
     "main": "./dist/extension.js",
     "contributes": {
+        "configuration": {
+            "type": "object",
+            "title": "IrishBruse Utilities",
+            "properties": {
+                "ib-utilities.languageIdMappings": {
+                    "type": "object",
+                    "description": "Map snippet files to known language ID.",
+                    "additionalProperties": {
+                        "type": "string",
+                        "description": "The replacement language ID."
+                    },
+                    "default": {
+                        "node": "typescript",
+                        "react": "typescriptreact"
+                    }
+                },
+                "ib-utilities.generatedLanguageMappings": {
+                    "type": "object",
+                    "description": "On the left is the languageId for the snippet to auto generate on the right is the comma delimited array of languages to build it from.",
+                    "additionalProperties": {
+                        "type": "string",
+                        "description": "The resulting language ID."
+                    },
+                    "default": {
+                        "javascript": "node",
+                        "typescript": "node",
+                        "typescriptreact": "node,react",
+                        "javascriptreact": "node,react"
+                    }
+                }
+            }
+        },
         "themes": [
             {
                 "label": "Empty Dark Theme",
@@ -95,15 +136,6 @@
                 }
             ]
         }
-    },
-    "scripts": {
-        "vscode:prepublish": "npm run package",
-        "esbuild": "node esbuild.mjs",
-        "watch": "node esbuild.mjs --watch",
-        "package": "node esbuild.mjs --production",
-        "lint": "eslint src --ext ts",
-        "test": "vscode-test",
-        "gen:constant": "NODE_NO_WARNINGS=1 node --watch --experimental-transform-types generator.mts"
     },
     "devDependencies": {
         "@types/cjson": "^0.5.3",

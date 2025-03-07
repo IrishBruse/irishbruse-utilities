@@ -1,7 +1,7 @@
 import { ExtensionContext } from "vscode";
 import { relativeGoTo } from "./commands/relativeGoTo";
 import { openPR } from "./commands/openPR";
-import { SnippetViewProvider } from "./views/SnippetView";
+import { SnippetViewProvider } from "./snippetEditor/views/SnippetView";
 import path from "path";
 import { registerCommandIB } from "./utils/vscode";
 import { Commands } from "./Contributes";

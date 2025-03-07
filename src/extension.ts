@@ -17,4 +17,6 @@ export function activate(context: ExtensionContext) {
     SnippetViewProvider.activate(context);
 }
 
-export function deactivate() {}
+export function deactivate() {
+    SnippetViewProvider.deactivate();
+}

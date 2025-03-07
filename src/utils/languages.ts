@@ -47,7 +47,7 @@ export function getExtensionFromLanguageId(languageId: string): string | undefin
     return mapping[languageId];
 }
 
-export async function getLineCommentSyntax(languageId: string): Promise<string | null> {
+export async function getLineCommentSyntax(languageId: string): Promise<string> {
     const languageExtension = extensions.all.find((ext) =>
         ext.packageJSON.contributes?.languages?.some((lang: any) => lang.id === languageId)
     );

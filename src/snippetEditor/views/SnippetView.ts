@@ -6,7 +6,7 @@ import * as fs from "fs/promises";
 import { registerCommandIB } from "../../utils/vscode";
 import { getExtensionFromLanguageId, getLineCommentSyntax } from "../../utils/languages";
 import { Commands, Views } from "../../Contributes";
-import { mkdirSync, existsSync } from "fs";
+import { mkdirSync, existsSync, rmdirSync, rmSync, readdirSync } from "fs";
 import {
     TreeItem,
     TreeItemCollapsibleState,
@@ -23,6 +23,8 @@ import {
     languages,
     TextDocument,
     TextEditor,
+    TabInputText,
+    TabInputTextDiff,
 } from "vscode";
 
 type Snippet = {
@@ -195,6 +197,35 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
 
         context.subscriptions.push(workspace.onDidSaveTextDocument(snippetDataProvider.save));
     }
+
+    static deactivate() {
+        const openFiles = getAllOpenTabUris().map((uri) => uri.path);
+        const files = readdirSync(snippetDir);
+
+        for (const file of files) {
+            const fullPath = path.join(snippetDir, file);
+            if (!openFiles.includes(fullPath)) {
+                rmSync(fullPath);
+            }
+        }
+    }
+}
+
+export function getAllOpenTabUris(): Uri[] {
+    const tabGroups = window.tabGroups.all;
+    const uris: Uri[] = [];
+
+    for (const group of tabGroups) {
+        for (const tab of group.tabs) {
+            if (tab.input instanceof TabInputText) {
+                uris.push(tab.input.uri);
+            } else if (tab.input instanceof TabInputTextDiff) {
+                uris.push(tab.input.original);
+                uris.push(tab.input.modified);
+            }
+        }
+    }
+    return uris;
 }
 
 function getLanguageIdMappings(): Record<string, string | undefined> {
@@ -212,10 +243,7 @@ async function stringifySnippet(snippet: Snippet): Promise<string> {
 
     const c = await getLineCommentSyntax(snippet.languageId);
 
-    if (!c) {
-        return "Error";
-    }
-
+    lines.push(`${c} @key ${snippet.key ?? ""}`);
     lines.push(`${c} @prefix ${snippet.prefix ?? ""}`);
     lines.push(`${c} @description ${snippet.description ?? ""}`);
     lines.push("");
@@ -229,21 +257,30 @@ async function parseSnippet(snippetPath: string): Promise<Snippet | null> {
     const lines: string[] = snippet.split("\n");
 
     const fileName = path.basename(snippetPath);
-    const [key, languageId] = fileName.split(".");
+    const [fileKey, languageId] = fileName.split(".");
 
-    const prefixLine = lines[0];
-    const descriptionLine = lines[1];
+    const keyLine = lines[0];
+    const prefixLine = lines[1];
+    const descriptionLine = lines[2];
 
-    if (!prefixLine.startsWith("// @prefix")) {
+    const c = await getLineCommentSyntax(languageId);
+
+    if (!keyLine.startsWith(`${c} @key`)) {
+        window.showErrorMessage(`${fileName} missing @key directive`);
+        return null;
+    }
+
+    if (!prefixLine.startsWith(`${c} @prefix`)) {
         window.showErrorMessage(`${fileName} missing @prefix directive`);
         return null;
     }
 
-    if (!descriptionLine.startsWith("// @description")) {
+    if (!descriptionLine.startsWith(`${c} @description`)) {
         window.showErrorMessage(`${fileName} missing @description directive`);
         return null;
     }
 
+    const key = prefixLine.slice(7).trim();
     const prefix = prefixLine.slice(10).trim();
     const description = descriptionLine.slice(15).trim();
 

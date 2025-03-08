@@ -6,7 +6,7 @@ import * as fs from "fs/promises";
 import { registerCommandIB } from "../../utils/vscode";
 import { getExtensionFromLanguageId, getLineCommentSyntax } from "../../utils/languages";
 import { Commands, Views } from "../../Contributes";
-import { mkdirSync, existsSync, rmdirSync, rmSync, readdirSync } from "fs";
+import { mkdirSync, existsSync, rmSync, readdirSync } from "fs";
 import {
     TreeItem,
     TreeItemCollapsibleState,
@@ -22,14 +22,13 @@ import {
     workspace,
     languages,
     TextDocument,
-    TextEditor,
     TabInputText,
     TabInputTextDiff,
 } from "vscode";
 
 type Snippet = {
-    languageId: string;
     key: string;
+    languageId: string;
     prefix?: string;
     body: string[];
     isFileTemplate?: boolean;
@@ -90,10 +89,6 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
     readonly onDidChangeTreeData: Event<SnippetTreeItem | undefined | void> = this._onDidChangeTreeData.event;
 
     constructor() {}
-
-    change(doc?: TextDocument) {
-        console.log("change", doc?.fileName);
-    }
 
     refresh() {
         this._onDidChangeTreeData.fire();
@@ -172,28 +167,18 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         }
     }
 
-    async close(file: TextDocument) {
-        const doc = file;
-        if (doc.fileName.startsWith(snippetDir) && doc.fileName.endsWith(".snippet")) {
-            console.log("close", doc.fileName);
-            // await fs.rm(doc.uri.path);
-        }
-    }
-
     static activate(context: ExtensionContext) {
         const snippetDataProvider = new SnippetViewProvider();
         window.registerTreeDataProvider(Views.SnippetView, snippetDataProvider);
 
         registerCommandIB(
             Commands.ShowSnippetView,
-            () => {
-                commands.executeCommand("workbench.view.snippetContainer");
-            },
+            () => commands.executeCommand("workbench.view.snippetContainer"),
             context
         );
 
         registerCommandIB(Commands.OpenSnippet, snippetDataProvider.openSnippet, context);
-        registerCommandIB(Commands.RefreshSnippetView, () => snippetDataProvider.refresh(), context);
+        registerCommandIB(Commands.RefreshSnippetView, snippetDataProvider.refresh, context);
 
         context.subscriptions.push(workspace.onDidSaveTextDocument(snippetDataProvider.save));
     }
@@ -259,17 +244,10 @@ async function parseSnippet(snippetPath: string): Promise<Snippet | null> {
     const fileName = path.basename(snippetPath);
     const [fileKey, languageId] = fileName.split(".");
 
-    const keyLine = lines[0];
-    const prefixLine = lines[1];
-    const descriptionLine = lines[2];
+    const prefixLine = lines[0];
+    const descriptionLine = lines[1];
 
     const c = await getLineCommentSyntax(languageId);
-
-    if (!keyLine.startsWith(`${c} @key`)) {
-        window.showErrorMessage(`${fileName} missing @key directive`);
-        return null;
-    }
-
     if (!prefixLine.startsWith(`${c} @prefix`)) {
         window.showErrorMessage(`${fileName} missing @prefix directive`);
         return null;
@@ -280,17 +258,15 @@ async function parseSnippet(snippetPath: string): Promise<Snippet | null> {
         return null;
     }
 
-    const key = prefixLine.slice(7).trim();
     const prefix = prefixLine.slice(10).trim();
     const description = descriptionLine.slice(15).trim();
 
     // TODO: improve for ts/eslint additional comments
-    const body = lines.slice(3);
+    const body = lines.slice(4);
 
     return {
         prefix: prefix === "" ? undefined : prefix,
         description: description === "" ? undefined : description,
-        key,
         languageId,
         isFileTemplate: false,
         body,

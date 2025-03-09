@@ -27,68 +27,73 @@ async function iconToImage(icon?: string) {
 
 const { commands, configuration, views, viewsContainers } = contributes;
 
-l(`# ${pkg.displayName || pkg.name} Contributions`);
-l();
-l(`${pkg.description}`);
-l();
-
-// Document commands.
-if (commands) {
-    l("## Commands");
+async function main() {
+    l(`# ${pkg.displayName || pkg.name} Contributions`);
     l();
-    commands.forEach(async (cmd) => {
-        l(`### ${cmd.title}`);
-        l();
-        l(`![${cmd.command} Screenshot](docs/commands/${cmd.command}.png)`);
-        l();
-        l(`- **Command:** \`${cmd.command}\``);
-        l(`- **Short Title:** ${cmd.shortTitle}`);
-        l(`- **Icon:** ${await iconToImage(cmd.icon)}`, !cmd.icon);
-        l();
-    });
-}
-
-// Document view containers.
-if (viewsContainers && viewsContainers.activitybar) {
-    l("## View Containers");
+    l(`${pkg.description}`);
     l();
-    viewsContainers.activitybar.forEach((container) => {
-        l(`### ${container.title}`);
-        l();
-        l(`- **ID:** \`${container.id}\``);
-        l(`- **Icon:** ![](${container.icon})`);
-        l();
-    });
-}
 
-// Document views.
-if (views) {
-    l("## Views");
-    l();
-    for (const containerId in views) {
-        views[containerId].forEach((view) => {
-            l(`### ${view.name}`);
+    // Document commands.
+    if (commands) {
+        l("## Commands");
+        l();
+        for (const cmd of commands) {
+            l(`### ${cmd.title}`);
             l();
-            l(`- **ID:** \`${view.id}\``);
-            l(`- **Container:** \`${containerId}\``);
+            l(`![${cmd.command} Screenshot](docs/commands/${cmd.command}.png)`);
             l();
-        });
+            l(`- **Command:** \`${cmd.command}\``);
+            l(`- **Short Title:** ${cmd.shortTitle}`);
+
+            l(`- **Icon:** ${await iconToImage(cmd.icon)}`, !cmd.icon);
+            l();
+        }
     }
+
+    // Document view containers.
+    if (viewsContainers && viewsContainers.activitybar) {
+        l("## View Containers");
+        l();
+        for (const container of viewsContainers.activitybar) {
+            l(`### ${container.title}`);
+            l();
+            l(`- **ID:** \`${container.id}\``);
+            l(`- **Icon:** ![](${container.icon})`);
+            l();
+        }
+    }
+
+    // Document views.
+    if (views) {
+        l("## Views");
+        l();
+        for (const containerId in views) {
+            views[containerId].forEach((view) => {
+                l(`### ${view.name}`);
+                l();
+                l(`- **ID:** \`${view.id}\``);
+                l(`- **Container:** \`${containerId}\``);
+                l();
+            });
+        }
+    }
+
+    // Document configuration properties.
+    if (configuration) {
+        l("## Configuration Properties");
+        l();
+        for (const key in configuration.properties) {
+            const prop = configuration.properties[key];
+            const configKey = key.replace("ib-utilities.", "");
+            l(`### ${toTitleCase(configKey)}`);
+            l();
+            l(`${prop.description}`);
+            l(`- **Key:** \`${key}\``);
+            l();
+        }
+    }
+
+    outputFile("README.md");
 }
 
-// Document configuration properties.
-if (configuration) {
-    l("## Configuration Properties");
-    l();
-    for (const key in configuration.properties) {
-        const prop = configuration.properties[key];
-        const configKey = key.replace("ib-utilities.", "");
-        l(`### ${toTitleCase(configKey)}`);
-        l();
-        l(`${prop.description}`);
-        l(`- **Key:** \`${key}\``);
-        l();
-    }
-}
-
-outputFile("README.md");
+main();

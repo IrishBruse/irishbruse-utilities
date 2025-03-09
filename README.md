@@ -10,37 +10,30 @@ A collection of utilities made by me
 
 - **Command:** `ib-utilities.relativeGoTo`
 - **Short Title:** Relative goto
-
 ### IB: Open Snippet
 
 ![ib-utilities.openSnippet Screenshot](docs/commands/ib-utilities.openSnippet.png)
 
 - **Command:** `ib-utilities.openSnippet`
 - **Short Title:** Open
-
 ### IB: Show Snippet View
 
 ![ib-utilities.showSnippetView Screenshot](docs/commands/ib-utilities.showSnippetView.png)
 
 - **Command:** `ib-utilities.showSnippetView`
 - **Short Title:** Show Snippet View
-
 ### IB: Open Pull Request
 
 ![ib-utilities.openPR Screenshot](docs/commands/ib-utilities.openPR.png)
 
 - **Command:** `ib-utilities.openPR`
 - **Short Title:** Open PR
-- **Icon:** ![#ABB2BF](https://raw.githubusercontent.com/microsoft/vscode-codicons/refs/heads/main/src/icons/github.svg)
-
 ### IB: Refresh Snippets
 
 ![ib-utilities.refreshSnippetView Screenshot](docs/commands/ib-utilities.refreshSnippetView.png)
 
 - **Command:** `ib-utilities.refreshSnippetView`
 - **Short Title:** Refresh
-- **Icon:** ![#ABB2BF](https://raw.githubusercontent.com/microsoft/vscode-codicons/refs/heads/main/src/icons/refresh.svg)
-
 ## View Containers
 
 ### Snippet

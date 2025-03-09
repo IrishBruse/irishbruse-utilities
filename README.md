@@ -31,7 +31,7 @@ A collection of utilities made by me
 
 - **Command:** `ib-utilities.openPR`
 - **Short Title:** Open PR
-- **Icon:** ![](https://raw.githubusercontent.com/microsoft/vscode-codicons/refs/heads/main/src/icons/github.svg)
+- **Icon:** ![#ABB2BF](https://raw.githubusercontent.com/microsoft/vscode-codicons/refs/heads/main/src/icons/github.svg)
 
 ### IB: Refresh Snippets
 
@@ -39,7 +39,7 @@ A collection of utilities made by me
 
 - **Command:** `ib-utilities.refreshSnippetView`
 - **Short Title:** Refresh
-- **Icon:** ![](https://raw.githubusercontent.com/microsoft/vscode-codicons/refs/heads/main/src/icons/refresh.svg)
+- **Icon:** ![#ABB2BF](https://raw.githubusercontent.com/microsoft/vscode-codicons/refs/heads/main/src/icons/refresh.svg)
 
 ## View Containers
 

@@ -38,6 +38,7 @@ export enum Commands {
      * Snippet
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,
+
 }
 
 /** View Containers */
@@ -46,7 +47,8 @@ export enum ViewContainers {
      * Snippet
      * Icon: media/snippet_icon.svg
      */
-    SnippetContainer = `snippetContainer`,
+      SnippetContainer = `snippetContainer`,
+
 }
 
 /** Views */
@@ -56,6 +58,7 @@ export enum Views {
      * ContainerId: snippetContainer
      */
     SnippetView = `snippetView`,
+
 }
 
 /** Configuration Properties */
@@ -69,4 +72,5 @@ export enum Configuration {
      * On the left is the languageId for the snippet to auto generate on the right is the comma delimited array of languages to build it from.
      */
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
+
 }

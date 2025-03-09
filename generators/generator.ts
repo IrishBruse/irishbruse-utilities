@@ -1,4 +1,5 @@
 import { writeFileSync } from "fs";
+// @ts-ignore: prettier doesnt support with
 import pkg from "../package.json" assert { type: "json" };
 import { Package } from "./package.types.js";
 import path from "path";
@@ -30,15 +31,6 @@ export function toTitleCase(str: string) {
 // Helper to strip the package prefix (everything before the first dot) from a command string.
 export function stripPackagePrefix(command: string): string {
     return command.replace(prefix + ".", "");
-}
-
-export function iconToImage(icon?: string) {
-    if (!icon) {
-        return "";
-    }
-    icon = icon.slice(2, -1);
-
-    return `![](https://raw.githubusercontent.com/microsoft/vscode-codicons/refs/heads/main/src/icons/${icon}.svg)`;
 }
 
 export function l(input?: string, condition: boolean = false) {

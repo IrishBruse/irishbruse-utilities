@@ -1,7 +1,16 @@
-import { l, iconToImage, toTitleCase, getPackage, outputFile } from "./generator.js";
+import { l, toTitleCase, getPackage, outputFile } from "./generator.js";
 
 const pkg = getPackage();
 const contributes = pkg.contributes;
+
+function iconToImage(icon?: string) {
+    if (!icon) {
+        return "";
+    }
+    icon = icon.slice(2, -1);
+
+    return `![#ABB2BF](https://raw.githubusercontent.com/microsoft/vscode-codicons/refs/heads/main/src/icons/${icon}.svg)`;
+}
 
 const { commands, configuration, menus, themes, views, viewsContainers } = contributes;
 

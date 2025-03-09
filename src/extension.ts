@@ -4,7 +4,7 @@ import { openPR } from "./commands/openPR";
 import { SnippetViewProvider } from "./snippetEditor/views/SnippetView";
 import path from "path";
 import { registerCommandIB } from "./utils/vscode";
-import { Commands } from "./Contributes";
+import { Commands } from "./constants";
 
 export let UserPath: string = null!;
 

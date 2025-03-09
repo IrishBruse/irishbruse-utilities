@@ -26,7 +26,8 @@
         "package": "node esbuild.mjs --production",
         "lint": "eslint src --ext ts",
         "test": "vscode-test",
-        "gen:constant": "NODE_NO_WARNINGS=1 node --watch --experimental-transform-types generator.mts"
+        "generate:readme": "tsx --watch --experimental-transform-types generators/readme.generator.ts",
+        "generate:contributes": "tsx --watch --experimental-transform-types generators/contributes.generator.ts"
     },
     "main": "./dist/extension.js",
     "contributes": {
@@ -74,7 +75,7 @@
                 {
                     "id": "snippetContainer",
                     "title": "Snippet",
-                    "icon": "media/icon.png"
+                    "icon": "media/snippet_icon.svg"
                 }
             ]
         },
@@ -82,35 +83,35 @@
             "snippetContainer": [
                 {
                     "id": "snippetView",
-                    "name": "Languages"
+                    "name": "Groups"
                 }
             ]
         },
         "commands": [
             {
                 "command": "ib-utilities.relativeGoTo",
-                "title": "Relative goto",
+                "title": "IB: Relative goto",
                 "shortTitle": "Relative goto"
             },
             {
                 "command": "ib-utilities.openSnippet",
-                "title": "Open Snippet",
+                "title": "IB: Open Snippet",
                 "shortTitle": "Open"
             },
             {
                 "command": "ib-utilities.showSnippetView",
-                "title": "Show Snippet View",
+                "title": "IB: Show Snippet View",
                 "shortTitle": "Show Snippet View"
             },
             {
                 "command": "ib-utilities.openPR",
-                "title": "Open Pull Request",
+                "title": "IB: Open Pull Request",
                 "shortTitle": "Open PR",
                 "icon": "$(github)"
             },
             {
                 "command": "ib-utilities.refreshSnippetView",
-                "title": "Refresh Snippets",
+                "title": "IB: Refresh Snippets",
                 "shortTitle": "Refresh",
                 "icon": "$(refresh)"
             }
@@ -149,6 +150,7 @@
         "esbuild": "0.25.0",
         "eslint": "^8.56.0",
         "ts-loader": "^9.5.1",
+        "tsx": "^4.19.3",
         "typescript": "^5.3.3",
         "webpack": "^5.89.0",
         "webpack-cli": "^5.1.4"

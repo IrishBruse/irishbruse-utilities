@@ -5,7 +5,7 @@ import cjson from "cjson";
 import * as fs from "fs/promises";
 import { registerCommandIB } from "../../utils/vscode";
 import { getExtensionFromLanguageId, getLineCommentSyntax } from "../../utils/languages";
-import { Commands, Views } from "../../Contributes";
+import { Commands, Views } from "../../constants";
 import { mkdirSync, existsSync, rmSync, readdirSync } from "fs";
 import {
     TreeItem,
@@ -23,12 +23,11 @@ import {
     languages,
     TextDocument,
     TabInputText,
-    TabInputTextDiff,
 } from "vscode";
 
 type Snippet = {
     key: string;
-    languageId: string;
+    group: string;
     prefix?: string;
     body: string[];
     isFileTemplate?: boolean;
@@ -128,7 +127,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
                 new SnippetTreeItem(key, TreeItemCollapsibleState.None, value.description, undefined, {
                     title: "Open Snippet",
                     command: Commands.OpenSnippet,
-                    arguments: [{ ...value, languageId: parent.languageId, key } as Snippet],
+                    arguments: [{ ...value, group: parent.languageId, key } as Snippet],
                 })
             );
         }
@@ -136,11 +135,21 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         return snippetItems;
     }
 
-    async openSnippet(snippet: Snippet) {
-        const { key, languageId } = snippet;
-        const snippetPath = path.join(snippetDir, key + "." + languageId + ".snippet");
+    async openSnippet(snippet?: Snippet) {
+        if (!snippet) {
+            window.showErrorMessage("Missing snippet argument");
+            return;
+        }
+
+        const { key, group } = snippet;
+
+        const langIds = getLanguageIdMappings();
+        const languageId = langIds[group] ?? group;
 
         const snippetContent = await stringifySnippet(snippet);
+
+        const snippetPath = path.join(snippetDir, key + "." + group + ".snippet");
+
         await fs.writeFile(snippetPath, snippetContent);
 
         let editor = await window.showTextDocument(Uri.file(snippetPath));
@@ -150,9 +159,8 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             await commands.executeCommand("workbench.action.files.setActiveEditorReadonlyInSession");
         }
 
-        const langIds = getLanguageIdMappings();
         try {
-            await languages.setTextDocumentLanguage(editor.document, langIds[languageId] ?? languageId);
+            await languages.setTextDocumentLanguage(editor.document, languageId);
         } catch (error) {
             // Ignore and use plaintext
         }
@@ -173,7 +181,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
 
         registerCommandIB(
             Commands.ShowSnippetView,
-            () => commands.executeCommand("workbench.view.snippetContainer"),
+            () => commands.executeCommand(Commands.ViewSnippetContainer),
             context
         );
 
@@ -204,9 +212,6 @@ export function getAllOpenTabUris(): Uri[] {
         for (const tab of group.tabs) {
             if (tab.input instanceof TabInputText) {
                 uris.push(tab.input.uri);
-            } else if (tab.input instanceof TabInputTextDiff) {
-                uris.push(tab.input.original);
-                uris.push(tab.input.modified);
             }
         }
     }
@@ -226,11 +231,15 @@ function getGeneratedIdMappings(): Record<string, string | undefined> {
 async function stringifySnippet(snippet: Snippet): Promise<string> {
     const lines: string[] = [];
 
-    const c = await getLineCommentSyntax(snippet.languageId);
+    const c = await getLineCommentSyntax(snippet.group);
 
-    lines.push(`${c} @key ${snippet.key ?? ""}`);
     lines.push(`${c} @prefix ${snippet.prefix ?? ""}`);
     lines.push(`${c} @description ${snippet.description ?? ""}`);
+    if (isECMA(snippet.group)) {
+        lines.push(`// @ts-nocheck`);
+        lines.push(`// prettier-ignore`);
+        lines.push(`// eslint-disable`);
+    }
     lines.push("");
     lines.push(...snippet.body);
 
@@ -242,7 +251,7 @@ async function parseSnippet(snippetPath: string): Promise<Snippet | null> {
     const lines: string[] = snippet.split("\n");
 
     const fileName = path.basename(snippetPath);
-    const [fileKey, languageId] = fileName.split(".");
+    const [key, languageId] = fileName.split(".");
 
     const prefixLine = lines[0];
     const descriptionLine = lines[1];
@@ -261,14 +270,28 @@ async function parseSnippet(snippetPath: string): Promise<Snippet | null> {
     const prefix = prefixLine.slice(10).trim();
     const description = descriptionLine.slice(15).trim();
 
-    // TODO: improve for ts/eslint additional comments
-    const body = lines.slice(4);
+    let startLine = 4;
+    if (lines[3] === "// @ts-nocheck") {
+        startLine += 3;
+    }
+
+    const body = lines.slice(startLine);
 
     return {
+        key,
         prefix: prefix === "" ? undefined : prefix,
         description: description === "" ? undefined : description,
-        languageId,
+        group: languageId,
         isFileTemplate: false,
         body,
     };
+}
+
+function isECMA(languageId: string) {
+    return (
+        languageId === "typescript" ||
+        languageId === "typescriptreact" ||
+        languageId === "javascript" ||
+        languageId === "javascriptreact"
+    );
 }

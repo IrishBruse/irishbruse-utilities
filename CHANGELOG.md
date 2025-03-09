@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3
+
+-   Snippet View
+
 ## 0.2
 
 -   Added Empty Dark Theme

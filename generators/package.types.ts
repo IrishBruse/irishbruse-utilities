@@ -50,6 +50,7 @@ export type Title = {
 };
 
 export type Theme = {
+    id?: string;
     label: string;
     uiTheme: string;
     path: string;

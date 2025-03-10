@@ -83,7 +83,8 @@
             "snippetContainer": [
                 {
                     "id": "snippetView",
-                    "name": "Groups"
+                    "name": "Groups",
+                    "icon": "media/snippet_icon.svg"
                 }
             ]
         },

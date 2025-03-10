@@ -1,11 +1,11 @@
-import { UserPath } from "../../extension";
+import { UserPath } from "../extension";
 import path from "path";
 import os from "os";
 import cjson from "cjson";
 import * as fs from "fs/promises";
-import { registerCommandIB } from "../../utils/vscode";
-import { getExtensionFromLanguageId, getLineCommentSyntax } from "../../utils/languages";
-import { Commands, Views } from "../../constants";
+import { registerCommandIB } from "../utils/vscode";
+import { getExtensionFromLanguageId, getLineCommentSyntax } from "../utils/languages";
+import { Commands, Views } from "../constants";
 import { mkdirSync, existsSync, rmSync, readdirSync } from "fs";
 import {
     TreeItem,
@@ -247,7 +247,6 @@ async function stringifySnippet(snippet: Snippet): Promise<string> {
 }
 
 async function parseSnippet(snippetPath: string): Promise<Snippet | null> {
-    const snippet = (await fs.readFile(snippetPath)).toString();
     const lines: string[] = snippet.split("\n");
 
     const fileName = path.basename(snippetPath);

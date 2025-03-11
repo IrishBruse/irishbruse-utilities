@@ -1,7 +1,8 @@
-import { spawnSync } from "child_process";
+import { spawn } from "child_process";
 import { env, SourceControl, Uri, window } from "vscode";
+import { asyncSpawn, Process } from "../utils/asyncSpawn";
 
-export function openPR(sourceControl: SourceControl) {
+export async function openPR(sourceControl: SourceControl) {
     if (!sourceControl || !sourceControl.rootUri) {
         window.showWarningMessage("Could not determine repository path.");
         return;
@@ -9,8 +10,22 @@ export function openPR(sourceControl: SourceControl) {
 
     const repoPath = sourceControl.rootUri.fsPath;
 
+    let commands: Process[] = [];
+
+    try {
+        commands = await Promise.all([
+            asyncSpawn("git", ["remote", "get-url", "origin"], { cwd: repoPath }),
+            asyncSpawn("git", ["ls-remote", "origin", "refs/pull/*/head"], { cwd: repoPath }),
+            asyncSpawn("git", ["rev-parse", "HEAD"], { cwd: repoPath }),
+        ]);
+    } catch (error) {
+        window.showErrorMessage("Failed to run git commands ", (error as Error).message);
+        return;
+    }
+
+    const [repoUrlProcess, prNumberProcess, commitHashProcess] = commands;
+
     // Get repository URL
-    const repoUrlProcess = spawnSync("git", ["remote", "get-url", "origin"], { cwd: repoPath });
     if (repoUrlProcess.status !== 0) {
         window.showErrorMessage("Failed to get remote repository URL.");
         return;
@@ -22,7 +37,6 @@ export function openPR(sourceControl: SourceControl) {
     }
 
     // Get PR number
-    const prNumberProcess = spawnSync("git", ["ls-remote", "origin", "refs/pull/*/head"], { cwd: repoPath });
     if (prNumberProcess.status !== 0) {
         window.showErrorMessage("Failed to fetch PRs from remote.");
         return;
@@ -30,12 +44,11 @@ export function openPR(sourceControl: SourceControl) {
 
     const prList = prNumberProcess.stdout.toString().split("\n");
 
-    const commitHashProcess = spawnSync("git", ["rev-parse", "HEAD"], { cwd: repoPath });
     const commitHash = commitHashProcess.stdout.toString().trim();
 
     const prEntry = prList.find((line) => line.includes(commitHash));
     if (!prEntry) {
-        window.showWarningMessage("No open pull request found for this branch.");
+        env.openExternal(Uri.parse(repoUrl));
         return;
     }
 

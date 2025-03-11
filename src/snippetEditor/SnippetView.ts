@@ -247,6 +247,7 @@ async function stringifySnippet(snippet: Snippet): Promise<string> {
 }
 
 async function parseSnippet(snippetPath: string): Promise<Snippet | null> {
+    const snippet = (await fs.readFile(snippetPath)).toString();
     const lines: string[] = snippet.split("\n");
 
     const fileName = path.basename(snippetPath);

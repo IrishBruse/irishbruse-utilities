@@ -34,7 +34,7 @@ if (viewsContainers && viewsContainers.activitybar) {
         l(`### ${container.title}`);
         l();
         l(`-   **ID:** \`${container.id}\``);
-        l(`-   **Icon:** ![](${container.icon})`);
+        l(`-   **Icon:** [${container.icon}](${container.icon})`);
         l();
     }
 }

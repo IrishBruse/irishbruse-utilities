@@ -46,7 +46,7 @@ A collection of utilities made by me
 ### Snippet Manager
 
 -   **ID:** `snippetContainer`
--   **Icon:** ![](media/snippet_icon.svg)
+-   **Icon:** [media/snippet_icon.svg](media/snippet_icon.svg)
 
 ## Views
 

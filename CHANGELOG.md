@@ -2,15 +2,16 @@
 
 ## 0.3
 
--   Snippet View
+-   Add: Snippet View
+-   Fix: Open PR use `git` instead of `gh`
 
 ## 0.2
 
--   Added Empty Dark Theme
+-   Add: Empty Dark Theme
 
 ## 0.1
 
 Initial Release
 
--   Added Open PR button
--   Added Relative goto Command
+-   Add: Open PR button
+-   Add: Relative goto Command

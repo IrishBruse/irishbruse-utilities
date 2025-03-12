@@ -1,4 +1,3 @@
-import { spawn } from "child_process";
 import { env, SourceControl, Uri, window } from "vscode";
 import { asyncSpawn, Process } from "../utils/asyncSpawn";
 
@@ -14,16 +13,16 @@ export async function openPR(sourceControl: SourceControl) {
 
     try {
         commands = await Promise.all([
+            asyncSpawn("git", ["rev-parse", "HEAD"], { cwd: repoPath }),
             asyncSpawn("git", ["remote", "get-url", "origin"], { cwd: repoPath }),
             asyncSpawn("git", ["ls-remote", "origin", "refs/pull/*/head"], { cwd: repoPath }),
-            asyncSpawn("git", ["rev-parse", "HEAD"], { cwd: repoPath }),
         ]);
     } catch (error) {
         window.showErrorMessage("Failed to run git commands ", (error as Error).message);
         return;
     }
 
-    const [repoUrlProcess, prNumberProcess, commitHashProcess] = commands;
+    const [commitHashProcess, repoUrlProcess, prNumberProcess] = commands;
 
     // Get repository URL
     if (repoUrlProcess.status !== 0) {

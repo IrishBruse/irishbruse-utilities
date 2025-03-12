@@ -2,7 +2,6 @@ import { UserPath } from "../extension";
 import path from "path";
 import os from "os";
 import cjson from "cjson";
-import * as fs from "fs/promises";
 import { registerCommandIB } from "../utils/vscode";
 import { getExtensionFromLanguageId, getLineCommentSyntax } from "../utils/languages";
 import { Commands, Views } from "../constants";
@@ -24,10 +23,10 @@ import {
     TextDocument,
     TabInputText,
 } from "vscode";
+import { isECMA, trimStringArray } from "./utility";
+import { readdir, readFile, writeFile } from "fs/promises";
 
 type Snippet = {
-    key: string;
-    group: string;
     prefix?: string;
     body: string[];
     isFileTemplate?: boolean;
@@ -64,14 +63,19 @@ class SnippetTreeItem extends TreeItem {
     }
 }
 
-export async function getSnippetByLanguageId(languageId: string): Promise<Snippets> {
+export async function getSnippetsByLanguageId(languageId: string): Promise<Snippets> {
     const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
     return cjson.load(snippetPath);
 }
 
+export async function setSnippetsByLanguageId(languageId: string, snippets: Snippets) {
+    const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
+    return await writeFile(snippetPath, JSON.stringify(snippets, null, 2));
+}
+
 export async function getSnippetLanguages(): Promise<string[]> {
     const snippetsPath = path.join(UserPath, "snippets");
-    const files = await fs.readdir(snippetsPath);
+    const files = await readdir(snippetsPath);
     return files.filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5));
 }
 
@@ -113,7 +117,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             return [];
         }
 
-        const snippets = await getSnippetByLanguageId(parent.languageId);
+        const snippets = await getSnippetsByLanguageId(parent.languageId);
         const snippetItems: SnippetTreeItem[] = [];
 
         const generated = generatedMappings[parent.languageId];
@@ -127,7 +131,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
                 new SnippetTreeItem(key, TreeItemCollapsibleState.None, value.description, undefined, {
                     title: "Open Snippet",
                     command: Commands.OpenSnippet,
-                    arguments: [{ ...value, group: parent.languageId, key } as Snippet],
+                    arguments: [key, value, parent.languageId],
                 })
             );
         }
@@ -135,27 +139,35 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         return snippetItems;
     }
 
-    async openSnippet(snippet?: Snippet) {
+    async openSnippet(key: string, snippet: Snippet, group: string) {
+        if (!key) {
+            window.showErrorMessage("Missing key argument");
+            return;
+        }
+
         if (!snippet) {
             window.showErrorMessage("Missing snippet argument");
             return;
         }
 
-        const { key, group } = snippet;
+        if (!group && Object.keys(group).length !== 4) {
+            window.showErrorMessage("Missing group argument");
+            return;
+        }
 
         const langIds = getLanguageIdMappings();
         const languageId = langIds[group] ?? group;
 
-        const snippetContent = await stringifySnippet(snippet);
+        const snippetContent = await stringifySnippet(group, snippet);
 
         const snippetPath = path.join(snippetDir, key + "." + group + ".snippet");
 
-        await fs.writeFile(snippetPath, snippetContent);
+        await writeFile(snippetPath, snippetContent);
 
         let editor = await window.showTextDocument(Uri.file(snippetPath));
 
         const generatedMap = getGeneratedIdMappings();
-        if (generatedMap[languageId]) {
+        if (generatedMap[group]) {
             await commands.executeCommand("workbench.action.files.setActiveEditorReadonlyInSession");
         }
 
@@ -167,12 +179,27 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
     }
 
     async save(file: TextDocument) {
-        if (file.fileName.startsWith(snippetDir) && file.fileName.endsWith(".snippet")) {
-            console.log("save", file.fileName);
-            const snippet = await parseSnippet(file.fileName);
-
-            console.log(snippet);
+        if (!file.fileName.startsWith(snippetDir) || !file.fileName.endsWith(".snippet")) {
+            return; // Not a snippet
         }
+
+        console.log("save", file.fileName);
+
+        const snippetPath = file.fileName;
+        const snippetText = (await readFile(snippetPath)).toString();
+
+        const fileName = path.basename(snippetPath);
+        const [key, languageId] = fileName.split(".");
+
+        const snippet = await parseSnippet(snippetText, languageId);
+
+        if (!snippet) {
+            return;
+        }
+
+        const snippets = await getSnippetsByLanguageId(languageId);
+        snippets[key] = snippet;
+        setSnippetsByLanguageId(languageId, snippets);
     }
 
     static activate(context: ExtensionContext) {
@@ -228,14 +255,15 @@ function getGeneratedIdMappings(): Record<string, string | undefined> {
     return config.get("ib-utilities.generatedLanguageMappings") || {};
 }
 
-async function stringifySnippet(snippet: Snippet): Promise<string> {
+async function stringifySnippet(group: string, snippet: Snippet): Promise<string> {
     const lines: string[] = [];
 
-    const c = await getLineCommentSyntax(snippet.group);
+    const c = await getLineCommentSyntax(group);
 
     lines.push(`${c} @prefix ${snippet.prefix ?? ""}`);
     lines.push(`${c} @description ${snippet.description ?? ""}`);
-    if (isECMA(snippet.group)) {
+    lines.push(`${c} @isFileTemplate ${snippet.isFileTemplate ?? ""}`);
+    if (isECMA(group)) {
         lines.push(`// @ts-nocheck`);
         lines.push(`// prettier-ignore`);
         lines.push(`// eslint-disable`);
@@ -246,52 +274,44 @@ async function stringifySnippet(snippet: Snippet): Promise<string> {
     return lines.join("\n");
 }
 
-async function parseSnippet(snippetPath: string): Promise<Snippet | null> {
-    const snippet = (await fs.readFile(snippetPath)).toString();
+async function parseSnippet(snippet: string, languageId: string): Promise<Snippet | null> {
     const lines: string[] = snippet.split("\n");
-
-    const fileName = path.basename(snippetPath);
-    const [key, languageId] = fileName.split(".");
 
     const prefixLine = lines[0];
     const descriptionLine = lines[1];
+    const fileTemplateLine = lines[2];
 
     const c = await getLineCommentSyntax(languageId);
     if (!prefixLine.startsWith(`${c} @prefix`)) {
-        window.showErrorMessage(`${fileName} missing @prefix directive`);
+        window.showErrorMessage(`missing @prefix directive`);
         return null;
     }
 
     if (!descriptionLine.startsWith(`${c} @description`)) {
-        window.showErrorMessage(`${fileName} missing @description directive`);
+        window.showErrorMessage(`missing @description directive`);
         return null;
     }
 
-    const prefix = prefixLine.slice(10).trim();
-    const description = descriptionLine.slice(15).trim();
+    if (!fileTemplateLine.startsWith(`${c} @isFileTemplate`)) {
+        window.showErrorMessage(`missing @isFileTemplate directive`);
+        return null;
+    }
 
-    let startLine = 4;
-    if (lines[3] === "// @ts-nocheck") {
+    const prefix = prefixLine.slice(c.length + 8).trim();
+    const description = descriptionLine.slice(c.length + 13).trim();
+    const fileTemplate = fileTemplateLine.slice(c.length + 16).trim();
+
+    let startLine = 3;
+    if (lines[2] === "// @ts-nocheck") {
         startLine += 3;
     }
 
-    const body = lines.slice(startLine);
+    const body = trimStringArray(lines.slice(startLine));
 
     return {
-        key,
         prefix: prefix === "" ? undefined : prefix,
         description: description === "" ? undefined : description,
-        group: languageId,
-        isFileTemplate: false,
+        isFileTemplate: fileTemplate === "" ? undefined : Boolean(fileTemplate),
         body,
     };
-}
-
-function isECMA(languageId: string) {
-    return (
-        languageId === "typescript" ||
-        languageId === "typescriptreact" ||
-        languageId === "javascript" ||
-        languageId === "javascriptreact"
-    );
 }

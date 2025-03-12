@@ -43,7 +43,7 @@ A collection of utilities made by me
 
 ## View Containers
 
-### Snippet
+### Snippet Manager
 
 -   **ID:** `snippetContainer`
 -   **Icon:** ![](media/snippet_icon.svg)

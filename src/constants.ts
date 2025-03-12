@@ -35,7 +35,7 @@ export enum Commands {
     RefreshSnippetView = `ib-utilities.refreshSnippetView`,
 
     /**
-     * Snippet
+     * Snippet Manager
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,
 
@@ -44,7 +44,7 @@ export enum Commands {
 /** View Containers */
 export enum ViewContainers {
     /**
-     * Snippet
+     * Snippet Manager
      * Icon: media/snippet_icon.svg
      */
       SnippetContainer = `snippetContainer`,

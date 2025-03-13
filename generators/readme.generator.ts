@@ -21,7 +21,7 @@ if (commands) {
         l();
         l(`-   **Command:** \`${cmd.command}\``);
         l(`-   **Short Title:** ${cmd.shortTitle}`);
-        l(`-   **Icon:** ${cmd.icon}`, !cmd.icon);
+        l(`-   **Icon:** ${cmd.icon}`, cmd.icon);
         l();
     }
 }
@@ -92,7 +92,7 @@ if (themes) {
     for (const theme of themes) {
         l(`### ${theme.label}`);
         l();
-        l(`- **ID:** \`${theme.id}\``, !theme.id);
+        l(`- **ID:** \`${theme.id}\``, theme.id);
         l(`- **Name:** \`${theme.label}\``);
         l(`- **Base Theme:** \`${theme.uiTheme}\``);
         l();

@@ -1,7 +1,5 @@
-import { UserPath } from "../extension";
 import path from "path";
 import os from "os";
-import cjson from "cjson";
 import { registerCommandIB } from "../utils/vscode";
 import { getExtensionFromLanguageId, getLineCommentSyntax } from "../utils/languages";
 import { Commands, Views } from "../constants";
@@ -21,19 +19,31 @@ import {
     workspace,
     languages,
     TextDocument,
-    TabInputText,
 } from "vscode";
-import { isECMA, trimStringArray } from "./utility";
-import { readdir, readFile, writeFile } from "fs/promises";
+import {
+    getAllOpenTabUris,
+    getSnippetLanguages,
+    getSnippetsByLanguageId,
+    isECMA,
+    setSnippetsByLanguageId,
+    trimStringArray,
+} from "./utility";
+import { readFile, writeFile } from "fs/promises";
 
-type Snippet = {
+const snippetDir = path.join(os.tmpdir(), "ib-utilities_snippet-editor");
+
+if (!existsSync(snippetDir)) {
+    mkdirSync(snippetDir);
+}
+
+export type Snippet = {
     prefix?: string;
     body: string[];
     isFileTemplate?: boolean;
     description?: string;
 };
 
-type Snippets = Record<string, Snippet>;
+export type Snippets = Record<string, Snippet>;
 
 class SnippetTreeItem extends TreeItem {
     constructor(
@@ -63,28 +73,6 @@ class SnippetTreeItem extends TreeItem {
     }
 }
 
-export async function getSnippetsByLanguageId(languageId: string): Promise<Snippets> {
-    const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
-    return cjson.load(snippetPath);
-}
-
-export async function setSnippetsByLanguageId(languageId: string, snippets: Snippets) {
-    const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
-    return await writeFile(snippetPath, JSON.stringify(snippets, null, 2));
-}
-
-export async function getSnippetLanguages(): Promise<string[]> {
-    const snippetsPath = path.join(UserPath, "snippets");
-    const files = await readdir(snippetsPath);
-    return files.filter((f) => f.endsWith(".json")).map((f) => f.slice(0, -5));
-}
-
-const snippetDir = path.join(os.tmpdir(), "ib-utilities_snippet-editor");
-
-if (!existsSync(snippetDir)) {
-    mkdirSync(snippetDir);
-}
-
 export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
     private _onDidChangeTreeData: EventEmitter<SnippetTreeItem | undefined | void> = new EventEmitter<
         SnippetTreeItem | undefined | void
@@ -109,7 +97,12 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
 
             return languages.map((languageId) => {
                 let description = generatedMappings[languageId];
-                return new SnippetTreeItem(languageId, TreeItemCollapsibleState.Collapsed, description);
+
+                return new SnippetTreeItem(
+                    languageId,
+                    TreeItemCollapsibleState.Collapsed,
+                    description ? description.join(",") : undefined
+                );
             });
         }
 
@@ -183,8 +176,6 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             return; // Not a snippet
         }
 
-        console.log("save", file.fileName);
-
         const snippetPath = file.fileName;
         const snippetText = (await readFile(snippetPath)).toString();
 
@@ -197,9 +188,22 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             return;
         }
 
-        const snippets = await getSnippetsByLanguageId(languageId);
+        const snippets = getSnippetsByLanguageId(languageId);
         snippets[key] = snippet;
-        setSnippetsByLanguageId(languageId, snippets);
+        await setSnippetsByLanguageId(languageId, snippets);
+
+        const generatedMap = getGeneratedIdMappings();
+        const reverseGeneratedMap = reverseMap(generatedMap);
+
+        const languagesToGenerate = reverseGeneratedMap[languageId];
+
+        if (languagesToGenerate) {
+            console.log(`Languages to generate due to change in "${languageId}":`, languagesToGenerate);
+
+            for (const dependentLanguageId of languagesToGenerate) {
+                generateSnippetsForLanguage(dependentLanguageId, generatedMap[dependentLanguageId]); // Assuming you have this function
+            }
+        }
     }
 
     static activate(context: ExtensionContext) {
@@ -231,44 +235,79 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
     }
 }
 
-export function getAllOpenTabUris(): Uri[] {
-    const tabGroups = window.tabGroups.all;
-    const uris: Uri[] = [];
+function getLanguageIdMappings(): Record<string, string> {
+    const config = workspace.getConfiguration("ib-utilities");
+    return config.get("languageIdMappings") || {};
+}
 
-    for (const group of tabGroups) {
-        for (const tab of group.tabs) {
-            if (tab.input instanceof TabInputText) {
-                uris.push(tab.input.uri);
-            }
+function getGeneratedIdMappings(): Record<string, string[]> {
+    const config = workspace.getConfiguration("ib-utilities");
+    const mappings: Record<string, string> = config.get("generatedLanguageMappings") ?? {};
+    return Object.entries(mappings).reduce((acc, [key, value]) => {
+        return {
+            ...acc,
+            [key]: value?.split(","),
+        };
+    }, {});
+}
+
+function generateSnippetsForLanguage(languageId: string, dependencies: string[]) {
+    console.log(`Generating snippets for "${languageId}" using dependencies:`, dependencies);
+
+    let generatedSnippets: Snippets = {};
+
+    for (const depLanguage of dependencies) {
+        let depSnippets = getSnippetsByLanguageId(depLanguage);
+
+        generatedSnippets = { ...generatedSnippets, ...depSnippets };
+    }
+
+    setSnippetsByLanguageId(languageId, generatedSnippets);
+}
+
+function reverseMap(inputMap: Record<string, string[]>): Record<string, string[]> {
+    const reversedMap: { [key: string]: string[] } = {};
+
+    for (const key in inputMap) {
+        if (inputMap.hasOwnProperty(key)) {
+            // Ensure key is directly on the object
+            const values = inputMap[key];
+
+            values.forEach((value) => {
+                const trimmedValue = value.trim();
+
+                if (!reversedMap[trimmedValue]) {
+                    reversedMap[trimmedValue] = [];
+                }
+                reversedMap[trimmedValue].push(key);
+            });
         }
     }
-    return uris;
-}
 
-function getLanguageIdMappings(): Record<string, string | undefined> {
-    const config = workspace.getConfiguration();
-    return config.get("ib-utilities.languageIdMappings") || {};
-}
-
-function getGeneratedIdMappings(): Record<string, string | undefined> {
-    const config = workspace.getConfiguration();
-    return config.get("ib-utilities.generatedLanguageMappings") || {};
+    return reversedMap;
 }
 
 async function stringifySnippet(group: string, snippet: Snippet): Promise<string> {
     const lines: string[] = [];
 
+    const l = (line: string, condition?: boolean) => {
+        if (condition !== false) {
+            lines.push(line);
+        }
+    };
+
     const c = await getLineCommentSyntax(group);
 
-    lines.push(`${c} @prefix ${snippet.prefix ?? ""}`);
-    lines.push(`${c} @description ${snippet.description ?? ""}`);
-    lines.push(`${c} @isFileTemplate ${snippet.isFileTemplate ?? ""}`);
-    if (isECMA(group)) {
-        lines.push(`// @ts-nocheck`);
-        lines.push(`// prettier-ignore`);
-        lines.push(`// eslint-disable`);
-    }
-    lines.push("");
+    const isEcma = isECMA(group);
+
+    l(`${c} @prefix ${snippet.prefix ?? ""}`);
+    l(`${c} @description ${snippet.description ?? ""}`);
+    l(`${c} @isFileTemplate ${snippet.isFileTemplate ?? ""}`);
+    l(`${c} @ts-nocheck`, isEcma);
+    l(`${c} prettier-ignore`, isEcma);
+    l(`${c} eslint-disable`, isEcma);
+    l("");
+
     lines.push(...snippet.body);
 
     return lines.join("\n");

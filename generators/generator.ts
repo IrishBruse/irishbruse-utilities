@@ -33,8 +33,8 @@ export function stripPackagePrefix(command: string): string {
     return command.replace(prefix + ".", "");
 }
 
-export function l(input?: string, condition: boolean = false) {
-    if (!!condition) {
+export function l(input?: string, condition?: unknown) {
+    if (condition === false) {
         return;
     }
 

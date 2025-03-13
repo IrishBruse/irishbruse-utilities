@@ -30,7 +30,7 @@ if (contributes.commands) {
         startDoc();
         l(cmd.title);
         l(`Short Title: ${cmd.shortTitle}`);
-        l(`Icon: ${cmd.icon}`, !cmd.icon);
+        l(`Icon: ${cmd.icon}`, cmd.icon);
         endDoc();
         l(`${constName} = \`${cmd.command}\`,`);
         l();

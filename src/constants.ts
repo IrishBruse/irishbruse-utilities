@@ -5,18 +5,21 @@ export enum Commands {
     /**
      * IB: Relative goto
      * Short Title: Relative goto
+     * Icon: undefined
      */
     RelativeGoTo = `ib-utilities.relativeGoTo`,
 
     /**
      * IB: Open Snippet
      * Short Title: Open
+     * Icon: undefined
      */
     OpenSnippet = `ib-utilities.openSnippet`,
 
     /**
      * IB: Show Snippet View
      * Short Title: Show Snippet View
+     * Icon: undefined
      */
     ShowSnippetView = `ib-utilities.showSnippetView`,
 

@@ -10,6 +10,7 @@ A collection of utilities made by me
 
 -   **Command:** `ib-utilities.relativeGoTo`
 -   **Short Title:** Relative goto
+-   **Icon:** undefined
 
 ### IB: Open Snippet
 
@@ -17,6 +18,7 @@ A collection of utilities made by me
 
 -   **Command:** `ib-utilities.openSnippet`
 -   **Short Title:** Open
+-   **Icon:** undefined
 
 ### IB: Show Snippet View
 
@@ -24,6 +26,7 @@ A collection of utilities made by me
 
 -   **Command:** `ib-utilities.showSnippetView`
 -   **Short Title:** Show Snippet View
+-   **Icon:** undefined
 
 ### IB: Open Pull Request
 
@@ -89,5 +92,6 @@ On the left is the languageId for the snippet to auto generate on the right is t
 
 ### Empty Dark Theme
 
+- **ID:** `undefined`
 - **Name:** `Empty Dark Theme`
 - **Base Theme:** `vs-dark`

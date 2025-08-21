@@ -13,47 +13,18 @@ export async function openPR(sourceControl: SourceControl) {
 
     try {
         commands = await Promise.all([
-            asyncSpawn("git", ["rev-parse", "HEAD"], { cwd: repoPath }),
+            asyncSpawn("gh", ["pr", "view", "--json", "number", "--jq", ".number"], { cwd: repoPath }),
             asyncSpawn("git", ["remote", "get-url", "origin"], { cwd: repoPath }),
-            asyncSpawn("git", ["ls-remote", "origin", "refs/pull/*/head"], { cwd: repoPath }),
         ]);
     } catch (error) {
         window.showErrorMessage("Failed to run git commands ", (error as Error).message);
         return;
     }
 
-    const [commitHashProcess, repoUrlProcess, prNumberProcess] = commands;
-
-    // Get repository URL
-    if (repoUrlProcess.status !== 0) {
-        window.showErrorMessage("Failed to get remote repository URL.");
-        return;
-    }
-    let repoUrl = repoUrlProcess.stdout.toString().trim();
-
-    if (repoUrl.endsWith(".git")) {
-        repoUrl = repoUrl.slice(0, repoUrl.length - 4);
-    }
-
-    // Get PR number
-    if (prNumberProcess.status !== 0) {
-        window.showErrorMessage("Failed to fetch PRs from remote.");
-        return;
-    }
-
-    const prList = prNumberProcess.stdout.toString().split("\n");
-
-    const commitHash = commitHashProcess.stdout.toString().trim();
-
-    const prEntry = prList.find((line) => line.includes(commitHash));
-    if (!prEntry) {
-        env.openExternal(Uri.parse(repoUrl));
-        return;
-    }
-
-    const prNumber = prEntry.split("/")[2];
+    const prNumber = commands[0].stdout.trim();
+    const remoteUrl = commands[1].stdout.trim().replace(".git", "");
 
     // Open the PR URL
-    const prUrl = `${repoUrl}/pull/${prNumber}`;
+    const prUrl = `${remoteUrl}/pull/${prNumber}`;
     env.openExternal(Uri.parse(prUrl));
 }

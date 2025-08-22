@@ -24,7 +24,12 @@ export async function openPR(sourceControl: SourceControl) {
     const prNumber = commands[0].stdout.trim();
     const remoteUrl = commands[1].stdout.trim().replace(".git", "");
 
+    let prUrl = `${remoteUrl}/pull/${prNumber}`;
+    if (commands[0].status !== 0) {
+        env.openExternal(Uri.parse(remoteUrl));
+        return;
+    }
+
     // Open the PR URL
-    const prUrl = `${remoteUrl}/pull/${prNumber}`;
     env.openExternal(Uri.parse(prUrl));
 }

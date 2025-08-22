@@ -3,7 +3,7 @@ import { spawn, SpawnOptionsWithoutStdio } from "child_process";
 export type Process = {
     stdout: string;
     stderr: string;
-    status: number;
+    status: number | null;
 };
 
 /**
@@ -33,11 +33,7 @@ export async function asyncSpawn(
         });
 
         child.on("close", (code) => {
-            if (code === 0) {
-                resolve({ stdout, stderr, status: code });
-            } else {
-                reject({ stdout, stderr, status: code });
-            }
+            resolve({ stdout, stderr, status: code });
         });
 
         child.on("error", (err) => {

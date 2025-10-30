@@ -3,39 +3,53 @@
 /** Commands */
 export enum Commands {
     /**
-     * IB: Relative goto
+     * Relative goto
      * Short Title: Relative goto
      * Icon: undefined
      */
     RelativeGoTo = `ib-utilities.relativeGoTo`,
 
     /**
-     * IB: Open Snippet
+     * Open Snippet
      * Short Title: Open
      * Icon: undefined
      */
     OpenSnippet = `ib-utilities.openSnippet`,
 
     /**
-     * IB: Show Snippet View
+     * Show Snippet View
      * Short Title: Show Snippet View
      * Icon: undefined
      */
     ShowSnippetView = `ib-utilities.showSnippetView`,
 
     /**
-     * IB: Open Pull Request
+     * Open Pull Request
      * Short Title: Open PR
      * Icon: $(github)
      */
     OpenPR = `ib-utilities.openPR`,
 
     /**
-     * IB: Refresh Snippets
+     * Refresh Snippets
      * Short Title: Refresh
      * Icon: $(refresh)
      */
     RefreshSnippetView = `ib-utilities.refreshSnippetView`,
+
+    /**
+     * Add new snippet
+     * Short Title: Add snippet
+     * Icon: $(add)
+     */
+    AddSnippet = `ib-utilities.addSnippet`,
+
+    /**
+     * Edit snippet file
+     * Short Title: Edit snippet
+     * Icon: $(edit)
+     */
+    EditSnippetFile = `ib-utilities.editSnippetFile`,
 
     /**
      * Snippet Manager

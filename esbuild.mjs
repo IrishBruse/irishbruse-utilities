@@ -32,7 +32,7 @@ const config = {
     entryPoints: ["src/extension.ts"],
     bundle: true,
     platform: "node",
-    target: "node16",
+    target: "node20",
     sourcemap: !isProd,
     minify: isProd,
     treeShaking: isProd,

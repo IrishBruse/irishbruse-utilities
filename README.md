@@ -4,7 +4,7 @@ A collection of utilities made by me
 
 ## Commands
 
-### IB: Relative goto
+### Relative goto
 
 ![ib-utilities.relativeGoTo Screenshot](docs/commands/ib-utilities.relativeGoTo.png)
 
@@ -12,7 +12,7 @@ A collection of utilities made by me
 -   **Short Title:** Relative goto
 -   **Icon:** undefined
 
-### IB: Open Snippet
+### Open Snippet
 
 ![ib-utilities.openSnippet Screenshot](docs/commands/ib-utilities.openSnippet.png)
 
@@ -20,7 +20,7 @@ A collection of utilities made by me
 -   **Short Title:** Open
 -   **Icon:** undefined
 
-### IB: Show Snippet View
+### Show Snippet View
 
 ![ib-utilities.showSnippetView Screenshot](docs/commands/ib-utilities.showSnippetView.png)
 
@@ -28,7 +28,7 @@ A collection of utilities made by me
 -   **Short Title:** Show Snippet View
 -   **Icon:** undefined
 
-### IB: Open Pull Request
+### Open Pull Request
 
 ![ib-utilities.openPR Screenshot](docs/commands/ib-utilities.openPR.png)
 
@@ -36,13 +36,29 @@ A collection of utilities made by me
 -   **Short Title:** Open PR
 -   **Icon:** $(github)
 
-### IB: Refresh Snippets
+### Refresh Snippets
 
 ![ib-utilities.refreshSnippetView Screenshot](docs/commands/ib-utilities.refreshSnippetView.png)
 
 -   **Command:** `ib-utilities.refreshSnippetView`
 -   **Short Title:** Refresh
 -   **Icon:** $(refresh)
+
+### Add new snippet
+
+![ib-utilities.addSnippet Screenshot](docs/commands/ib-utilities.addSnippet.png)
+
+-   **Command:** `ib-utilities.addSnippet`
+-   **Short Title:** Add snippet
+-   **Icon:** $(add)
+
+### Edit snippet file
+
+![ib-utilities.editSnippetFile Screenshot](docs/commands/ib-utilities.editSnippetFile.png)
+
+-   **Command:** `ib-utilities.editSnippetFile`
+-   **Short Title:** Edit snippet
+-   **Icon:** $(edit)
 
 ## View Containers
 
@@ -77,6 +93,16 @@ On the left is the languageId for the snippet to auto generate on the right is t
 - **Command:** `ib-utilities.openPR`
   - **Condition:** `scmProvider == git`
   - **Group:** `navigation`
+
+### View/item/context
+
+- **Command:** `ib-utilities.editSnippetFile`
+  - **Condition:** `view == snippetView && viewItem == language`
+  - **Group:** `inline`
+
+- **Command:** `ib-utilities.addSnippet`
+  - **Condition:** `view == snippetView && viewItem == language`
+  - **Group:** `inline`
 
 ### View/title
 

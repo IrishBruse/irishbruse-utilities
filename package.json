@@ -8,7 +8,7 @@
     },
     "publisher": "irishbruse",
     "author": "Ethan Conneely",
-    "version": "0.3.2",
+    "version": "0.4.0",
     "license": "MIT",
     "engines": {
         "vscode": "^1.85.0"
@@ -91,30 +91,42 @@
         "commands": [
             {
                 "command": "ib-utilities.relativeGoTo",
-                "title": "IB: Relative goto",
+                "title": "Relative goto",
                 "shortTitle": "Relative goto"
             },
             {
                 "command": "ib-utilities.openSnippet",
-                "title": "IB: Open Snippet",
+                "title": "Open Snippet",
                 "shortTitle": "Open"
             },
             {
                 "command": "ib-utilities.showSnippetView",
-                "title": "IB: Show Snippet View",
+                "title": "Show Snippet View",
                 "shortTitle": "Show Snippet View"
             },
             {
                 "command": "ib-utilities.openPR",
-                "title": "IB: Open Pull Request",
+                "title": "Open Pull Request",
                 "shortTitle": "Open PR",
                 "icon": "$(github)"
             },
             {
                 "command": "ib-utilities.refreshSnippetView",
-                "title": "IB: Refresh Snippets",
+                "title": "Refresh Snippets",
                 "shortTitle": "Refresh",
                 "icon": "$(refresh)"
+            },
+            {
+                "command": "ib-utilities.addSnippet",
+                "title": "Add new snippet",
+                "shortTitle": "Add snippet",
+                "icon": "$(add)"
+            },
+            {
+                "command": "ib-utilities.editSnippetFile",
+                "title": "Edit snippet file",
+                "shortTitle": "Edit snippet",
+                "icon": "$(edit)"
             }
         ],
         "menus": {
@@ -123,6 +135,18 @@
                     "command": "ib-utilities.openPR",
                     "when": "scmProvider == git",
                     "group": "navigation"
+                }
+            ],
+            "view/item/context": [
+                {
+                    "command": "ib-utilities.editSnippetFile",
+                    "when": "view == snippetView && viewItem == language",
+                    "group": "inline"
+                },
+                {
+                    "command": "ib-utilities.addSnippet",
+                    "when": "view == snippetView && viewItem == language",
+                    "group": "inline"
                 }
             ],
             "view/title": [

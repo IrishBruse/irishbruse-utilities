@@ -107,7 +107,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         registerCommandIB(Commands.DeleteSnippet, (i) => snippetDataProvider.deleteSnippet(i), context);
 
         // TODO: is there a better way of creating these extension files
-        context.subscriptions.push(workspace.onDidSaveTextDocument(snippetDataProvider.save));
+        context.subscriptions.push(workspace.onDidSaveTextDocument((e) => snippetDataProvider.save(e)));
     }
 
     static async deactivate(): Promise<void> {
@@ -238,6 +238,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         const snippetPath = file.fileName;
 
         await saveFile(snippetPath);
+        this.refresh();
     }
 
     async addSnippet(item: SnippetTreeItem) {

@@ -123,10 +123,16 @@
                 "icon": "$(add)"
             },
             {
-                "command": "ib-utilities.editSnippetFile",
-                "title": "Edit snippet file",
+                "command": "ib-utilities.editSnippet",
+                "title": "Edit snippet",
                 "shortTitle": "Edit snippet",
                 "icon": "$(edit)"
+            },
+            {
+                "command": "ib-utilities.deleteSnippet",
+                "title": "Delete snippet",
+                "shortTitle": "Delete snippet",
+                "icon": "$(trash)"
             }
         ],
         "menus": {
@@ -139,13 +145,18 @@
             ],
             "view/item/context": [
                 {
-                    "command": "ib-utilities.editSnippetFile",
-                    "when": "view == snippetView && viewItem == language",
+                    "command": "ib-utilities.editSnippet",
+                    "when": "view == snippetView && viewItem == folder",
                     "group": "inline"
                 },
                 {
                     "command": "ib-utilities.addSnippet",
-                    "when": "view == snippetView && viewItem == language",
+                    "when": "view == snippetView && viewItem == folder",
+                    "group": "inline"
+                },
+                {
+                    "command": "ib-utilities.deleteSnippet",
+                    "when": "view == snippetView && viewItem == file",
                     "group": "inline"
                 }
             ],

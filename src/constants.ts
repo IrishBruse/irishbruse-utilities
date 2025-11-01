@@ -45,11 +45,18 @@ export enum Commands {
     AddSnippet = `ib-utilities.addSnippet`,
 
     /**
-     * Edit snippet file
+     * Edit snippet
      * Short Title: Edit snippet
      * Icon: $(edit)
      */
-    EditSnippetFile = `ib-utilities.editSnippetFile`,
+    EditSnippet = `ib-utilities.editSnippet`,
+
+    /**
+     * Delete snippet
+     * Short Title: Delete snippet
+     * Icon: $(trash)
+     */
+    DeleteSnippet = `ib-utilities.deleteSnippet`,
 
     /**
      * Snippet Manager

@@ -46,7 +46,7 @@ export function isECMA(languageId: string) {
     );
 }
 
-export function getSnippetsByLanguageId(languageId: string): Snippets {
+export function getSnippetsFile(languageId: string): Snippets {
     const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
     return cjson.load(snippetPath);
 }
@@ -83,12 +83,10 @@ export function getGeneratedIdMappings(): Record<string, string[]> {
 }
 
 export async function generateSnippetsForLanguage(languageId: string, dependencies: string[] = []) {
-    console.log(`Generating snippets for "${languageId}" using dependencies:`, dependencies);
-
     let generatedSnippets: Snippets = {};
 
     for (const depLanguage of dependencies) {
-        const depSnippets = await getSnippetsByLanguageId(depLanguage);
+        const depSnippets = getSnippetsFile(depLanguage);
         generatedSnippets = { ...generatedSnippets, ...depSnippets };
     }
 
@@ -117,7 +115,7 @@ export function reverseMap(inputMap: Record<string, string[]>): Record<string, s
     return reversedMap;
 }
 
-export async function stringifySnippet(languageId: string, snippet: Snippet): Promise<string> {
+export async function stringifySnippet(snippet: Snippet): Promise<string> {
     const lines: string[] = [];
 
     const l = (line: string, condition?: boolean) => {
@@ -126,10 +124,11 @@ export async function stringifySnippet(languageId: string, snippet: Snippet): Pr
         }
     };
 
-    const c = await getLineCommentSyntax(languageId);
+    const c = await getLineCommentSyntax(snippet.languageId);
 
-    const isEcma = isECMA(languageId);
+    const isEcma = isECMA(snippet.languageId);
 
+    l(`${c} @languageId ${snippet.languageId ?? ""}`);
     l(`${c} @prefix ${snippet.prefix ?? ""}`);
     l(`${c} @description ${snippet.description ?? ""}`);
     l(`${c} @isFileTemplate ${snippet.isFileTemplate ?? ""}`);
@@ -144,85 +143,37 @@ export async function stringifySnippet(languageId: string, snippet: Snippet): Pr
     return lines.join("\n");
 }
 
-export async function parseSnippet(snippet: string, languageId: string): Promise<Snippet | null> {
+export async function parseSnippet(snippet: string): Promise<Snippet | null> {
     const lines: string[] = snippet.split("\n");
 
-    const prefixLine = lines[0];
-    const descriptionLine = lines[1];
-    const fileTemplateLine = lines[2];
+    const languageId = lines[0].split("@languageId")[1].trim();
+    if (!languageId) {
+        window.showErrorMessage(`missing @languageId directive`);
+        return null;
+    }
 
-    const c = await getLineCommentSyntax(languageId);
-    if (!prefixLine.startsWith(`${c} @prefix`)) {
+    const prefix = lines[1].split("@prefix")[1].trim();
+    if (!prefix) {
         window.showErrorMessage(`missing @prefix directive`);
         return null;
     }
 
-    if (!descriptionLine.startsWith(`${c} @description`)) {
-        window.showErrorMessage(`missing @description directive`);
-        return null;
-    }
+    const description = lines[2].split("@description")[1]?.trim() ?? "";
+    const fileTemplate = lines[3].split("@isFileTemplate")[1]?.trim() ?? "";
 
-    if (!fileTemplateLine.startsWith(`${c} @isFileTemplate`)) {
-        window.showErrorMessage(`missing @isFileTemplate directive`);
-        return null;
-    }
-
-    const prefix = prefixLine.slice(c.length + 8).trim();
-    const description = descriptionLine.slice(c.length + 13).trim();
-    const fileTemplate = fileTemplateLine.slice(c.length + 16).trim();
-
-    let startLine = 3;
-    if (lines[2] === "// @ts-nocheck") {
-        startLine += 3;
+    let startLine = 0;
+    const c = await getLineCommentSyntax(languageId);
+    while (lines[startLine].startsWith(c)) {
+        startLine++;
     }
 
     const body = trimStringArray(lines.slice(startLine));
 
     return {
+        languageId: languageId,
         prefix: prefix === "" ? undefined : prefix,
         description: description === "" ? undefined : description,
         isFileTemplate: fileTemplate === "" ? undefined : fileTemplate === "true",
         body,
     };
-}
-
-export async function saveFile(snippetPath: string) {
-    const fileName = path.basename(snippetPath);
-    if (!fileName.endsWith(".snippet")) {
-        return;
-    }
-
-    const base = fileName.slice(0, -".snippet".length);
-    const lastDot = base.lastIndexOf(".");
-    if (lastDot === -1) {
-        window.showErrorMessage("Invalid snippet filename");
-        return;
-    }
-
-    const key = base.slice(0, lastDot);
-    const languageId = base.slice(lastDot + 1);
-
-    const snippetText = await readFile(snippetPath);
-
-    const snippet = await parseSnippet(snippetText.toString(), languageId);
-
-    if (!snippet) {
-        return;
-    }
-
-    const snippets = getSnippetsByLanguageId(languageId);
-    snippets[key] = snippet;
-    await setSnippetsByLanguageId(languageId, snippets);
-
-    const reverseGeneratedMap = reverseMap(GeneratedMap);
-
-    const languagesToGenerate = reverseGeneratedMap[languageId];
-
-    if (languagesToGenerate) {
-        console.log(`Languages to generate due to change in "${languageId}":`, languagesToGenerate);
-
-        for (const dependentLanguageId of languagesToGenerate) {
-            await generateSnippetsForLanguage(dependentLanguageId, GeneratedMap[dependentLanguageId]);
-        }
-    }
 }

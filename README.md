@@ -52,13 +52,21 @@ A collection of utilities made by me
 -   **Short Title:** Add snippet
 -   **Icon:** $(add)
 
-### Edit snippet file
+### Edit snippet
 
-![ib-utilities.editSnippetFile Screenshot](docs/commands/ib-utilities.editSnippetFile.png)
+![ib-utilities.editSnippet Screenshot](docs/commands/ib-utilities.editSnippet.png)
 
--   **Command:** `ib-utilities.editSnippetFile`
+-   **Command:** `ib-utilities.editSnippet`
 -   **Short Title:** Edit snippet
 -   **Icon:** $(edit)
+
+### Delete snippet
+
+![ib-utilities.deleteSnippet Screenshot](docs/commands/ib-utilities.deleteSnippet.png)
+
+-   **Command:** `ib-utilities.deleteSnippet`
+-   **Short Title:** Delete snippet
+-   **Icon:** $(trash)
 
 ## View Containers
 
@@ -96,12 +104,16 @@ On the left is the languageId for the snippet to auto generate on the right is t
 
 ### View/item/context
 
-- **Command:** `ib-utilities.editSnippetFile`
-  - **Condition:** `view == snippetView && viewItem == language`
+- **Command:** `ib-utilities.editSnippet`
+  - **Condition:** `view == snippetView && viewItem == folder`
   - **Group:** `inline`
 
 - **Command:** `ib-utilities.addSnippet`
-  - **Condition:** `view == snippetView && viewItem == language`
+  - **Condition:** `view == snippetView && viewItem == folder`
+  - **Group:** `inline`
+
+- **Command:** `ib-utilities.deleteSnippet`
+  - **Condition:** `view == snippetView && viewItem == file`
   - **Group:** `inline`
 
 ### View/title

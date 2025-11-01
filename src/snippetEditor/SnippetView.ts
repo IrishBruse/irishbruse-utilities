@@ -33,6 +33,7 @@ import {
     setSnippetsByLanguageId,
     stringifySnippet,
 } from "./utility";
+import { getExtensionFromLanguageId } from "../utils/languages";
 
 const snippetDir = path.join(os.tmpdir(), "ib-utilities_snippet-editor");
 
@@ -53,7 +54,7 @@ export type Snippets = Record<string, Snippet>;
 class SnippetTreeItem extends TreeItem {
     constructor(
         public readonly label: string,
-        public readonly type: "file" | "folder" | "readonly",
+        public readonly type: "file" | "folder",
         public readonly collapsibleState: TreeItemCollapsibleState,
         public readonly description: string | undefined,
         public readonly iconPath: ThemeIcon,
@@ -61,18 +62,20 @@ class SnippetTreeItem extends TreeItem {
     ) {
         super(label, collapsibleState);
 
-        if (type !== "folder") {
-            this.tooltip = description ?? label;
-            this.resourceUri = Uri.parse("file:///" + label + ".snippet");
-        } else {
-            this.tooltip = "snippets/" + label + ".json";
-            this.resourceUri = Uri.parse("file:///" + label);
-        }
-
         this.contextValue = type;
         this.description = description;
-        this.iconPath = iconPath;
         this.command = command;
+
+        if (type === "folder") {
+            this.tooltip = "snippets/" + label + ".json";
+            const extension = getExtensionFromLanguageId(label);
+            this.resourceUri = Uri.parse("file:///" + (extension ?? label));
+            this.iconPath = !extension ? ThemeIcon.Folder : ThemeIcon.File;
+        } else {
+            this.tooltip = description ?? label;
+            this.resourceUri = Uri.parse("file:///" + label + ".snippet");
+            this.iconPath = iconPath;
+        }
     }
 }
 
@@ -100,7 +103,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         registerCommandIB(Commands.OpenSnippet, snippetDataProvider.openSnippet, context);
 
         registerCommandIB(Commands.AddSnippet, (i) => snippetDataProvider.addSnippet(i), context);
-        registerCommandIB(Commands.EditSnippet, snippetDataProvider.editSnippet, context);
+        registerCommandIB(Commands.EditSnippet, (i) => snippetDataProvider.editSnippet(i), context);
         registerCommandIB(Commands.DeleteSnippet, (i) => snippetDataProvider.deleteSnippet(i), context);
 
         // TODO: is there a better way of creating these extension files

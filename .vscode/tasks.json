@@ -13,28 +13,6 @@
                 "group": "watchers"
             },
             "runOptions": { "runOn": "folderOpen" }
-        },
-        {
-            "type": "npm",
-            "script": "generate:readme",
-            "problemMatcher": [],
-            "isBackground": true,
-            "presentation": {
-                "reveal": "never",
-                "group": "generators"
-            },
-            "runOptions": { "runOn": "folderOpen" }
-        },
-        {
-            "type": "npm",
-            "script": "generate:contributes",
-            "problemMatcher": [],
-            "isBackground": true,
-            "presentation": {
-                "reveal": "never",
-                "group": "generators"
-            },
-            "runOptions": { "runOn": "folderOpen" }
         }
     ]
 }

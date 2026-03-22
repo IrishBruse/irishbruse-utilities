@@ -1,7 +1,7 @@
 import cjson from "cjson";
 import { readdir, readFile, writeFile } from "fs/promises";
 import path from "path";
-import { window, workspace } from "vscode";
+import { commands, Position, Range, TabInputText, Uri, window, workspace, WorkspaceEdit } from "vscode";
 import { UserPath } from "../extension";
 import { getLineCommentSyntax } from "../utils/languages";
 import { Snippet, Snippets } from "./SnippetView";
@@ -53,7 +53,7 @@ export function getSnippetsFile(languageId: string): Snippets {
 
 export async function setSnippetsByLanguageId(languageId: string, snippets: Snippets) {
     const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
-    return await writeFile(snippetPath, JSON.stringify(snippets, null, 2));
+    await updateSnippetFile(Uri.file(snippetPath), JSON.stringify(snippets, null, 2));
 }
 
 export async function getSnippetLanguages(): Promise<string[]> {
@@ -70,16 +70,19 @@ export function getLanguageIdMappings(): Record<string, string> {
 export function getGeneratedIdMappings(): Record<string, string[]> {
     const config = workspace.getConfiguration("ib-utilities");
     const mappings: Record<string, string> = config.get("generatedLanguageMappings") ?? {};
-    return Object.entries(mappings).reduce((acc, [key, value]) => {
-        const arr = (value ?? "")
-            .split(",")
-            .map((v) => v.trim())
-            .filter(Boolean);
-        return {
-            ...acc,
-            [key]: arr,
-        };
-    }, {} as Record<string, string[]>);
+    return Object.entries(mappings).reduce(
+        (acc, [key, value]) => {
+            const arr = (value ?? "")
+                .split(",")
+                .map((v) => v.trim())
+                .filter(Boolean);
+            return {
+                ...acc,
+                [key]: arr,
+            };
+        },
+        {} as Record<string, string[]>
+    );
 }
 
 export async function generateSnippetsForLanguage(languageId: string, dependencies: string[] = []) {
@@ -176,4 +179,32 @@ export async function parseSnippet(snippet: string): Promise<Snippet | null> {
         isFileTemplate: fileTemplate === "" ? undefined : fileTemplate === "true",
         body,
     };
+}
+
+export async function updateSnippetFile(uri: Uri, newContent: string) {
+    const doc = await workspace.openTextDocument(uri);
+    const editor = await window.showTextDocument(doc, { preview: true, preserveFocus: true });
+
+    const fullRange = new Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
+
+    // Replace entire content via editor (NOT fs)
+    await editor.edit((editBuilder) => {
+        editBuilder.replace(fullRange, newContent);
+    });
+
+    await doc.save();
+
+    // Optional: trigger refresh hack
+    await editor.edit((editBuilder) => {
+        editBuilder.insert(new Position(0, 0), " ");
+    });
+    await editor.edit((editBuilder) => {
+        editBuilder.delete(new Range(new Position(0, 0), new Position(0, 1)));
+    });
+
+    await doc.save();
+
+    // Close the editor
+    await window.showTextDocument(doc, { preview: true });
+    await commands.executeCommand("workbench.action.closeActiveEditor");
 }

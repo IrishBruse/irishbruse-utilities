@@ -345,6 +345,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             }
 
             this.refresh();
+
             window.showInformationMessage(`Deleted snippet '${key}' from '${languageId}'`);
         } catch (err) {
             window.showErrorMessage(`Failed to delete snippet: ${String(err)}`);

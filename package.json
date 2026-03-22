@@ -24,10 +24,10 @@
         "esbuild": "node esbuild.mjs",
         "watch": "node esbuild.mjs --watch",
         "package": "node esbuild.mjs --production",
-        "lint": "eslint src --ext ts",
+        "lint": "eslint src --ext ts && tsc --noEmit",
         "test": "vscode-test",
-        "generate:readme": "tsx --watch --experimental-transform-types generators/readme.generator.ts",
-        "generate:contributes": "tsx --watch --experimental-transform-types generators/contributes.generator.ts"
+        "generate:contributes": "tsx --experimental-transform-types generators/contributes.generator.ts",
+        "generate:contributes:watch": "tsx --watch --experimental-transform-types generators/contributes.generator.ts"
     },
     "main": "./dist/extension.js",
     "contributes": {
@@ -60,6 +60,11 @@
                         "typescriptreact": "node,react",
                         "javascriptreact": "node,react"
                     }
+                },
+                "ib-utilities.pasteImagePath": {
+                    "type": "string",
+                    "description": "Path where pasted images will be saved relative to workspace root.",
+                    "default": "images"
                 }
             }
         },
@@ -109,6 +114,12 @@
                 "title": "Open Pull Request",
                 "shortTitle": "Open PR",
                 "icon": "$(github)"
+            },
+            {
+                "command": "ib-utilities.pasteImage",
+                "title": "Paste Image",
+                "shortTitle": "Paste Image",
+                "icon": "$(clippy)"
             },
             {
                 "command": "ib-utilities.refreshSnippetView",
@@ -172,7 +183,15 @@
                     "group": "navigation"
                 }
             ]
-        }
+        },
+        "keybindings": [
+            {
+                "command": "ib-utilities.pasteImage",
+                "key": "ctrl+v",
+                "mac": "cmd+v",
+                "when": "terminalFocus"
+            }
+        ]
     },
     "devDependencies": {
         "@types/cjson": "^0.5.3",

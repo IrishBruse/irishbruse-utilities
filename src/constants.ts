@@ -31,6 +31,13 @@ export enum Commands {
     OpenPR = `ib-utilities.openPR`,
 
     /**
+     * Paste Image
+     * Short Title: Paste Image
+     * Icon: $(clippy)
+     */
+    PasteImage = `ib-utilities.pasteImage`,
+
+    /**
      * Refresh Snippets
      * Short Title: Refresh
      * Icon: $(refresh)
@@ -96,5 +103,10 @@ export enum Configuration {
      * On the left is the languageId for the snippet to auto generate on the right is the comma delimited array of languages to build it from.
      */
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
+
+    /**
+     * Path where pasted images will be saved relative to workspace root.
+     */
+    PasteImagePath = `ib-utilities.pasteImagePath`,
 
 }

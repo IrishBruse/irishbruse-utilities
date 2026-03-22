@@ -220,9 +220,8 @@ export async function updateSnippetFile(uri: Uri, newContent: string) {
         editBuilder.replace(fullRange, newContent);
     });
 
-    await sleep(50);
     await doc.save();
-    await sleep(250);
+    await sleep(150);
     await commands.executeCommand("workbench.action.closeActiveEditor");
 }
 async function sleep(ms: number) {

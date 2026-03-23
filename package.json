@@ -8,7 +8,7 @@
     },
     "publisher": "irishbruse",
     "author": "Ethan Conneely",
-    "version": "0.6.0",
+    "version": "0.6.1",
     "license": "MIT",
     "engines": {
         "vscode": "^1.110.0"
@@ -186,11 +186,12 @@
                 "command": "ib-utilities.pasteImage",
                 "key": "ctrl+shift+v",
                 "mac": "ctrl+shift+v",
-                "when": "terminalFocus"
+                "when": "filesExplorerFocus"
             }
         ]
     },
     "devDependencies": {
+        "@vscode/vsce": "^3.3.2",
         "@types/cjson": "^0.5.3",
         "@types/mocha": "^10.0.10",
         "@types/node": "24.x",

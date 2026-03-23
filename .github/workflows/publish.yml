@@ -1,10 +1,4 @@
 on:
-    workflow_dispatch:
-        inputs:
-            force_publish:
-                description: "Publish even if version hasn't changed"
-                type: boolean
-                default: false
     push:
         paths:
             - "package.json"
@@ -12,50 +6,36 @@ on:
 name: Deploy Extension
 
 jobs:
-    deploy:
+    publish:
+        if: "!contains(github.event.head_commit.message, '[skip publish]')"
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
               with:
-                  fetch-depth: 0 # Full history needed for reliable diffing
+                  fetch-depth: 2
 
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  cache: "npm" # Cache dependencies
-
-            - run: npm ci
-
-            - name: Lint & test
+            - name: Check version changed
+              id: version
               run: |
-                  npm run lint --if-present
-                  npm test --if-present
-
-            - name: Build extension
-              run: npm run build --if-present
-
-            - name: Check if version changed
-              id: check_version
-              run: |
-                  # Fallback to empty tree SHA if there's no previous commit
-                  PREV=$(git rev-parse HEAD^2 2>/dev/null || git rev-parse HEAD^ 2>/dev/null || echo "4b825dc642cb6eb9a060e54bf8d69288fbee4904")
-
-                  if git diff "$PREV" HEAD -- package.json | grep '"version":'; then
-                      echo "VERSION_BUMPED=true" >> $GITHUB_ENV
+                  current=$(jq -r .version package.json)
+                  previous=$(git show HEAD~1:package.json | jq -r .version)
+                  if [ "$current" = "$previous" ]; then
+                    echo "Version unchanged ($current), skipping publish"
+                    echo "skip=true" >> "$GITHUB_OUTPUT"
                   else
-                      echo "VERSION_BUMPED=false" >> $GITHUB_ENV
+                    echo "Version changed ($previous -> $current)"
+                    echo "skip=false" >> "$GITHUB_OUTPUT"
                   fi
 
-            - name: Publish to Visual Studio Marketplace
-              if: env.VERSION_BUMPED == 'true' || inputs.force_publish
-              uses: HaaLeo/publish-vscode-extension@v2
+            - uses: actions/setup-node@v4
+              if: steps.version.outputs.skip != 'true'
               with:
-                  pat: ${{ secrets.VSCE_TOKEN }}
-                  registryUrl: https://marketplace.visualstudio.com
+                  node-version: "lts/*"
 
-            - name: Publish to Open VSX Registry
-              if: env.VERSION_BUMPED == 'true' || inputs.force_publish
-              uses: HaaLeo/publish-vscode-extension@v2
-              with:
-                  pat: ${{ secrets.OPEN_VSX_TOKEN }}
-                  registryUrl: https://open-vsx.org
+            - run: npm ci
+              if: steps.version.outputs.skip != 'true'
+
+            - run: npx @vscode/vsce publish
+              if: steps.version.outputs.skip != 'true'
+              env:
+                  VSCE_PAT: ${{ secrets.VSCE_TOKEN }}

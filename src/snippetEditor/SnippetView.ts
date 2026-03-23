@@ -85,11 +85,7 @@ class SnippetTreeItem extends TreeItem {
     }
 }
 
-function createSnippetFileItem(
-    key: string,
-    snippet: Snippet,
-    isGenerated: boolean
-): SnippetTreeItem {
+function createSnippetFileItem(key: string, snippet: Snippet, isGenerated: boolean): SnippetTreeItem {
     return new SnippetTreeItem(
         key,
         "file",
@@ -120,10 +116,6 @@ function validateSnippetItem(item: SnippetTreeItem | undefined, context: string)
         window.showErrorMessage(`Only call ${context} on languages in snippet manager`);
         return null;
     }
-    return item.label;
-}
-
-function getLanguageIdFromTreeItem(item: SnippetTreeItem): string {
     return item.label;
 }
 

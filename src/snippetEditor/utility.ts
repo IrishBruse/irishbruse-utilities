@@ -1,5 +1,5 @@
 import cjson from "cjson";
-import { readdir, readFile, writeFile } from "fs/promises";
+import { readdir } from "fs/promises";
 import path from "path";
 import { commands, Range, Uri, window, workspace } from "vscode";
 import { UserPath } from "../extension";
@@ -24,6 +24,8 @@ export const DIRECTIVES = {
     description: "description",
     isFileTemplate: "isFileTemplate",
 } as const;
+
+const textEncoder = new TextEncoder();
 
 function directive(key: keyof typeof DIRECTIVES): string {
     return DIRECTIVE_PREFIX + DIRECTIVES[key];
@@ -59,6 +61,11 @@ export function isECMA(languageId: string): boolean {
 export function getSnippetsFile(languageId: string): Snippets {
     const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
     return cjson.load(snippetPath);
+}
+
+export async function writeSnippetFile(languageId: string, snippets: Snippets) {
+    const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
+    await workspace.fs.writeFile(Uri.file(snippetPath), textEncoder.encode(JSON.stringify(snippets, null, 2)));
 }
 
 export async function setSnippetsByLanguageId(languageId: string, snippets: Snippets) {

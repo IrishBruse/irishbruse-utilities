@@ -28,10 +28,9 @@ import {
     getLanguageIdMappings,
     getSnippetLanguages,
     getSnippetsFile,
-    parseSnippet,
     reverseMap,
     setSnippetsByLanguageId,
-    stringifySnippet,
+    SnippetParser,
 } from "./utility";
 import { getExtensionFromLanguageId } from "../utils/languages";
 
@@ -83,48 +82,40 @@ class SnippetTreeItem extends TreeItem {
             this.iconPath = iconPath;
         }
     }
-}
 
-function createSnippetFileItem(key: string, snippet: Snippet, isGenerated: boolean): SnippetTreeItem {
-    return new SnippetTreeItem(
-        key,
-        "file",
-        TreeItemCollapsibleState.None,
-        snippet.description,
-        isGenerated ? new ThemeIcon(ICON_LOCK) : new ThemeIcon(ICON_SNIPPET),
-        {
-            title: "Open Snippet",
-            command: Commands.OpenSnippet,
-            arguments: [key, snippet],
-        }
-    );
-}
-
-function createLanguageFolderItem(languageId: string): SnippetTreeItem {
-    const isGenerated = !!GeneratedMap[languageId];
-    return new SnippetTreeItem(
-        languageId,
-        "folder",
-        TreeItemCollapsibleState.Collapsed,
-        isGenerated ? GENERATED_LABEL : undefined,
-        ThemeIcon.Folder
-    );
-}
-
-function validateSnippetItem(item: SnippetTreeItem | undefined, context: string): string | null {
-    if (!item) {
-        window.showErrorMessage(`Only call ${context} on languages in snippet manager`);
-        return null;
+    static forSnippet(key: string, snippet: Snippet, isGenerated: boolean): SnippetTreeItem {
+        return new SnippetTreeItem(
+            key,
+            "file",
+            TreeItemCollapsibleState.None,
+            snippet.description,
+            isGenerated ? new ThemeIcon(ICON_LOCK) : new ThemeIcon(ICON_SNIPPET),
+            {
+                title: "Open Snippet",
+                command: Commands.OpenSnippet,
+                arguments: [key, snippet],
+            }
+        );
     }
-    return item.label;
+
+    static forLanguage(languageId: string): SnippetTreeItem {
+        const isGenerated = !!GeneratedMap[languageId];
+        return new SnippetTreeItem(
+            languageId,
+            "folder",
+            TreeItemCollapsibleState.Collapsed,
+            isGenerated ? GENERATED_LABEL : undefined,
+            ThemeIcon.Folder
+        );
+    }
 }
 
 async function regenerateDependentSnippets(languageId: string): Promise<void> {
     const reverseGeneratedMap = reverseMap(GeneratedMap);
-    const languagesToGenerate = reverseGeneratedMap[languageId];
+    const dependents = reverseGeneratedMap[languageId];
 
-    if (languagesToGenerate) {
-        for (const dependentLanguageId of languagesToGenerate) {
+    if (dependents) {
+        for (const dependentLanguageId of dependents) {
             await generateSnippetsForLanguage(dependentLanguageId, GeneratedMap[dependentLanguageId]);
         }
     }
@@ -133,55 +124,47 @@ async function regenerateDependentSnippets(languageId: string): Promise<void> {
 export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
     private changeEvent = new EventEmitter<SnippetTreeItem | undefined>();
 
-    constructor() {}
-
     public get onDidChangeTreeData(): Event<SnippetTreeItem | undefined> {
         return this.changeEvent.event;
     }
 
     static activate(context: ExtensionContext) {
-        const snippetDataProvider = new SnippetViewProvider();
-        window.registerTreeDataProvider(Views.SnippetView, snippetDataProvider);
+        const provider = new SnippetViewProvider();
+        window.registerTreeDataProvider(Views.SnippetView, provider);
 
         registerCommandIB(
             Commands.ShowSnippetView,
             () => commands.executeCommand(Commands.ViewSnippetContainer),
             context
         );
+        registerCommandIB(Commands.RefreshSnippetView, () => provider.refresh(), context);
 
-        registerCommandIB(Commands.RefreshSnippetView, () => snippetDataProvider.refresh(), context);
+        // openSnippet is an arrow property — `this` is preserved when passed as a reference
+        registerCommandIB(Commands.OpenSnippet, provider.openSnippet, context);
 
-        registerCommandIB(Commands.OpenSnippet, snippetDataProvider.openSnippet, context);
+        registerCommandIB(Commands.AddSnippet, (i) => provider.addSnippet(i), context);
+        registerCommandIB(Commands.EditSnippet, (i) => provider.editSnippet(i), context);
+        registerCommandIB(Commands.DeleteSnippet, (i) => provider.deleteSnippet(i), context);
 
-        registerCommandIB(Commands.AddSnippet, (i) => snippetDataProvider.addSnippet(i), context);
-        registerCommandIB(Commands.EditSnippet, (i) => snippetDataProvider.editSnippet(i), context);
-        registerCommandIB(Commands.DeleteSnippet, (i) => snippetDataProvider.deleteSnippet(i), context);
-
-        context.subscriptions.push(workspace.onDidSaveTextDocument((e) => snippetDataProvider.save(e)));
+        context.subscriptions.push(workspace.onDidSaveTextDocument((e) => provider.save(e)));
     }
 
     static async deactivate(): Promise<void> {
-        const files = readdirSync(snippetDir);
         for (const group of window.tabGroups.all) {
             for (const tab of group.tabs) {
                 if (!(tab.input instanceof TabInputText)) {
                     continue;
                 }
 
-                const uri = tab.input.uri;
-                if (!uri.fsPath.startsWith(snippetDir)) {
-                    continue;
-                }
-
-                const fullPath = path.join(snippetDir, uri.fsPath);
-                if (!files.includes(fullPath)) {
-                    rmSync(uri.fsPath);
+                const { fsPath } = tab.input.uri;
+                if (fsPath.startsWith(snippetDir)) {
+                    rmSync(fsPath, { force: true });
                 }
             }
         }
     }
 
-    refresh() {
+    refresh(): void {
         this.changeEvent.fire(undefined);
     }
 
@@ -191,14 +174,13 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
 
     async getChildren(parent?: SnippetTreeItem): Promise<SnippetTreeItem[]> {
         if (!parent) {
-            const languages = await getSnippetLanguages();
-            return this.getSnippetKeyChildren(languages);
-        } else {
-            return this.getSnippetLanguageChildren(parent);
+            const langs = await getSnippetLanguages();
+            return this.getLanguageChildren(langs);
         }
+        return this.getSnippetChildren(parent);
     }
 
-    getSnippetLanguageChildren(parent: SnippetTreeItem): SnippetTreeItem[] {
+    private getSnippetChildren(parent: SnippetTreeItem): SnippetTreeItem[] {
         if (parent.collapsibleState === TreeItemCollapsibleState.None) {
             return [];
         }
@@ -208,13 +190,13 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
 
         return Object.entries(snippets).map(([key, value]) => {
             value.languageId = parent.label;
-            return createSnippetFileItem(key, value, isGenerated);
+            return SnippetTreeItem.forSnippet(key, value, isGenerated);
         });
     }
 
-    private getSnippetKeyChildren(languages: string[]) {
-        return languages
-            .map((languageId) => createLanguageFolderItem(languageId))
+    private getLanguageChildren(langs: string[]): SnippetTreeItem[] {
+        return langs
+            .map((languageId) => SnippetTreeItem.forLanguage(languageId))
             .sort((a, b) => {
                 if (GeneratedMap[b.label]) {
                     return -100;
@@ -223,48 +205,45 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             });
     }
 
-    async openSnippet(key: string, snippet: Snippet) {
+    // Arrow property so `this` is preserved when passed as a reference to registerCommandIB
+    openSnippet = async (key: string, snippet: Snippet): Promise<void> => {
         if (!key) {
             window.showErrorMessage("Missing key argument");
             return;
         }
-
         if (!snippet) {
             window.showErrorMessage("Missing snippet argument");
             return;
         }
 
         const snippetPath = path.join(snippetDir, key);
-        const snippetContent = await stringifySnippet(snippet);
-        await writeFile(snippetPath, snippetContent);
+        await writeFile(snippetPath, await SnippetParser.stringify(snippet));
 
-        let editor = await window.showTextDocument(Uri.file(snippetPath), { preview: true });
+        const editor = await window.showTextDocument(Uri.file(snippetPath), { preview: true });
 
-        const languageId = snippet.languageId;
-
-        if (GeneratedMap[languageId]) {
+        if (GeneratedMap[snippet.languageId]) {
             await commands.executeCommand("workbench.action.files.setActiveEditorReadonlyInSession");
         }
 
         try {
             const langIds = getLanguageIdMappings();
-            await languages.setTextDocumentLanguage(editor.document, langIds[languageId] ?? languageId);
+            await languages.setTextDocumentLanguage(editor.document, langIds[snippet.languageId] ?? snippet.languageId);
         } catch {
-            // Ignore and use plaintext
+            // Ignore and fall back to plaintext
         }
-    }
+    };
 
-    async save(file: TextDocument) {
+    async save(file: TextDocument): Promise<void> {
         if (!file.fileName.startsWith(snippetDir)) {
             return;
         }
 
-        await saveFile(file.fileName);
+        await SnippetViewProvider.saveSnippetFile(file.fileName);
         this.refresh();
     }
 
-    async addSnippet(item: SnippetTreeItem) {
-        const languageId = validateSnippetItem(item, "add snippet");
+    async addSnippet(item: SnippetTreeItem): Promise<void> {
+        const languageId = SnippetViewProvider.requireLabel(item, "add snippet");
         if (!languageId) {
             return;
         }
@@ -275,49 +254,44 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         }
 
         const snippet: Snippet = {
-            languageId: languageId,
+            languageId,
             prefix: key,
             description: "",
             isFileTemplate: false,
             body: ["replace me"],
         };
 
-        const content = await stringifySnippet(snippet);
-
         const snippetPath = path.join(snippetDir, key);
-        await writeFile(snippetPath, content);
+        await writeFile(snippetPath, await SnippetParser.stringify(snippet));
 
         const editor = await window.showTextDocument(Uri.file(snippetPath));
 
         const langIds = getLanguageIdMappings();
-        const mapped = langIds[languageId] ?? languageId;
         try {
-            await languages.setTextDocumentLanguage(editor.document, mapped);
+            await languages.setTextDocumentLanguage(editor.document, langIds[languageId] ?? languageId);
         } catch {
-            // ignore
+            // Ignore and fall back to plaintext
         }
 
-        await saveFile(snippetPath);
+        await SnippetViewProvider.saveSnippetFile(snippetPath);
         this.refresh();
     }
 
-    async editSnippet(item: SnippetTreeItem) {
-        const languageId = validateSnippetItem(item, "edit snippet");
+    async editSnippet(item: SnippetTreeItem): Promise<void> {
+        const languageId = SnippetViewProvider.requireLabel(item, "edit snippet");
         if (!languageId) {
             return;
         }
 
-        const snippetPath = path.join(SnippetsPath, `${languageId}.json`);
-
         try {
-            await window.showTextDocument(Uri.file(snippetPath));
+            await window.showTextDocument(Uri.file(path.join(SnippetsPath, `${languageId}.json`)));
         } catch (error) {
             window.showErrorMessage("Failed to open snippet file: " + error);
         }
     }
 
-    async deleteSnippet(item: SnippetTreeItem) {
-        const languageId = validateSnippetItem(item, "delete snippet");
+    async deleteSnippet(item: SnippetTreeItem): Promise<void> {
+        const languageId = SnippetViewProvider.requireLabel(item, "delete snippet");
         if (!languageId) {
             return;
         }
@@ -336,7 +310,6 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             { modal: true },
             "Delete"
         );
-
         if (answer !== "Delete") {
             return;
         }
@@ -350,38 +323,39 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             }
 
             delete snippets[key];
-
             await setSnippetsByLanguageId(snippetLanguageId, snippets);
-
             await regenerateDependentSnippets(snippetLanguageId);
 
             this.refresh();
-
             window.showInformationMessage(`Deleted snippet '${key}' from '${snippetLanguageId}'`);
         } catch (err) {
             window.showErrorMessage(`Failed to delete snippet: ${String(err)}`);
         }
     }
-}
 
-async function saveFile(snippetPath: string) {
-    const key = path.basename(snippetPath);
-
-    const snippetText = await readFile(snippetPath);
-
-    const snippet = await parseSnippet(snippetText.toString());
-
-    if (!snippet) {
-        window.showErrorMessage("Failed to parse snippet");
-        return;
+    private static requireLabel(item: SnippetTreeItem | undefined, context: string): string | null {
+        if (!item) {
+            window.showErrorMessage(`Only call ${context} on languages in snippet manager`);
+            return null;
+        }
+        return item.label;
     }
 
-    const languageId = snippet.languageId;
-    const { languageId: _, ...snippetWithoutId } = snippet;
+    private static async saveSnippetFile(snippetPath: string): Promise<void> {
+        const key = path.basename(snippetPath);
+        const text = await readFile(snippetPath);
+        const snippet = await SnippetParser.parse(text.toString());
 
-    const snippets = getSnippetsFile(languageId) as Record<string, Omit<Snippet, "languageId">>;
-    snippets[key] = snippetWithoutId;
-    await setSnippetsByLanguageId(languageId, snippets as Snippets);
+        if (!snippet) {
+            window.showErrorMessage("Failed to parse snippet");
+            return;
+        }
 
-    await regenerateDependentSnippets(languageId);
+        const { languageId, ...snippetWithoutId } = snippet;
+        const snippets = getSnippetsFile(languageId) as Record<string, Omit<Snippet, "languageId">>;
+        snippets[key] = snippetWithoutId;
+
+        await setSnippetsByLanguageId(languageId, snippets as Snippets);
+        await regenerateDependentSnippets(languageId);
+    }
 }

@@ -25,12 +25,6 @@ export const DIRECTIVES = {
     isFileTemplate: "isFileTemplate",
 } as const;
 
-const textEncoder = new TextEncoder();
-
-function directive(key: keyof typeof DIRECTIVES): string {
-    return DIRECTIVE_PREFIX + DIRECTIVES[key];
-}
-
 export function trimStringArray(arr: string[]): string[] {
     if (!arr || arr.length === 0) {
         return [];
@@ -42,16 +36,11 @@ export function trimStringArray(arr: string[]): string[] {
     while (start <= end && (!arr[start] || arr[start].trim() === "")) {
         start++;
     }
-
     while (end >= start && (!arr[end] || arr[end].trim() === "")) {
         end--;
     }
 
-    if (start > end) {
-        return [];
-    }
-
-    return arr.slice(start, end + 1);
+    return start > end ? [] : arr.slice(start, end + 1);
 }
 
 export function isECMA(languageId: string): boolean {
@@ -59,17 +48,12 @@ export function isECMA(languageId: string): boolean {
 }
 
 export function getSnippetsFile(languageId: string): Snippets {
-    const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
+    const snippetPath = path.join(UserPath, "snippets", `${languageId}.json`);
     return cjson.load(snippetPath);
 }
 
-export async function writeSnippetFile(languageId: string, snippets: Snippets) {
-    const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
-    await workspace.fs.writeFile(Uri.file(snippetPath), textEncoder.encode(JSON.stringify(snippets, null, 2)));
-}
-
-export async function setSnippetsByLanguageId(languageId: string, snippets: Snippets) {
-    const snippetPath = path.join(UserPath, "snippets", languageId + ".json");
+export async function setSnippetsByLanguageId(languageId: string, snippets: Snippets): Promise<void> {
+    const snippetPath = path.join(UserPath, "snippets", `${languageId}.json`);
     await updateSnippetFile(Uri.file(snippetPath), JSON.stringify(snippets, null, 2));
 }
 
@@ -80,109 +64,90 @@ export async function getSnippetLanguages(): Promise<string[]> {
 }
 
 export function getLanguageIdMappings(): Record<string, string> {
-    const config = workspace.getConfiguration("ib-utilities");
-    return config.get("languageIdMappings") || {};
+    return workspace.getConfiguration("ib-utilities").get("languageIdMappings") ?? {};
 }
 
 export function getGeneratedIdMappings(): Record<string, string[]> {
-    const config = workspace.getConfiguration("ib-utilities");
-    const mappings: Record<string, string> = config.get("generatedLanguageMappings") ?? {};
+    const mappings: Record<string, string> =
+        workspace.getConfiguration("ib-utilities").get("generatedLanguageMappings") ?? {};
+
     return Object.entries(mappings).reduce(
         (acc, [key, value]) => {
-            const arr = (value ?? "")
+            acc[key] = (value ?? "")
                 .split(",")
                 .map((v) => v.trim())
                 .filter(Boolean);
-            return {
-                ...acc,
-                [key]: arr,
-            };
+            return acc;
         },
         {} as Record<string, string[]>
     );
 }
 
-export async function generateSnippetsForLanguage(languageId: string, dependencies: string[] = []) {
-    let generatedSnippets: Snippets = {};
-
-    for (const depLanguage of dependencies) {
-        const depSnippets = getSnippetsFile(depLanguage);
-        generatedSnippets = { ...generatedSnippets, ...depSnippets };
-    }
-
+export async function generateSnippetsForLanguage(languageId: string, dependencies: string[] = []): Promise<void> {
+    const generatedSnippets = dependencies.reduce<Snippets>((acc, dep) => ({ ...acc, ...getSnippetsFile(dep) }), {});
     await setSnippetsByLanguageId(languageId, generatedSnippets);
 }
 
 export function reverseMap<T>(inputMap: Record<string, T[]>): Record<string, T[]> {
-    const reversedMap: Record<string, T[]> = {};
+    const reversed: Record<string, T[]> = {};
 
-    for (const key in inputMap) {
-        if (Object.prototype.hasOwnProperty.call(inputMap, key)) {
-            const values = inputMap[key];
-
-            for (const value of values) {
-                const trimmedValue = String(value).trim();
-                if (!reversedMap[trimmedValue]) {
-                    reversedMap[trimmedValue] = [];
-                }
-                reversedMap[trimmedValue].push(key as unknown as T);
-            }
+    for (const [key, values] of Object.entries(inputMap)) {
+        for (const value of values) {
+            const k = String(value).trim();
+            (reversed[k] ??= []).push(key as unknown as T);
         }
     }
 
-    return reversedMap;
+    return reversed;
 }
 
 export class SnippetParser {
-    private readonly commentSyntax: Promise<string>;
-
-    constructor(private readonly languageId: string) {
-        this.commentSyntax = getLineCommentSyntax(languageId);
+    private static directive(key: keyof typeof DIRECTIVES): string {
+        return DIRECTIVE_PREFIX + DIRECTIVES[key];
     }
 
-    async stringify(snippet: Snippet): Promise<string> {
+    static async stringify(snippet: Snippet): Promise<string> {
         const lines: string[] = [];
-        const c = await this.commentSyntax;
+        const c = await getLineCommentSyntax(snippet.languageId);
         const isEcma = isECMA(snippet.languageId);
 
-        const l = (line: string, condition?: boolean) => {
-            if (condition !== false) {
+        const push = (line: string, condition = true) => {
+            if (condition) {
                 lines.push(line);
             }
         };
 
-        l(`${c} ${directive("languageId")} ${snippet.languageId ?? ""}`);
-        l(`${c} ${directive("prefix")} ${snippet.prefix ?? ""}`);
-        l(`${c} ${directive("description")} ${snippet.description ?? ""}`);
-        l(`${c} ${directive("isFileTemplate")} ${snippet.isFileTemplate ?? ""}`);
-        l(`${c}`, isEcma);
-        l(`${c} @ts-nocheck`, isEcma);
-        l(`${c} prettier-ignore`, isEcma);
-        l(`${c} eslint-disable`, isEcma);
-        l("");
+        push(`${c} ${SnippetParser.directive("languageId")} ${snippet.languageId ?? ""}`);
+        push(`${c} ${SnippetParser.directive("prefix")} ${snippet.prefix ?? ""}`);
+        push(`${c} ${SnippetParser.directive("description")} ${snippet.description ?? ""}`);
+        push(`${c} ${SnippetParser.directive("isFileTemplate")} ${snippet.isFileTemplate ?? ""}`);
+        push(`${c}`, isEcma);
+        push(`${c} @ts-nocheck`, isEcma);
+        push(`${c} prettier-ignore`, isEcma);
+        push(`${c} eslint-disable`, isEcma);
+        push("");
 
         lines.push(...snippet.body);
-
         return lines.join("\n");
     }
 
-    static async parse(snippet: string): Promise<Snippet | null> {
-        const lines = snippet.split("\n");
+    static async parse(text: string): Promise<Snippet | null> {
+        const lines = text.split("\n");
 
-        const languageId = SnippetParser.extractDirective(lines[0], directive("languageId"));
+        const languageId = SnippetParser.extractDirective(lines[0], SnippetParser.directive("languageId"));
         if (!languageId) {
-            window.showErrorMessage(`missing ${directive("languageId")} directive`);
+            window.showErrorMessage(`missing ${SnippetParser.directive("languageId")} directive`);
             return null;
         }
 
-        const prefix = SnippetParser.extractDirective(lines[1], directive("prefix"));
-        if (!prefix) {
-            window.showErrorMessage(`missing ${directive("prefix")} directive`);
+        const prefix = SnippetParser.extractDirective(lines[1], SnippetParser.directive("prefix"));
+        if (prefix === undefined) {
+            window.showErrorMessage(`missing ${SnippetParser.directive("prefix")} directive`);
             return null;
         }
 
-        const description = SnippetParser.extractDirective(lines[2], directive("description")) ?? "";
-        const fileTemplate = SnippetParser.extractDirective(lines[3], directive("isFileTemplate")) ?? "";
+        const description = SnippetParser.extractDirective(lines[2], SnippetParser.directive("description")) ?? "";
+        const fileTemplate = SnippetParser.extractDirective(lines[3], SnippetParser.directive("isFileTemplate")) ?? "";
 
         const c = await getLineCommentSyntax(languageId);
         let startLine = 0;
@@ -190,14 +155,12 @@ export class SnippetParser {
             startLine++;
         }
 
-        const body = trimStringArray(lines.slice(startLine));
-
         return {
             languageId,
-            prefix: prefix === "" ? undefined : prefix,
-            description: description === "" ? undefined : description,
-            isFileTemplate: fileTemplate === "" ? undefined : fileTemplate === "true",
-            body,
+            prefix: prefix || undefined,
+            description: description || undefined,
+            isFileTemplate: fileTemplate ? fileTemplate === "true" : undefined,
+            body: trimStringArray(lines.slice(startLine)),
         };
     }
 
@@ -210,15 +173,7 @@ export class SnippetParser {
     }
 }
 
-export async function stringifySnippet(snippet: Snippet): Promise<string> {
-    return new SnippetParser(snippet.languageId).stringify(snippet);
-}
-
-export async function parseSnippet(snippet: string): Promise<Snippet | null> {
-    return SnippetParser.parse(snippet);
-}
-
-export async function updateSnippetFile(uri: Uri, newContent: string) {
+export async function updateSnippetFile(uri: Uri, newContent: string): Promise<void> {
     const doc = await workspace.openTextDocument(uri);
     const editor = await window.showTextDocument(doc, { preview: true });
 
@@ -228,9 +183,6 @@ export async function updateSnippetFile(uri: Uri, newContent: string) {
     });
 
     await doc.save();
-    await sleep(150);
+    await new Promise<void>((resolve) => setTimeout(resolve, 150));
     await commands.executeCommand("workbench.action.closeActiveEditor");
-}
-async function sleep(ms: number) {
-    await new Promise((res) => setTimeout(res, ms));
 }

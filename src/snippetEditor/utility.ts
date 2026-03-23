@@ -173,6 +173,14 @@ export class SnippetParser {
     }
 }
 
+export async function stringifySnippet(snippet: Snippet): Promise<string> {
+    return SnippetParser.stringify(snippet);
+}
+
+export async function parseSnippet(text: string): Promise<Snippet | null> {
+    return SnippetParser.parse(text);
+}
+
 export async function updateSnippetFile(uri: Uri, newContent: string): Promise<void> {
     const doc = await workspace.openTextDocument(uri);
     const editor = await window.showTextDocument(doc, {

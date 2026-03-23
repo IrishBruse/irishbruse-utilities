@@ -188,7 +188,7 @@ describe("snippetEditor/utility", () => {
                 description: "A test snippet",
             };
 
-            const result = await new SnippetParser("typescript").stringify(snippet);
+            const result = await SnippetParser.stringify(snippet);
 
             expect(result).toContain("@languageId typescript");
             expect(result).toContain("@prefix test");
@@ -203,7 +203,7 @@ describe("snippetEditor/utility", () => {
                 body: ["content"],
             };
 
-            const result = await new SnippetParser("typescript").stringify(snippet);
+            const result = await SnippetParser.stringify(snippet);
 
             expect(result).toContain("@languageId typescript");
             expect(result).toContain("@prefix ");
@@ -217,7 +217,7 @@ describe("snippetEditor/utility", () => {
                 body: ["const x = 1;"],
             };
 
-            const result = await new SnippetParser("typescript").stringify(snippet);
+            const result = await SnippetParser.stringify(snippet);
 
             expect(result).toContain("@ts-nocheck");
             expect(result).toContain("prettier-ignore");
@@ -230,7 +230,7 @@ describe("snippetEditor/utility", () => {
                 body: ["print('hello')"],
             };
 
-            const result = await new SnippetParser("python").stringify(snippet);
+            const result = await SnippetParser.stringify(snippet);
 
             expect(result).not.toContain("@ts-nocheck");
             expect(result).not.toContain("prettier-ignore");
@@ -243,7 +243,7 @@ describe("snippetEditor/utility", () => {
                 body: ["const a = 1;", "const b = 2;", "return a + b;"],
             };
 
-            const result = await new SnippetParser("typescript").stringify(snippet);
+            const result = await SnippetParser.stringify(snippet);
 
             expect(result).toContain("const a = 1;");
             expect(result).toContain("const b = 2;");
@@ -258,7 +258,7 @@ describe("snippetEditor/utility", () => {
                 body: ["// template content"],
             };
 
-            const result = await new SnippetParser("typescript").stringify(snippet);
+            const result = await SnippetParser.stringify(snippet);
 
             expect(result).toContain("@isFileTemplate true");
         });

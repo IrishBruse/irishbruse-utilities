@@ -62,11 +62,6 @@
                         "typescriptreact": "node,react",
                         "javascriptreact": "node,react"
                     }
-                },
-                "ib-utilities.pasteImagePath": {
-                    "type": "string",
-                    "description": "Path where pasted images will be saved relative to workspace root.",
-                    "default": "images"
                 }
             }
         },
@@ -189,8 +184,8 @@
         "keybindings": [
             {
                 "command": "ib-utilities.pasteImage",
-                "key": "ctrl+v",
-                "mac": "cmd+v",
+                "key": "ctrl+shift+v",
+                "mac": "ctrl+shift+v",
                 "when": "terminalFocus"
             }
         ]

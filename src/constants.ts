@@ -104,9 +104,4 @@ export enum Configuration {
      */
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
 
-    /**
-     * Path where pasted images will be saved relative to workspace root.
-     */
-    PasteImagePath = `ib-utilities.pasteImagePath`,
-
 }

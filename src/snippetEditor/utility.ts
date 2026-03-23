@@ -1,7 +1,7 @@
 import cjson from "cjson";
 import { readdir } from "fs/promises";
 import path from "path";
-import { commands, Range, Uri, window, workspace } from "vscode";
+import { commands, Range, TabInputText, Uri, ViewColumn, window, workspace } from "vscode";
 import { UserPath } from "../extension";
 import { getLineCommentSyntax } from "../utils/languages";
 import { Snippet, Snippets } from "./SnippetView";
@@ -175,7 +175,11 @@ export class SnippetParser {
 
 export async function updateSnippetFile(uri: Uri, newContent: string): Promise<void> {
     const doc = await workspace.openTextDocument(uri);
-    const editor = await window.showTextDocument(doc, { preview: true });
+    const editor = await window.showTextDocument(doc, {
+        preview: true,
+        preserveFocus: true,
+        viewColumn: ViewColumn.Beside,
+    });
 
     await editor.edit((editBuilder) => {
         const fullRange = new Range(doc.positionAt(0), doc.positionAt(doc.getText().length));
@@ -184,5 +188,12 @@ export async function updateSnippetFile(uri: Uri, newContent: string): Promise<v
 
     await doc.save();
     await new Promise<void>((resolve) => setTimeout(resolve, 150));
-    await commands.executeCommand("workbench.action.closeActiveEditor");
+
+    const tab = window.tabGroups.all
+        .flatMap((g) => g.tabs)
+        .find((t) => t.input instanceof TabInputText && t.input.uri.toString() === uri.toString());
+
+    if (tab) {
+        await window.tabGroups.close(tab);
+    }
 }

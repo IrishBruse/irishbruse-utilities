@@ -1,34 +1,61 @@
 on:
     workflow_dispatch:
+        inputs:
+            force_publish:
+                description: "Publish even if version hasn't changed"
+                type: boolean
+                default: false
     push:
         paths:
             - "package.json"
 
 name: Deploy Extension
+
 jobs:
     deploy:
         runs-on: ubuntu-latest
         steps:
             - uses: actions/checkout@v4
               with:
-                  fetch-depth: 2 # Ensure at least two commits for HEAD^ to exist
+                  fetch-depth: 0 # Full history needed for reliable diffing
+
             - uses: actions/setup-node@v4
               with:
                   node-version: 20
+                  cache: "npm" # Cache dependencies
+
             - run: npm ci
+
+            - name: Lint & test
+              run: |
+                  npm run lint --if-present
+                  npm test --if-present
+
+            - name: Build extension
+              run: npm run build --if-present
 
             - name: Check if version changed
               id: check_version
               run: |
-                  if git diff HEAD^ HEAD -- package.json | grep '"version":'; then
+                  # Fallback to empty tree SHA if there's no previous commit
+                  PREV=$(git rev-parse HEAD^2 2>/dev/null || git rev-parse HEAD^ 2>/dev/null || echo "4b825dc642cb6eb9a060e54bf8d69288fbee4904")
+
+                  if git diff "$PREV" HEAD -- package.json | grep '"version":'; then
                       echo "VERSION_BUMPED=true" >> $GITHUB_ENV
                   else
                       echo "VERSION_BUMPED=false" >> $GITHUB_ENV
                   fi
 
             - name: Publish to Visual Studio Marketplace
-              if: env.VERSION_BUMPED == 'true'
+              if: env.VERSION_BUMPED == 'true' || inputs.force_publish
               uses: HaaLeo/publish-vscode-extension@v2
               with:
                   pat: ${{ secrets.VSCE_TOKEN }}
                   registryUrl: https://marketplace.visualstudio.com
+
+            - name: Publish to Open VSX Registry
+              if: env.VERSION_BUMPED == 'true' || inputs.force_publish
+              uses: HaaLeo/publish-vscode-extension@v2
+              with:
+                  pat: ${{ secrets.OPEN_VSX_TOKEN }}
+                  registryUrl: https://open-vsx.org

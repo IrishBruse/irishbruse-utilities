@@ -52,12 +52,17 @@ export async function pasteImage(selectedUri?: Uri) {
             targetDir = selectedUri.fsPath;
         }
     } else {
-        const workspaceFolder = workspace.workspaceFolders?.[0];
-        if (!workspaceFolder) {
-            window.showErrorMessage("No workspace folder open");
-            return;
+        const activeEditor = window.activeTextEditor;
+        if (activeEditor) {
+            targetDir = path.dirname(activeEditor.document.uri.fsPath);
+        } else {
+            const workspaceFolder = workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                window.showErrorMessage("No workspace folder open");
+                return;
+            }
+            targetDir = workspaceFolder.uri.fsPath;
         }
-        targetDir = workspaceFolder.uri.fsPath;
     }
 
     const tempFile = path.join(os.tmpdir(), "paste-image-temp.png");

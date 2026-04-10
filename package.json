@@ -144,6 +144,12 @@
             }
         ],
         "menus": {
+            "explorer/context": [
+                {
+                    "command": "ib-utilities.pasteImage",
+                    "group": "copypaste"
+                }
+            ],
             "scm/title": [
                 {
                     "command": "ib-utilities.openPR",

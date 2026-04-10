@@ -119,6 +119,11 @@
                 "icon": "$(clippy)"
             },
             {
+                "command": "ib-utilities.smartPaste",
+                "title": "Smart paste",
+                "shortTitle": "Paste"
+            },
+            {
                 "command": "ib-utilities.refreshSnippetView",
                 "title": "Refresh Snippets",
                 "shortTitle": "Refresh",
@@ -191,8 +196,19 @@
             {
                 "command": "ib-utilities.pasteImage",
                 "key": "ctrl+shift+v",
-                "mac": "ctrl+shift+v",
                 "when": "filesExplorerFocus"
+            },
+            {
+                "command": "ib-utilities.smartPaste",
+                "key": "ctrl+v",
+                "when": "editorTextFocus",
+                "args": "editor"
+            },
+            {
+                "command": "ib-utilities.smartPaste",
+                "key": "ctrl+v",
+                "when": "filesExplorerFocus",
+                "args": "explorer"
             }
         ]
     },

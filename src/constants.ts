@@ -38,6 +38,13 @@ export enum Commands {
     PasteImage = `ib-utilities.pasteImage`,
 
     /**
+     * Smart paste
+     * Short Title: Paste
+     * Icon: undefined
+     */
+    SmartPaste = `ib-utilities.smartPaste`,
+
+    /**
      * Refresh Snippets
      * Short Title: Refresh
      * Icon: $(refresh)

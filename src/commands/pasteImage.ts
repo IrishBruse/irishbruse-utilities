@@ -1,4 +1,12 @@
-import { commands, env, FileType, Uri, window, workspace, type FileStat } from "vscode";
+import {
+    commands,
+    env,
+    FileType,
+    Uri,
+    window,
+    workspace,
+    type FileStat,
+} from "vscode";
 import { exec } from "child_process";
 import path from "path";
 import fs from "fs";
@@ -76,9 +84,19 @@ async function resolveTargetDirectory(selectedUri: Uri | undefined): Promise<str
     }
 }
 
-export async function pasteImage(selectedUri?: Uri) {
-    const tempFile = path.join(os.tmpdir(), "paste-image-temp.png");
-    const clipboardCommand = getClipboardCommand(tempFile);
+const tempBasename = "paste-image-temp.png";
+
+/**
+ * Writes clipboard image bytes to a PNG file under the system temp directory, or returns undefined if none.
+ */
+export async function tryCaptureClipboardImageAsTempFile(): Promise<string | undefined> {
+    const tempFile = path.join(os.tmpdir(), tempBasename);
+    let clipboardCommand: string;
+    try {
+        clipboardCommand = getClipboardCommand(tempFile);
+    } catch {
+        return undefined;
+    }
 
     try {
         await execAsync(clipboardCommand);
@@ -86,31 +104,48 @@ export async function pasteImage(selectedUri?: Uri) {
         if (fs.existsSync(tempFile)) {
             fs.unlinkSync(tempFile);
         }
-        return;
+        return undefined;
     }
 
     if (!fs.existsSync(tempFile) || fs.statSync(tempFile).size === 0) {
         if (fs.existsSync(tempFile)) {
             fs.unlinkSync(tempFile);
         }
-        return;
+        return undefined;
     }
 
+    return tempFile;
+}
+
+/**
+ * Saves a PNG from a temp path into the workspace and writes `@relativePath` to the clipboard.
+ * @param pasteContext When `explorer`, an empty explorer selection uses the first workspace folder root instead of the active editor path.
+ */
+export async function finalizePasteImageFromTempFile(
+    tempFile: string,
+    selectedUri: Uri | undefined,
+    pasteContext: "explorer" | "editor" = "editor"
+): Promise<boolean> {
     let targetDir = await resolveTargetDirectory(selectedUri);
 
     if (!targetDir) {
-        const activeEditor = window.activeTextEditor;
-        if (activeEditor) {
-            targetDir = path.dirname(activeEditor.document.uri.fsPath);
-        } else {
+        if (pasteContext === "explorer") {
             const workspaceFolder = workspace.workspaceFolders?.[0];
             if (!workspaceFolder) {
-                if (fs.existsSync(tempFile)) {
-                    fs.unlinkSync(tempFile);
-                }
-                return;
+                return false;
             }
             targetDir = workspaceFolder.uri.fsPath;
+        } else {
+            const activeEditor = window.activeTextEditor;
+            if (activeEditor) {
+                targetDir = path.dirname(activeEditor.document.uri.fsPath);
+            } else {
+                const workspaceFolder = workspace.workspaceFolders?.[0];
+                if (!workspaceFolder) {
+                    return false;
+                }
+                targetDir = workspaceFolder.uri.fsPath;
+            }
         }
     }
 
@@ -119,16 +154,63 @@ export async function pasteImage(selectedUri?: Uri) {
         const destPath = path.join(targetDir, imageName);
 
         fs.copyFileSync(tempFile, destPath);
-        fs.unlinkSync(tempFile);
 
         const workspaceFolder = workspace.getWorkspaceFolder(Uri.file(targetDir));
         if (!workspaceFolder) {
-            throw new Error("Could not determine workspace folder");
+            return false;
         }
 
         const relativePath = path.relative(workspaceFolder.uri.fsPath, destPath);
         await env.clipboard.writeText(`@${relativePath}`);
+        return true;
     } catch {
+        return false;
+    }
+}
+
+/**
+ * Pastes a clipboard image into the workspace when present; otherwise runs the built-in paste for the given surface.
+ */
+export async function smartPaste(
+    fallback: "editor" | "explorer" | undefined,
+    selectedUri?: Uri
+): Promise<void> {
+    const tempFile = await tryCaptureClipboardImageAsTempFile();
+    if (tempFile) {
+        let saved = false;
+        try {
+            saved = await finalizePasteImageFromTempFile(
+                tempFile,
+                selectedUri,
+                fallback === "explorer" ? "explorer" : "editor"
+            );
+        } finally {
+            if (fs.existsSync(tempFile)) {
+                fs.unlinkSync(tempFile);
+            }
+        }
+        if (saved) {
+            return;
+        }
+    }
+
+    if (fallback === "explorer") {
+        await commands.executeCommand("filesExplorer.paste");
+        return;
+    }
+
+    await commands.executeCommand("editor.action.clipboardPasteAction");
+}
+
+export async function pasteImage(selectedUri?: Uri) {
+    const tempFile = await tryCaptureClipboardImageAsTempFile();
+    if (!tempFile) {
+        return;
+    }
+
+    try {
+        await finalizePasteImageFromTempFile(tempFile, selectedUri, "explorer");
+    } finally {
         if (fs.existsSync(tempFile)) {
             fs.unlinkSync(tempFile);
         }

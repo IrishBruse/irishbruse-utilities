@@ -1,7 +1,7 @@
 import { ExtensionContext, Uri } from "vscode";
 import { relativeGoTo } from "./commands/relativeGoTo";
 import { openPR } from "./commands/openPR";
-import { pasteImage } from "./commands/pasteImage";
+import { pasteImage, smartPaste } from "./commands/pasteImage";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
 import { registerCommandIB } from "./utils/vscode";
 import { Commands } from "./constants";
@@ -19,6 +19,7 @@ export function activate(context: ExtensionContext) {
     registerCommandIB(Commands.RelativeGoTo, relativeGoTo, context);
     registerCommandIB(Commands.OpenPR, openPR, context);
     registerCommandIB(Commands.PasteImage, pasteImage, context);
+    registerCommandIB(Commands.SmartPaste, smartPaste, context);
 
     SnippetViewProvider.activate(context);
 }

@@ -162,7 +162,7 @@ body {
     margin-top: auto;
     border: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border));
     border-radius: 4px;
-    background-color: var(--vscode-editor-background);
+    background-color: #21252b;
     overflow: hidden;
     transition:
         border-color 0.12s ease,

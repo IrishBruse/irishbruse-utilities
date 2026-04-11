@@ -120,11 +120,6 @@
                 "shortTitle": "Show Snippet View"
             },
             {
-                "command": "ib-utilities.showIbChat",
-                "title": "Show IB Chat",
-                "shortTitle": "Show IB Chat"
-            },
-            {
                 "command": "ib-utilities.focusIbChatSessions",
                 "title": "Focus IB Chat Chats list",
                 "shortTitle": "Focus Chats list"
@@ -140,12 +135,6 @@
                 "title": "Refresh IB Chat list",
                 "shortTitle": "Refresh",
                 "icon": "$(refresh)"
-            },
-            {
-                "command": "ib-utilities.addIbChatSession",
-                "title": "New IB Chat",
-                "shortTitle": "New chat",
-                "icon": "$(add)"
             },
             {
                 "command": "ib-utilities.openIbChatSession",
@@ -238,22 +227,12 @@
             ],
             "view/title": [
                 {
-                    "command": "ib-utilities.addIbChatSession",
-                    "when": "view == ibChatSessionsView",
-                    "group": "navigation"
-                },
-                {
                     "command": "ib-utilities.refreshIbChatSessions",
                     "when": "view == ibChatSessionsView",
                     "group": "navigation"
                 },
                 {
                     "command": "ib-utilities.newIbChatEditor",
-                    "when": "view == ibChatSessionsView",
-                    "group": "navigation"
-                },
-                {
-                    "command": "ib-utilities.showIbChat",
                     "when": "view == ibChatSessionsView",
                     "group": "navigation"
                 },

@@ -24,13 +24,6 @@ export enum Commands {
     ShowSnippetView = `ib-utilities.showSnippetView`,
 
     /**
-     * Show IB Chat
-     * Short Title: Show IB Chat
-     * Icon: undefined
-     */
-    ShowIbChat = `ib-utilities.showIbChat`,
-
-    /**
      * Focus IB Chat Chats list
      * Short Title: Focus Chats list
      * Icon: undefined
@@ -50,13 +43,6 @@ export enum Commands {
      * Icon: $(refresh)
      */
     RefreshIbChatSessions = `ib-utilities.refreshIbChatSessions`,
-
-    /**
-     * New IB Chat
-     * Short Title: New chat
-     * Icon: $(add)
-     */
-    AddIbChatSession = `ib-utilities.addIbChatSession`,
 
     /**
      * Open IB Chat session

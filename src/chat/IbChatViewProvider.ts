@@ -14,11 +14,6 @@ import { registerCommandIB } from "../utils/vscode";
  */
 export function activateIbChatView(context: ExtensionContext): void {
     IbChatSessionsViewProvider.activate(context);
-    registerCommandIB(
-        Commands.ShowIbChat,
-        () => commands.executeCommand(Commands.ViewIbChatContainer),
-        context
-    );
     registerCommandIB(Commands.NewIbChatEditor, () => {
         const nextIndex = listIbChatSessions().length + 1;
         const created = addIbChatSession(`Chat ${nextIndex}`);

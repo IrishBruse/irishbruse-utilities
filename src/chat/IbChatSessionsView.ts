@@ -12,7 +12,6 @@ import {
 import { Commands, Views } from "../constants";
 import { disposeIbChatEditorForSession, openOrRevealIbChatEditor } from "./ibChatEditor";
 import {
-    addIbChatSession,
     getActiveIbChatSessionId,
     IbChatSessionRecord,
     listIbChatSessions,
@@ -27,9 +26,9 @@ type IbChatSessionsTreeNode = IbChatSessionTreeItem | IbChatPlaceholderTreeItem;
 
 class IbChatPlaceholderTreeItem extends TreeItem {
     constructor() {
-        super("No chats yet — use New IB Chat above", TreeItemCollapsibleState.None);
+        super("No chats yet — use New IB Chat in Editor above", TreeItemCollapsibleState.None);
         this.contextValue = "placeholder";
-        this.tooltip = "Use the + button on the Chats view title to create a chat";
+        this.tooltip = "Use New IB Chat in Editor on the Chats view title to create a chat";
     }
 }
 
@@ -76,7 +75,6 @@ export class IbChatSessionsViewProvider implements TreeDataProvider<IbChatSessio
         context.subscriptions.push(window.registerTreeDataProvider(Views.IbChatSessionsView, provider));
 
         registerCommandIB(Commands.RefreshIbChatSessions, () => provider.refresh(), context);
-        registerCommandIB(Commands.AddIbChatSession, () => provider.addSession(), context);
         registerCommandIB(Commands.OpenIbChatSession, (id?: string) => provider.openSession(id), context);
         registerCommandIB(Commands.DeleteIbChatSession, (item: IbChatSessionsTreeNode | undefined) =>
             provider.deleteSession(item)
@@ -114,28 +112,6 @@ export class IbChatSessionsViewProvider implements TreeDataProvider<IbChatSessio
 
     private toTreeItem(row: IbChatSessionRecord, activeId: string | null): IbChatSessionTreeItem {
         return new IbChatSessionTreeItem(row.id, row.title, row.id === activeId);
-    }
-
-    private async addSession(): Promise<void> {
-        const nextIndex = listIbChatSessions().length + 1;
-        const title = await window.showInputBox({
-            title: "New IB Chat",
-            prompt: "Name this chat",
-            value: `Chat ${nextIndex}`,
-            validateInput: (value) => {
-                if (!value || value.trim().length === 0) {
-                    return "Enter a name";
-                }
-                return null;
-            },
-        });
-        if (title === undefined) {
-            return;
-        }
-        const created = addIbChatSession(title.trim());
-        setActiveIbChatSessionId(created.id);
-        this.refresh();
-        openOrRevealIbChatEditor(this.extensionContext, created.id, created.title);
     }
 
     private async openSession(sessionId?: string): Promise<void> {

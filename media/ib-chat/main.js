@@ -74,14 +74,22 @@ function r(e, r, i) {
 	let p = document.createElement("div");
 	p.className = "agent-summary", p.textContent = "Removing the Chats view title entries for \"Show IB Chat\" and duplicate \"New IB Chat\" (addIbChatSession), keeping newIbChatEditor. Removing the unused commands and cleaning up the sessions view.", f.append(p, n());
 	let m = document.createElement("footer");
-	m.className = "composer";
+	m.className = "composer-frame";
 	let h = document.createElement("textarea");
-	h.className = "composer-input", h.placeholder = "Message the agent…", h.setAttribute("aria-label", "Agent input");
-	let g = document.createElement("button");
-	g.type = "button", g.className = "composer-send", g.textContent = "Send", g.addEventListener("click", () => {
+	h.className = "composer-input", h.placeholder = "Describe a task or reply to the agent…", h.setAttribute("aria-label", "Agent input"), h.rows = 2;
+	let g = document.createElement("div");
+	g.className = "composer-footer";
+	let _ = document.createElement("span");
+	_.className = "composer-hint", _.textContent = "Enter to send";
+	let v = document.createElement("button");
+	v.type = "button", v.className = "composer-send", v.textContent = "Send";
+	let y = () => {
 		let e = h.value.trim();
 		e.length !== 0 && (i(e), h.value = "");
-	}), m.append(h, g), e.append(a, d, f, m);
+	};
+	v.addEventListener("click", y), h.addEventListener("keydown", (e) => {
+		e.key === "Enter" && !e.shiftKey && (e.preventDefault(), y());
+	}), g.append(_, v), m.append(h, g), e.append(a, d, f, m);
 }
 var i = document.getElementById("root");
 if (!i) throw Error("Missing #root");

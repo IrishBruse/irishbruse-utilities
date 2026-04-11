@@ -108,28 +108,43 @@ function mountShell(root: HTMLElement, init: InitPayload, post: (body: string) =
         'Removing the Chats view title entries for "Show IB Chat" and duplicate "New IB Chat" (addIbChatSession), keeping newIbChatEditor. Removing the unused commands and cleaning up the sessions view.';
     trace.append(summary, buildDemoDiffBlock());
 
-    const composer = document.createElement("footer");
-    composer.className = "composer";
+    const composerFrame = document.createElement("footer");
+    composerFrame.className = "composer-frame";
     const textarea = document.createElement("textarea");
     textarea.className = "composer-input";
-    textarea.placeholder = "Message the agent…";
+    textarea.placeholder = "Describe a task or reply to the agent…";
     textarea.setAttribute("aria-label", "Agent input");
+    textarea.rows = 2;
+    const composerFooter = document.createElement("div");
+    composerFooter.className = "composer-footer";
+    const hint = document.createElement("span");
+    hint.className = "composer-hint";
+    hint.textContent = "Enter to send";
     const sendButton = document.createElement("button");
     sendButton.type = "button";
     sendButton.className = "composer-send";
     sendButton.textContent = "Send";
 
-    sendButton.addEventListener("click", () => {
+    const submitMessage = (): void => {
         const body = textarea.value.trim();
         if (body.length === 0) {
             return;
         }
         post(body);
         textarea.value = "";
+    };
+
+    sendButton.addEventListener("click", submitMessage);
+    textarea.addEventListener("keydown", (event: KeyboardEvent) => {
+        if (event.key === "Enter" && !event.shiftKey) {
+            event.preventDefault();
+            submitMessage();
+        }
     });
 
-    composer.append(textarea, sendButton);
-    root.append(header, userBar, trace, composer);
+    composerFooter.append(hint, sendButton);
+    composerFrame.append(textarea, composerFooter);
+    root.append(header, userBar, trace, composerFrame);
 }
 
 const mount = document.getElementById("root");

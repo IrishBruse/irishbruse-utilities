@@ -26,5 +26,9 @@ describe("ibChatProtocol", () => {
             expect(tryParseWebviewMessage(null)).toBeNull();
             expect(tryParseWebviewMessage("x")).toBeNull();
         });
+
+        it("returns cancel for a cancel payload", () => {
+            expect(tryParseWebviewMessage({ type: "cancel" })).toEqual({ type: "cancel" });
+        });
     });
 });

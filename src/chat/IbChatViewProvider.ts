@@ -2,6 +2,7 @@ import { commands, ExtensionContext } from "vscode";
 import { Commands } from "../constants";
 import { openNewIbChatEditor } from "./ibChatEditor";
 import { IbChatSessionsViewProvider } from "./IbChatSessionsView";
+import { pickAcpAgentConfig } from "./ibChatAgentPicker";
 import {
     addIbChatSession,
     listIbChatSessions,
@@ -14,11 +15,19 @@ import { registerCommandIB } from "../utils/vscode";
  */
 export function activateIbChatView(context: ExtensionContext): void {
     IbChatSessionsViewProvider.activate(context);
-    registerCommandIB(Commands.NewIbChatEditor, () => {
-        const nextIndex = listIbChatSessions().length + 1;
-        const created = addIbChatSession(`Chat ${nextIndex}`);
-        setActiveIbChatSessionId(created.id);
-        openNewIbChatEditor(context, created.id, created.title);
-        void commands.executeCommand(Commands.RefreshIbChatSessions);
-    }, context);
+    registerCommandIB(
+        Commands.NewIbChatEditor,
+        async () => {
+            const agentConfig = await pickAcpAgentConfig();
+            if (!agentConfig) {
+                return;
+            }
+            const nextIndex = listIbChatSessions().length + 1;
+            const created = addIbChatSession(`Chat ${nextIndex}`, { agentName: agentConfig.name });
+            setActiveIbChatSessionId(created.id);
+            openNewIbChatEditor(context, created.id, created.title, agentConfig);
+            void commands.executeCommand(Commands.RefreshIbChatSessions);
+        },
+        context
+    );
 }

@@ -1,68 +1,133 @@
-import type { ExtensionToWebviewMessage } from "../../../src/chat/protocol/ibChatProtocol";
+import type {
+    ExtensionToWebviewMessage,
+    PlanEntry,
+    ToolCallStatus,
+} from "../../../src/chat/protocol/ibChatProtocol";
 import "./app.css";
 import { createVsCodeIbChatHost } from "./host";
 
 type InitPayload = Extract<ExtensionToWebviewMessage, { type: "init" }>;
 
-function createTraceStep(primary: string, details?: string[]): HTMLElement {
-    const step = document.createElement("div");
-    step.className = "trace-step";
-    const bullet = document.createElement("span");
-    bullet.className = "trace-bullet";
-    bullet.textContent = "\u25CF";
-    bullet.setAttribute("aria-hidden", "true");
-    const body = document.createElement("div");
-    body.className = "trace-body";
-    const line = document.createElement("div");
-    line.className = "trace-line";
-    line.textContent = primary;
-    body.append(line);
-    if (details !== undefined && details.length > 0) {
-        const detailWrap = document.createElement("div");
-        detailWrap.className = "trace-details";
-        for (const detail of details) {
-            const row = document.createElement("div");
-            row.className = "trace-detail";
-            row.textContent = detail;
-            detailWrap.append(row);
-        }
-        body.append(detailWrap);
-    }
-    step.append(bullet, body);
-    return step;
+function createUserMessageBlock(text: string): HTMLElement {
+    const bar = document.createElement("section");
+    bar.className = "user-prompt-bar";
+    bar.setAttribute("aria-label", "User message");
+    bar.textContent = text;
+    return bar;
 }
 
-function buildDemoDiffBlock(): HTMLElement {
-    const frame = document.createElement("div");
-    frame.className = "diff-frame";
-    const header = document.createElement("div");
-    header.className = "diff-frame-header";
-    header.textContent = "package.json -5";
+function createAgentStreamBlock(): { wrap: HTMLElement; pre: HTMLPreElement } {
+    const wrap = document.createElement("div");
+    wrap.className = "agent-response-stream";
     const pre = document.createElement("pre");
-    pre.className = "diff-frame-body";
-    const rows: { text: string; remove?: boolean }[] = [
-        { text: '{ "commands": [' },
-        { text: "    {" },
-        { text: '-      "command": "ib-utilities.showIbChat",', remove: true },
-        { text: '      "title": "Show IB Chat",' },
-    ];
-    for (const row of rows) {
-        const span = document.createElement("span");
-        span.style.display = "block";
-        if (row.remove === true) {
-            span.className = "diff-line-remove";
-        }
-        span.textContent = row.text;
-        pre.append(span);
-    }
-    const footer = document.createElement("div");
-    footer.className = "diff-frame-footer";
-    footer.textContent = "... truncated (2 more lines) · ctrl+r to review";
-    frame.append(header, pre, footer);
-    return frame;
+    pre.className = "agent-response-text";
+    pre.setAttribute("aria-label", "Agent response");
+    wrap.append(pre);
+    return { wrap, pre };
 }
 
-function mountShell(root: HTMLElement, init: InitPayload, post: (body: string) => void): void {
+function createToolCallCard(
+    toolCallId: string,
+    title: string,
+    kind: string | undefined,
+    status: ToolCallStatus | undefined
+): HTMLElement {
+    const card = document.createElement("div");
+    card.className = "tool-call-card";
+    card.dataset.toolId = toolCallId;
+
+    const head = document.createElement("div");
+    head.className = "tool-call-head";
+
+    const spinner = document.createElement("span");
+    spinner.className = "tool-call-spinner";
+    spinner.setAttribute("aria-hidden", "true");
+
+    const titleEl = document.createElement("span");
+    titleEl.className = "tool-call-title";
+    titleEl.textContent = title;
+
+    const kindEl = document.createElement("span");
+    kindEl.className = "tool-call-kind";
+    kindEl.textContent = kind ?? "";
+    kindEl.hidden = kind === undefined || kind.length === 0;
+
+    head.append(spinner, titleEl, kindEl);
+
+    const detail = document.createElement("div");
+    detail.className = "tool-call-detail";
+    detail.hidden = true;
+
+    card.append(head, detail);
+
+    setToolCallStatus(card, status ?? "pending");
+    return card;
+}
+
+function setToolCallStatus(card: HTMLElement, status: ToolCallStatus): void {
+    card.dataset.status = status;
+    const spinner = card.querySelector(".tool-call-spinner");
+    if (spinner instanceof HTMLElement) {
+        if (status === "in_progress" || status === "pending") {
+            spinner.textContent = "\u25CC";
+            spinner.className = "tool-call-spinner tool-call-spinner--running";
+        } else if (status === "completed") {
+            spinner.textContent = "\u2713";
+            spinner.className = "tool-call-spinner tool-call-spinner--done";
+        } else {
+            spinner.textContent = "\u2715";
+            spinner.className = "tool-call-spinner tool-call-spinner--failed";
+        }
+    }
+}
+
+function updateToolCallCard(card: HTMLElement, status: ToolCallStatus, content: string | undefined): void {
+    setToolCallStatus(card, status);
+    const detail = card.querySelector(".tool-call-detail");
+    if (detail instanceof HTMLElement && content !== undefined && content.trim().length > 0) {
+        detail.textContent = content;
+        detail.hidden = false;
+    }
+}
+
+function createPlanBlock(entries: PlanEntry[]): HTMLElement {
+    const wrap = document.createElement("div");
+    wrap.className = "agent-plan";
+    wrap.setAttribute("aria-label", "Agent plan");
+    const title = document.createElement("div");
+    title.className = "agent-plan-title";
+    title.textContent = "Plan";
+    wrap.append(title);
+    for (const e of entries) {
+        const row = document.createElement("div");
+        row.className = "agent-plan-row";
+        const st = document.createElement("span");
+        st.className = "agent-plan-status";
+        st.textContent = e.status;
+        const pr = document.createElement("span");
+        pr.className = "agent-plan-content";
+        pr.textContent = e.content;
+        if (e.priority !== undefined) {
+            row.title = `priority: ${e.priority}`;
+        }
+        row.append(st, pr);
+        wrap.append(row);
+    }
+    return wrap;
+}
+
+type ExtensionMessageAfterInit = Exclude<ExtensionToWebviewMessage, { type: "init" }>;
+
+type ChatView = {
+    handleMessage(message: ExtensionMessageAfterInit): void;
+};
+
+function mountChatView(
+    root: HTMLElement,
+    init: InitPayload,
+    postSend: (body: string) => void,
+    postCancel: () => void
+): ChatView {
     root.replaceChildren();
     root.className = "root agent-root";
 
@@ -70,7 +135,7 @@ function mountShell(root: HTMLElement, init: InitPayload, post: (body: string) =
     header.className = "agent-header";
     const titleLine = document.createElement("div");
     titleLine.className = "agent-title-line";
-    const brand = document.createTextNode("IB Chat Agent ");
+    const brand = document.createTextNode("IB Chat ");
     const versionSpan = document.createElement("span");
     versionSpan.className = "agent-version";
     versionSpan.textContent = init.agentVersionLabel ?? "";
@@ -84,29 +149,22 @@ function mountShell(root: HTMLElement, init: InitPayload, post: (body: string) =
     meta.textContent = workspaceText;
     meta.title = workspaceText;
     header.append(titleLine, meta);
+    if (init.acpAgentName !== undefined && init.acpAgentName.length > 0) {
+        const agentLine = document.createElement("div");
+        agentLine.className = "agent-acp-name";
+        agentLine.textContent = `ACP agent: ${init.acpAgentName}`;
+        header.append(agentLine);
+    }
 
-    const userBar = document.createElement("section");
-    userBar.className = "user-prompt-bar";
-    userBar.setAttribute("aria-label", "User request");
-    userBar.textContent =
-        "Remove the show ib chat button in the view and remove the extra new ib chat keep the editor one";
+    const errorBanner = document.createElement("div");
+    errorBanner.className = "ib-chat-error";
+    errorBanner.setAttribute("role", "alert");
+    errorBanner.hidden = true;
 
     const trace = document.createElement("main");
     trace.className = "agent-trace";
     trace.setAttribute("role", "log");
-    trace.setAttribute("aria-label", "Agent trace");
-
-    trace.append(
-        createTraceStep('Searching the codebase for "Show IB Chat" and related commands.'),
-        createTraceStep("Grepped 2 greps", ['Grepped "Show IB Chat|showIbChat|show.*ib.*chat" in .']),
-        createTraceStep("Read 2 files", ["Read src/chat/IbChatViewProvider.ts", "Read package.json lines 70-289"])
-    );
-
-    const summary = document.createElement("div");
-    summary.className = "agent-summary";
-    summary.textContent =
-        'Removing the Chats view title entries for "Show IB Chat" and duplicate "New IB Chat" (addIbChatSession), keeping newIbChatEditor. Removing the unused commands and cleaning up the sessions view.';
-    trace.append(summary, buildDemoDiffBlock());
+    trace.setAttribute("aria-label", "Conversation");
 
     const composerFrame = document.createElement("footer");
     composerFrame.className = "composer-frame";
@@ -119,20 +177,67 @@ function mountShell(root: HTMLElement, init: InitPayload, post: (body: string) =
     composerFooter.className = "composer-footer";
     const hint = document.createElement("span");
     hint.className = "composer-hint";
-    hint.textContent = "Enter to send";
+    hint.textContent = "Enter to send · Shift+Enter for newline";
+    const cancelButton = document.createElement("button");
+    cancelButton.type = "button";
+    cancelButton.className = "composer-cancel";
+    cancelButton.textContent = "Cancel";
+    cancelButton.disabled = true;
     const sendButton = document.createElement("button");
     sendButton.type = "button";
     sendButton.className = "composer-send";
     sendButton.textContent = "Send";
 
+    let promptInFlight = false;
+    let agentTextPre: HTMLPreElement | null = null;
+    const toolCards = new Map<string, HTMLElement>();
+
+    function setBusy(busy: boolean): void {
+        promptInFlight = busy;
+        textarea.disabled = busy;
+        sendButton.disabled = busy;
+        cancelButton.disabled = !busy;
+    }
+
+    function closeAgentStream(): void {
+        agentTextPre = null;
+    }
+
+    function appendToTrace(el: HTMLElement): void {
+        trace.append(el);
+        trace.scrollTop = trace.scrollHeight;
+    }
+
+    function getOrCreateAgentStream(): HTMLPreElement {
+        if (agentTextPre !== null) {
+            return agentTextPre;
+        }
+        const { wrap, pre } = createAgentStreamBlock();
+        agentTextPre = pre;
+        appendToTrace(wrap);
+        return pre;
+    }
+
     const submitMessage = (): void => {
+        if (promptInFlight) {
+            return;
+        }
         const body = textarea.value.trim();
         if (body.length === 0) {
             return;
         }
-        post(body);
+        appendToTrace(createUserMessageBlock(body));
         textarea.value = "";
+        postSend(body);
+        setBusy(true);
+        errorBanner.hidden = true;
+        closeAgentStream();
+        toolCards.clear();
     };
+
+    cancelButton.addEventListener("click", () => {
+        postCancel();
+    });
 
     sendButton.addEventListener("click", submitMessage);
     textarea.addEventListener("keydown", (event: KeyboardEvent) => {
@@ -142,9 +247,65 @@ function mountShell(root: HTMLElement, init: InitPayload, post: (body: string) =
         }
     });
 
-    composerFooter.append(hint, sendButton);
+    composerFooter.append(hint, cancelButton, sendButton);
     composerFrame.append(textarea, composerFooter);
-    root.append(header, userBar, trace, composerFrame);
+    root.append(header, errorBanner, trace, composerFrame);
+
+    function handleMessage(message: ExtensionMessageAfterInit): void {
+        switch (message.type) {
+            case "appendAgentText": {
+                const pre = getOrCreateAgentStream();
+                pre.textContent += message.text;
+                trace.scrollTop = trace.scrollHeight;
+                break;
+            }
+            case "appendToolCall": {
+                closeAgentStream();
+                const card = createToolCallCard(
+                    message.toolCallId,
+                    message.title,
+                    message.kind,
+                    message.status
+                );
+                toolCards.set(message.toolCallId, card);
+                appendToTrace(card);
+                break;
+            }
+            case "updateToolCall": {
+                const card = toolCards.get(message.toolCallId);
+                if (card) {
+                    updateToolCallCard(card, message.status, message.content);
+                } else {
+                    const orphan = createToolCallCard(message.toolCallId, "Tool", undefined, message.status);
+                    updateToolCallCard(orphan, message.status, message.content);
+                    toolCards.set(message.toolCallId, orphan);
+                    closeAgentStream();
+                    appendToTrace(orphan);
+                }
+                trace.scrollTop = trace.scrollHeight;
+                break;
+            }
+            case "appendPlan": {
+                closeAgentStream();
+                appendToTrace(createPlanBlock(message.entries));
+                break;
+            }
+            case "turnComplete": {
+                closeAgentStream();
+                setBusy(false);
+                break;
+            }
+            case "error": {
+                closeAgentStream();
+                errorBanner.textContent = message.message;
+                errorBanner.hidden = false;
+                setBusy(false);
+                break;
+            }
+        }
+    }
+
+    return { handleMessage };
 }
 
 const mount = document.getElementById("root");
@@ -153,13 +314,18 @@ if (!mount) {
 }
 
 const host = createVsCodeIbChatHost();
+let view: ChatView | null = null;
 
 host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
     if (message.type === "init") {
-        mountShell(mount, message, (body) => {
+        view = mountChatView(mount, message, (body) => {
             host.post({ type: "send", body });
+        }, () => {
+            host.post({ type: "cancel" });
         });
+        return;
     }
+    view?.handleMessage(message);
 });
 
 host.post({ type: "ready" });

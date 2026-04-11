@@ -63,6 +63,42 @@
                         "typescriptreact": "node,react",
                         "javascriptreact": "node,react"
                     }
+                },
+                "ib-utilities.acpAgents": {
+                    "type": "array",
+                    "description": "ACP agent configurations. Each entry defines an agent subprocess to launch.",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "name",
+                            "command"
+                        ],
+                        "properties": {
+                            "name": {
+                                "type": "string",
+                                "description": "Display name for the agent."
+                            },
+                            "command": {
+                                "type": "string",
+                                "description": "Executable to spawn (e.g. 'npx', 'gemini', 'claude')."
+                            },
+                            "args": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                },
+                                "description": "Arguments passed to the command."
+                            },
+                            "env": {
+                                "type": "object",
+                                "additionalProperties": {
+                                    "type": "string"
+                                },
+                                "description": "Extra environment variables for the agent process."
+                            }
+                        }
+                    },
+                    "default": []
                 }
             }
         },
@@ -270,14 +306,14 @@
         ]
     },
     "devDependencies": {
-        "@vscode/vsce": "^3.3.2",
         "@types/cjson": "^0.5.3",
         "@types/mocha": "^10.0.10",
-        "@types/node": "24.x",
+        "@types/node": "^24.12.2",
         "@types/vscode": "^1.110.0",
         "@typescript-eslint/eslint-plugin": "^8.57.1",
         "@typescript-eslint/parser": "^8.57.1",
         "@vitest/coverage-v8": "^4.1.0",
+        "@vscode/vsce": "^3.3.2",
         "esbuild": "0.27.4",
         "eslint": "^9.39.4",
         "ts-loader": "^9.5.4",
@@ -289,6 +325,7 @@
         "webpack-cli": "^7.0.2"
     },
     "dependencies": {
+        "@agentclientprotocol/sdk": "^0.18.2",
         "cjson": "^0.5.0"
     }
 }

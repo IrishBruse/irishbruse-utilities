@@ -7,6 +7,7 @@ export type IbChatSessionRecord = {
     id: string;
     title: string;
     createdAt: number;
+    agentName?: string;
 };
 
 const sessions: IbChatSessionRecord[] = [];
@@ -37,11 +38,12 @@ export function setActiveIbChatSessionId(id: string | null): void {
 /**
  * Appends a new session and returns it.
  */
-export function addIbChatSession(title: string): IbChatSessionRecord {
+export function addIbChatSession(title: string, options?: { agentName?: string }): IbChatSessionRecord {
     const record: IbChatSessionRecord = {
         id: randomUUID(),
         title,
         createdAt: Date.now(),
+        agentName: options?.agentName,
     };
     sessions.push(record);
     return record;

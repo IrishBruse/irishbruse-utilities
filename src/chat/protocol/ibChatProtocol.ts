@@ -1,22 +1,39 @@
+/** Plan entry forwarded from an ACP agent plan update. */
+export type PlanEntry = {
+    content: string;
+    status: string;
+    priority?: string;
+};
+
+/** Tool call status forwarded from ACP. */
+export type ToolCallStatus = "pending" | "in_progress" | "completed" | "failed";
+
 /**
  * Messages sent from the IB Chat webview to the extension host.
  */
 export type WebviewToExtensionMessage =
     | { type: "ready" }
-    | { type: "send"; body: string };
+    | { type: "send"; body: string }
+    | { type: "cancel" };
 
 /**
  * Messages sent from the extension host to the IB Chat webview.
  */
-export type ExtensionToWebviewMessage = {
-    type: "init";
-    sessionId: string;
-    title: string;
-    /** Workspace path or label for the agent header (optional). */
-    workspaceLabel?: string;
-    /** Extension version string for the agent header, for example "v0.7.0". */
-    agentVersionLabel?: string;
-};
+export type ExtensionToWebviewMessage =
+    | {
+          type: "init";
+          sessionId: string;
+          title: string;
+          workspaceLabel?: string;
+          agentVersionLabel?: string;
+          acpAgentName?: string;
+      }
+    | { type: "appendAgentText"; text: string }
+    | { type: "appendToolCall"; toolCallId: string; title: string; kind?: string; status?: ToolCallStatus }
+    | { type: "updateToolCall"; toolCallId: string; status: ToolCallStatus; content?: string }
+    | { type: "appendPlan"; entries: PlanEntry[] }
+    | { type: "turnComplete"; stopReason: string }
+    | { type: "error"; message: string };
 
 /**
  * Parses an untrusted `postMessage` payload from the webview.
@@ -32,6 +49,9 @@ export function tryParseWebviewMessage(raw: unknown): WebviewToExtensionMessage 
     }
     if (messageType === "send" && typeof record.body === "string") {
         return { type: "send", body: record.body };
+    }
+    if (messageType === "cancel") {
+        return { type: "cancel" };
     }
     return null;
 }

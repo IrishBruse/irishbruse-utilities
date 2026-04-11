@@ -163,4 +163,9 @@ export enum Configuration {
      */
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
 
+    /**
+     * ACP agent configurations. Each entry defines an agent subprocess to launch.
+     */
+    AcpAgents = `ib-utilities.acpAgents`,
+
 }

@@ -10,6 +10,7 @@ import {
     window,
 } from "vscode";
 import { Commands, Views } from "../constants";
+import { getAcpAgentConfigByName, getAcpAgentConfigs } from "./acp/acpAgentConfig";
 import { disposeIbChatEditorForSession, openOrRevealIbChatEditor } from "./ibChatEditor";
 import {
     getActiveIbChatSessionId,
@@ -127,7 +128,11 @@ export class IbChatSessionsViewProvider implements TreeDataProvider<IbChatSessio
         }
         setActiveIbChatSessionId(sessionId);
         this.refresh();
-        openOrRevealIbChatEditor(this.extensionContext, sessionId, row.title);
+        const agentConfig =
+            row.agentName !== undefined
+                ? getAcpAgentConfigByName(row.agentName)
+                : getAcpAgentConfigs()[0];
+        openOrRevealIbChatEditor(this.extensionContext, sessionId, row.title, agentConfig);
     }
 
     private async deleteSession(item: IbChatSessionsTreeNode | undefined): Promise<void> {

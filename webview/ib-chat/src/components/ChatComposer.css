@@ -1,0 +1,127 @@
+.composer-frame {
+    flex-shrink: 0;
+    margin-top: auto;
+    border: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border));
+    border-radius: 4px;
+    background-color: var(--vscode-editorWidget-background, var(--vscode-sideBar-background));
+    overflow: hidden;
+    transition:
+        border-color 0.12s ease,
+        box-shadow 0.12s ease;
+}
+
+.composer-frame:focus-within {
+    border-color: var(--vscode-focusBorder);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--vscode-focusBorder) 25%, transparent);
+}
+
+.composer-model-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px 4px;
+    border-bottom: 1px solid color-mix(in srgb, var(--vscode-widget-border) 70%, transparent);
+}
+
+.composer-model-label {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.composer-model-select {
+    flex: 0 1 auto;
+    width: auto;
+    min-width: 0;
+    max-width: 11rem;
+    padding: 3px 6px;
+    color: var(--vscode-foreground);
+    background-color: var(--vscode-dropdown-background, var(--vscode-editor-background));
+    border: 1px solid var(--vscode-dropdown-border, var(--vscode-widget-border));
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 11px;
+}
+
+.composer-input {
+    display: block;
+    width: 100%;
+    min-height: 60px;
+    max-height: 200px;
+    resize: none;
+    margin: 0;
+    padding: 10px 12px;
+    color: var(--vscode-foreground);
+    background: transparent;
+    border: none;
+    font-family: inherit;
+    font-size: 12px;
+    line-height: 1.45;
+}
+
+.composer-input::placeholder {
+    color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground));
+    opacity: 0.7;
+}
+
+.composer-input:focus {
+    outline: none;
+}
+
+.composer-footer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 4px 8px 6px;
+    border-top: none;
+}
+
+.composer-hint {
+    font-size: 10px;
+    color: var(--vscode-descriptionForeground);
+    opacity: 0.7;
+    user-select: none;
+}
+
+.composer-send {
+    flex-shrink: 0;
+    padding: 4px 14px;
+    color: var(--vscode-button-foreground);
+    background-color: var(--vscode-button-background);
+    border: none;
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: default;
+    transition: background-color 0.1s ease;
+}
+
+.composer-send:hover {
+    background-color: var(--vscode-button-hoverBackground);
+}
+
+.composer-send:active {
+    opacity: 0.85;
+}
+
+.composer-cancel {
+    flex-shrink: 0;
+    padding: 4px 12px;
+    color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+    background-color: var(--vscode-button-secondaryBackground, var(--vscode-button-background));
+    border: 1px solid var(--vscode-widget-border);
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: default;
+}
+
+.composer-cancel:hover:not(:disabled) {
+    background-color: var(--vscode-button-secondaryHoverBackground, var(--vscode-button-hoverBackground));
+}
+
+.composer-cancel:disabled {
+    opacity: 0.45;
+}

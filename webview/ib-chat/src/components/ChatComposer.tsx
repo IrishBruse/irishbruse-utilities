@@ -1,4 +1,5 @@
 import type { KeyboardEvent, ReactElement } from "react";
+import "./ChatComposer.css";
 import type { IbChatSessionModelSelection } from "../../../../src/chat/acp/agentSession/ibChatSessionModels";
 
 export type ChatComposerProps = {

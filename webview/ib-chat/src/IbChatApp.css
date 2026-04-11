@@ -1,0 +1,19 @@
+.ib-chat-error {
+    flex-shrink: 0;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    color: var(--vscode-errorForeground);
+    background-color: color-mix(in srgb, var(--vscode-inputValidation-errorBackground) 90%, transparent);
+    border: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground));
+    border-radius: 3px;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.agent-trace {
+    flex: 1;
+    min-height: 0;
+    overflow: auto;
+    padding-right: 4px;
+    color: var(--vscode-foreground);
+}

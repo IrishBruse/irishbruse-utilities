@@ -2,7 +2,7 @@ import type {
     ExtensionToWebviewMessage,
     WebviewToExtensionMessage,
 } from "../../../src/chat/protocol/ibChatProtocol";
-import "../../ib-chat/src/app.css";
+import "../../ib-chat/src/global.css";
 import { mountChatView, type ChatView } from "../../ib-chat/src/ui";
 
 const WS_URL = `ws://${location.host}/__ib_chat_ws`;

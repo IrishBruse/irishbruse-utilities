@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import "./PlanBlock.css";
 import type { PlanEntry } from "../../../../src/chat/protocol/ibChatProtocol";
 
 /**

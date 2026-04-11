@@ -29,10 +29,7 @@ import { spawn } from "node:child_process";
 import { Readable, Writable, Transform } from "node:stream";
 import { WebSocketServer, WebSocket } from "ws";
 import * as acp from "@agentclientprotocol/sdk";
-import {
-    tryParseWebviewMessage,
-    type ExtensionToWebviewMessage,
-} from "../../src/chat/protocol/ibChatProtocol";
+import { tryParseWebviewMessage, type ExtensionToWebviewMessage } from "../../src/chat/protocol/ibChatProtocol";
 import {
     sessionModelStateToIbChatSelection,
     type IbChatSessionModelSelection,
@@ -107,9 +104,10 @@ function createNdjsonRpcLogTransform(logStream: ReturnType<typeof createWriteStr
     });
 }
 
-function ndJsonStreamArgsForChild(
-    child: ReturnType<typeof spawn>
-): { stdinWeb: WritableStream; stdoutWeb: ReadableStream<Uint8Array> } {
+function ndJsonStreamArgsForChild(child: ReturnType<typeof spawn>): {
+    stdinWeb: WritableStream;
+    stdoutWeb: ReadableStream<Uint8Array>;
+} {
     const logStream = getRpcLogStream();
     if (logStream === null) {
         return {
@@ -133,7 +131,7 @@ type JsonRpcNotification = { jsonrpc: "2.0"; method: string; params: unknown };
 type JsonRpcResponse = { jsonrpc: "2.0"; id: number | string; result: Record<string, unknown> };
 
 /** Pause between successive NDJSON lines during fixture replay. */
-const fixtureLineDelayMs = 55;
+const fixtureLineDelayMs = 100;
 
 /**
  * Resolves a fixture path: `mock-<stem>` maps to `mock/<stem>.ndjson` under this directory;
@@ -162,10 +160,7 @@ function resolveFixture(body: string): string | null {
  * Replays a fixture in file order: pauses briefly between each NDJSON line, maps session/update
  * lines through the normal path, then returns the recorded stopReason from prompt responses.
  */
-async function replayFixture(
-    fixturePath: string,
-    send: (msg: ExtensionToWebviewMessage) => void
-): Promise<string> {
+async function replayFixture(fixturePath: string, send: (msg: ExtensionToWebviewMessage) => void): Promise<string> {
     const lines = readFileSync(fixturePath, "utf-8")
         .split("\n")
         .filter((l) => l.trim().length > 0);

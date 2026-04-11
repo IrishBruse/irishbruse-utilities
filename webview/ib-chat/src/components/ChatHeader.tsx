@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import "./ChatHeader.css";
 
 export type ChatHeaderProps = {
     agentVersionLabel: string | undefined;

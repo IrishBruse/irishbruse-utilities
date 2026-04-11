@@ -1,5 +1,6 @@
 import type { ExtensionToWebviewMessage } from "../../../src/chat/protocol/ibChatProtocol";
-import "./app.css";
+import "./global.css";
+import "./boot.css";
 import { createVsCodeIbChatHost } from "./host";
 import { mountChatView, type ChatView, type InitPayload } from "./ui";
 

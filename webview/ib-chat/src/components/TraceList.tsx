@@ -1,4 +1,5 @@
 import type { ReactElement } from "react";
+import "./TraceList.css";
 import type { TraceItem } from "../chatReducer";
 import { AgentMarkdown } from "./AgentMarkdown";
 import { PlanBlock } from "./PlanBlock";

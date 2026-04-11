@@ -1,0 +1,9 @@
+.ib-chat-boot {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--vscode-descriptionForeground);
+    font-size: 12px;
+    padding: 16px;
+}

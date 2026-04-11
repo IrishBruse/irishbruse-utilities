@@ -1,3 +1,5 @@
+import "./IbChatApp.css";
+import "./scrollRegions.css";
 import {
     Fragment,
     useLayoutEffect,

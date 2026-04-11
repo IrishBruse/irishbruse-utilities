@@ -1,0 +1,31 @@
+.agent-header {
+    flex-shrink: 0;
+    margin-bottom: 10px;
+}
+
+.agent-title-line {
+    color: var(--vscode-foreground);
+    font-size: 12px;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+
+.agent-version {
+    color: var(--vscode-descriptionForeground);
+    font-weight: 400;
+}
+
+.agent-meta-line {
+    margin-top: 3px;
+    color: var(--vscode-descriptionForeground);
+    font-size: 11px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.agent-acp-name {
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+}

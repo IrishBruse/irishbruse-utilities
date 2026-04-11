@@ -8,7 +8,15 @@ export type WebviewToExtensionMessage =
 /**
  * Messages sent from the extension host to the IB Chat webview.
  */
-export type ExtensionToWebviewMessage = { type: "init"; sessionId: string; title: string };
+export type ExtensionToWebviewMessage = {
+    type: "init";
+    sessionId: string;
+    title: string;
+    /** Workspace path or label for the agent header (optional). */
+    workspaceLabel?: string;
+    /** Extension version string for the agent header, for example "v0.7.0". */
+    agentVersionLabel?: string;
+};
 
 /**
  * Parses an untrusted `postMessage` payload from the webview.

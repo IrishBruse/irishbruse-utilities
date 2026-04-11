@@ -1,4 +1,4 @@
-import { ExtensionContext, ViewColumn, WebviewPanel, window } from "vscode";
+import { ExtensionContext, ViewColumn, WebviewPanel, window, workspace } from "vscode";
 import { getIbChatWebviewHtml } from "./ibChatWebviewShell";
 import { tryParseWebviewMessage } from "./protocol/ibChatProtocol";
 import type { ExtensionToWebviewMessage } from "./protocol/ibChatProtocol";
@@ -28,7 +28,19 @@ export function openOrRevealIbChatEditor(context: ExtensionContext, sessionId: s
             return;
         }
         if (parsed.type === "ready") {
-            const outgoing: ExtensionToWebviewMessage = { type: "init", sessionId, title };
+            const pkg = context.extension.packageJSON as { version?: string };
+            const versionRaw = pkg.version;
+            const agentVersionLabel =
+                typeof versionRaw === "string" && versionRaw.length > 0 ? `v${versionRaw}` : undefined;
+            const folder = workspace.workspaceFolders?.[0];
+            const workspaceLabel = folder !== undefined ? folder.uri.fsPath : undefined;
+            const outgoing: ExtensionToWebviewMessage = {
+                type: "init",
+                sessionId,
+                title,
+                workspaceLabel,
+                agentVersionLabel,
+            };
             void panel.webview.postMessage(outgoing);
         }
     });

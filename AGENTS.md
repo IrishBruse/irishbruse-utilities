@@ -1,9 +1,8 @@
 # Rules
 
-1. Write all plans to docs/ before implementating anything
-2. When you encounter something you didnt expect in this code base update `Quirks` in the `AGENTS.md`
-3. When you encounter something that took a very long time add the shortcut to solving it to `Shortcuts` in the `AGENTS.md`
-4. Always make sure to verify changes with command `npm run verify` before finishing
+1. When you encounter something you didnt expect in this code base update `Quirks` in the `AGENTS.md`
+2. When you encounter something that took a very long time add the shortcut to solving it to `Shortcuts` in the `AGENTS.md`
+3. Always make sure to verify changes with command `npm run verify` before finishing
 
 # Commands
 

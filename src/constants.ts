@@ -24,11 +24,18 @@ export enum Commands {
     ShowSnippetView = `ib-utilities.showSnippetView`,
 
     /**
-     * Focus IB Chat
-     * Short Title: Focus IB Chat
+     * Show IB Chat
+     * Short Title: Show IB Chat
      * Icon: undefined
      */
     ShowIbChat = `ib-utilities.showIbChat`,
+
+    /**
+     * Focus IB Chat Chats list
+     * Short Title: Focus Chats list
+     * Icon: undefined
+     */
+    FocusIbChatSessions = `ib-utilities.focusIbChatSessions`,
 
     /**
      * New IB Chat in Editor
@@ -36,6 +43,34 @@ export enum Commands {
      * Icon: $(add)
      */
     NewIbChatEditor = `ib-utilities.newIbChatEditor`,
+
+    /**
+     * Refresh IB Chat list
+     * Short Title: Refresh
+     * Icon: $(refresh)
+     */
+    RefreshIbChatSessions = `ib-utilities.refreshIbChatSessions`,
+
+    /**
+     * New IB Chat
+     * Short Title: New chat
+     * Icon: $(add)
+     */
+    AddIbChatSession = `ib-utilities.addIbChatSession`,
+
+    /**
+     * Open IB Chat session
+     * Short Title: Open
+     * Icon: undefined
+     */
+    OpenIbChatSession = `ib-utilities.openIbChatSession`,
+
+    /**
+     * Delete IB Chat
+     * Short Title: Delete
+     * Icon: $(trash)
+     */
+    DeleteIbChatSession = `ib-utilities.deleteIbChatSession`,
 
     /**
      * Open Pull Request
@@ -91,6 +126,11 @@ export enum Commands {
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,
 
+    /**
+     * IB Chat
+     */
+    ViewIbChatContainer = `workbench.view.ibChatContainer`,
+
 }
 
 /** View Containers */
@@ -118,10 +158,10 @@ export enum Views {
     SnippetView = `snippetView`,
 
     /**
-     * Header: Chat
+     * Header: Chats
      * ContainerId: ibChatContainer
      */
-    IbChatView = `ibChatView`,
+    IbChatSessionsView = `ibChatSessionsView`,
 
 }
 

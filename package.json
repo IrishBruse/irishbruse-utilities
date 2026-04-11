@@ -78,9 +78,7 @@
                     "id": "snippetContainer",
                     "title": "Snippet Manager",
                     "icon": "media/snippet_icon.svg"
-                }
-            ],
-            "panel": [
+                },
                 {
                     "id": "ibChatContainer",
                     "title": "IB Chat",
@@ -98,8 +96,9 @@
             ],
             "ibChatContainer": [
                 {
-                    "id": "ibChatView",
-                    "name": "Chat",
+                    "id": "ibChatSessionsView",
+                    "name": "Chats",
+                    "type": "tree",
                     "icon": "media/chat_icon.svg"
                 }
             ]
@@ -122,14 +121,42 @@
             },
             {
                 "command": "ib-utilities.showIbChat",
-                "title": "Focus IB Chat",
-                "shortTitle": "Focus IB Chat"
+                "title": "Show IB Chat",
+                "shortTitle": "Show IB Chat"
+            },
+            {
+                "command": "ib-utilities.focusIbChatSessions",
+                "title": "Focus IB Chat Chats list",
+                "shortTitle": "Focus Chats list"
             },
             {
                 "command": "ib-utilities.newIbChatEditor",
                 "title": "New IB Chat in Editor",
                 "shortTitle": "New in Editor",
                 "icon": "$(add)"
+            },
+            {
+                "command": "ib-utilities.refreshIbChatSessions",
+                "title": "Refresh IB Chat list",
+                "shortTitle": "Refresh",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "ib-utilities.addIbChatSession",
+                "title": "New IB Chat",
+                "shortTitle": "New chat",
+                "icon": "$(add)"
+            },
+            {
+                "command": "ib-utilities.openIbChatSession",
+                "title": "Open IB Chat session",
+                "shortTitle": "Open"
+            },
+            {
+                "command": "ib-utilities.deleteIbChatSession",
+                "title": "Delete IB Chat",
+                "shortTitle": "Delete",
+                "icon": "$(trash)"
             },
             {
                 "command": "ib-utilities.openPR",
@@ -202,17 +229,32 @@
                     "command": "ib-utilities.deleteSnippet",
                     "when": "view == snippetView && viewItem == file",
                     "group": "inline"
+                },
+                {
+                    "command": "ib-utilities.deleteIbChatSession",
+                    "when": "view == ibChatSessionsView && viewItem == session",
+                    "group": "inline"
                 }
             ],
             "view/title": [
                 {
+                    "command": "ib-utilities.addIbChatSession",
+                    "when": "view == ibChatSessionsView",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.refreshIbChatSessions",
+                    "when": "view == ibChatSessionsView",
+                    "group": "navigation"
+                },
+                {
                     "command": "ib-utilities.newIbChatEditor",
-                    "when": "view == ibChatView",
+                    "when": "view == ibChatSessionsView",
                     "group": "navigation"
                 },
                 {
                     "command": "ib-utilities.showIbChat",
-                    "when": "view == ibChatView",
+                    "when": "view == ibChatSessionsView",
                     "group": "navigation"
                 },
                 {

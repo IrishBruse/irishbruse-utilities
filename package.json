@@ -22,8 +22,7 @@
     "scripts": {
         "vscode:prepublish": "npm run package",
         "build:webview": "vite build --config webview/ib-chat/vite.config.ts",
-        "dev:standalone:ui": "vite --config webview/ib-chat-standalone/vite.config.ts",
-        "dev:standalone:server": "tsx webview/ib-chat-standalone/server.ts",
+        "dev:standalone": "concurrently --names ui,server --prefix-colors cyan,yellow \"vite --config webview/ib-chat-standalone/vite.config.ts\" \"tsx --watch webview/ib-chat-standalone/server.ts\"",
         "build": "npm run build:webview && node esbuild.mjs",
         "watch": "node esbuild.mjs --watch",
         "package": "npm run build:webview && node esbuild.mjs --production",
@@ -311,12 +310,16 @@
         "@types/cjson": "^0.5.3",
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.12.2",
+        "@types/react": "^19.2.14",
+        "@types/react-dom": "^19.2.3",
         "@types/vscode": "^1.110.0",
         "@types/ws": "^8.18.1",
         "@typescript-eslint/eslint-plugin": "^8.58.1",
         "@typescript-eslint/parser": "^8.58.1",
+        "@vitejs/plugin-react": "^6.0.1",
         "@vitest/coverage-v8": "^4.1.0",
         "@vscode/vsce": "^3.3.2",
+        "concurrently": "^9.2.1",
         "esbuild": "0.27.4",
         "eslint": "^9.39.4",
         "ts-loader": "^9.5.4",
@@ -330,6 +333,8 @@
     "dependencies": {
         "@agentclientprotocol/sdk": "^0.18.2",
         "cjson": "^0.5.0",
+        "react": "^19.2.5",
+        "react-dom": "^19.2.5",
         "ws": "^8.20.0"
     }
 }

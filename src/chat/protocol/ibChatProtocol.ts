@@ -31,7 +31,15 @@ export type ExtensionToWebviewMessage =
           vscodeThemeVariables?: Record<string, string>;
       }
     | { type: "appendAgentText"; text: string }
-    | { type: "appendToolCall"; toolCallId: string; title: string; kind?: string; status?: ToolCallStatus }
+    | {
+          type: "appendToolCall";
+          toolCallId: string;
+          title: string;
+          kind?: string;
+          status?: ToolCallStatus;
+          /** Secondary line (arguments, path, or preview), shown like terminal dim text. */
+          subtitle?: string;
+      }
     | { type: "updateToolCall"; toolCallId: string; status: ToolCallStatus; content?: string }
     | { type: "appendPlan"; entries: PlanEntry[] }
     | { type: "turnComplete"; stopReason: string }

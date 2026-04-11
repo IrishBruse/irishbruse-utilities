@@ -29,6 +29,42 @@ describe("sessionUpdateToWebviewMessages", () => {
         ]);
     });
 
+    it("adds subtitle from tool_call locations", () => {
+        const messages = sessionUpdateToWebviewMessages({
+            sessionUpdate: "tool_call",
+            toolCallId: "t2",
+            title: "Read file",
+            kind: "read",
+            locations: [{ path: "/workspace/src/a.ts" }],
+        });
+        expect(messages).toEqual([
+            {
+                type: "appendToolCall",
+                toolCallId: "t2",
+                title: "Read file",
+                kind: "read",
+                subtitle: "/workspace/src/a.ts",
+            },
+        ]);
+    });
+
+    it("adds subtitle from tool_call rawInput when no locations", () => {
+        const messages = sessionUpdateToWebviewMessages({
+            sessionUpdate: "tool_call",
+            toolCallId: "t3",
+            title: "Grep",
+            rawInput: { pattern: "foo", path: "." },
+        });
+        expect(messages).toEqual([
+            {
+                type: "appendToolCall",
+                toolCallId: "t3",
+                title: "Grep",
+                subtitle: '{"pattern":"foo","path":"."}',
+            },
+        ]);
+    });
+
     it("maps plan to appendPlan", () => {
         const messages = sessionUpdateToWebviewMessages({
             sessionUpdate: "plan",

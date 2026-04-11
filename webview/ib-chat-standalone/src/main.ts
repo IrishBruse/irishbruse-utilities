@@ -2,7 +2,6 @@ import type {
     ExtensionToWebviewMessage,
     WebviewToExtensionMessage,
 } from "../../../src/chat/protocol/ibChatProtocol";
-import "virtual:ib-chat-theme.css";
 import "../../ib-chat/src/app.css";
 import { mountChatView, type ChatView } from "../../ib-chat/src/ui";
 

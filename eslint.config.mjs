@@ -29,12 +29,13 @@ export default [
         },
     },
     {
-        files: ["webview/**/*.ts"],
+        files: ["webview/**/*.ts", "webview/**/*.tsx"],
         languageOptions: {
             parser: tsparser,
             parserOptions: {
-                ecmaVersion: 6,
+                ecmaVersion: 2022,
                 sourceType: "module",
+                ecmaFeatures: { jsx: true },
             },
             globals: {
                 window: "readonly",

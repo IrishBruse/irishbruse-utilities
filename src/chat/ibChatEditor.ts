@@ -9,6 +9,7 @@ const editorViewType = "ibUtilitiesIbChatEditor";
 
 const panelsBySessionId = new Map<string, WebviewPanel>();
 const bridgesBySessionId = new Map<string, AcpSessionBridge>();
+const pendingModelIdBySessionId = new Map<string, string>();
 
 /**
  * Reveals an existing editor webview for the session or creates one with the given title.
@@ -62,6 +63,9 @@ export function openOrRevealIbChatEditor(
         if (parsed.type === "cancel") {
             void handleCancel(sessionId);
         }
+        if (parsed.type === "setSessionModel") {
+            void handleSetSessionModel(sessionId, parsed.modelId, post);
+        }
     });
     panel.onDidDispose(() => {
         panelsBySessionId.delete(sessionId);
@@ -113,8 +117,10 @@ async function handleSend(
         }
         bridge = new AcpSessionBridge(config, post);
         bridgesBySessionId.set(sessionId, bridge);
+        const preferredModelId = pendingModelIdBySessionId.get(sessionId);
         try {
-            await bridge.connect();
+            await bridge.connect(preferredModelId);
+            pendingModelIdBySessionId.delete(sessionId);
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
             post({ type: "error", message: `Failed to connect to agent: ${message}` });
@@ -125,6 +131,24 @@ async function handleSend(
     }
 
     void bridge.prompt(body);
+}
+
+async function handleSetSessionModel(
+    sessionId: string,
+    modelId: string,
+    post: (msg: ExtensionToWebviewMessage) => void
+): Promise<void> {
+    const bridge = bridgesBySessionId.get(sessionId);
+    if (bridge) {
+        try {
+            await bridge.setSessionModel(modelId);
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            post({ type: "error", message: `Model change failed: ${message}` });
+        }
+        return;
+    }
+    pendingModelIdBySessionId.set(sessionId, modelId);
 }
 
 async function handleCancel(sessionId: string): Promise<void> {

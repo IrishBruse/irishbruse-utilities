@@ -67,14 +67,21 @@ export class AcpAgentProcess {
         return response;
     }
 
-    /** Creates a new ACP session and returns its id. */
-    async newSession(): Promise<string> {
+    /** Creates a new ACP session and returns the full agent response (includes models when supported). */
+    async newSession(): Promise<acp.NewSessionResponse> {
         if (!this.connection) {
             throw new Error("Agent not started");
         }
         const cwd = workspace.workspaceFolders?.[0]?.uri.fsPath ?? process.cwd();
-        const result = await this.connection.newSession({ cwd, mcpServers: [] });
-        return result.sessionId;
+        return this.connection.newSession({ cwd, mcpServers: [] });
+    }
+
+    /** Sets the active model for a session when the agent supports it. */
+    async setSessionModel(sessionId: string, modelId: string): Promise<void> {
+        if (!this.connection) {
+            throw new Error("Agent not started");
+        }
+        await this.connection.unstable_setSessionModel({ sessionId, modelId });
     }
 
     /** Sends a user prompt and waits for the turn to complete. */

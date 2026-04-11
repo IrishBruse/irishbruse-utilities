@@ -59,11 +59,19 @@ let view: ChatView | null = null;
 
 host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
     if (message.type === "init") {
-        view = mountChatView(mount, message, (body) => {
-            host.post({ type: "send", body });
-        }, () => {
-            host.post({ type: "cancel" });
-        });
+        view = mountChatView(
+            mount,
+            message,
+            (body) => {
+                host.post({ type: "send", body });
+            },
+            () => {
+                host.post({ type: "cancel" });
+            },
+            (modelId) => {
+                host.post({ type: "setSessionModel", modelId });
+            }
+        );
         return;
     }
     view?.handleMessage(message);

@@ -1,6 +1,10 @@
 import type * as acp from "@agentclientprotocol/sdk";
 import { AcpAgentProcess } from "./acpAgentProcess";
 import type { AcpAgentConfig } from "./acpAgentConfig";
+import {
+    sessionModelStateToIbChatSelection,
+    type IbChatSessionModelSelection,
+} from "./agentSession/ibChatSessionModels";
 import { sessionUpdateToWebviewMessages } from "./acpSessionUpdateMapping";
 import type { ExtensionToWebviewMessage } from "../protocol/ibChatProtocol";
 
@@ -16,6 +20,7 @@ export class AcpSessionBridge {
     private agentProcess: AcpAgentProcess;
     private acpSessionId: string | null = null;
     private prompting = false;
+    private lastModelSelection: IbChatSessionModelSelection | null = null;
 
     constructor(
         private readonly config: AcpAgentConfig,
@@ -25,10 +30,42 @@ export class AcpSessionBridge {
         this.agentProcess.onSessionUpdate((params) => this.handleSessionUpdate(params));
     }
 
-    /** Starts the agent process and creates an ACP session. */
-    async connect(): Promise<void> {
+    /**
+     * Starts the agent process and creates an ACP session. If `preferredModelId` is set and the
+     * session advertises models, applies it before the first `sessionModels` message to the webview.
+     */
+    async connect(preferredModelId?: string): Promise<void> {
         await this.agentProcess.start();
-        this.acpSessionId = await this.agentProcess.newSession();
+        const result = await this.agentProcess.newSession();
+        this.acpSessionId = result.sessionId;
+        if (result.models) {
+            let state = result.models;
+            if (preferredModelId !== undefined && preferredModelId !== state.currentModelId) {
+                try {
+                    await this.agentProcess.setSessionModel(result.sessionId, preferredModelId);
+                    state = { ...state, currentModelId: preferredModelId };
+                } catch {}
+            }
+            const selection = sessionModelStateToIbChatSelection(state);
+            this.lastModelSelection = selection;
+            this.postToWebview({ type: "sessionModels", ...selection });
+        }
+    }
+
+    /** Updates the session model when the agent supports `session/set_model`. */
+    async setSessionModel(modelId: string): Promise<void> {
+        if (!this.acpSessionId) {
+            return;
+        }
+        await this.agentProcess.setSessionModel(this.acpSessionId, modelId);
+        if (this.lastModelSelection !== null) {
+            const next: IbChatSessionModelSelection = {
+                ...this.lastModelSelection,
+                currentModelId: modelId,
+            };
+            this.lastModelSelection = next;
+            this.postToWebview({ type: "sessionModels", ...next });
+        }
     }
 
     /** Sends a user prompt. The bridge forwards all session updates to the webview. */

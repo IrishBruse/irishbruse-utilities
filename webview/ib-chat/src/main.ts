@@ -1,23 +1,45 @@
 import type { ExtensionToWebviewMessage } from "../../../src/chat/protocol/ibChatProtocol";
 import "./app.css";
 import { createVsCodeIbChatHost } from "./host";
-import { mountChatView, type ChatView } from "./ui";
+import { mountChatView, type ChatView, type InitPayload } from "./ui";
+
+function isInitPayload(message: ExtensionToWebviewMessage): message is InitPayload {
+    return message.type === "init";
+}
 
 const mount = document.getElementById("root");
 if (!mount) {
     throw new Error("Missing #root");
 }
 
+mount.className = "root agent-root";
+mount.replaceChildren();
+const bootLine = document.createElement("div");
+bootLine.className = "ib-chat-boot";
+bootLine.textContent = "Connecting…";
+mount.appendChild(bootLine);
+
 const host = createVsCodeIbChatHost();
 let view: ChatView | null = null;
 
 host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
-    if (message.type === "init") {
-        view = mountChatView(mount, message, (body) => {
-            host.post({ type: "send", body });
-        }, () => {
-            host.post({ type: "cancel" });
-        });
+    if (isInitPayload(message)) {
+        if (view !== null) {
+            return;
+        }
+        view = mountChatView(
+            mount,
+            message,
+            (body) => {
+                host.post({ type: "send", body });
+            },
+            () => {
+                host.post({ type: "cancel" });
+            },
+            (modelId) => {
+                host.post({ type: "setSessionModel", modelId });
+            }
+        );
         return;
     }
     view?.handleMessage(message);

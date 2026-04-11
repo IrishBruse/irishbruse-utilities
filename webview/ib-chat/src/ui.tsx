@@ -17,7 +17,8 @@ export function mountChatView(
     root: HTMLElement,
     init: InitPayload,
     postSend: (body: string) => void,
-    postCancel: () => void
+    postCancel: () => void,
+    postSetSessionModel: (modelId: string) => void
 ): ChatView {
     root.replaceChildren();
     root.className = "root agent-root";
@@ -30,6 +31,7 @@ export function mountChatView(
             init={init}
             postSend={postSend}
             postCancel={postCancel}
+            postSetSessionModel={postSetSessionModel}
             extensionDispatchRef={extensionDispatchRef}
         />
     );

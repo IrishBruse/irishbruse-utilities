@@ -11,7 +11,7 @@ import {
 import type { PlanEntry, ToolCallStatus } from "../../../src/chat/protocol/ibChatProtocol";
 import {
     chatReducer,
-    createInitialChatState,
+    createChatStateFromInit,
     type ChatAction,
     type ExtensionMessageAfterInit,
     type InitPayload,
@@ -114,14 +114,21 @@ export type IbChatAppProps = {
     init: InitPayload;
     postSend: (body: string) => void;
     postCancel: () => void;
+    postSetSessionModel: (modelId: string) => void;
     extensionDispatchRef: RefObject<((message: ExtensionMessageAfterInit) => void) | null>;
 };
 
 /**
  * IB Chat editor webview: header, transcript, composer, and protocol-driven transcript updates.
  */
-export function IbChatApp({ init, postSend, postCancel, extensionDispatchRef }: IbChatAppProps): ReactElement {
-    const [state, dispatch] = useReducer(chatReducer, undefined, createInitialChatState);
+export function IbChatApp({
+    init,
+    postSend,
+    postCancel,
+    postSetSessionModel,
+    extensionDispatchRef,
+}: IbChatAppProps): ReactElement {
+    const [state, dispatch] = useReducer(chatReducer, init, createChatStateFromInit);
     const [draft, setDraft] = useState("");
     const traceRef = useRef<HTMLElement | null>(null);
 
@@ -190,6 +197,31 @@ export function IbChatApp({ init, postSend, postCancel, extensionDispatchRef }: 
                 <TraceList items={state.trace} />
             </main>
             <footer className="composer-frame">
+                {state.modelSelection !== null && state.modelSelection.availableModels.length > 0 ? (
+                    <div className="composer-model-row">
+                        <label className="composer-model-label" htmlFor="ib-chat-model-select">
+                            Model
+                        </label>
+                        <select
+                            id="ib-chat-model-select"
+                            className="composer-model-select"
+                            aria-label="Model"
+                            value={state.modelSelection.currentModelId}
+                            disabled={state.promptInFlight}
+                            onChange={(e) => {
+                                const modelId = e.target.value;
+                                dispatch({ type: "pickSessionModel", modelId });
+                                postSetSessionModel(modelId);
+                            }}
+                        >
+                            {state.modelSelection.availableModels.map((m) => (
+                                <option key={m.modelId} value={m.modelId}>
+                                    {m.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                ) : null}
                 <textarea
                     className="composer-input"
                     placeholder="Describe a task or reply to the agent…"

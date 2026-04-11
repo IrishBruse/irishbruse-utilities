@@ -3,6 +3,7 @@ import type {
     PlanEntry,
     ToolCallStatus,
 } from "../../../src/chat/protocol/ibChatProtocol";
+import type { IbChatSessionModelSelection } from "../../../src/chat/acp/agentSession/ibChatSessionModels";
 
 export type InitPayload = Extract<ExtensionToWebviewMessage, { type: "init" }>;
 export type ExtensionMessageAfterInit = Exclude<ExtensionToWebviewMessage, { type: "init" }>;
@@ -31,9 +32,13 @@ export type ChatState = {
     toolIndexById: Map<string, number>;
     promptInFlight: boolean;
     errorText: string | null;
+    modelSelection: IbChatSessionModelSelection | null;
 };
 
-export type ChatAction = ExtensionMessageAfterInit | { type: "submit"; body: string };
+export type ChatAction =
+    | ExtensionMessageAfterInit
+    | { type: "submit"; body: string }
+    | { type: "pickSessionModel"; modelId: string };
 
 export function createInitialChatState(): ChatState {
     return {
@@ -42,6 +47,17 @@ export function createInitialChatState(): ChatState {
         toolIndexById: new Map(),
         promptInFlight: false,
         errorText: null,
+        modelSelection: null,
+    };
+}
+
+/**
+ * Builds initial chat state from the host `init` payload (model list from ACP or standalone readme seed).
+ */
+export function createChatStateFromInit(payload: InitPayload): ChatState {
+    return {
+        ...createInitialChatState(),
+        modelSelection: payload.sessionModels ?? null,
     };
 }
 
@@ -152,7 +168,27 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             toolIndexById: new Map(),
         };
     }
+    if (action.type === "pickSessionModel") {
+        if (state.modelSelection === null) {
+            return state;
+        }
+        return {
+            ...state,
+            modelSelection: {
+                ...state.modelSelection,
+                currentModelId: action.modelId,
+            },
+        };
+    }
     switch (action.type) {
+        case "sessionModels":
+            return {
+                ...state,
+                modelSelection: {
+                    currentModelId: action.currentModelId,
+                    availableModels: action.availableModels,
+                },
+            };
         case "appendAgentText":
             return appendAgentText(state, action.text);
         case "appendToolCall":

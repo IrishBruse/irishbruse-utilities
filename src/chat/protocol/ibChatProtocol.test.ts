@@ -1,7 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { tryParseWebviewMessage } from "./ibChatProtocol";
+import { isPotentiallyExtensionPostMessageData, tryParseWebviewMessage } from "./ibChatProtocol";
 
 describe("ibChatProtocol", () => {
+    describe("isPotentiallyExtensionPostMessageData", () => {
+        it("accepts plain objects and arrays", () => {
+            expect(isPotentiallyExtensionPostMessageData({ type: "init" })).toBe(true);
+            expect(isPotentiallyExtensionPostMessageData({})).toBe(true);
+            expect(isPotentiallyExtensionPostMessageData({ type: 1 })).toBe(true);
+            expect(isPotentiallyExtensionPostMessageData([])).toBe(true);
+        });
+        it("rejects null, undefined, and primitives", () => {
+            expect(isPotentiallyExtensionPostMessageData(null)).toBe(false);
+            expect(isPotentiallyExtensionPostMessageData(undefined)).toBe(false);
+            expect(isPotentiallyExtensionPostMessageData("x")).toBe(false);
+        });
+    });
+
     describe("tryParseWebviewMessage", () => {
         it("returns ready for a ready payload", () => {
             expect(tryParseWebviewMessage({ type: "ready" })).toEqual({ type: "ready" });
@@ -29,6 +43,11 @@ describe("ibChatProtocol", () => {
 
         it("returns cancel for a cancel payload", () => {
             expect(tryParseWebviewMessage({ type: "cancel" })).toEqual({ type: "cancel" });
+            expect(tryParseWebviewMessage({ type: "setSessionModel", modelId: "gpt-5[]" })).toEqual({
+                type: "setSessionModel",
+                modelId: "gpt-5[]",
+            });
+            expect(tryParseWebviewMessage({ type: "setSessionModel", modelId: "" })).toBeNull();
         });
     });
 });

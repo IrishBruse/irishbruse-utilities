@@ -1,4 +1,8 @@
-import type { ExtensionToWebviewMessage, WebviewToExtensionMessage } from "../../../src/chat/protocol/ibChatProtocol";
+import {
+    isPotentiallyExtensionPostMessageData,
+    type ExtensionToWebviewMessage,
+    type WebviewToExtensionMessage,
+} from "../../../src/chat/protocol/ibChatProtocol";
 
 declare function acquireVsCodeApi(): {
     postMessage(message: unknown): void;
@@ -17,8 +21,12 @@ export function createVsCodeIbChatHost(): {
             vscode.postMessage(message);
         },
         onExtensionMessage(handler: (message: ExtensionToWebviewMessage) => void): void {
-            window.addEventListener("message", (event: MessageEvent<ExtensionToWebviewMessage>) => {
-                handler(event.data);
+            window.addEventListener("message", (event: MessageEvent) => {
+                const data = event.data;
+                if (!isPotentiallyExtensionPostMessageData(data)) {
+                    return;
+                }
+                handler(data as ExtensionToWebviewMessage);
             });
         },
     };

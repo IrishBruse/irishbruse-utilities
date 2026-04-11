@@ -1,3 +1,5 @@
+import type { IbChatSessionModelSelection } from "../acp/agentSession/ibChatSessionModels";
+
 /** Plan entry forwarded from an ACP agent plan update. */
 export type PlanEntry = {
     content: string;
@@ -14,7 +16,8 @@ export type ToolCallStatus = "pending" | "in_progress" | "completed" | "failed";
 export type WebviewToExtensionMessage =
     | { type: "ready" }
     | { type: "send"; body: string }
-    | { type: "cancel" };
+    | { type: "cancel" }
+    | { type: "setSessionModel"; modelId: string };
 
 /**
  * Messages sent from the extension host to the IB Chat webview.
@@ -29,6 +32,13 @@ export type ExtensionToWebviewMessage =
           acpAgentName?: string;
           /** Optional `--vscode-*` overrides applied on `document.documentElement` (VS Code injects these in the real webview). */
           vscodeThemeVariables?: Record<string, string>;
+          /** From ACP `session/new` when available (standalone may seed from `mock/readme.ndjson`). */
+          sessionModels?: IbChatSessionModelSelection;
+      }
+    | {
+          type: "sessionModels";
+          currentModelId: string;
+          availableModels: IbChatSessionModelSelection["availableModels"];
       }
     | { type: "appendAgentText"; text: string }
     | {
@@ -44,6 +54,15 @@ export type ExtensionToWebviewMessage =
     | { type: "appendPlan"; entries: PlanEntry[] }
     | { type: "turnComplete"; stopReason: string }
     | { type: "error"; message: string };
+
+/**
+ * True when `raw` is a non-null object (`typeof null === "object"` is excluded). Used to ignore
+ * primitives on VS Code webview `message` events while still forwarding extension payloads whose
+ * `type` may not be a plain string after structured cloning.
+ */
+export function isPotentiallyExtensionPostMessageData(raw: unknown): raw is Record<string, unknown> {
+    return raw !== null && typeof raw === "object";
+}
 
 /**
  * Parses an untrusted `postMessage` payload from the webview.
@@ -62,6 +81,9 @@ export function tryParseWebviewMessage(raw: unknown): WebviewToExtensionMessage 
     }
     if (messageType === "cancel") {
         return { type: "cancel" };
+    }
+    if (messageType === "setSessionModel" && typeof record.modelId === "string" && record.modelId.length > 0) {
+        return { type: "setSessionModel", modelId: record.modelId };
     }
     return null;
 }

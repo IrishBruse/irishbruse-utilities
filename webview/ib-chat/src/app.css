@@ -36,6 +36,16 @@ body {
     gap: 0;
 }
 
+.ib-chat-boot {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--vscode-descriptionForeground);
+    font-size: 12px;
+    padding: 16px;
+}
+
 .agent-header {
     flex-shrink: 0;
     margin-bottom: 10px;
@@ -136,6 +146,33 @@ body {
 .composer-frame:focus-within {
     border-color: var(--vscode-focusBorder);
     box-shadow: 0 0 0 1px color-mix(in srgb, var(--vscode-focusBorder) 25%, transparent);
+}
+
+.composer-model-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px 4px;
+    border-bottom: 1px solid color-mix(in srgb, var(--vscode-widget-border) 70%, transparent);
+}
+
+.composer-model-label {
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+}
+
+.composer-model-select {
+    flex: 1;
+    min-width: 0;
+    max-width: 100%;
+    padding: 3px 6px;
+    color: var(--vscode-foreground);
+    background-color: var(--vscode-dropdown-background, var(--vscode-editor-background));
+    border: 1px solid var(--vscode-dropdown-border, var(--vscode-widget-border));
+    border-radius: 3px;
+    font-family: inherit;
+    font-size: 11px;
 }
 
 .composer-input {

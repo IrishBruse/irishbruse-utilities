@@ -29,7 +29,15 @@ import { spawn } from "node:child_process";
 import { Readable, Writable, Transform } from "node:stream";
 import { WebSocketServer, WebSocket } from "ws";
 import * as acp from "@agentclientprotocol/sdk";
-import type { ExtensionToWebviewMessage, WebviewToExtensionMessage } from "../../src/chat/protocol/ibChatProtocol";
+import {
+    tryParseWebviewMessage,
+    type ExtensionToWebviewMessage,
+} from "../../src/chat/protocol/ibChatProtocol";
+import {
+    sessionModelStateToIbChatSelection,
+    type IbChatSessionModelSelection,
+} from "../../src/chat/acp/agentSession/ibChatSessionModels";
+import { parseSessionModelsFromReadmeNdjson } from "../../src/chat/acp/agentSession/readmeSessionNew";
 import { sessionUpdateToWebviewMessages } from "../../src/chat/acp/acpSessionUpdateMapping";
 import { parseAcpAgentSpawnConfig, type AcpAgentSpawnConfig } from "../../src/chat/acp/acpAgentSpawnConfig";
 
@@ -124,37 +132,8 @@ function ndJsonStreamArgsForChild(
 type JsonRpcNotification = { jsonrpc: "2.0"; method: string; params: unknown };
 type JsonRpcResponse = { jsonrpc: "2.0"; id: number | string; result: Record<string, unknown> };
 
-/**
- * Reads a fixture NDJSON file and extracts session/update notifications and the prompt stop reason.
- * Any line that is a client→agent request is skipped.
- */
-function loadFixture(fixturePath: string): { updates: acp.SessionUpdate[]; stopReason: string } {
-    const lines = readFileSync(fixturePath, "utf-8")
-        .split("\n")
-        .filter((l) => l.trim().length > 0);
-
-    const updates: acp.SessionUpdate[] = [];
-    let stopReason = "end_turn";
-
-    for (const line of lines) {
-        const msg = JSON.parse(line) as JsonRpcNotification | JsonRpcResponse;
-
-        if ("method" in msg && msg.method === "session/update") {
-            const params = (msg as JsonRpcNotification).params as { update: acp.SessionUpdate };
-            updates.push(params.update);
-            continue;
-        }
-
-        if (!("method" in msg) && "result" in msg) {
-            const result = (msg as JsonRpcResponse).result;
-            if (typeof result["stopReason"] === "string") {
-                stopReason = result["stopReason"];
-            }
-        }
-    }
-
-    return { updates, stopReason };
-}
+/** Pause between successive NDJSON lines during fixture replay. */
+const fixtureLineDelayMs = 55;
 
 /**
  * Resolves a fixture path: `mock-<stem>` maps to `mock/<stem>.ndjson` under this directory;
@@ -180,21 +159,44 @@ function resolveFixture(body: string): string | null {
 }
 
 /**
- * Replays a fixture: streams each session/update through the normal mapping,
- * then sends turnComplete with the recorded stopReason.
+ * Replays a fixture in file order: pauses briefly between each NDJSON line, maps session/update
+ * lines through the normal path, then returns the recorded stopReason from prompt responses.
  */
 async function replayFixture(
     fixturePath: string,
     send: (msg: ExtensionToWebviewMessage) => void
 ): Promise<string> {
-    const { updates, stopReason } = loadFixture(fixturePath);
-    for (const update of updates) {
-        const messages = sessionUpdateToWebviewMessages(update);
-        for (const msg of messages) {
-            send(msg);
-            await new Promise<void>((resolve) => setImmediate(resolve));
+    const lines = readFileSync(fixturePath, "utf-8")
+        .split("\n")
+        .filter((l) => l.trim().length > 0);
+
+    let stopReason = "end_turn";
+
+    for (let i = 0; i < lines.length; i++) {
+        if (i > 0) {
+            await new Promise<void>((resolve) => setTimeout(resolve, fixtureLineDelayMs));
+        }
+
+        const msg = JSON.parse(lines[i]) as JsonRpcNotification | JsonRpcResponse;
+
+        if ("method" in msg && msg.method === "session/update") {
+            const params = (msg as JsonRpcNotification).params as { update: acp.SessionUpdate };
+            const messages = sessionUpdateToWebviewMessages(params.update);
+            for (const webviewMessage of messages) {
+                send(webviewMessage);
+                await new Promise<void>((resolve) => setImmediate(resolve));
+            }
+            continue;
+        }
+
+        if (!("method" in msg) && "result" in msg) {
+            const result = (msg as JsonRpcResponse).result;
+            if (typeof result["stopReason"] === "string") {
+                stopReason = result["stopReason"];
+            }
         }
     }
+
     return stopReason;
 }
 
@@ -229,6 +231,15 @@ function loadAgentConfig(): AcpAgentSpawnConfig {
 
 const agentConfig = loadAgentConfig();
 
+function loadReadmeSessionModels(): IbChatSessionModelSelection | null {
+    try {
+        const text = readFileSync(join(STANDALONE_DIR, "mock/readme.ndjson"), "utf-8");
+        return parseSessionModelsFromReadmeNdjson(text);
+    } catch {
+        return null;
+    }
+}
+
 // ── WebSocket server ──────────────────────────────────────────────────────────
 
 const httpServer = createServer();
@@ -241,6 +252,8 @@ wss.on("connection", (ws: WebSocket) => {
     let acpConnection: acp.ClientSideConnection | null = null;
     let acpSessionId: string | null = null;
     let prompting = false;
+    let pendingModelId: string | null = null;
+    let lastModelSelection: IbChatSessionModelSelection | null = null;
 
     function send(msg: ExtensionToWebviewMessage): void {
         if (ws.readyState === WebSocket.OPEN) {
@@ -308,17 +321,40 @@ wss.on("connection", (ws: WebSocket) => {
 
         const result = await acpConnection.newSession({ cwd: process.cwd(), mcpServers: [] });
         acpSessionId = result.sessionId;
+        const preferred = pendingModelId;
+        pendingModelId = null;
+        if (result.models) {
+            let state = result.models;
+            if (preferred !== null && preferred !== state.currentModelId) {
+                try {
+                    await acpConnection.unstable_setSessionModel({
+                        sessionId: result.sessionId,
+                        modelId: preferred,
+                    });
+                    state = { ...state, currentModelId: preferred };
+                } catch {}
+            }
+            const selection = sessionModelStateToIbChatSelection(state);
+            lastModelSelection = selection;
+            send({ type: "sessionModels", ...selection });
+        }
     }
 
     const handleMessage = async (raw: string): Promise<void> => {
-        let parsed: WebviewToExtensionMessage;
+        let rawObj: unknown;
         try {
-            parsed = JSON.parse(raw) as WebviewToExtensionMessage;
+            rawObj = JSON.parse(raw) as unknown;
         } catch {
+            return;
+        }
+        const parsed = tryParseWebviewMessage(rawObj);
+        if (parsed === null) {
             return;
         }
 
         if (parsed.type === "ready") {
+            const seed = loadReadmeSessionModels();
+            lastModelSelection = seed;
             send({
                 type: "init",
                 sessionId,
@@ -326,7 +362,32 @@ wss.on("connection", (ws: WebSocket) => {
                 workspaceLabel: process.cwd(),
                 agentVersionLabel: undefined,
                 acpAgentName: agentConfig.name,
+                sessionModels: seed ?? undefined,
             });
+            return;
+        }
+
+        if (parsed.type === "setSessionModel") {
+            if (acpConnection && acpSessionId) {
+                try {
+                    await acpConnection.unstable_setSessionModel({
+                        sessionId: acpSessionId,
+                        modelId: parsed.modelId,
+                    });
+                    if (lastModelSelection !== null) {
+                        lastModelSelection = {
+                            ...lastModelSelection,
+                            currentModelId: parsed.modelId,
+                        };
+                        send({ type: "sessionModels", ...lastModelSelection });
+                    }
+                } catch (err: unknown) {
+                    const message = err instanceof Error ? err.message : String(err);
+                    send({ type: "error", message: `Model change failed: ${message}` });
+                }
+            } else {
+                pendingModelId = parsed.modelId;
+            }
             return;
         }
 

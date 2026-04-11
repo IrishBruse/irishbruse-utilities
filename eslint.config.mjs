@@ -29,6 +29,36 @@ export default [
         },
     },
     {
-        ignores: ["out", "dist", "**/*.d.ts"],
+        files: ["webview/**/*.ts"],
+        languageOptions: {
+            parser: tsparser,
+            parserOptions: {
+                ecmaVersion: 6,
+                sourceType: "module",
+            },
+            globals: {
+                window: "readonly",
+                document: "readonly",
+            },
+        },
+        plugins: {
+            "@typescript-eslint": tseslint,
+        },
+        rules: {
+            "@typescript-eslint/naming-convention": [
+                "warn",
+                {
+                    selector: "import",
+                    format: ["camelCase", "PascalCase"],
+                },
+            ],
+            curly: "warn",
+            eqeqeq: "warn",
+            "no-throw-literal": "warn",
+            semi: "off",
+        },
+    },
+    {
+        ignores: ["out", "dist", "**/*.d.ts", "media/ib-chat/**"],
     },
 ];

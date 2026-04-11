@@ -1,5 +1,7 @@
 import { ExtensionContext, ViewColumn, WebviewPanel, window } from "vscode";
-import { buildIbChatHtml } from "./ibChatHtml";
+import { getIbChatWebviewHtml } from "./ibChatWebviewShell";
+import { tryParseWebviewMessage } from "./protocol/ibChatProtocol";
+import type { ExtensionToWebviewMessage } from "./protocol/ibChatProtocol";
 
 const editorViewType = "ibUtilitiesIbChatEditor";
 
@@ -15,11 +17,21 @@ export function openOrRevealIbChatEditor(context: ExtensionContext, sessionId: s
         return;
     }
     const panel = window.createWebviewPanel(editorViewType, title, ViewColumn.Active, {
-        enableScripts: false,
+        enableScripts: true,
         retainContextWhenHidden: true,
         localResourceRoots: [context.extensionUri],
     });
-    panel.webview.html = buildIbChatHtml(panel.webview.cspSource, `session-${sessionId}`);
+    panel.webview.html = getIbChatWebviewHtml(context.extensionUri, panel.webview);
+    panel.webview.onDidReceiveMessage((message: unknown) => {
+        const parsed = tryParseWebviewMessage(message);
+        if (!parsed) {
+            return;
+        }
+        if (parsed.type === "ready") {
+            const outgoing: ExtensionToWebviewMessage = { type: "init", sessionId, title };
+            void panel.webview.postMessage(outgoing);
+        }
+    });
     panel.onDidDispose(() => {
         panelsBySessionId.delete(sessionId);
     });

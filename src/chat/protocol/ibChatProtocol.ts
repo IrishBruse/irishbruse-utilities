@@ -27,6 +27,8 @@ export type ExtensionToWebviewMessage =
           workspaceLabel?: string;
           agentVersionLabel?: string;
           acpAgentName?: string;
+          /** Optional `--vscode-*` overrides applied on `document.documentElement` (VS Code injects these in the real webview). */
+          vscodeThemeVariables?: Record<string, string>;
       }
     | { type: "appendAgentText"; text: string }
     | { type: "appendToolCall"; toolCallId: string; title: string; kind?: string; status?: ToolCallStatus }

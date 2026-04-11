@@ -13,7 +13,7 @@ function e() {
 	};
 }
 //#endregion
-//#region webview/ib-chat/src/main.ts
+//#region webview/ib-chat/src/ui.ts
 function t(e) {
 	let t = document.createElement("section");
 	return t.className = "user-prompt-bar", t.setAttribute("aria-label", "User message"), t.textContent = e, t;
@@ -67,7 +67,7 @@ function o(e) {
 	return t;
 }
 function s(e, i, s, c) {
-	e.replaceChildren(), e.className = "root agent-root";
+	if (e.replaceChildren(), e.className = "root agent-root", i.vscodeThemeVariables) for (let [e, t] of Object.entries(i.vscodeThemeVariables)) document.documentElement.style.setProperty(e, t);
 	let l = document.createElement("header");
 	l.className = "agent-header";
 	let u = document.createElement("div");
@@ -158,6 +158,8 @@ function s(e, i, s, c) {
 	}
 	return { handleMessage: j };
 }
+//#endregion
+//#region webview/ib-chat/src/main.ts
 var c = document.getElementById("root");
 if (!c) throw Error("Missing #root");
 var l = e(), u = null;

@@ -122,17 +122,13 @@ export class AcpAgentProcess {
         return { outcome: { outcome: "selected", optionId: matched.optionId } };
     }
 
-    private async handleReadTextFile(
-        params: acp.ReadTextFileRequest
-    ): Promise<acp.ReadTextFileResponse> {
+    private async handleReadTextFile(params: acp.ReadTextFileRequest): Promise<acp.ReadTextFileResponse> {
         const uri = await import("vscode").then((vs) => vs.Uri.file(params.path));
         const bytes = await workspace.fs.readFile(uri);
         return { content: Buffer.from(bytes).toString("utf-8") };
     }
 
-    private async handleWriteTextFile(
-        params: acp.WriteTextFileRequest
-    ): Promise<acp.WriteTextFileResponse> {
+    private async handleWriteTextFile(params: acp.WriteTextFileRequest): Promise<acp.WriteTextFileResponse> {
         const uri = await import("vscode").then((vs) => vs.Uri.file(params.path));
         await workspace.fs.writeFile(uri, Buffer.from(params.content, "utf-8"));
         return {};

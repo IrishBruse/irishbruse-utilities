@@ -22,10 +22,12 @@
     "scripts": {
         "vscode:prepublish": "npm run package",
         "build:webview": "vite build --config webview/ib-chat/vite.config.ts",
+        "dev:standalone:ui": "vite --config webview/ib-chat-standalone/vite.config.ts",
+        "dev:standalone:server": "tsx webview/ib-chat-standalone/server.ts",
         "build": "npm run build:webview && node esbuild.mjs",
         "watch": "node esbuild.mjs --watch",
         "package": "npm run build:webview && node esbuild.mjs --production",
-        "lint": "eslint src webview && tsc --noEmit",
+        "lint": "eslint src webview && tsc --noEmit && tsc --noEmit -p webview/ib-chat/tsconfig.json && tsc --noEmit -p webview/ib-chat-standalone/tsconfig.json",
         "test": "vitest run",
         "verify": "npm run build && npm run test && npm run lint",
         "test:watch": "vitest watch",
@@ -310,15 +312,16 @@
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.12.2",
         "@types/vscode": "^1.110.0",
-        "@typescript-eslint/eslint-plugin": "^8.57.1",
-        "@typescript-eslint/parser": "^8.57.1",
+        "@types/ws": "^8.18.1",
+        "@typescript-eslint/eslint-plugin": "^8.58.1",
+        "@typescript-eslint/parser": "^8.58.1",
         "@vitest/coverage-v8": "^4.1.0",
         "@vscode/vsce": "^3.3.2",
         "esbuild": "0.27.4",
         "eslint": "^9.39.4",
         "ts-loader": "^9.5.4",
         "tsx": "^4.21.0",
-        "typescript": "^5.9.3",
+        "typescript": "^6.0.2",
         "vite": "^8.0.1",
         "vitest": "^4.1.0",
         "webpack": "^5.105.4",
@@ -326,6 +329,7 @@
     },
     "dependencies": {
         "@agentclientprotocol/sdk": "^0.18.2",
-        "cjson": "^0.5.0"
+        "cjson": "^0.5.0",
+        "ws": "^8.20.0"
     }
 }

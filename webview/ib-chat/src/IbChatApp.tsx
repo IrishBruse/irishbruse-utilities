@@ -8,64 +8,16 @@ import {
     type ReactElement,
     type RefObject,
 } from "react";
-import type { PlanEntry } from "../../../src/chat/protocol/ibChatProtocol";
-import { AgentMarkdown } from "./AgentMarkdown";
-import { ToolCallBlock } from "./ToolCallBlock";
+import { ChatComposer } from "./components/ChatComposer";
+import { ChatHeader } from "./components/ChatHeader";
+import { TraceList } from "./components/TraceList";
 import {
     chatReducer,
     createChatStateFromInit,
     type ChatAction,
     type ExtensionMessageAfterInit,
     type InitPayload,
-    type TraceItem,
 } from "./chatReducer";
-
-function PlanBlock({ entries }: { entries: PlanEntry[] }): ReactElement {
-    return (
-        <div className="agent-plan" aria-label="Agent plan">
-            <div className="agent-plan-title">Plan</div>
-            {entries.map((e, i) => (
-                <div
-                    key={i}
-                    className="agent-plan-row"
-                    title={e.priority !== undefined ? `priority: ${e.priority}` : undefined}
-                >
-                    <span className="agent-plan-status">{e.status}</span>
-                    <span className="agent-plan-content">{e.content}</span>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function TraceList({ items }: { items: TraceItem[] }): ReactElement {
-    return (
-        <>
-            {items.map((item, index) => {
-                if (item.type === "user") {
-                    return (
-                        <section key={index} className="user-prompt-bar" aria-label="User message">
-                            {item.text}
-                        </section>
-                    );
-                }
-                if (item.type === "agent") {
-                    return (
-                        <div key={index} className="agent-response-stream">
-                            <div className="agent-response-markdown" aria-label="Agent response">
-                                <AgentMarkdown text={item.text} />
-                            </div>
-                        </div>
-                    );
-                }
-                if (item.type === "tool") {
-                    return <ToolCallBlock key={index} item={item} />;
-                }
-                return <PlanBlock key={index} entries={item.entries} />;
-            })}
-        </>
-    );
-}
 
 export type IbChatAppProps = {
     init: InitPayload;
@@ -136,79 +88,30 @@ export function IbChatApp({
 
     return (
         <Fragment>
-            <header className="agent-header">
-                <div className="agent-title-line">
-                    IB Chat <span className="agent-version">{init.agentVersionLabel ?? ""}</span>
-                </div>
-                <div className="agent-meta-line" title={workspaceText}>
-                    {workspaceText}
-                </div>
-                {init.acpAgentName !== undefined && init.acpAgentName.length > 0 ? (
-                    <div className="agent-acp-name">ACP agent: {init.acpAgentName}</div>
-                ) : null}
-            </header>
+            <ChatHeader
+                agentVersionLabel={init.agentVersionLabel}
+                workspaceText={workspaceText}
+                acpAgentName={init.acpAgentName}
+            />
             <div className="ib-chat-error" role="alert" hidden={state.errorText === null}>
                 {state.errorText}
             </div>
             <main ref={traceRef} className="agent-trace" role="log" aria-label="Conversation">
                 <TraceList items={state.trace} />
             </main>
-            <footer className="composer-frame">
-                {state.modelSelection !== null && state.modelSelection.availableModels.length > 0 ? (
-                    <div className="composer-model-row">
-                        <label className="composer-model-label" htmlFor="ib-chat-model-select">
-                            Model
-                        </label>
-                        <select
-                            id="ib-chat-model-select"
-                            className="composer-model-select"
-                            aria-label="Model"
-                            value={state.modelSelection.currentModelId}
-                            disabled={state.promptInFlight}
-                            onChange={(e) => {
-                                const modelId = e.target.value;
-                                dispatch({ type: "pickSessionModel", modelId });
-                                postSetSessionModel(modelId);
-                            }}
-                        >
-                            {state.modelSelection.availableModels.map((m) => (
-                                <option key={m.modelId} value={m.modelId}>
-                                    {m.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                ) : null}
-                <textarea
-                    className="composer-input"
-                    placeholder="Describe a task or reply to the agent…"
-                    aria-label="Agent input"
-                    rows={2}
-                    value={draft}
-                    disabled={state.promptInFlight}
-                    onChange={(e) => setDraft(e.target.value)}
-                    onKeyDown={onKeyDown}
-                />
-                <div className="composer-footer">
-                    <span className="composer-hint">Enter to send · Shift+Enter for newline</span>
-                    <button
-                        type="button"
-                        className="composer-cancel"
-                        disabled={!state.promptInFlight}
-                        onClick={() => postCancel()}
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="button"
-                        className="composer-send"
-                        disabled={state.promptInFlight}
-                        onClick={() => submit()}
-                    >
-                        Send
-                    </button>
-                </div>
-            </footer>
+            <ChatComposer
+                modelSelection={state.modelSelection}
+                promptInFlight={state.promptInFlight}
+                draft={draft}
+                onDraftChange={setDraft}
+                onPickSessionModel={(modelId) => {
+                    dispatch({ type: "pickSessionModel", modelId });
+                    postSetSessionModel(modelId);
+                }}
+                onSubmit={submit}
+                onCancel={postCancel}
+                onKeyDown={onKeyDown}
+            />
         </Fragment>
     );
 }

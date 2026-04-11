@@ -1,6 +1,6 @@
 import { type ReactElement } from "react";
-import type { ToolCallStatus } from "../../../src/chat/protocol/ibChatProtocol";
-import type { TraceToolItem } from "./chatReducer";
+import type { ToolCallStatus } from "../../../../src/chat/protocol/ibChatProtocol";
+import type { TraceToolItem } from "../chatReducer";
 
 function ToolCallStatusGlyph({ status }: { status: ToolCallStatus }): ReactElement {
     if (status === "in_progress" || status === "pending") {

@@ -1,4 +1,5 @@
 import { ExtensionContext, Uri } from "vscode";
+import { activateIbChatView } from "./chat/IbChatViewProvider";
 import { relativeGoTo } from "./commands/relativeGoTo";
 import { openPR } from "./commands/openPR";
 import { pasteImage, smartPaste } from "./commands/pasteImage";
@@ -22,6 +23,7 @@ export function activate(context: ExtensionContext) {
     registerCommandIB(Commands.SmartPaste, smartPaste, context);
 
     SnippetViewProvider.activate(context);
+    activateIbChatView(context);
 }
 
 export function deactivate() {

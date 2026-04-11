@@ -79,6 +79,13 @@
                     "title": "Snippet Manager",
                     "icon": "media/snippet_icon.svg"
                 }
+            ],
+            "panel": [
+                {
+                    "id": "ibChatContainer",
+                    "title": "IB Chat",
+                    "icon": "media/chat_icon.svg"
+                }
             ]
         },
         "views": {
@@ -87,6 +94,13 @@
                     "id": "snippetView",
                     "name": "Groups",
                     "icon": "media/snippet_icon.svg"
+                }
+            ],
+            "ibChatContainer": [
+                {
+                    "id": "ibChatView",
+                    "name": "Chat",
+                    "icon": "media/chat_icon.svg"
                 }
             ]
         },
@@ -105,6 +119,17 @@
                 "command": "ib-utilities.showSnippetView",
                 "title": "Show Snippet View",
                 "shortTitle": "Show Snippet View"
+            },
+            {
+                "command": "ib-utilities.showIbChat",
+                "title": "Focus IB Chat",
+                "shortTitle": "Focus IB Chat"
+            },
+            {
+                "command": "ib-utilities.newIbChatEditor",
+                "title": "New IB Chat in Editor",
+                "shortTitle": "New in Editor",
+                "icon": "$(add)"
             },
             {
                 "command": "ib-utilities.openPR",
@@ -180,6 +205,16 @@
                 }
             ],
             "view/title": [
+                {
+                    "command": "ib-utilities.newIbChatEditor",
+                    "when": "view == ibChatView",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.showIbChat",
+                    "when": "view == ibChatView",
+                    "group": "navigation"
+                },
                 {
                     "command": "ib-utilities.showSnippetView",
                     "when": "view == snippetContainer",

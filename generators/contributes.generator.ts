@@ -71,6 +71,17 @@ if (contributes.viewsContainers) {
                 l();
             });
         }
+        if (contributes.viewsContainers.panel) {
+            contributes.viewsContainers.panel.forEach((container) => {
+                const constName = toPascalCase(container.id);
+                startDoc();
+                l(container.title);
+                l(`Icon: ${container.icon}`);
+                endDoc();
+                l(`  ${constName} = \`${container.id}\`,`);
+                l();
+            });
+        }
         dedent();
     }
     l("}");

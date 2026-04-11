@@ -65,7 +65,7 @@ export type View = {
 
 export type ViewsContainers = {
     activitybar: Activitybar[];
-    panel: Activitybar[];
+    panel?: Activitybar[];
 };
 
 export type Activitybar = {

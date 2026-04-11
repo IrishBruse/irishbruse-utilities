@@ -24,6 +24,20 @@ export enum Commands {
     ShowSnippetView = `ib-utilities.showSnippetView`,
 
     /**
+     * Focus IB Chat
+     * Short Title: Focus IB Chat
+     * Icon: undefined
+     */
+    ShowIbChat = `ib-utilities.showIbChat`,
+
+    /**
+     * New IB Chat in Editor
+     * Short Title: New in Editor
+     * Icon: $(add)
+     */
+    NewIbChatEditor = `ib-utilities.newIbChatEditor`,
+
+    /**
      * Open Pull Request
      * Short Title: Open PR
      * Icon: $(github)
@@ -87,6 +101,12 @@ export enum ViewContainers {
      */
       SnippetContainer = `snippetContainer`,
 
+    /**
+     * IB Chat
+     * Icon: media/chat_icon.svg
+     */
+      IbChatContainer = `ibChatContainer`,
+
 }
 
 /** Views */
@@ -96,6 +116,12 @@ export enum Views {
      * ContainerId: snippetContainer
      */
     SnippetView = `snippetView`,
+
+    /**
+     * Header: Chat
+     * ContainerId: ibChatContainer
+     */
+    IbChatView = `ibChatView`,
 
 }
 

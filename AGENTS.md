@@ -8,6 +8,7 @@
 - Test: `npm run test`
 - Build: `npm run build`
 - Lint: `npm run lint`
+- fnm for node versions
 
 # Style
 

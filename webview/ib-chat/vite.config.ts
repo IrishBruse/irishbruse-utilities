@@ -8,11 +8,15 @@ const dir = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
     plugins: [react()],
     root: dir,
+    define: {
+        "process.env.NODE_ENV": JSON.stringify("production"),
+    },
     build: {
         lib: {
             entry: path.join(dir, "src/main.ts"),
+            name: "IbChat",
             fileName: () => "main.js",
-            formats: ["es"],
+            formats: ["iife"],
         },
         outDir: path.join(dir, "../../media/ib-chat"),
         emptyOutDir: true,

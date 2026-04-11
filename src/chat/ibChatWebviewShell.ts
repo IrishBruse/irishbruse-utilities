@@ -32,7 +32,7 @@ export function getIbChatWebviewHtml(extensionRoot: Uri, webview: Webview): stri
 </head>
 <body>
   <div id="root"></div>
-  <script type="module" src="${scriptUri}"></script>
+  <script src="${scriptUri}"></script>
 </body>
 </html>`;
 }

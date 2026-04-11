@@ -8,7 +8,9 @@ import {
     type ReactElement,
     type RefObject,
 } from "react";
-import type { PlanEntry, ToolCallStatus } from "../../../src/chat/protocol/ibChatProtocol";
+import type { PlanEntry } from "../../../src/chat/protocol/ibChatProtocol";
+import { AgentMarkdown } from "./AgentMarkdown";
+import { ToolCallBlock } from "./ToolCallBlock";
 import {
     chatReducer,
     createChatStateFromInit,
@@ -16,52 +18,7 @@ import {
     type ExtensionMessageAfterInit,
     type InitPayload,
     type TraceItem,
-    type TraceToolItem,
 } from "./chatReducer";
-
-function terminalStatusGlyph(status: ToolCallStatus): string {
-    if (status === "in_progress" || status === "pending") {
-        return "\u25CF";
-    }
-    if (status === "completed") {
-        return "\u2713";
-    }
-    return "\u2715";
-}
-
-/**
- * Renders a tool invocation as a compact integrated-terminal style block (prompt line + optional output).
- */
-function ToolCallBlock({ item }: { item: TraceToolItem }): ReactElement {
-    const glyph = terminalStatusGlyph(item.status);
-    const kindHidden = item.kind === undefined || item.kind.length === 0;
-    const showOutput =
-        item.detailVisible && item.content !== undefined && item.content.trim().length > 0;
-    const subtitle =
-        item.subtitle !== undefined && item.subtitle.trim().length > 0 ? item.subtitle.trim() : null;
-    return (
-        <div
-            className="tool-call-terminal"
-            data-tool-id={item.toolCallId}
-            data-status={item.status}
-            role="status"
-            aria-label="Tool use"
-        >
-            <div className="tool-call-terminal-line">
-                <span className="tool-call-terminal-prompt" aria-hidden="true">
-                    $
-                </span>
-                <span className="tool-call-terminal-glyph" aria-hidden="true">
-                    {glyph}
-                </span>
-                <span className="tool-call-terminal-title">{item.title}</span>
-                {kindHidden ? null : <span className="tool-call-terminal-kind">[{item.kind}]</span>}
-            </div>
-            {subtitle !== null ? <div className="tool-call-terminal-subtitle">{subtitle}</div> : null}
-            {showOutput ? <pre className="tool-call-terminal-pre">{item.content}</pre> : null}
-        </div>
-    );
-}
 
 function PlanBlock({ entries }: { entries: PlanEntry[] }): ReactElement {
     return (
@@ -95,9 +52,9 @@ function TraceList({ items }: { items: TraceItem[] }): ReactElement {
                 if (item.type === "agent") {
                     return (
                         <div key={index} className="agent-response-stream">
-                            <pre className="agent-response-text" aria-label="Agent response">
-                                {item.text}
-                            </pre>
+                            <div className="agent-response-markdown" aria-label="Agent response">
+                                <AgentMarkdown text={item.text} />
+                            </div>
                         </div>
                     );
                 }

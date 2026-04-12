@@ -42,6 +42,9 @@ host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
             },
             (modelId) => {
                 host.post({ type: "setSessionModel", modelId });
+            },
+            (payload) => {
+                host.post({ type: "permissionResponse", ...payload });
             }
         );
         return;

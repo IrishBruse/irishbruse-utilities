@@ -1,11 +1,16 @@
 import { spawn, ChildProcess } from "node:child_process";
 import { Readable, Writable } from "node:stream";
 import * as acp from "@agentclientprotocol/sdk";
-import { workspace, window } from "vscode";
+import { workspace } from "vscode";
 import type { AcpAgentConfig } from "./acpAgentConfig";
 
 /** Callback invoked whenever the agent sends a session/update notification. */
 export type SessionUpdateHandler = (params: acp.SessionNotification) => void;
+
+/** Resolves `session/request_permission` (webview UI in IB Chat; required). */
+export type RequestPermissionHandler = (
+    params: acp.RequestPermissionRequest
+) => Promise<acp.RequestPermissionResponse>;
 
 /**
  * Manages the lifecycle of a single ACP agent subprocess. Handles spawning,
@@ -16,7 +21,10 @@ export class AcpAgentProcess {
     private connection: acp.ClientSideConnection | null = null;
     private sessionUpdateHandler: SessionUpdateHandler | null = null;
 
-    constructor(private readonly config: AcpAgentConfig) {}
+    constructor(
+        private readonly config: AcpAgentConfig,
+        private readonly requestPermissionHandler: RequestPermissionHandler
+    ) {}
 
     /** Registers a handler that receives every `session/update` notification. */
     onSessionUpdate(handler: SessionUpdateHandler): void {
@@ -50,7 +58,7 @@ export class AcpAgentProcess {
         const stream = acp.ndJsonStream(input, output);
 
         const client: acp.Client = {
-            requestPermission: async (params) => this.handleRequestPermission(params),
+            requestPermission: async (params) => this.requestPermissionHandler(params),
             sessionUpdate: async (params) => {
                 this.sessionUpdateHandler?.(params);
             },
@@ -113,23 +121,6 @@ export class AcpAgentProcess {
             this.child = null;
         }
         this.connection = null;
-    }
-
-    private async handleRequestPermission(
-        params: acp.RequestPermissionRequest
-    ): Promise<acp.RequestPermissionResponse> {
-        const options = params.options.map((o) => o.name);
-        const picked = await window.showQuickPick(options, {
-            placeHolder: `Agent wants permission: ${params.toolCall.title}`,
-        });
-        if (!picked) {
-            return { outcome: { outcome: "cancelled" } };
-        }
-        const matched = params.options.find((o) => o.name === picked);
-        if (!matched) {
-            return { outcome: { outcome: "cancelled" } };
-        }
-        return { outcome: { outcome: "selected", optionId: matched.optionId } };
     }
 
     private async handleReadTextFile(params: acp.ReadTextFileRequest): Promise<acp.ReadTextFileResponse> {

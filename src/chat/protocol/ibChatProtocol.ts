@@ -13,12 +13,27 @@ export type ToolCallStatus = "pending" | "in_progress" | "completed" | "failed";
 /**
  * Messages sent from the IB Chat webview to the extension host.
  */
+/** Line-level diff for tool output (git-style presentation in the webview). */
+export type ToolCallDiffRow = {
+    kind: "removed" | "added" | "context";
+    text: string;
+};
+
+/** Slash commands advertised by the agent via `available_commands_update`. */
+export type IbChatSlashCommand = {
+    name: string;
+    description: string;
+    inputHint?: string;
+};
+
 export type WebviewToExtensionMessage =
     | { type: "ready" }
     | { type: "send"; body: string }
     | { type: "cancel" }
     | { type: "setSessionModel"; modelId: string }
-    | { type: "setSessionAgent"; agentName: string };
+    | { type: "setSessionAgent"; agentName: string }
+    | { type: "permissionResponse"; requestId: string; selectedOptionId: string }
+    | { type: "permissionResponse"; requestId: string; cancelled: true };
 
 /**
  * Messages sent from the extension host to the IB Chat webview.
@@ -61,7 +76,16 @@ export type ExtensionToWebviewMessage =
           content?: string;
           /** When set, replaces the tool row subtitle (e.g. path from `locations` or diff on completion). */
           subtitle?: string;
+          /** Structured line diff for `diff` tool content; takes precedence over plain `content` in the UI. */
+          diffRows?: ToolCallDiffRow[];
       }
+    | {
+          type: "permissionRequest";
+          requestId: string;
+          toolTitle: string;
+          options: { optionId: string; name: string }[];
+      }
+    | { type: "slashCommands"; commands: IbChatSlashCommand[] }
     | { type: "appendPlan"; entries: PlanEntry[] }
     | { type: "turnComplete"; stopReason: string }
     | { type: "error"; message: string };
@@ -98,6 +122,18 @@ export function tryParseWebviewMessage(raw: unknown): WebviewToExtensionMessage 
     }
     if (messageType === "setSessionAgent" && typeof record.agentName === "string" && record.agentName.length > 0) {
         return { type: "setSessionAgent", agentName: record.agentName };
+    }
+    if (messageType === "permissionResponse" && typeof record.requestId === "string" && record.requestId.length > 0) {
+        if (record.cancelled === true) {
+            return { type: "permissionResponse", requestId: record.requestId, cancelled: true };
+        }
+        if (typeof record.selectedOptionId === "string" && record.selectedOptionId.length > 0) {
+            return {
+                type: "permissionResponse",
+                requestId: record.requestId,
+                selectedOptionId: record.selectedOptionId,
+            };
+        }
     }
     return null;
 }

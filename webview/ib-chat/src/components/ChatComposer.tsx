@@ -1,6 +1,7 @@
-import type { KeyboardEvent, ReactElement } from "react";
+import { useMemo, type KeyboardEvent, type ReactElement } from "react";
 import "./ChatComposer.css";
 import type { IbChatSessionModelSelection } from "../../../../src/chat/acp/agentSession/ibChatSessionModels";
+import type { IbChatSlashCommand } from "../../../../src/chat/protocol/ibChatProtocol";
 import type { AcpAgentSelectionState } from "../chatReducer";
 
 export type ChatComposerProps = {
@@ -8,6 +9,9 @@ export type ChatComposerProps = {
     acpAgentSelection: AcpAgentSelectionState | null;
     modelSelection: IbChatSessionModelSelection | null;
     promptInFlight: boolean;
+    /** When set, blocks the textarea (e.g. pending permission dialog). */
+    inputBlocked: boolean;
+    slashCommands: IbChatSlashCommand[];
     draft: string;
     onDraftChange: (value: string) => void;
     onPickSessionAgent: (agentName: string) => void;
@@ -15,6 +19,7 @@ export type ChatComposerProps = {
     onSubmit: () => void;
     onCancel: () => void;
     onKeyDown: (event: KeyboardEvent<HTMLTextAreaElement>) => void;
+    workspaceText: string;
 };
 
 /**
@@ -25,6 +30,8 @@ export function ChatComposer({
     acpAgentSelection,
     modelSelection,
     promptInFlight,
+    inputBlocked,
+    slashCommands,
     draft,
     onDraftChange,
     onPickSessionAgent,
@@ -32,11 +39,28 @@ export function ChatComposer({
     onSubmit,
     onCancel,
     onKeyDown,
+    workspaceText,
 }: ChatComposerProps): ReactElement {
+    const textareaDisabled = promptInFlight || inputBlocked;
+    const slashQuery = useMemo(() => {
+        const line = draft.split("\n")[0] ?? "";
+        const match = line.match(/^\/([\w-]*)$/);
+        if (match === null || slashCommands.length === 0) {
+            return null;
+        }
+        return match[1] ?? "";
+    }, [draft, slashCommands]);
+    const slashMatches = useMemo(() => {
+        if (slashQuery === null) {
+            return [];
+        }
+        const q = slashQuery.toLowerCase();
+        return slashCommands.filter((c) => c.name.toLowerCase().startsWith(q)).slice(0, 12);
+    }, [slashQuery, slashCommands]);
+    const showSlashMenu = slashMatches.length > 0 && slashQuery !== null;
     const showAgentPicker = acpAgentSelection !== null && acpAgentSelection.availableNames.length > 0;
     const showModelPicker = modelSelection !== null && modelSelection.availableModels.length > 0;
-    const showTopBar =
-        (activityLabel !== null && activityLabel.length > 0) || showAgentPicker || showModelPicker;
+    const showTopBar = (activityLabel !== null && activityLabel.length > 0) || showAgentPicker || showModelPicker;
 
     return (
         <footer className="composer-frame">
@@ -57,7 +81,7 @@ export function ChatComposer({
                                 className="composer-agent-select"
                                 aria-label="Agent"
                                 value={acpAgentSelection.currentName}
-                                disabled={promptInFlight}
+                                disabled={textareaDisabled}
                                 onChange={(e) => {
                                     onPickSessionAgent(e.target.value);
                                 }}
@@ -80,7 +104,7 @@ export function ChatComposer({
                                 className="composer-model-select"
                                 aria-label="Model"
                                 value={modelSelection.currentModelId}
-                                disabled={promptInFlight}
+                                disabled={textareaDisabled}
                                 onChange={(e) => {
                                     onPickSessionModel(e.target.value);
                                 }}
@@ -95,32 +119,42 @@ export function ChatComposer({
                     </div>
                 </div>
             ) : null}
-            <textarea
-                className="composer-input"
-                placeholder="Describe a task or reply to the agent…"
-                aria-label="Agent input"
-                rows={2}
-                value={draft}
-                disabled={promptInFlight}
-                onChange={(e) => onDraftChange(e.target.value)}
-                onKeyDown={onKeyDown}
-            />
+            <div className="composer-input-wrap">
+                {showSlashMenu ? (
+                    <div className="composer-slash-menu" role="listbox" aria-label="Slash commands">
+                        {slashMatches.map((cmd) => (
+                            <button
+                                key={cmd.name}
+                                type="button"
+                                role="option"
+                                className="composer-slash-item"
+                                onClick={() => {
+                                    onDraftChange(`/${cmd.name} `);
+                                }}
+                            >
+                                <span className="composer-slash-name">/{cmd.name}</span>
+                                <span className="composer-slash-desc">{cmd.description}</span>
+                            </button>
+                        ))}
+                    </div>
+                ) : null}
+                <textarea
+                    className="composer-input"
+                    placeholder={"Describe a task for the agent to do in\n" + workspaceText}
+                    aria-label="Agent input"
+                    rows={2}
+                    value={draft}
+                    disabled={textareaDisabled}
+                    onChange={(e) => onDraftChange(e.target.value)}
+                    onKeyDown={onKeyDown}
+                />
+            </div>
             <div className="composer-footer">
                 <span className="composer-hint">Enter to send · Shift+Enter for newline</span>
-                <button
-                    type="button"
-                    className="composer-cancel"
-                    disabled={!promptInFlight}
-                    onClick={() => onCancel()}
-                >
+                <button type="button" className="composer-cancel" disabled={!promptInFlight} onClick={() => onCancel()}>
                     Cancel
                 </button>
-                <button
-                    type="button"
-                    className="composer-send"
-                    disabled={promptInFlight}
-                    onClick={() => onSubmit()}
-                >
+                <button type="button" className="composer-send" disabled={textareaDisabled} onClick={() => onSubmit()}>
                     Send
                 </button>
             </div>

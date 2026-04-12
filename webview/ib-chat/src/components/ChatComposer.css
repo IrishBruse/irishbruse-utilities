@@ -63,6 +63,64 @@
     font-size: 11px;
 }
 
+.composer-input-wrap {
+    position: relative;
+}
+
+.composer-slash-menu {
+    position: absolute;
+    bottom: 100%;
+    left: 8px;
+    right: 8px;
+    margin-bottom: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 4px 0;
+    border: 1px solid var(--vscode-widget-border, color-mix(in srgb, var(--vscode-foreground) 14%, transparent));
+    border-radius: 4px;
+    background: var(--vscode-editorWidget-background, var(--vscode-sideBar-background));
+    box-shadow: 0 -6px 16px color-mix(in srgb, var(--vscode-widget-shadow) 45%, transparent);
+}
+
+.composer-slash-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    width: 100%;
+    margin: 0;
+    padding: 6px 10px;
+    border: none;
+    background: transparent;
+    color: var(--vscode-foreground);
+    font: inherit;
+    font-size: 12px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.composer-slash-item:hover,
+.composer-slash-item:focus-visible {
+    background: var(--vscode-list-hoverBackground);
+    outline: none;
+}
+
+.composer-slash-name {
+    font-weight: 600;
+    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
+    font-size: 11px;
+}
+
+.composer-slash-desc {
+    font-size: 11px;
+    color: var(--vscode-descriptionForeground);
+    line-height: 1.3;
+}
+
 .composer-input {
     display: block;
     width: 100%;
@@ -70,7 +128,7 @@
     max-height: 200px;
     resize: none;
     margin: 0;
-    padding: 10px 12px;
+    padding: 0 12px;
     color: var(--vscode-foreground);
     background: transparent;
     border: none;

@@ -15,6 +15,7 @@ import {
 } from "react";
 import { ChatComposer } from "./components/ChatComposer";
 import { ChatHeader } from "./components/ChatHeader";
+import { PermissionDialog } from "./components/PermissionDialog";
 import { TraceList } from "./components/TraceList";
 import {
     chatReducer,
@@ -31,6 +32,9 @@ export type IbChatAppProps = {
     postCancel: () => void;
     postSetSessionAgent: (agentName: string) => void;
     postSetSessionModel: (modelId: string) => void;
+    postPermissionResponse: (
+        payload: { requestId: string; selectedOptionId: string } | { requestId: string; cancelled: true }
+    ) => void;
     extensionDispatchRef: RefObject<((message: ExtensionMessageAfterInit) => void) | null>;
 };
 
@@ -43,6 +47,7 @@ export function IbChatApp({
     postCancel,
     postSetSessionAgent,
     postSetSessionModel,
+    postPermissionResponse,
     extensionDispatchRef,
 }: IbChatAppProps): ReactElement {
     const [state, dispatch] = useReducer(chatReducer, init, createChatStateFromInit);
@@ -132,7 +137,7 @@ export function IbChatApp({
     );
 
     const submit = (): void => {
-        if (state.promptInFlight) {
+        if (state.promptInFlight || state.permissionPrompt !== null) {
             return;
         }
         const body = draft.trim();
@@ -152,19 +157,28 @@ export function IbChatApp({
         }
     };
 
+    const permission = state.permissionPrompt;
+
     return (
         <Fragment>
-            <ChatHeader agentVersionLabel={init.agentVersionLabel} workspaceText={workspaceText} />
+            {permission !== null ? (
+                <PermissionDialog
+                    toolTitle={permission.toolTitle}
+                    options={permission.options}
+                    onSelect={(optionId) => {
+                        postPermissionResponse({ requestId: permission.requestId, selectedOptionId: optionId });
+                        dispatch({ type: "clearPermissionPrompt" });
+                    }}
+                    onDismiss={() => {
+                        postPermissionResponse({ requestId: permission.requestId, cancelled: true });
+                        dispatch({ type: "clearPermissionPrompt" });
+                    }}
+                />
+            ) : null}
             <div className="ib-chat-error" role="alert" hidden={state.errorText === null}>
                 {state.errorText}
             </div>
-            <main
-                ref={traceRef}
-                className="agent-trace"
-                role="log"
-                aria-label="Conversation"
-                onScroll={onTraceScroll}
-            >
+            <main ref={traceRef} className="agent-trace" role="log" aria-label="Conversation" onScroll={onTraceScroll}>
                 <div ref={traceContentRef}>
                     <TraceList items={state.trace} expandAllToolOutputs={expandAllToolOutputs} />
                 </div>
@@ -174,6 +188,8 @@ export function IbChatApp({
                 acpAgentSelection={state.acpAgentSelection}
                 modelSelection={state.modelSelection}
                 promptInFlight={state.promptInFlight}
+                inputBlocked={state.permissionPrompt !== null}
+                slashCommands={state.slashCommands}
                 draft={draft}
                 onDraftChange={setDraft}
                 onPickSessionAgent={(agentName) => {
@@ -187,6 +203,7 @@ export function IbChatApp({
                 onSubmit={submit}
                 onCancel={postCancel}
                 onKeyDown={onKeyDown}
+                workspaceText={workspaceText}
             />
         </Fragment>
     );

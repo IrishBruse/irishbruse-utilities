@@ -1,6 +1,7 @@
 import type * as acp from "@agentclientprotocol/sdk";
 import { AcpAgentProcess } from "./acpAgentProcess";
 import type { AcpAgentConfig } from "./acpAgentConfig";
+import type { WebviewToExtensionMessage } from "../protocol/ibChatProtocol";
 import {
     sessionModelStateToIbChatSelection,
     type IbChatSessionModelSelection,
@@ -22,13 +23,53 @@ export class AcpSessionBridge {
     private prompting = false;
     private lastModelSelection: IbChatSessionModelSelection | null = null;
     private toolCallKindTracking = createToolCallKindTracking();
+    private nextPermissionRequestId = 0;
+    private permissionWaiters = new Map<string, (outcome: acp.RequestPermissionResponse) => void>();
 
     constructor(
         private readonly config: AcpAgentConfig,
         private readonly postToWebview: PostToWebview
     ) {
-        this.agentProcess = new AcpAgentProcess(config);
+        this.agentProcess = new AcpAgentProcess(config, (params) => this.queuePermissionRequest(params));
         this.agentProcess.onSessionUpdate((params) => this.handleSessionUpdate(params));
+    }
+
+    private async queuePermissionRequest(params: acp.RequestPermissionRequest): Promise<acp.RequestPermissionResponse> {
+        const requestId = `perm-${this.nextPermissionRequestId++}`;
+        return new Promise((resolve) => {
+            this.permissionWaiters.set(requestId, resolve);
+            this.postToWebview({
+                type: "permissionRequest",
+                requestId,
+                toolTitle: params.toolCall.title ?? "Tool",
+                options: params.options.map((o) => ({ optionId: o.optionId, name: o.name })),
+            });
+        });
+    }
+
+    /**
+     * Completes a pending `session/request_permission` from the webview dialog.
+     */
+    handlePermissionResponse(message: Extract<WebviewToExtensionMessage, { type: "permissionResponse" }>): void {
+        const resolve = this.permissionWaiters.get(message.requestId);
+        if (resolve === undefined) {
+            return;
+        }
+        this.permissionWaiters.delete(message.requestId);
+        if ("cancelled" in message && message.cancelled === true) {
+            resolve({ outcome: { outcome: "cancelled" } });
+            return;
+        }
+        if ("selectedOptionId" in message) {
+            resolve({ outcome: { outcome: "selected", optionId: message.selectedOptionId } });
+        }
+    }
+
+    private cancelPendingPermissions(): void {
+        for (const resolve of this.permissionWaiters.values()) {
+            resolve({ outcome: { outcome: "cancelled" } });
+        }
+        this.permissionWaiters.clear();
     }
 
     /**
@@ -90,6 +131,7 @@ export class AcpSessionBridge {
 
     /** Cancels the current prompt turn, if one is in progress. */
     async cancel(): Promise<void> {
+        this.cancelPendingPermissions();
         if (!this.prompting || !this.acpSessionId) {
             return;
         }
@@ -103,6 +145,7 @@ export class AcpSessionBridge {
 
     /** Kills the agent process and releases resources. */
     dispose(): void {
+        this.cancelPendingPermissions();
         this.agentProcess.dispose();
         this.acpSessionId = null;
     }

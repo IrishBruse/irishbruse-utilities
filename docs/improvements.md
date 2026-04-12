@@ -1,5 +1,3 @@
-- [ ] Add a proper git style red/green diff
-- [ ] Implement session/request_permission popup above the chat ins a small dialog specifically in both standalone and vscode it should be a custom ui
-- [ ] Terminal doesnt display the command being run
-- [ ] `/command` support with provided command from `available_commands_update`
-- [ ] For the standalone version it should init the session when the ui loads to get all the metadata needed it only does this after the first prompt
+- [ ] I want up and down arrow history for previous sent prompts
+- [ ] Add some animation to the thinking... reading... etc
+- [ ] Add on the very bottom left of the text dialog inline with the send button but that on the right add `/ commands · @ files`

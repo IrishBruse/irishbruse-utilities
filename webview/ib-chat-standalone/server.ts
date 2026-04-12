@@ -256,6 +256,9 @@ wss.on("connection", (ws: WebSocket) => {
     let toolKindTracking = createToolCallKindTracking();
     let selectedAgentName = agentConfigs[0]!.name;
     let agentChild: ChildProcess | null = null;
+    let nextPermissionRequestId = 0;
+    const permissionWaiters = new Map<string, (outcome: acp.RequestPermissionResponse) => void>();
+    let connectInFlight: Promise<void> | null = null;
 
     function send(msg: ExtensionToWebviewMessage): void {
         if (ws.readyState === WebSocket.OPEN) {
@@ -275,9 +278,13 @@ wss.on("connection", (ws: WebSocket) => {
         }
         acpConnection = null;
         acpSessionId = null;
+        for (const resolve of permissionWaiters.values()) {
+            resolve({ outcome: { outcome: "cancelled" } });
+        }
+        permissionWaiters.clear();
     }
 
-    async function connectAgent(): Promise<void> {
+    async function runConnectAgent(): Promise<void> {
         disposeAgentConnection();
         const cfg = activeAgentConfig();
         const child = spawn(cfg.command, cfg.args, {
@@ -305,11 +312,16 @@ wss.on("connection", (ws: WebSocket) => {
 
         const client: acp.Client = {
             requestPermission: async (params) => {
-                const first = params.options[0];
-                if (!first) {
-                    return { outcome: { outcome: "cancelled" } };
-                }
-                return { outcome: { outcome: "selected", optionId: first.optionId } };
+                const requestId = `perm-${nextPermissionRequestId++}`;
+                return new Promise((resolve) => {
+                    permissionWaiters.set(requestId, resolve);
+                    send({
+                        type: "permissionRequest",
+                        requestId,
+                        toolTitle: params.toolCall.title ?? "Tool",
+                        options: params.options.map((o) => ({ optionId: o.optionId, name: o.name })),
+                    });
+                });
             },
             sessionUpdate: async (params) => {
                 const messages = sessionUpdateToWebviewMessages(params.update, toolKindTracking);
@@ -359,6 +371,23 @@ wss.on("connection", (ws: WebSocket) => {
         }
     }
 
+    async function connectAgent(): Promise<void> {
+        if (acpConnection !== null && acpSessionId !== null) {
+            return;
+        }
+        if (connectInFlight !== null) {
+            await connectInFlight;
+            return;
+        }
+        const started = runConnectAgent();
+        connectInFlight = started;
+        try {
+            await started;
+        } finally {
+            connectInFlight = null;
+        }
+    }
+
     const handleMessage = async (raw: string): Promise<void> => {
         let rawObj: unknown;
         try {
@@ -384,6 +413,24 @@ wss.on("connection", (ws: WebSocket) => {
                 availableAcpAgents: agentConfigs.map((c) => c.name),
                 sessionModels: seed ?? undefined,
             });
+            void connectAgent().catch((err: unknown) => {
+                const message = err instanceof Error ? err.message : String(err);
+                send({ type: "error", message: `Failed to connect to agent: ${message}` });
+            });
+            return;
+        }
+
+        if (parsed.type === "permissionResponse") {
+            const resolve = permissionWaiters.get(parsed.requestId);
+            if (resolve === undefined) {
+                return;
+            }
+            permissionWaiters.delete(parsed.requestId);
+            if ("cancelled" in parsed && parsed.cancelled === true) {
+                resolve({ outcome: { outcome: "cancelled" } });
+            } else if ("selectedOptionId" in parsed) {
+                resolve({ outcome: { outcome: "selected", optionId: parsed.selectedOptionId } });
+            }
             return;
         }
 

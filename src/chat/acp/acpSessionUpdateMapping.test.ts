@@ -84,7 +84,7 @@ describe("sessionUpdateToWebviewMessages", () => {
         ]);
     });
 
-    it("maps tool_call_update diff content to updateToolCall with formatted text", () => {
+    it("maps tool_call_update diff content to updateToolCall with summary text and diff rows", () => {
         const messages = sessionUpdateToWebviewMessages({
             sessionUpdate: "tool_call_update",
             toolCallId: "e1",
@@ -103,8 +103,11 @@ describe("sessionUpdateToWebviewMessages", () => {
                 type: "updateToolCall",
                 toolCallId: "e1",
                 status: "completed",
-                content:
-                    "/proj/README.md\n1 line(s) before -> 1 line(s) after\n\n--- previous ---\na\n\n--- proposed ---\nb",
+                content: "/proj/README.md\n1 line(s) before -> 1 line(s) after",
+                diffRows: [
+                    { kind: "removed", text: "a" },
+                    { kind: "added", text: "b" },
+                ],
                 subtitle: "/proj/README.md",
             },
         ]);
@@ -157,6 +160,43 @@ describe("sessionUpdateToWebviewMessages", () => {
                 toolCallId: "x1",
                 status: "completed",
                 content: "exit 0\nok",
+            },
+        ]);
+    });
+
+    it("maps tool_call_update terminal piece with command from rawInput", () => {
+        const messages = sessionUpdateToWebviewMessages({
+            sessionUpdate: "tool_call_update",
+            toolCallId: "t1",
+            status: "in_progress",
+            rawInput: { command: "npm run build" },
+            content: [{ type: "terminal", terminalId: "term-1" }],
+        });
+        expect(messages).toEqual([
+            {
+                type: "updateToolCall",
+                toolCallId: "t1",
+                status: "in_progress",
+                content: "$ npm run build\nTerminal: term-1",
+            },
+        ]);
+    });
+
+    it("maps available_commands_update to slashCommands", () => {
+        const messages = sessionUpdateToWebviewMessages({
+            sessionUpdate: "available_commands_update",
+            availableCommands: [
+                { name: "plan", description: "Plan work", input: { hint: "topic" } },
+                { name: "test", description: "Run tests" },
+            ],
+        } as never);
+        expect(messages).toEqual([
+            {
+                type: "slashCommands",
+                commands: [
+                    { name: "plan", description: "Plan work", inputHint: "topic" },
+                    { name: "test", description: "Run tests" },
+                ],
             },
         ]);
     });

@@ -1,6 +1,8 @@
 import type {
     ExtensionToWebviewMessage,
+    IbChatSlashCommand,
     PlanEntry,
+    ToolCallDiffRow,
     ToolCallStatus,
 } from "../../../src/chat/protocol/ibChatProtocol";
 import type { IbChatSessionModelSelection } from "../../../src/chat/acp/agentSession/ibChatSessionModels";
@@ -17,6 +19,8 @@ export type TraceToolItem = {
     subtitle: string | undefined;
     status: ToolCallStatus;
     content: string | undefined;
+    /** Structured diff when the agent sent `diff` content (preferred over plain `content`). */
+    diffRows: ToolCallDiffRow[] | undefined;
     detailVisible: boolean;
 };
 
@@ -31,6 +35,12 @@ export type AcpAgentSelectionState = {
     availableNames: string[];
 };
 
+export type PermissionPromptState = {
+    requestId: string;
+    toolTitle: string;
+    options: { optionId: string; name: string }[];
+};
+
 export type ChatState = {
     trace: TraceItem[];
     openStreamIndex: number | null;
@@ -39,13 +49,16 @@ export type ChatState = {
     errorText: string | null;
     modelSelection: IbChatSessionModelSelection | null;
     acpAgentSelection: AcpAgentSelectionState | null;
+    slashCommands: IbChatSlashCommand[];
+    permissionPrompt: PermissionPromptState | null;
 };
 
 export type ChatAction =
     | ExtensionMessageAfterInit
     | { type: "submit"; body: string }
     | { type: "pickSessionModel"; modelId: string }
-    | { type: "pickSessionAgent"; agentName: string };
+    | { type: "pickSessionAgent"; agentName: string }
+    | { type: "clearPermissionPrompt" };
 
 export function createInitialChatState(): ChatState {
     return {
@@ -56,6 +69,8 @@ export function createInitialChatState(): ChatState {
         errorText: null,
         modelSelection: null,
         acpAgentSelection: null,
+        slashCommands: [],
+        permissionPrompt: null,
     };
 }
 
@@ -118,6 +133,7 @@ function appendToolCall(
         subtitle,
         status: status ?? "pending",
         content: undefined,
+        diffRows: undefined,
         detailVisible: false,
     };
     const trace = [...state.trace, newItem];
@@ -136,7 +152,8 @@ function updateToolCall(
     toolCallId: string,
     status: ToolCallStatus,
     content: string | undefined,
-    subtitle: string | undefined
+    subtitle: string | undefined,
+    diffRows: ToolCallDiffRow[] | undefined
 ): ChatState {
     const idx = state.toolIndexById.get(toolCallId);
     if (idx !== undefined) {
@@ -145,7 +162,11 @@ function updateToolCall(
             return state;
         }
         const mergedContent = content !== undefined ? content : item.content;
-        const detailVisible = mergedContent !== undefined && mergedContent.trim().length > 0;
+        const mergedDiffRows =
+            diffRows !== undefined && diffRows.length > 0 ? diffRows : item.diffRows;
+        const detailVisible =
+            (mergedContent !== undefined && mergedContent.trim().length > 0) ||
+            (mergedDiffRows !== undefined && mergedDiffRows.length > 0);
         const mergedSubtitle =
             subtitle !== undefined && subtitle.trim().length > 0 ? subtitle.trim() : item.subtitle;
         const trace = state.trace.slice();
@@ -153,13 +174,17 @@ function updateToolCall(
             ...item,
             status,
             content: mergedContent,
+            diffRows: mergedDiffRows,
             detailVisible,
             subtitle: mergedSubtitle,
         };
         return { ...state, trace };
     }
     const mergedContent = content;
-    const detailVisible = mergedContent !== undefined && mergedContent.trim().length > 0;
+    const mergedDiffRows = diffRows !== undefined && diffRows.length > 0 ? diffRows : undefined;
+    const detailVisible =
+        (mergedContent !== undefined && mergedContent.trim().length > 0) ||
+        (mergedDiffRows !== undefined && mergedDiffRows.length > 0);
     const newItem: TraceToolItem = {
         type: "tool",
         toolCallId,
@@ -168,6 +193,7 @@ function updateToolCall(
         subtitle: subtitle !== undefined && subtitle.trim().length > 0 ? subtitle.trim() : undefined,
         status,
         content: mergedContent,
+        diffRows: mergedDiffRows,
         detailVisible,
     };
     const trace = [...state.trace, newItem];
@@ -219,6 +245,9 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             },
         };
     }
+    if (action.type === "clearPermissionPrompt") {
+        return { ...state, permissionPrompt: null };
+    }
     switch (action.type) {
         case "sessionModels":
             return {
@@ -248,7 +277,25 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 action.subtitle
             );
         case "updateToolCall":
-            return updateToolCall(state, action.toolCallId, action.status, action.content, action.subtitle);
+            return updateToolCall(
+                state,
+                action.toolCallId,
+                action.status,
+                action.content,
+                action.subtitle,
+                action.diffRows
+            );
+        case "slashCommands":
+            return { ...state, slashCommands: action.commands };
+        case "permissionRequest":
+            return {
+                ...state,
+                permissionPrompt: {
+                    requestId: action.requestId,
+                    toolTitle: action.toolTitle,
+                    options: action.options,
+                },
+            };
         case "appendPlan": {
             const trace = [...state.trace, { type: "plan" as const, entries: action.entries }];
             return {

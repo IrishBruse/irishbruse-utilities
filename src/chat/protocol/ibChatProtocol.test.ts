@@ -49,5 +49,37 @@ describe("ibChatProtocol", () => {
             });
             expect(tryParseWebviewMessage({ type: "setSessionModel", modelId: "" })).toBeNull();
         });
+
+        it("returns permissionResponse with selectedOptionId", () => {
+            expect(
+                tryParseWebviewMessage({
+                    type: "permissionResponse",
+                    requestId: "perm-0",
+                    selectedOptionId: "allow",
+                })
+            ).toEqual({
+                type: "permissionResponse",
+                requestId: "perm-0",
+                selectedOptionId: "allow",
+            });
+        });
+
+        it("returns permissionResponse with cancelled", () => {
+            expect(
+                tryParseWebviewMessage({
+                    type: "permissionResponse",
+                    requestId: "perm-1",
+                    cancelled: true,
+                })
+            ).toEqual({
+                type: "permissionResponse",
+                requestId: "perm-1",
+                cancelled: true,
+            });
+        });
+
+        it("returns null for permissionResponse without selection or cancel", () => {
+            expect(tryParseWebviewMessage({ type: "permissionResponse", requestId: "x" })).toBeNull();
+        });
     });
 });

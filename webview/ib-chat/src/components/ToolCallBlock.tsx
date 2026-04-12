@@ -51,11 +51,15 @@ export function ToolCallBlock({
     expandAllToolOutputs: boolean;
 }): ReactElement {
     const kindHidden = item.kind === undefined || item.kind.length === 0;
-    const showOutput = item.detailVisible && item.content !== undefined && item.content.trim().length > 0;
+    const hasDiff = item.diffRows !== undefined && item.diffRows.length > 0;
+    const showOutput =
+        item.detailVisible &&
+        (hasDiff || (item.content !== undefined && item.content.trim().length > 0));
     const subtitle = item.subtitle !== undefined && item.subtitle.trim().length > 0 ? item.subtitle.trim() : null;
     const contentText = item.content ?? "";
     const contentLines = contentText.split(/\r?\n/);
     const outputCollapsible =
+        !hasDiff &&
         showOutput &&
         toolKindUsesCollapsiblePreview(item.kind) &&
         contentLines.length > collapsiblePreviewLineCount;
@@ -78,7 +82,27 @@ export function ToolCallBlock({
                 {kindHidden ? null : <span className="tool-call-terminal-kind">[{item.kind}]</span>}
             </div>
             {subtitle !== null ? <div className="tool-call-terminal-subtitle">{subtitle}</div> : null}
-            {showOutput ? (
+            {showOutput && hasDiff ? (
+                <div className="tool-call-diff" role="group" aria-label="File diff">
+                    {item.diffRows!.map((row, rowIndex) => (
+                        <div
+                            key={rowIndex}
+                            className={
+                                row.kind === "removed"
+                                    ? "tool-call-diff-line tool-call-diff-line--removed"
+                                    : row.kind === "added"
+                                      ? "tool-call-diff-line tool-call-diff-line--added"
+                                      : "tool-call-diff-line tool-call-diff-line--context"
+                            }
+                        >
+                            <span className="tool-call-diff-prefix" aria-hidden="true">
+                                {row.kind === "removed" ? "-" : row.kind === "added" ? "+" : " "}
+                            </span>
+                            <span className="tool-call-diff-text">{row.text}</span>
+                        </div>
+                    ))}
+                </div>
+            ) : showOutput ? (
                 outputCollapsible ? (
                     <div
                         className="tool-call-collapsible-output"

@@ -1,5 +1,6 @@
 import type * as acp from "@agentclientprotocol/sdk";
-import type { ExtensionToWebviewMessage } from "../protocol/ibChatProtocol";
+import type { ExtensionToWebviewMessage, ToolCallDiffRow } from "../protocol/ibChatProtocol";
+import { computeToolCallDiffRows } from "./toolCallDiffLines";
 
 const maxToolDisplayChars = 120_000;
 
@@ -32,26 +33,102 @@ function formatContentBlockForTool(block: acp.ContentBlock): string | undefined 
     return `[${block.type}]`;
 }
 
-function formatToolCallContentPiece(piece: acp.ToolCallContent): string | undefined {
+function formatDiffPieceAsFullText(piece: acp.ToolCallContent & { type: "diff" }): string {
+    const pathLabel = piece.path.trim();
+    const oldRaw = piece.oldText;
+    const newText = piece.newText;
+    const oldText = oldRaw ?? "";
+    const isNewFile = oldRaw === null || oldRaw === undefined;
+    const oldLineCount = lineCountForToolSummary(oldText);
+    const newLineCount = lineCountForToolSummary(newText);
+    const summary = isNewFile
+        ? `new file (${newLineCount} line(s))`
+        : `${oldLineCount} line(s) before -> ${newLineCount} line(s) after`;
+    const oldDisplay = oldText.replace(/\r\n/g, "\n").trimEnd();
+    const newDisplay = newText.replace(/\r\n/g, "\n").trimEnd();
+    const body = `${pathLabel}\n${summary}\n\n--- previous ---\n${oldDisplay}\n\n--- proposed ---\n${newDisplay}`;
+    return clipToolDisplayText(body);
+}
+
+function formatDiffSummaryOnly(piece: acp.ToolCallContent & { type: "diff" }): string {
+    const pathLabel = piece.path.trim();
+    const oldRaw = piece.oldText;
+    const newText = piece.newText;
+    const oldText = oldRaw ?? "";
+    const isNewFile = oldRaw === null || oldRaw === undefined;
+    const oldLineCount = lineCountForToolSummary(oldText);
+    const newLineCount = lineCountForToolSummary(newText);
+    const summary = isNewFile
+        ? `new file (${newLineCount} line(s))`
+        : `${oldLineCount} line(s) before -> ${newLineCount} line(s) after`;
+    return `${pathLabel}\n${summary}`;
+}
+
+function extractShellCommandLine(raw: unknown): string | undefined {
+    if (raw === undefined || raw === null) {
+        return undefined;
+    }
+    if (typeof raw === "string") {
+        const t = raw.trim();
+        return t.length > 0 ? t : undefined;
+    }
+    if (typeof raw !== "object" || Array.isArray(raw)) {
+        return undefined;
+    }
+    const record = raw as Record<string, unknown>;
+    const directKeys = [
+        "command",
+        "cmd",
+        "shellCommand",
+        "shell_command",
+        "bashCommand",
+        "script",
+        "line",
+    ] as const;
+    for (const key of directKeys) {
+        const v = record[key];
+        if (typeof v === "string" && v.trim().length > 0) {
+            return v.trim();
+        }
+    }
+    if (Array.isArray(record.argv) && record.argv.length > 0) {
+        const parts = record.argv.filter((x): x is string => typeof x === "string").map((s) => s.trim());
+        if (parts.length > 0) {
+            return parts.join(" ");
+        }
+    }
+    if (typeof record.program === "string" && record.program.trim().length > 0) {
+        const prog = record.program.trim();
+        const args = Array.isArray(record.args) ? record.args.filter((x): x is string => typeof x === "string") : [];
+        return args.length > 0 ? `${prog} ${args.join(" ")}` : prog;
+    }
+    return undefined;
+}
+
+function commandLineHintForToolUpdate(update: acp.ToolCallUpdate): string | undefined {
+    const fromInput = extractShellCommandLine(update.rawInput);
+    if (fromInput !== undefined) {
+        return fromInput;
+    }
+    return extractShellCommandLine(update.rawOutput);
+}
+
+function formatToolCallContentPiece(piece: acp.ToolCallContent, update: acp.ToolCallUpdate): string | undefined {
     if (piece.type === "diff") {
-        const pathLabel = piece.path.trim();
-        const oldRaw = piece.oldText;
-        const newText = piece.newText;
-        const oldText = oldRaw ?? "";
-        const isNewFile = oldRaw === null || oldRaw === undefined;
-        const oldLineCount = lineCountForToolSummary(oldText);
-        const newLineCount = lineCountForToolSummary(newText);
-        const summary = isNewFile
-            ? `new file (${newLineCount} line(s))`
-            : `${oldLineCount} line(s) before -> ${newLineCount} line(s) after`;
-        const oldDisplay = oldText.replace(/\r\n/g, "\n").trimEnd();
-        const newDisplay = newText.replace(/\r\n/g, "\n").trimEnd();
-        const body = `${pathLabel}\n${summary}\n\n--- previous ---\n${oldDisplay}\n\n--- proposed ---\n${newDisplay}`;
-        return clipToolDisplayText(body);
+        return formatDiffPieceAsFullText(piece);
     }
     if (piece.type === "terminal") {
         const id = piece.terminalId.trim();
-        return id.length > 0 ? `[Terminal ${id}]` : "[Terminal]";
+        const cmd = commandLineHintForToolUpdate(update);
+        const lines: string[] = [];
+        if (cmd !== undefined && cmd.length > 0) {
+            lines.push(`$ ${cmd}`);
+        }
+        if (id.length > 0) {
+            lines.push(`Terminal: ${id}`);
+        }
+        const joined = lines.filter((l) => l.length > 0).join("\n");
+        return joined.length > 0 ? joined : id.length > 0 ? `[Terminal ${id}]` : "[Terminal]";
     }
     if (piece.type === "content") {
         return formatContentBlockForTool(piece.content);
@@ -119,20 +196,44 @@ function formatRawToolOutput(raw: unknown): string | undefined {
     return clipToolDisplayText(String(raw));
 }
 
-function toolCallUpdateToDisplayText(update: acp.ToolCallUpdate): string | undefined {
+function toolCallUpdateToDisplayParts(update: acp.ToolCallUpdate): {
+    contentText: string | undefined;
+    diffRows: ToolCallDiffRow[] | undefined;
+} {
+    let diffRows: ToolCallDiffRow[] | undefined;
     const segments: string[] = [];
     if (update.content !== undefined && update.content !== null && update.content.length > 0) {
         for (const piece of update.content) {
-            const segment = formatToolCallContentPiece(piece);
+            if (piece.type === "diff") {
+                if (diffRows === undefined) {
+                    const oldText = piece.oldText ?? "";
+                    const newText = piece.newText;
+                    diffRows = computeToolCallDiffRows(oldText, newText);
+                    segments.push(formatDiffSummaryOnly(piece));
+                } else {
+                    const segment = formatDiffPieceAsFullText(piece);
+                    if (segment.trim().length > 0) {
+                        segments.push(segment.trim());
+                    }
+                }
+                continue;
+            }
+            const segment = formatToolCallContentPiece(piece, update);
             if (segment !== undefined && segment.trim().length > 0) {
                 segments.push(segment.trim());
             }
         }
     }
     if (segments.length > 0) {
-        return clipToolDisplayText(segments.join("\n\n"));
+        return {
+            contentText: clipToolDisplayText(segments.join("\n\n")),
+            diffRows,
+        };
     }
-    return formatRawToolOutput(update.rawOutput);
+    if (diffRows !== undefined && diffRows.length > 0) {
+        return { contentText: undefined, diffRows };
+    }
+    return { contentText: formatRawToolOutput(update.rawOutput), diffRows: undefined };
 }
 
 function firstToolCallTextPreview(call: acp.ToolCall): string | undefined {
@@ -342,7 +443,7 @@ export function sessionUpdateToWebviewMessages(
             ];
         }
         case "tool_call_update": {
-            const contentText = toolCallUpdateToDisplayText(update);
+            const parts = toolCallUpdateToDisplayParts(update);
             const pendingKind = toolKindTracking?.kindByToolId.get(update.toolCallId);
             const subtitleHint = toolCallUpdateSubtitleHint(update, { pendingKind });
             return [
@@ -350,10 +451,41 @@ export function sessionUpdateToWebviewMessages(
                     type: "updateToolCall",
                     toolCallId: update.toolCallId,
                     status: update.status ?? "completed",
-                    content: contentText,
+                    ...(parts.contentText !== undefined ? { content: parts.contentText } : {}),
+                    ...(parts.diffRows !== undefined && parts.diffRows.length > 0 ? { diffRows: parts.diffRows } : {}),
                     ...(subtitleHint !== undefined ? { subtitle: subtitleHint } : {}),
                 },
             ];
+        }
+        case "available_commands_update": {
+            const raw = update as unknown as { availableCommands?: unknown };
+            const list = raw.availableCommands;
+            if (!Array.isArray(list)) {
+                return [];
+            }
+            const commands = list
+                .map((entry) => {
+                    if (entry === null || typeof entry !== "object") {
+                        return null;
+                    }
+                    const o = entry as Record<string, unknown>;
+                    const name = typeof o.name === "string" ? o.name.trim() : "";
+                    const description = typeof o.description === "string" ? o.description.trim() : "";
+                    if (name.length === 0) {
+                        return null;
+                    }
+                    let inputHint: string | undefined;
+                    const input = o.input;
+                    if (input !== null && typeof input === "object") {
+                        const hint = (input as Record<string, unknown>).hint;
+                        if (typeof hint === "string" && hint.trim().length > 0) {
+                            inputHint = hint.trim();
+                        }
+                    }
+                    return { name, description, ...(inputHint !== undefined ? { inputHint } : {}) };
+                })
+                .filter((x): x is NonNullable<typeof x> => x !== null);
+            return [{ type: "slashCommands", commands }];
         }
         case "plan":
             return [

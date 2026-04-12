@@ -74,6 +74,9 @@ export function openOrRevealIbChatEditor(
         if (parsed.type === "setSessionAgent") {
             handleSetSessionAgent(sessionId, parsed.agentName, post);
         }
+        if (parsed.type === "permissionResponse") {
+            bridgesBySessionId.get(sessionId)?.handlePermissionResponse(parsed);
+        }
     });
     panel.onDidDispose(() => {
         panelsBySessionId.delete(sessionId);

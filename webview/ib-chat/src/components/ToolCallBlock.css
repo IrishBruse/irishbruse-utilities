@@ -4,7 +4,7 @@
     font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
     font-size: 11px;
     line-height: 1.35;
-    color: var(--vscode-terminal-ansiWhite, var(--vscode-editor-foreground));
+    color: var(--vscode-terminal-foreground, var(--vscode-editor-foreground, var(--vscode-foreground)));
     background-color: var(
         --vscode-terminal-background,
         color-mix(in srgb, var(--vscode-editor-background) 90%, var(--vscode-widget-border) 10%)
@@ -63,18 +63,17 @@
     flex: 1 1 auto;
     min-width: 0;
     word-break: break-word;
-    color: var(--vscode-terminal-ansiBrightWhite, var(--vscode-editor-foreground));
+    color: var(--vscode-terminal-foreground, var(--vscode-editor-foreground, var(--vscode-foreground)));
 }
 
 .tool-call-terminal[data-status="completed"] .tool-call-terminal-title {
-    color: var(--vscode-terminal-ansiWhite, var(--vscode-descriptionForeground));
+    color: color-mix(in srgb, var(--vscode-terminal-foreground, var(--vscode-foreground)) 82%, var(--vscode-descriptionForeground));
 }
 
 .tool-call-terminal-kind {
     flex-shrink: 0;
     font-size: 10px;
-    color: var(--vscode-terminal-ansiBrightBlack, var(--vscode-descriptionForeground));
-    opacity: 0.9;
+    color: var(--vscode-list-deemphasizedForeground, var(--vscode-descriptionForeground));
 }
 
 .tool-call-terminal-subtitle {
@@ -84,8 +83,7 @@
     line-height: 1.35;
     white-space: pre-wrap;
     word-break: break-word;
-    color: var(--vscode-terminal-ansiBrightBlack, var(--vscode-descriptionForeground));
-    opacity: 0.92;
+    color: var(--vscode-descriptionForeground);
 }
 
 .tool-call-collapsible-output {
@@ -99,26 +97,23 @@
 
 .tool-call-collapsible-hint {
     margin: 0;
-    padding: 0 0 1px 8px;
-    border-left: 1px solid color-mix(in srgb, var(--vscode-descriptionForeground) 22%, transparent);
+    padding: 0 0 1px 0;
     font-family: inherit;
     font-size: 10px;
     font-style: italic;
     line-height: 1.35;
-    color: var(--vscode-descriptionForeground, var(--vscode-terminal-ansiBrightBlack));
-    opacity: 0.95;
+    color: var(--vscode-descriptionForeground);
 }
 
 .tool-call-terminal-pre {
     margin: 2px 0 0;
-    padding: 2px 0 1px 8px;
-    border-left: 1px solid color-mix(in srgb, var(--vscode-descriptionForeground) 22%, transparent);
+    padding: 2px 0 1px 0;
     font-family: inherit;
     font-size: 11px;
     line-height: 1.35;
     white-space: pre-wrap;
     word-break: break-word;
-    color: var(--vscode-terminal-ansiBrightBlack, var(--vscode-descriptionForeground));
+    color: var(--vscode-editor-foreground, var(--vscode-foreground));
 }
 
 .tool-call-terminal-pre--collapsible {
@@ -170,6 +165,5 @@
 }
 
 .tool-call-diff-line--context {
-    color: var(--vscode-descriptionForeground);
-    opacity: 0.95;
+    color: color-mix(in srgb, var(--vscode-editor-foreground, var(--vscode-foreground)) 58%, var(--vscode-descriptionForeground));
 }

@@ -20,6 +20,7 @@ export function mountChatView(
     postCancel: () => void,
     postSetSessionAgent: (agentName: string) => void,
     postSetSessionModel: (modelId: string) => void,
+    postSavePromptHistory: (entries: string[]) => void,
     postPermissionResponse: (
         payload:
             | { requestId: string; selectedOptionId: string }
@@ -39,6 +40,7 @@ export function mountChatView(
             postCancel={postCancel}
             postSetSessionAgent={postSetSessionAgent}
             postSetSessionModel={postSetSessionModel}
+            postSavePromptHistory={postSavePromptHistory}
             postPermissionResponse={postPermissionResponse}
             extensionDispatchRef={extensionDispatchRef}
         />

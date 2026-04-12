@@ -81,5 +81,15 @@ describe("ibChatProtocol", () => {
         it("returns null for permissionResponse without selection or cancel", () => {
             expect(tryParseWebviewMessage({ type: "permissionResponse", requestId: "x" })).toBeNull();
         });
+
+        it("returns savePromptHistory with string entries", () => {
+            expect(
+                tryParseWebviewMessage({ type: "savePromptHistory", entries: ["a", "b"] })
+            ).toEqual({ type: "savePromptHistory", entries: ["a", "b"] });
+        });
+
+        it("returns null for savePromptHistory when entries is not an array", () => {
+            expect(tryParseWebviewMessage({ type: "savePromptHistory", entries: "x" })).toBeNull();
+        });
     });
 });

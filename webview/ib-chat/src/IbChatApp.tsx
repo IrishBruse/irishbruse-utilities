@@ -32,6 +32,7 @@ export type IbChatAppProps = {
     postCancel: () => void;
     postSetSessionAgent: (agentName: string) => void;
     postSetSessionModel: (modelId: string) => void;
+    postSavePromptHistory: (entries: string[]) => void;
     postPermissionResponse: (
         payload: { requestId: string; selectedOptionId: string } | { requestId: string; cancelled: true }
     ) => void;
@@ -47,11 +48,14 @@ export function IbChatApp({
     postCancel,
     postSetSessionAgent,
     postSetSessionModel,
+    postSavePromptHistory,
     postPermissionResponse,
     extensionDispatchRef,
 }: IbChatAppProps): ReactElement {
     const [state, dispatch] = useReducer(chatReducer, init, createChatStateFromInit);
     const [draft, setDraft] = useState("");
+    const [promptHistory, setPromptHistory] = useState<string[]>(init.promptHistory ?? []);
+    const [promptHistoryBrowse, setPromptHistoryBrowse] = useState<{ pointer: number; restore: string } | null>(null);
     const [expandAllToolOutputs, setExpandAllToolOutputs] = useState(false);
     const traceRef = useRef<HTMLElement | null>(null);
     const traceContentRef = useRef<HTMLDivElement | null>(null);
@@ -136,6 +140,11 @@ export function IbChatApp({
         [state.promptInFlight, state.trace, state.openStreamIndex]
     );
 
+    const onDraftChange = useCallback((value: string): void => {
+        setDraft(value);
+        setPromptHistoryBrowse((browse) => (browse !== null ? null : browse));
+    }, []);
+
     const submit = (): void => {
         if (state.promptInFlight || state.permissionPrompt !== null) {
             return;
@@ -145,12 +154,56 @@ export function IbChatApp({
             return;
         }
         setDraft("");
+        setPromptHistoryBrowse(null);
+        setPromptHistory((prev) => {
+            const next =
+                prev.length > 0 && prev[prev.length - 1] === body ? prev : [...prev.slice(-49), body];
+            postSavePromptHistory(next);
+            return next;
+        });
         stickToBottomRef.current = true;
         dispatch({ type: "submit", body });
         postSend(body);
     };
 
-    const onKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
+    const onComposerKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>): void => {
+        const target = event.currentTarget;
+        const start = target.selectionStart ?? 0;
+        const end = target.selectionEnd ?? 0;
+        const mod = event.shiftKey || event.ctrlKey || event.metaKey || event.altKey;
+
+        if (event.key === "ArrowUp" && !mod) {
+            if (promptHistoryBrowse !== null) {
+                event.preventDefault();
+                if (promptHistoryBrowse.pointer > 0) {
+                    const nextPointer = promptHistoryBrowse.pointer - 1;
+                    setPromptHistoryBrowse({ pointer: nextPointer, restore: promptHistoryBrowse.restore });
+                    setDraft(promptHistory[nextPointer] ?? "");
+                }
+                return;
+            }
+            if (promptHistory.length > 0 && textareaAtFirstLineFirstColumn(start, end)) {
+                event.preventDefault();
+                const lastIdx = promptHistory.length - 1;
+                setPromptHistoryBrowse({ pointer: lastIdx, restore: draft });
+                setDraft(promptHistory[lastIdx] ?? "");
+                return;
+            }
+        }
+
+        if (event.key === "ArrowDown" && !mod && promptHistoryBrowse !== null) {
+            event.preventDefault();
+            if (promptHistoryBrowse.pointer < promptHistory.length - 1) {
+                const nextPointer = promptHistoryBrowse.pointer + 1;
+                setPromptHistoryBrowse({ pointer: nextPointer, restore: promptHistoryBrowse.restore });
+                setDraft(promptHistory[nextPointer] ?? "");
+            } else {
+                setPromptHistoryBrowse(null);
+                setDraft(promptHistoryBrowse.restore);
+            }
+            return;
+        }
+
         if (event.key === "Enter" && !event.shiftKey) {
             event.preventDefault();
             submit();
@@ -191,7 +244,7 @@ export function IbChatApp({
                 inputBlocked={state.permissionPrompt !== null}
                 slashCommands={state.slashCommands}
                 draft={draft}
-                onDraftChange={setDraft}
+                onDraftChange={onDraftChange}
                 onPickSessionAgent={(agentName) => {
                     dispatch({ type: "pickSessionAgent", agentName });
                     postSetSessionAgent(agentName);
@@ -202,11 +255,21 @@ export function IbChatApp({
                 }}
                 onSubmit={submit}
                 onCancel={postCancel}
-                onKeyDown={onKeyDown}
+                onKeyDown={onComposerKeyDown}
                 workspaceText={workspaceText}
             />
         </Fragment>
     );
+}
+
+/**
+ * Whether the caret is at the start of the first line (for recalling prompt history with ArrowUp).
+ */
+function textareaAtFirstLineFirstColumn(selectionStart: number, selectionEnd: number): boolean {
+    if (selectionStart !== selectionEnd) {
+        return false;
+    }
+    return selectionStart === 0;
 }
 
 /**

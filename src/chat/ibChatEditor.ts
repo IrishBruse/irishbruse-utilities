@@ -4,6 +4,7 @@ import { tryParseWebviewMessage } from "./protocol/ibChatProtocol";
 import type { ExtensionToWebviewMessage } from "./protocol/ibChatProtocol";
 import { AcpSessionBridge } from "./acp/acpSessionBridge";
 import { getAcpAgentConfigByName, getAcpAgentConfigs, type AcpAgentConfig } from "./acp/acpAgentConfig";
+import { getIbChatPromptHistoryEntries, setIbChatPromptHistoryEntries } from "./ibChatPromptHistoryMemento";
 import { setIbChatSessionAgentName } from "./ibChatSessionsStore";
 
 const editorViewType = "ibUtilitiesIbChatEditor";
@@ -52,6 +53,7 @@ export function openOrRevealIbChatEditor(
             const folder = workspace.workspaceFolders?.[0];
             const workspaceLabel = folder !== undefined ? folder.uri.fsPath : undefined;
             const availableNames = getAcpAgentConfigs().map((c) => c.name);
+            const promptHistory = getIbChatPromptHistoryEntries(context, sessionId);
             post({
                 type: "init",
                 sessionId,
@@ -60,7 +62,11 @@ export function openOrRevealIbChatEditor(
                 agentVersionLabel,
                 acpAgentName: agentConfig?.name,
                 ...(availableNames.length > 0 ? { availableAcpAgents: availableNames } : {}),
+                ...(promptHistory.length > 0 ? { promptHistory } : {}),
             });
+        }
+        if (parsed.type === "savePromptHistory") {
+            setIbChatPromptHistoryEntries(context, sessionId, parsed.entries);
         }
         if (parsed.type === "send") {
             void handleSend(sessionId, parsed.body, post);

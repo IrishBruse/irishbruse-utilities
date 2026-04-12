@@ -43,6 +43,9 @@ host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
             (modelId) => {
                 host.post({ type: "setSessionModel", modelId });
             },
+            (entries) => {
+                host.post({ type: "savePromptHistory", entries });
+            },
             (payload) => {
                 host.post({ type: "permissionResponse", ...payload });
             }

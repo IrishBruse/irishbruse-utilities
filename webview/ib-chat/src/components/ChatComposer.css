@@ -4,7 +4,7 @@
     border: 1px solid var(--vscode-editorWidget-border, var(--vscode-widget-border));
     border-radius: 4px;
     background-color: var(--vscode-editorWidget-background, var(--vscode-sideBar-background));
-    overflow: hidden;
+    overflow: visible;
     transition:
         border-color 0.12s ease,
         box-shadow 0.12s ease;
@@ -31,6 +31,28 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+}
+
+@keyframes composer-activity-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.45;
+    }
+}
+
+.composer-activity--inflight {
+    animation: composer-activity-pulse 1.15s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .composer-activity--inflight {
+        animation: none;
+        opacity: 1;
+    }
 }
 
 .composer-top-bar-right {
@@ -65,6 +87,7 @@
 
 .composer-input-wrap {
     position: relative;
+    overflow: visible;
 }
 
 .composer-slash-menu {
@@ -75,7 +98,7 @@
     margin-bottom: 4px;
     max-height: 200px;
     overflow-y: auto;
-    z-index: 6;
+    z-index: 50;
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -149,16 +172,18 @@
 .composer-footer {
     display: flex;
     align-items: center;
-    justify-content: flex-end;
     gap: 10px;
     padding: 4px 8px 6px;
     border-top: none;
 }
 
-.composer-hint {
+.composer-footer-hint-left {
+    flex: 1;
+    min-width: 0;
     font-size: 10px;
+    font-family: var(--vscode-editor-font-family), ui-monospace, monospace;
     color: var(--vscode-descriptionForeground);
-    opacity: 0.7;
+    opacity: 0.8;
     user-select: none;
 }
 

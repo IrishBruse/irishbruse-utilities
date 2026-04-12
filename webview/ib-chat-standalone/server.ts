@@ -452,6 +452,10 @@ wss.on("connection", (ws: WebSocket) => {
             return;
         }
 
+        if (parsed.type === "savePromptHistory") {
+            return;
+        }
+
         if (parsed.type === "setSessionModel") {
             if (acpConnection && acpSessionId) {
                 try {

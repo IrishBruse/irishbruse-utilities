@@ -12,6 +12,7 @@ import {
 import { Commands, Views } from "../constants";
 import { getAcpAgentConfigByName, getAcpAgentConfigs } from "./acp/acpAgentConfig";
 import { disposeIbChatEditorForSession, openOrRevealIbChatEditor } from "./ibChatEditor";
+import { removeIbChatPromptHistoryEntries } from "./ibChatPromptHistoryMemento";
 import {
     getActiveIbChatSessionId,
     IbChatSessionRecord,
@@ -151,6 +152,7 @@ export class IbChatSessionsViewProvider implements TreeDataProvider<IbChatSessio
             return;
         }
         disposeIbChatEditorForSession(item.sessionId);
+        removeIbChatPromptHistoryEntries(this.extensionContext, item.sessionId);
         removeIbChatSession(item.sessionId);
         this.refresh();
     }

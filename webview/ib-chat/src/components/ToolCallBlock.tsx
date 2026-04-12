@@ -5,6 +5,8 @@ import type { TraceToolItem } from "../chatReducer";
 
 const collapsiblePreviewLineCount = 3;
 
+const collapsibleDiffPreviewRowCount = 6;
+
 function toolKindUsesCollapsiblePreview(kind: string | undefined): boolean {
     return kind === "read" || kind === "execute";
 }
@@ -18,6 +20,11 @@ function collapsibleRegionAriaLabel(kind: string | undefined, expandAll: boolean
         return `Terminal output, ${tail}`;
     }
     return `Tool output, ${tail}`;
+}
+
+function collapsibleDiffAriaLabel(expandAll: boolean): string {
+    const tail = expandAll ? "full diff; press Ctrl+O or ⌘O to collapse long diffs" : "truncated; press Ctrl+O or ⌘O to expand all long outputs";
+    return `File diff, ${tail}`;
 }
 
 function collapsibleHintText(expandAll: boolean): string {
@@ -67,6 +74,15 @@ export function ToolCallBlock({
         outputCollapsible && !expandAllToolOutputs
             ? contentLines.slice(0, collapsiblePreviewLineCount).join("\n")
             : contentText;
+    const diffRows = item.diffRows;
+    const diffCollapsible =
+        hasDiff &&
+        diffRows !== undefined &&
+        diffRows.length > collapsibleDiffPreviewRowCount;
+    const displayedDiffRows =
+        diffCollapsible && !expandAllToolOutputs
+            ? diffRows.slice(0, collapsibleDiffPreviewRowCount)
+            : diffRows ?? [];
 
     return (
         <div
@@ -83,25 +99,55 @@ export function ToolCallBlock({
             </div>
             {subtitle !== null ? <div className="tool-call-terminal-subtitle">{subtitle}</div> : null}
             {showOutput && hasDiff ? (
-                <div className="tool-call-diff" role="group" aria-label="File diff">
-                    {item.diffRows!.map((row, rowIndex) => (
-                        <div
-                            key={rowIndex}
-                            className={
-                                row.kind === "removed"
-                                    ? "tool-call-diff-line tool-call-diff-line--removed"
-                                    : row.kind === "added"
-                                      ? "tool-call-diff-line tool-call-diff-line--added"
-                                      : "tool-call-diff-line tool-call-diff-line--context"
-                            }
-                        >
-                            <span className="tool-call-diff-prefix" aria-hidden="true">
-                                {row.kind === "removed" ? "-" : row.kind === "added" ? "+" : " "}
-                            </span>
-                            <span className="tool-call-diff-text">{row.text}</span>
+                diffCollapsible && !expandAllToolOutputs ? (
+                    <div
+                        className="tool-call-collapsible-output"
+                        role="group"
+                        aria-expanded={expandAllToolOutputs}
+                        aria-label={collapsibleDiffAriaLabel(expandAllToolOutputs)}
+                    >
+                        <div className="tool-call-diff" role="group" aria-label="File diff preview">
+                            {displayedDiffRows.map((row, rowIndex) => (
+                                <div
+                                    key={rowIndex}
+                                    className={
+                                        row.kind === "removed"
+                                            ? "tool-call-diff-line tool-call-diff-line--removed"
+                                            : row.kind === "added"
+                                              ? "tool-call-diff-line tool-call-diff-line--added"
+                                              : "tool-call-diff-line tool-call-diff-line--context"
+                                    }
+                                >
+                                    <span className="tool-call-diff-prefix" aria-hidden="true">
+                                        {row.kind === "removed" ? "-" : row.kind === "added" ? "+" : " "}
+                                    </span>
+                                    <span className="tool-call-diff-text">{row.text}</span>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
+                        <p className="tool-call-collapsible-hint">{collapsibleHintText(expandAllToolOutputs)}</p>
+                    </div>
+                ) : (
+                    <div className="tool-call-diff" role="group" aria-label="File diff">
+                        {(diffRows ?? []).map((row, rowIndex) => (
+                            <div
+                                key={rowIndex}
+                                className={
+                                    row.kind === "removed"
+                                        ? "tool-call-diff-line tool-call-diff-line--removed"
+                                        : row.kind === "added"
+                                          ? "tool-call-diff-line tool-call-diff-line--added"
+                                          : "tool-call-diff-line tool-call-diff-line--context"
+                                }
+                            >
+                                <span className="tool-call-diff-prefix" aria-hidden="true">
+                                    {row.kind === "removed" ? "-" : row.kind === "added" ? "+" : " "}
+                                </span>
+                                <span className="tool-call-diff-text">{row.text}</span>
+                            </div>
+                        ))}
+                    </div>
+                )
             ) : showOutput ? (
                 outputCollapsible ? (
                     <div

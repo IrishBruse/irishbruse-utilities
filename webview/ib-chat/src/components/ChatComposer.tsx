@@ -66,7 +66,15 @@ export function ChatComposer({
         <footer className="composer-frame">
             {showTopBar ? (
                 <div className="composer-top-bar">
-                    <div className="composer-activity" role="status" aria-live="polite">
+                    <div
+                        className={
+                            activityLabel !== null && activityLabel.length > 0
+                                ? "composer-activity composer-activity--inflight"
+                                : "composer-activity"
+                        }
+                        role="status"
+                        aria-live="polite"
+                    >
                         {activityLabel ?? ""}
                     </div>
                     <div className="composer-top-bar-right">
@@ -142,6 +150,7 @@ export function ChatComposer({
                     className="composer-input"
                     placeholder={"Describe a task for the agent to do in\n" + workspaceText}
                     aria-label="Agent input"
+                    title="Enter to send. Shift+Enter for newline. Arrow up and down for prompt history."
                     rows={2}
                     value={draft}
                     disabled={textareaDisabled}
@@ -150,7 +159,7 @@ export function ChatComposer({
                 />
             </div>
             <div className="composer-footer">
-                <span className="composer-hint">Enter to send · Shift+Enter for newline</span>
+                <span className="composer-footer-hint-left">/ commands · @ files</span>
                 <button type="button" className="composer-cancel" disabled={!promptInFlight} onClick={() => onCancel()}>
                     Cancel
                 </button>

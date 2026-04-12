@@ -64,6 +64,46 @@ function formatDiffSummaryOnly(piece: acp.ToolCallContent & { type: "diff" }): s
     return `${pathLabel}\n${summary}`;
 }
 
+function commandSubtitleFromBacktickTitle(title: string): string | undefined {
+    const t = title.trim();
+    if (t.length >= 2 && t.startsWith("`") && t.endsWith("`")) {
+        const inner = t.slice(1, -1).trim();
+        return inner.length > 0 ? inner : undefined;
+    }
+    return undefined;
+}
+
+/**
+ * Resolves a one-line shell command for execute/terminal tools from structured input, output, or Cursor-style backtick titles.
+ */
+export function toolCallExecuteCommandSubtitle(call: {
+    title?: string | null;
+    kind?: string | null;
+    rawInput?: unknown;
+    rawOutput?: unknown;
+}): string | undefined {
+    const kindStr =
+        call.kind !== undefined && call.kind !== null && String(call.kind).length > 0 ? String(call.kind) : "";
+    const isExecute = kindStr === "execute";
+    const fromInput = extractShellCommandLine(call.rawInput);
+    if (fromInput !== undefined) {
+        return fromInput;
+    }
+    if (isExecute) {
+        const fromOutput = extractShellCommandLine(call.rawOutput);
+        if (fromOutput !== undefined) {
+            return fromOutput;
+        }
+        if (typeof call.title === "string") {
+            const fromTitle = commandSubtitleFromBacktickTitle(call.title);
+            if (fromTitle !== undefined) {
+                return fromTitle;
+            }
+        }
+    }
+    return undefined;
+}
+
 function extractShellCommandLine(raw: unknown): string | undefined {
     if (raw === undefined || raw === null) {
         return undefined;
@@ -287,6 +327,13 @@ export function toolCallUpdateSubtitleHint(
     update: acp.ToolCallUpdate,
     options?: { pendingKind?: string }
 ): string | undefined {
+    const kind = effectiveToolKindForUpdate(update, options?.pendingKind);
+    if (kind === "execute") {
+        const cmd = extractShellCommandLine(update.rawInput) ?? extractShellCommandLine(update.rawOutput);
+        if (cmd !== undefined) {
+            return cmd;
+        }
+    }
     if (update.locations && update.locations.length > 0) {
         const locPath = update.locations[0]!.path.trim();
         if (locPath.length > 0) {
@@ -400,6 +447,20 @@ function fileNameFromPath(pathText: string): string {
  * Builds the dim subtitle line for a tool call (paths, arguments, or inline text from the agent).
  */
 export function toolCallSubtitleFromToolCall(call: acp.ToolCall): string | undefined {
+    const execLine = toolCallExecuteCommandSubtitle(call);
+    if (execLine !== undefined) {
+        return execLine;
+    }
+    const kindStr = call.kind !== undefined && call.kind !== null ? String(call.kind) : "";
+    if (kindStr === "execute") {
+        if (call.locations && call.locations.length > 0) {
+            const locPath = call.locations[0]!.path.trim();
+            if (locPath.length > 0) {
+                return locPath;
+            }
+        }
+        return formatToolRawInput(call.rawInput);
+    }
     const fromContent = firstToolCallTextPreview(call);
     if (fromContent !== undefined) {
         return fromContent;

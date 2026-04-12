@@ -1,3 +1,0 @@
-- [ ] I want up and down arrow history for previous sent prompts
-- [ ] Add some animation to the thinking... reading... etc
-- [ ] Add on the very bottom left of the text dialog inline with the send button but that on the right add `/ commands · @ files`

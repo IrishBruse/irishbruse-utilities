@@ -33,7 +33,9 @@ export type WebviewToExtensionMessage =
     | { type: "setSessionModel"; modelId: string }
     | { type: "setSessionAgent"; agentName: string }
     | { type: "permissionResponse"; requestId: string; selectedOptionId: string }
-    | { type: "permissionResponse"; requestId: string; cancelled: true };
+    | { type: "permissionResponse"; requestId: string; cancelled: true }
+    /** Persists composer Arrow Up / Down prompt history for this session. */
+    | { type: "savePromptHistory"; entries: string[] };
 
 /**
  * Messages sent from the extension host to the IB Chat webview.
@@ -52,6 +54,8 @@ export type ExtensionToWebviewMessage =
           vscodeThemeVariables?: Record<string, string>;
           /** From ACP `session/new` when available (standalone may seed from `mock/readme.ndjson`). */
           sessionModels?: IbChatSessionModelSelection;
+          /** Restored composer prompt history (Arrow Up / Down), keyed by session in workspace storage. */
+          promptHistory?: string[];
       }
     | {
           type: "sessionModels";
@@ -134,6 +138,19 @@ export function tryParseWebviewMessage(raw: unknown): WebviewToExtensionMessage 
                 selectedOptionId: record.selectedOptionId,
             };
         }
+    }
+    if (messageType === "savePromptHistory" && Array.isArray(record.entries)) {
+        const entries: string[] = [];
+        for (const item of record.entries) {
+            if (typeof item !== "string") {
+                continue;
+            }
+            entries.push(item);
+            if (entries.length >= 55) {
+                break;
+            }
+        }
+        return { type: "savePromptHistory", entries };
     }
     return null;
 }

@@ -1,0 +1,5 @@
+- [ ] The Terminal tool call is still not showing correctly
+- [ ] when the app start it shouldnt have any items in the agent or model dropdown and they should be disabled till populated by intiializzation
+- [ ] I want the / command menu to display each command in 1 line if the description is too wide trim it with ...
+  - [ ] Also make the scrollbar follow the theme.
+- [ ] Make the tool box clickable to expand that individual tool not all like the ctrl+o put the button at the start of where the ctrl+o message is

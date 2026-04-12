@@ -65,6 +65,27 @@ describe("sessionUpdateToWebviewMessages", () => {
         ]);
     });
 
+    it("adds subtitle from tool_call execute with Cursor backtick title", () => {
+        const messages = sessionUpdateToWebviewMessages({
+            sessionUpdate: "tool_call",
+            toolCallId: "t-exec",
+            title: "`npm run build`",
+            kind: "execute",
+            status: "pending",
+            rawInput: {},
+        });
+        expect(messages).toEqual([
+            {
+                type: "appendToolCall",
+                toolCallId: "t-exec",
+                title: "`npm run build`",
+                kind: "execute",
+                status: "pending",
+                subtitle: "npm run build",
+            },
+        ]);
+    });
+
     it("maps plan to appendPlan", () => {
         const messages = sessionUpdateToWebviewMessages({
             sessionUpdate: "plan",
@@ -216,6 +237,32 @@ describe("sessionUpdateToWebviewMessages", () => {
                 status: "completed",
                 content: "export {}",
                 subtitle: "/workspace/src/foo.ts",
+            },
+        ]);
+    });
+
+    it("prefers execute command in tool_call_update subtitle when kind is execute", () => {
+        const tracking: ToolCallKindTracking = {
+            kindByToolId: new Map([["e2", "execute"]]),
+        };
+        const messages = sessionUpdateToWebviewMessages(
+            {
+                sessionUpdate: "tool_call_update",
+                toolCallId: "e2",
+                kind: "execute",
+                status: "completed",
+                rawInput: { command: "ls -la" },
+                rawOutput: { exitCode: 0, stdout: ".\n", stderr: "" },
+            },
+            tracking
+        );
+        expect(messages).toEqual([
+            {
+                type: "updateToolCall",
+                toolCallId: "e2",
+                status: "completed",
+                content: "exit 0\n.",
+                subtitle: "ls -la",
             },
         ]);
     });

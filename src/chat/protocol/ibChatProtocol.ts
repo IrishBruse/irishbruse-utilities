@@ -17,7 +17,8 @@ export type WebviewToExtensionMessage =
     | { type: "ready" }
     | { type: "send"; body: string }
     | { type: "cancel" }
-    | { type: "setSessionModel"; modelId: string };
+    | { type: "setSessionModel"; modelId: string }
+    | { type: "setSessionAgent"; agentName: string };
 
 /**
  * Messages sent from the extension host to the IB Chat webview.
@@ -30,6 +31,8 @@ export type ExtensionToWebviewMessage =
           workspaceLabel?: string;
           agentVersionLabel?: string;
           acpAgentName?: string;
+          /** Display names from `ib-utilities.acpAgents` for the agent picker (same order as settings). */
+          availableAcpAgents?: string[];
           /** Optional `--vscode-*` overrides applied on `document.documentElement` (VS Code injects these in the real webview). */
           vscodeThemeVariables?: Record<string, string>;
           /** From ACP `session/new` when available (standalone may seed from `mock/readme.ndjson`). */
@@ -40,6 +43,7 @@ export type ExtensionToWebviewMessage =
           currentModelId: string;
           availableModels: IbChatSessionModelSelection["availableModels"];
       }
+    | { type: "acpAgentSelection"; currentAgentName: string; availableAgentNames: string[] }
     | { type: "appendAgentText"; text: string }
     | {
           type: "appendToolCall";
@@ -50,7 +54,14 @@ export type ExtensionToWebviewMessage =
           /** Secondary line (arguments, path, or preview), shown like terminal dim text. */
           subtitle?: string;
       }
-    | { type: "updateToolCall"; toolCallId: string; status: ToolCallStatus; content?: string }
+    | {
+          type: "updateToolCall";
+          toolCallId: string;
+          status: ToolCallStatus;
+          content?: string;
+          /** When set, replaces the tool row subtitle (e.g. path from `locations` or diff on completion). */
+          subtitle?: string;
+      }
     | { type: "appendPlan"; entries: PlanEntry[] }
     | { type: "turnComplete"; stopReason: string }
     | { type: "error"; message: string };
@@ -84,6 +95,9 @@ export function tryParseWebviewMessage(raw: unknown): WebviewToExtensionMessage 
     }
     if (messageType === "setSessionModel" && typeof record.modelId === "string" && record.modelId.length > 0) {
         return { type: "setSessionModel", modelId: record.modelId };
+    }
+    if (messageType === "setSessionAgent" && typeof record.agentName === "string" && record.agentName.length > 0) {
+        return { type: "setSessionAgent", agentName: record.agentName };
     }
     return null;
 }

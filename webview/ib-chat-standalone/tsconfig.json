@@ -10,12 +10,5 @@
         "noEmit": true,
         "isolatedModules": true
     },
-    "include": [
-        "../vite-env.d.ts",
-        "./src/**/*.ts",
-        "./vite.config.ts",
-        "./themeFromJson.ts",
-        "./themeFromJson.test.ts",
-        "./server.ts"
-    ]
+    "include": ["../vite-env.d.ts", "./src/**/*.ts", "./vite.config.ts", "./server.ts"]
 }

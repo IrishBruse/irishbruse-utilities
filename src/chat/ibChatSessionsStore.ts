@@ -61,3 +61,13 @@ export function removeIbChatSession(id: string): void {
         activeId = sessions[0]?.id ?? null;
     }
 }
+
+/**
+ * Updates the stored ACP agent name for a session (for example when the user picks another agent in the editor).
+ */
+export function setIbChatSessionAgentName(id: string, agentName: string): void {
+    const row = sessions.find((s) => s.id === id);
+    if (row !== undefined) {
+        row.agentName = agentName;
+    }
+}

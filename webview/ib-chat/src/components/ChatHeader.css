@@ -23,9 +23,3 @@
     overflow: hidden;
     text-overflow: ellipsis;
 }
-
-.agent-acp-name {
-    margin-top: 4px;
-    font-size: 11px;
-    color: var(--vscode-descriptionForeground);
-}

@@ -9,6 +9,25 @@ export type AcpAgentSpawnConfig = {
     env?: Record<string, string>;
 };
 
+/**
+ * Parses `acp-agent.json`: a non-empty array of agent objects, or a single agent object
+ * (accepted for backward compatibility).
+ */
+export function parseAcpAgentsJsonFileContent(content: unknown): AcpAgentSpawnConfig[] | undefined {
+    if (Array.isArray(content)) {
+        const result: AcpAgentSpawnConfig[] = [];
+        for (const entry of content) {
+            const one = parseAcpAgentSpawnConfig(entry);
+            if (one !== undefined) {
+                result.push(one);
+            }
+        }
+        return result.length > 0 ? result : undefined;
+    }
+    const single = parseAcpAgentSpawnConfig(content);
+    return single !== undefined ? [single] : undefined;
+}
+
 /** Parses one agent entry from settings or a JSON file. Returns undefined if invalid. */
 export function parseAcpAgentSpawnConfig(entry: unknown): AcpAgentSpawnConfig | undefined {
     if (entry === null || typeof entry !== "object") {

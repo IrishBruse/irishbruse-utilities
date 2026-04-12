@@ -5,7 +5,7 @@ import {
     sessionModelStateToIbChatSelection,
     type IbChatSessionModelSelection,
 } from "./agentSession/ibChatSessionModels";
-import { sessionUpdateToWebviewMessages } from "./acpSessionUpdateMapping";
+import { createToolCallKindTracking, sessionUpdateToWebviewMessages } from "./acpSessionUpdateMapping";
 import type { ExtensionToWebviewMessage } from "../protocol/ibChatProtocol";
 
 /** Callback that forwards an extension-to-webview message to the panel. */
@@ -21,6 +21,7 @@ export class AcpSessionBridge {
     private acpSessionId: string | null = null;
     private prompting = false;
     private lastModelSelection: IbChatSessionModelSelection | null = null;
+    private toolCallKindTracking = createToolCallKindTracking();
 
     constructor(
         private readonly config: AcpAgentConfig,
@@ -74,6 +75,7 @@ export class AcpSessionBridge {
             this.postToWebview({ type: "error", message: "Agent session not connected." });
             return;
         }
+        this.toolCallKindTracking = createToolCallKindTracking();
         this.prompting = true;
         try {
             const result = await this.agentProcess.prompt(this.acpSessionId, text);
@@ -106,7 +108,7 @@ export class AcpSessionBridge {
     }
 
     private handleSessionUpdate(params: acp.SessionNotification): void {
-        const messages = sessionUpdateToWebviewMessages(params.update);
+        const messages = sessionUpdateToWebviewMessages(params.update, this.toolCallKindTracking);
         for (const msg of messages) {
             this.postToWebview(msg);
         }

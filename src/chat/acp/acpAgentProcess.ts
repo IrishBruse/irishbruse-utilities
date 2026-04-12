@@ -23,7 +23,10 @@ export class AcpAgentProcess {
         this.sessionUpdateHandler = handler;
     }
 
-    /** Spawns the agent subprocess, creates the ACP connection, and runs `initialize`. */
+    /**
+     * Spawns the agent subprocess, creates the ACP connection, and runs `initialize`.
+     * See `docs/cursor-acp.md` for Cursor CLI behavior (for example sparse `tool_call` then rich `tool_call_update`).
+     */
     async start(): Promise<acp.InitializeResponse> {
         const cwd = workspace.workspaceFolders?.[0]?.uri.fsPath;
 

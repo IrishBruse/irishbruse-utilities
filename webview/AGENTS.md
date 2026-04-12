@@ -1,0 +1,1 @@
+Read [`docs/cursor-acp.md`](../docs/cursor-acp.md) for Cursor ACP behavior (extension methods, empty `rawInput` on `tool_call`, stderr vs stdout). IB Chat maps `tool_call_update` paths into tool subtitles in `src/chat/acp/acpSessionUpdateMapping.ts` when the pending call had no args line.

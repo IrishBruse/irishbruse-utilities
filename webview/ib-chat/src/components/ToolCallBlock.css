@@ -48,7 +48,7 @@
 
 .tool-call-terminal-status--completed {
     border-radius: 50%;
-    background: var(--vscode-terminal-ansiGreen, var(--vscode-descriptionForeground));
+    background: currentColor;
 }
 
 .tool-call-terminal-status--failed {
@@ -88,6 +88,27 @@
     opacity: 0.92;
 }
 
+.tool-call-collapsible-output {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+    margin: 2px 0 0;
+    min-width: 0;
+}
+
+.tool-call-collapsible-hint {
+    margin: 0;
+    padding: 0 0 1px 8px;
+    border-left: 1px solid color-mix(in srgb, var(--vscode-descriptionForeground) 22%, transparent);
+    font-family: inherit;
+    font-size: 10px;
+    font-style: italic;
+    line-height: 1.35;
+    color: var(--vscode-descriptionForeground, var(--vscode-terminal-ansiBrightBlack));
+    opacity: 0.95;
+}
+
 .tool-call-terminal-pre {
     margin: 2px 0 0;
     padding: 2px 0 1px 8px;
@@ -98,4 +119,9 @@
     white-space: pre-wrap;
     word-break: break-word;
     color: var(--vscode-terminal-ansiBrightBlack, var(--vscode-descriptionForeground));
+}
+
+.tool-call-terminal-pre--collapsible {
+    margin-top: 0;
+    min-width: 0;
 }

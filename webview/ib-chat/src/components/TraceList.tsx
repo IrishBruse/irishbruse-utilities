@@ -8,7 +8,13 @@ import { ToolCallBlock } from "./ToolCallBlock";
 /**
  * Renders the conversation trace: user lines, streamed agent markdown, tool blocks, and plan blocks.
  */
-export function TraceList({ items }: { items: TraceItem[] }): ReactElement {
+export function TraceList({
+    items,
+    expandAllToolOutputs,
+}: {
+    items: TraceItem[];
+    expandAllToolOutputs: boolean;
+}): ReactElement {
     return (
         <>
             {items.map((item, index) => {
@@ -29,7 +35,13 @@ export function TraceList({ items }: { items: TraceItem[] }): ReactElement {
                     );
                 }
                 if (item.type === "tool") {
-                    return <ToolCallBlock key={index} item={item} />;
+                    return (
+                        <ToolCallBlock
+                            key={item.toolCallId}
+                            item={item}
+                            expandAllToolOutputs={expandAllToolOutputs}
+                        />
+                    );
                 }
                 return <PlanBlock key={index} entries={item.entries} />;
             })}

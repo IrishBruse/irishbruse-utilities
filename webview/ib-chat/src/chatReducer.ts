@@ -26,6 +26,11 @@ export type TraceItem =
     | TraceToolItem
     | { type: "plan"; entries: PlanEntry[] };
 
+export type AcpAgentSelectionState = {
+    currentName: string;
+    availableNames: string[];
+};
+
 export type ChatState = {
     trace: TraceItem[];
     openStreamIndex: number | null;
@@ -33,12 +38,14 @@ export type ChatState = {
     promptInFlight: boolean;
     errorText: string | null;
     modelSelection: IbChatSessionModelSelection | null;
+    acpAgentSelection: AcpAgentSelectionState | null;
 };
 
 export type ChatAction =
     | ExtensionMessageAfterInit
     | { type: "submit"; body: string }
-    | { type: "pickSessionModel"; modelId: string };
+    | { type: "pickSessionModel"; modelId: string }
+    | { type: "pickSessionAgent"; agentName: string };
 
 export function createInitialChatState(): ChatState {
     return {
@@ -48,6 +55,7 @@ export function createInitialChatState(): ChatState {
         promptInFlight: false,
         errorText: null,
         modelSelection: null,
+        acpAgentSelection: null,
     };
 }
 
@@ -58,7 +66,22 @@ export function createChatStateFromInit(payload: InitPayload): ChatState {
     return {
         ...createInitialChatState(),
         modelSelection: payload.sessionModels ?? null,
+        acpAgentSelection: buildAcpAgentSelectionFromInit(payload),
     };
+}
+
+function buildAcpAgentSelectionFromInit(payload: InitPayload): AcpAgentSelectionState | null {
+    const listed = payload.availableAcpAgents;
+    const named = payload.acpAgentName;
+    if (listed !== undefined && listed.length > 0) {
+        const current =
+            named !== undefined && named.length > 0 && listed.includes(named) ? named : listed[0]!;
+        return { currentName: current, availableNames: listed };
+    }
+    if (named !== undefined && named.length > 0) {
+        return { currentName: named, availableNames: [named] };
+    }
+    return null;
 }
 
 function appendAgentText(state: ChatState, text: string): ChatState {
@@ -112,7 +135,8 @@ function updateToolCall(
     state: ChatState,
     toolCallId: string,
     status: ToolCallStatus,
-    content: string | undefined
+    content: string | undefined,
+    subtitle: string | undefined
 ): ChatState {
     const idx = state.toolIndexById.get(toolCallId);
     if (idx !== undefined) {
@@ -122,12 +146,15 @@ function updateToolCall(
         }
         const mergedContent = content !== undefined ? content : item.content;
         const detailVisible = mergedContent !== undefined && mergedContent.trim().length > 0;
+        const mergedSubtitle =
+            subtitle !== undefined && subtitle.trim().length > 0 ? subtitle.trim() : item.subtitle;
         const trace = state.trace.slice();
         trace[idx] = {
             ...item,
             status,
             content: mergedContent,
             detailVisible,
+            subtitle: mergedSubtitle,
         };
         return { ...state, trace };
     }
@@ -138,7 +165,7 @@ function updateToolCall(
         toolCallId,
         title: "Tool",
         kind: undefined,
-        subtitle: undefined,
+        subtitle: subtitle !== undefined && subtitle.trim().length > 0 ? subtitle.trim() : undefined,
         status,
         content: mergedContent,
         detailVisible,
@@ -180,6 +207,18 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
             },
         };
     }
+    if (action.type === "pickSessionAgent") {
+        if (state.acpAgentSelection === null) {
+            return state;
+        }
+        return {
+            ...state,
+            acpAgentSelection: {
+                ...state.acpAgentSelection,
+                currentName: action.agentName,
+            },
+        };
+    }
     switch (action.type) {
         case "sessionModels":
             return {
@@ -187,6 +226,14 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 modelSelection: {
                     currentModelId: action.currentModelId,
                     availableModels: action.availableModels,
+                },
+            };
+        case "acpAgentSelection":
+            return {
+                ...state,
+                acpAgentSelection: {
+                    currentName: action.currentAgentName,
+                    availableNames: action.availableAgentNames,
                 },
             };
         case "appendAgentText":
@@ -201,7 +248,7 @@ export function chatReducer(state: ChatState, action: ChatAction): ChatState {
                 action.subtitle
             );
         case "updateToolCall":
-            return updateToolCall(state, action.toolCallId, action.status, action.content);
+            return updateToolCall(state, action.toolCallId, action.status, action.content, action.subtitle);
         case "appendPlan": {
             const trace = [...state.trace, { type: "plan" as const, entries: action.entries }];
             return {

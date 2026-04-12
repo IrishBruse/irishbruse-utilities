@@ -1,0 +1,4 @@
+- [ ] Add a proper git style red/green diff
+- [ ] Implement session/request_permission popup above the chat ins a small dialog
+- [ ] Terminal doesnt display the command being run
+- [ ] `/command` support with provided command from `available_commands_update`

@@ -3,13 +3,15 @@ import { getIbChatWebviewHtml } from "./ibChatWebviewShell";
 import { tryParseWebviewMessage } from "./protocol/ibChatProtocol";
 import type { ExtensionToWebviewMessage } from "./protocol/ibChatProtocol";
 import { AcpSessionBridge } from "./acp/acpSessionBridge";
-import { getAcpAgentConfigs, type AcpAgentConfig } from "./acp/acpAgentConfig";
+import { getAcpAgentConfigByName, getAcpAgentConfigs, type AcpAgentConfig } from "./acp/acpAgentConfig";
+import { setIbChatSessionAgentName } from "./ibChatSessionsStore";
 
 const editorViewType = "ibUtilitiesIbChatEditor";
 
 const panelsBySessionId = new Map<string, WebviewPanel>();
 const bridgesBySessionId = new Map<string, AcpSessionBridge>();
 const pendingModelIdBySessionId = new Map<string, string>();
+const agentConfigBySessionId = new Map<string, AcpAgentConfig | undefined>();
 
 /**
  * Reveals an existing editor webview for the session or creates one with the given title.
@@ -25,6 +27,7 @@ export function openOrRevealIbChatEditor(
         existing.reveal(ViewColumn.Active);
         return;
     }
+    agentConfigBySessionId.set(sessionId, agentConfig);
     const panel = window.createWebviewPanel(editorViewType, title, ViewColumn.Active, {
         enableScripts: true,
         retainContextWhenHidden: true,
@@ -48,6 +51,7 @@ export function openOrRevealIbChatEditor(
                 typeof versionRaw === "string" && versionRaw.length > 0 ? `v${versionRaw}` : undefined;
             const folder = workspace.workspaceFolders?.[0];
             const workspaceLabel = folder !== undefined ? folder.uri.fsPath : undefined;
+            const availableNames = getAcpAgentConfigs().map((c) => c.name);
             post({
                 type: "init",
                 sessionId,
@@ -55,10 +59,11 @@ export function openOrRevealIbChatEditor(
                 workspaceLabel,
                 agentVersionLabel,
                 acpAgentName: agentConfig?.name,
+                ...(availableNames.length > 0 ? { availableAcpAgents: availableNames } : {}),
             });
         }
         if (parsed.type === "send") {
-            void handleSend(sessionId, parsed.body, post, agentConfig);
+            void handleSend(sessionId, parsed.body, post);
         }
         if (parsed.type === "cancel") {
             void handleCancel(sessionId);
@@ -66,9 +71,13 @@ export function openOrRevealIbChatEditor(
         if (parsed.type === "setSessionModel") {
             void handleSetSessionModel(sessionId, parsed.modelId, post);
         }
+        if (parsed.type === "setSessionAgent") {
+            handleSetSessionAgent(sessionId, parsed.agentName, post);
+        }
     });
     panel.onDidDispose(() => {
         panelsBySessionId.delete(sessionId);
+        agentConfigBySessionId.delete(sessionId);
         const bridge = bridgesBySessionId.get(sessionId);
         if (bridge) {
             bridge.dispose();
@@ -101,16 +110,11 @@ export function openNewIbChatEditor(
     openOrRevealIbChatEditor(context, sessionId, title, agentConfig);
 }
 
-async function handleSend(
-    sessionId: string,
-    body: string,
-    post: (msg: ExtensionToWebviewMessage) => void,
-    agentConfig?: AcpAgentConfig
-): Promise<void> {
+async function handleSend(sessionId: string, body: string, post: (msg: ExtensionToWebviewMessage) => void): Promise<void> {
     let bridge = bridgesBySessionId.get(sessionId);
 
     if (!bridge) {
-        const config = agentConfig ?? pickAgentConfig();
+        const config = agentConfigBySessionId.get(sessionId) ?? pickAgentConfig();
         if (!config) {
             post({ type: "error", message: "No ACP agents configured. Add agents in settings (ib-utilities.acpAgents)." });
             return;
@@ -156,6 +160,27 @@ async function handleCancel(sessionId: string): Promise<void> {
     if (bridge) {
         await bridge.cancel();
     }
+}
+
+function handleSetSessionAgent(sessionId: string, agentName: string, post: (msg: ExtensionToWebviewMessage) => void): void {
+    const config = getAcpAgentConfigByName(agentName);
+    if (!config) {
+        post({ type: "error", message: `Unknown agent: ${agentName}` });
+        return;
+    }
+    agentConfigBySessionId.set(sessionId, config);
+    setIbChatSessionAgentName(sessionId, config.name);
+    const existingBridge = bridgesBySessionId.get(sessionId);
+    if (existingBridge) {
+        existingBridge.dispose();
+        bridgesBySessionId.delete(sessionId);
+    }
+    pendingModelIdBySessionId.delete(sessionId);
+    post({
+        type: "acpAgentSelection",
+        currentAgentName: config.name,
+        availableAgentNames: getAcpAgentConfigs().map((c) => c.name),
+    });
 }
 
 function pickAgentConfig(): AcpAgentConfig | undefined {

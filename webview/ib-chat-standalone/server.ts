@@ -5,9 +5,9 @@
  * ACP agent subprocess and session. The Vite dev server at port 5173 proxies
  * `/__ib_chat_ws` traffic here.
  *
- * Agent subprocess is defined by `acp-agent.json` in this directory (next to this file).
- * Shape: `{ "name": "...", "command": "...", "args": ["..."], "env": { "KEY": "value" } }`
- * — `args` and `env` are optional.
+ * Agent subprocesses are defined by `acp-agent.json` in this directory (next to this file).
+ * Shape: a JSON array of agents `[{ "name": "...", "command": "...", "args": ["..."], "env": {} }, ...]`
+ * — `args` and `env` are optional. A single agent object is also accepted.
  *
  * JSON-RPC over NDJSON on the agent stdio is appended to `acp-rpc.ndjson` next to this file by default.
  * Set `ACP_RPC_LOG=0` to disable, `ACP_RPC_LOG=/path/file.ndjson` for a custom file, or `ACP_RPC_LOG=1` for the default path explicitly.
@@ -25,7 +25,7 @@ import { randomUUID } from "node:crypto";
 import { readFileSync, existsSync, createWriteStream } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { spawn } from "node:child_process";
+import { spawn, type ChildProcess } from "node:child_process";
 import { Readable, Writable, Transform } from "node:stream";
 import { WebSocketServer, WebSocket } from "ws";
 import * as acp from "@agentclientprotocol/sdk";
@@ -35,8 +35,11 @@ import {
     type IbChatSessionModelSelection,
 } from "../../src/chat/acp/agentSession/ibChatSessionModels";
 import { parseSessionModelsFromReadmeNdjson } from "../../src/chat/acp/agentSession/readmeSessionNew";
-import { sessionUpdateToWebviewMessages } from "../../src/chat/acp/acpSessionUpdateMapping";
-import { parseAcpAgentSpawnConfig, type AcpAgentSpawnConfig } from "../../src/chat/acp/acpAgentSpawnConfig";
+import { createToolCallKindTracking, sessionUpdateToWebviewMessages } from "../../src/chat/acp/acpSessionUpdateMapping";
+import {
+    parseAcpAgentsJsonFileContent,
+    type AcpAgentSpawnConfig,
+} from "../../src/chat/acp/acpAgentSpawnConfig";
 
 const PORT = Number(process.env["ACP_WS_PORT"] ?? 5174);
 const STANDALONE_DIR = dirname(fileURLToPath(import.meta.url));
@@ -166,6 +169,7 @@ async function replayFixture(fixturePath: string, send: (msg: ExtensionToWebview
         .filter((l) => l.trim().length > 0);
 
     let stopReason = "end_turn";
+    const toolKindTracking = createToolCallKindTracking();
 
     for (let i = 0; i < lines.length; i++) {
         if (i > 0) {
@@ -176,7 +180,7 @@ async function replayFixture(fixturePath: string, send: (msg: ExtensionToWebview
 
         if ("method" in msg && msg.method === "session/update") {
             const params = (msg as JsonRpcNotification).params as { update: acp.SessionUpdate };
-            const messages = sessionUpdateToWebviewMessages(params.update);
+            const messages = sessionUpdateToWebviewMessages(params.update, toolKindTracking);
             for (const webviewMessage of messages) {
                 send(webviewMessage);
                 await new Promise<void>((resolve) => setImmediate(resolve));
@@ -197,12 +201,12 @@ async function replayFixture(fixturePath: string, send: (msg: ExtensionToWebview
 
 // ── Agent config ─────────────────────────────────────────────────────────────
 
-function loadAgentConfig(): AcpAgentSpawnConfig {
+function loadAgentConfigs(): AcpAgentSpawnConfig[] {
     const configPath = join(STANDALONE_DIR, "acp-agent.json");
     if (!existsSync(configPath)) {
         console.error(`ACP agent config not found: ${configPath}`);
         console.error(
-            "Add acp-agent.json next to server.ts with name, command, and optional args (string array) and env (string map)."
+            "Add acp-agent.json next to server.ts: a JSON array of agents (each with string name, command, optional args, optional env), or one agent object."
         );
         process.exit(1);
     }
@@ -214,17 +218,17 @@ function loadAgentConfig(): AcpAgentSpawnConfig {
         console.error(`Failed to read or parse ACP agent config ${configPath}: ${message}`);
         process.exit(1);
     }
-    const cfg = parseAcpAgentSpawnConfig(parsed);
-    if (!cfg) {
+    const list = parseAcpAgentsJsonFileContent(parsed);
+    if (list === undefined || list.length === 0) {
         console.error(
-            `Invalid ACP agent config in ${configPath}: expected JSON object with string "name", string "command", optional "args" (string array), optional "env" (string values only).`
+            `Invalid ACP agent config in ${configPath}: expected a non-empty array of valid agent objects (or one valid agent object).`
         );
         process.exit(1);
     }
-    return cfg;
+    return list;
 }
 
-const agentConfig = loadAgentConfig();
+const agentConfigs = loadAgentConfigs();
 
 function loadReadmeSessionModels(): IbChatSessionModelSelection | null {
     try {
@@ -249,6 +253,9 @@ wss.on("connection", (ws: WebSocket) => {
     let prompting = false;
     let pendingModelId: string | null = null;
     let lastModelSelection: IbChatSessionModelSelection | null = null;
+    let toolKindTracking = createToolCallKindTracking();
+    let selectedAgentName = agentConfigs[0]!.name;
+    let agentChild: ChildProcess | null = null;
 
     function send(msg: ExtensionToWebviewMessage): void {
         if (ws.readyState === WebSocket.OPEN) {
@@ -256,18 +263,35 @@ wss.on("connection", (ws: WebSocket) => {
         }
     }
 
+    function activeAgentConfig(): AcpAgentSpawnConfig {
+        const found = agentConfigs.find((c) => c.name === selectedAgentName);
+        return found ?? agentConfigs[0]!;
+    }
+
+    function disposeAgentConnection(): void {
+        if (agentChild !== null) {
+            agentChild.kill();
+            agentChild = null;
+        }
+        acpConnection = null;
+        acpSessionId = null;
+    }
+
     async function connectAgent(): Promise<void> {
-        const child = spawn(agentConfig.command, agentConfig.args, {
+        disposeAgentConnection();
+        const cfg = activeAgentConfig();
+        const child = spawn(cfg.command, cfg.args, {
             stdio: ["pipe", "pipe", "pipe"],
             cwd: process.cwd(),
-            env: { ...process.env, ...agentConfig.env },
+            env: { ...process.env, ...cfg.env },
         });
+        agentChild = child;
 
         child.stderr?.on("data", (chunk: Buffer) => {
-            process.stderr.write(`[${agentConfig.name}] ${chunk.toString()}`);
+            process.stderr.write(`[${cfg.name}] ${chunk.toString()}`);
         });
         child.on("error", (err) => {
-            console.error(`[${agentConfig.name}] process error:`, err);
+            console.error(`[${cfg.name}] process error:`, err);
             send({ type: "error", message: `Agent process error: ${err.message}` });
         });
         child.on("exit", (code) => {
@@ -288,7 +312,7 @@ wss.on("connection", (ws: WebSocket) => {
                 return { outcome: { outcome: "selected", optionId: first.optionId } };
             },
             sessionUpdate: async (params) => {
-                const messages = sessionUpdateToWebviewMessages(params.update);
+                const messages = sessionUpdateToWebviewMessages(params.update, toolKindTracking);
                 for (const msg of messages) {
                     send(msg);
                 }
@@ -356,8 +380,27 @@ wss.on("connection", (ws: WebSocket) => {
                 title: "IB Chat",
                 workspaceLabel: process.cwd(),
                 agentVersionLabel: undefined,
-                acpAgentName: agentConfig.name,
+                acpAgentName: selectedAgentName,
+                availableAcpAgents: agentConfigs.map((c) => c.name),
                 sessionModels: seed ?? undefined,
+            });
+            return;
+        }
+
+        if (parsed.type === "setSessionAgent") {
+            const next = agentConfigs.find((c) => c.name === parsed.agentName);
+            if (next === undefined) {
+                send({ type: "error", message: `Unknown agent: ${parsed.agentName}` });
+                return;
+            }
+            selectedAgentName = next.name;
+            disposeAgentConnection();
+            lastModelSelection = null;
+            pendingModelId = null;
+            send({
+                type: "acpAgentSelection",
+                currentAgentName: next.name,
+                availableAgentNames: agentConfigs.map((c) => c.name),
             });
             return;
         }
@@ -391,6 +434,7 @@ wss.on("connection", (ws: WebSocket) => {
             if (fixturePath !== null) {
                 console.log(`fixture: replaying ${fixturePath}`);
                 prompting = true;
+                toolKindTracking = createToolCallKindTracking();
                 try {
                     const stopReason = await replayFixture(fixturePath, send);
                     send({ type: "turnComplete", stopReason });
@@ -412,6 +456,7 @@ wss.on("connection", (ws: WebSocket) => {
                     return;
                 }
             }
+            toolKindTracking = createToolCallKindTracking();
             prompting = true;
             try {
                 const result = await acpConnection!.prompt({
@@ -441,14 +486,17 @@ wss.on("connection", (ws: WebSocket) => {
     });
 
     ws.on("close", () => {
+        disposeAgentConnection();
         console.log(`client disconnected session=${sessionId}`);
     });
 });
 
 httpServer.listen(PORT, () => {
-    const argLine = agentConfig.args.length > 0 ? ` ${agentConfig.args.join(" ")}` : "";
     console.log(`WebSocket bridge listening on ws://localhost:${PORT}`);
-    console.log(`Agent: ${agentConfig.command}${argLine}`);
+    for (const c of agentConfigs) {
+        const argLine = c.args.length > 0 ? ` ${c.args.join(" ")}` : "";
+        console.log(`Agent "${c.name}": ${c.command}${argLine}`);
+    }
     console.log(`Open http://localhost:5173 after starting the Vite dev server`);
     if (rpcLogPath !== null) {
         getRpcLogStream();

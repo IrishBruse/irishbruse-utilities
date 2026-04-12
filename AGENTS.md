@@ -18,11 +18,10 @@
 
 # Tools
 
-- You have access to the `ask` cli tool/skill to ask questions to the user with use this
+- You have access to the `ask` cli tool/skill to ask questions to the user if they need to make a choice
 
 # Finish
 
 These must be done before finishing
 
 - [ ] Verification: `npm run verify`
-- [ ] Confirmation: `ask` to see if the user has any final points or corrections

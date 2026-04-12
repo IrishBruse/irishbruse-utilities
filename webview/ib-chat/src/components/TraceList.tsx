@@ -11,9 +11,11 @@ import { ToolCallBlock } from "./ToolCallBlock";
 export function TraceList({
     items,
     expandAllToolOutputs,
+    onCollapseExpandAll,
 }: {
     items: TraceItem[];
     expandAllToolOutputs: boolean;
+    onCollapseExpandAll?: () => void;
 }): ReactElement {
     return (
         <>
@@ -40,6 +42,7 @@ export function TraceList({
                             key={item.toolCallId}
                             item={item}
                             expandAllToolOutputs={expandAllToolOutputs}
+                            onCollapseExpandAll={onCollapseExpandAll}
                         />
                     );
                 }

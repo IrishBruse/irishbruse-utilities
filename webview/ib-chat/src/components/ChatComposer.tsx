@@ -55,78 +55,83 @@ export function ChatComposer({
             return [];
         }
         const q = slashQuery.toLowerCase();
-        return slashCommands.filter((c) => c.name.toLowerCase().startsWith(q)).slice(0, 12);
+        return slashCommands.filter((c) => c.name.toLowerCase().startsWith(q));
     }, [slashQuery, slashCommands]);
     const showSlashMenu = slashMatches.length > 0 && slashQuery !== null;
-    const showAgentPicker = acpAgentSelection !== null && acpAgentSelection.availableNames.length > 0;
-    const showModelPicker = modelSelection !== null && modelSelection.availableModels.length > 0;
-    const showTopBar = (activityLabel !== null && activityLabel.length > 0) || showAgentPicker || showModelPicker;
+    const agentSelection = acpAgentSelection;
+    const modelSel = modelSelection;
+    const agentReady = agentSelection !== null && agentSelection.availableNames.length > 0;
+    const modelReady = modelSel !== null && modelSel.availableModels.length > 0;
+    const agentSelectDisabled = textareaDisabled || !agentReady;
+    const modelSelectDisabled = textareaDisabled || !modelReady;
 
     return (
         <footer className="composer-frame">
-            {showTopBar ? (
-                <div className="composer-top-bar">
-                    <div
-                        className={
-                            activityLabel !== null && activityLabel.length > 0
-                                ? "composer-activity composer-activity--inflight"
-                                : "composer-activity"
-                        }
-                        role="status"
-                        aria-live="polite"
-                    >
-                        {activityLabel ?? ""}
-                    </div>
-                    <div className="composer-top-bar-right">
-                        {showAgentPicker ? (
-                            <label className="composer-inline-label" htmlFor="ib-chat-agent-select">
-                                Agent
-                            </label>
-                        ) : null}
-                        {showAgentPicker ? (
-                            <select
-                                id="ib-chat-agent-select"
-                                className="composer-agent-select"
-                                aria-label="Agent"
-                                value={acpAgentSelection.currentName}
-                                disabled={textareaDisabled}
-                                onChange={(e) => {
-                                    onPickSessionAgent(e.target.value);
-                                }}
-                            >
-                                {acpAgentSelection.availableNames.map((name) => (
-                                    <option key={name} value={name}>
-                                        {name}
-                                    </option>
-                                ))}
-                            </select>
-                        ) : null}
-                        {showModelPicker ? (
-                            <label className="composer-inline-label" htmlFor="ib-chat-model-select">
-                                Model
-                            </label>
-                        ) : null}
-                        {showModelPicker ? (
-                            <select
-                                id="ib-chat-model-select"
-                                className="composer-model-select"
-                                aria-label="Model"
-                                value={modelSelection.currentModelId}
-                                disabled={textareaDisabled}
-                                onChange={(e) => {
-                                    onPickSessionModel(e.target.value);
-                                }}
-                            >
-                                {modelSelection.availableModels.map((m) => (
-                                    <option key={m.modelId} value={m.modelId}>
-                                        {m.name}
-                                    </option>
-                                ))}
-                            </select>
-                        ) : null}
-                    </div>
+            <div className="composer-top-bar">
+                <div
+                    className={
+                        activityLabel !== null && activityLabel.length > 0
+                            ? "composer-activity composer-activity--inflight"
+                            : "composer-activity"
+                    }
+                    role="status"
+                    aria-live="polite"
+                >
+                    {activityLabel ?? ""}
                 </div>
-            ) : null}
+                <div className="composer-top-bar-right">
+                    <label className="composer-inline-label" htmlFor="ib-chat-agent-select">
+                        Agent
+                    </label>
+                    <select
+                        id="ib-chat-agent-select"
+                        className="composer-agent-select"
+                        aria-label="Agent"
+                        value={agentReady && agentSelection !== null ? agentSelection.currentName : ""}
+                        disabled={agentSelectDisabled}
+                        onChange={(e) => {
+                            onPickSessionAgent(e.target.value);
+                        }}
+                    >
+                        {agentReady && agentSelection !== null ? (
+                            agentSelection.availableNames.map((name) => (
+                                <option key={name} value={name}>
+                                    {name}
+                                </option>
+                            ))
+                        ) : (
+                            <option value="" disabled>
+                                {"\u2014"}
+                            </option>
+                        )}
+                    </select>
+                    <label className="composer-inline-label" htmlFor="ib-chat-model-select">
+                        Model
+                    </label>
+                    <select
+                        id="ib-chat-model-select"
+                        className="composer-model-select"
+                        aria-label="Model"
+                        value={modelReady && modelSel !== null ? modelSel.currentModelId : ""}
+                        disabled={modelSelectDisabled}
+                        onChange={(e) => {
+                            onPickSessionModel(e.target.value);
+                        }}
+                    >
+                        {modelReady && modelSel !== null ? (
+                            modelSel.availableModels.map((m) => (
+                                <option key={m.modelId} value={m.modelId}>
+                                    {m.name}
+                                </option>
+                            ))
+                        ) : (
+                            <option value="" disabled>
+                                {"\u2014"}
+                            </option>
+                        )}
+                    </select>
+                </div>
+            </div>
             <div className="composer-input-wrap">
                 {showSlashMenu ? (
                     <div className="composer-slash-menu" role="listbox" aria-label="Slash commands">
@@ -142,6 +147,11 @@ export function ChatComposer({
                             >
                                 <span className="composer-slash-name">/{cmd.name}</span>
                                 <span className="composer-slash-desc">{cmd.description}</span>
+                                {cmd.source !== undefined && cmd.source.length > 0 ? (
+                                    <span className="composer-slash-source" title={cmd.source}>
+                                        {cmd.source}
+                                    </span>
+                                ) : null}
                             </button>
                         ))}
                     </div>

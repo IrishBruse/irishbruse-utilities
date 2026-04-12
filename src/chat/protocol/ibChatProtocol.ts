@@ -24,6 +24,8 @@ export type IbChatSlashCommand = {
     name: string;
     description: string;
     inputHint?: string;
+    /** Origin label from the agent (for example user, global, workspace). */
+    source?: string;
 };
 
 export type WebviewToExtensionMessage =

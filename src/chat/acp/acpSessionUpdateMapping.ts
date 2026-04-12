@@ -1,5 +1,5 @@
 import type * as acp from "@agentclientprotocol/sdk";
-import type { ExtensionToWebviewMessage, ToolCallDiffRow } from "../protocol/ibChatProtocol";
+import type { ExtensionToWebviewMessage, ToolCallDiffRow, ToolCallStatus } from "../protocol/ibChatProtocol";
 import { computeToolCallDiffRows } from "./toolCallDiffLines";
 
 const maxToolDisplayChars = 120_000;
@@ -84,7 +84,7 @@ export function toolCallExecuteCommandSubtitle(call: {
 }): string | undefined {
     const kindStr =
         call.kind !== undefined && call.kind !== null && String(call.kind).length > 0 ? String(call.kind) : "";
-    const isExecute = kindStr === "execute";
+    const isExecute = kindStr === "execute" || kindStr === "terminal";
     const fromInput = extractShellCommandLine(call.rawInput);
     if (fromInput !== undefined) {
         return fromInput;
@@ -102,6 +102,42 @@ export function toolCallExecuteCommandSubtitle(call: {
         }
     }
     return undefined;
+}
+
+/**
+ * Webview messages for a pending `session/request_permission`: dialog plus optional tool subtitle when the shell line can be resolved (same as {@link toolCallExecuteCommandSubtitle}).
+ */
+export function extensionMessagesForPermissionRequest(
+    requestId: string,
+    params: acp.RequestPermissionRequest
+): ExtensionToWebviewMessage[] {
+    const toolCall = params.toolCall;
+    const messages: ExtensionToWebviewMessage[] = [
+        {
+            type: "permissionRequest",
+            requestId,
+            toolTitle: toolCall.title ?? "Tool",
+            options: params.options.map((o) => ({ optionId: o.optionId, name: o.name })),
+        },
+    ];
+    const commandSubtitle = toolCallExecuteCommandSubtitle(toolCall);
+    if (commandSubtitle !== undefined && typeof toolCall.toolCallId === "string" && toolCall.toolCallId.length > 0) {
+        const rawStatus = toolCall.status;
+        const status: ToolCallStatus =
+            rawStatus === "failed" ||
+            rawStatus === "completed" ||
+            rawStatus === "in_progress" ||
+            rawStatus === "pending"
+                ? rawStatus
+                : "pending";
+        messages.push({
+            type: "updateToolCall",
+            toolCallId: toolCall.toolCallId,
+            status,
+            subtitle: commandSubtitle,
+        });
+    }
+    return messages;
 }
 
 function extractShellCommandLine(raw: unknown): string | undefined {
@@ -242,6 +278,7 @@ function toolCallUpdateToDisplayParts(update: acp.ToolCallUpdate): {
 } {
     let diffRows: ToolCallDiffRow[] | undefined;
     const segments: string[] = [];
+    let hadTerminalPiece = false;
     if (update.content !== undefined && update.content !== null && update.content.length > 0) {
         for (const piece of update.content) {
             if (piece.type === "diff") {
@@ -258,6 +295,9 @@ function toolCallUpdateToDisplayParts(update: acp.ToolCallUpdate): {
                 }
                 continue;
             }
+            if (piece.type === "terminal") {
+                hadTerminalPiece = true;
+            }
             const segment = formatToolCallContentPiece(piece, update);
             if (segment !== undefined && segment.trim().length > 0) {
                 segments.push(segment.trim());
@@ -265,8 +305,15 @@ function toolCallUpdateToDisplayParts(update: acp.ToolCallUpdate): {
         }
     }
     if (segments.length > 0) {
+        let contentText = clipToolDisplayText(segments.join("\n\n"));
+        if (hadTerminalPiece) {
+            const rawFormatted = formatRawToolOutput(update.rawOutput);
+            if (rawFormatted !== undefined && rawFormatted.trim().length > 0) {
+                contentText = clipToolDisplayText(`${contentText}\n\n${rawFormatted.trim()}`);
+            }
+        }
         return {
-            contentText: clipToolDisplayText(segments.join("\n\n")),
+            contentText,
             diffRows,
         };
     }
@@ -328,7 +375,7 @@ export function toolCallUpdateSubtitleHint(
     options?: { pendingKind?: string }
 ): string | undefined {
     const kind = effectiveToolKindForUpdate(update, options?.pendingKind);
-    if (kind === "execute") {
+    if (kind === "execute" || kind === "terminal") {
         const cmd = extractShellCommandLine(update.rawInput) ?? extractShellCommandLine(update.rawOutput);
         if (cmd !== undefined) {
             return cmd;
@@ -452,7 +499,7 @@ export function toolCallSubtitleFromToolCall(call: acp.ToolCall): string | undef
         return execLine;
     }
     const kindStr = call.kind !== undefined && call.kind !== null ? String(call.kind) : "";
-    if (kindStr === "execute") {
+    if (kindStr === "execute" || kindStr === "terminal") {
         if (call.locations && call.locations.length > 0) {
             const locPath = call.locations[0]!.path.trim();
             if (locPath.length > 0) {
@@ -543,7 +590,20 @@ export function sessionUpdateToWebviewMessages(
                             inputHint = hint.trim();
                         }
                     }
-                    return { name, description, ...(inputHint !== undefined ? { inputHint } : {}) };
+                    const sourceCandidates = [o.source, o.scope, o.skillSource] as unknown[];
+                    let source: string | undefined;
+                    for (const candidate of sourceCandidates) {
+                        if (typeof candidate === "string" && candidate.trim().length > 0) {
+                            source = candidate.trim();
+                            break;
+                        }
+                    }
+                    return {
+                        name,
+                        description,
+                        ...(inputHint !== undefined ? { inputHint } : {}),
+                        ...(source !== undefined ? { source } : {}),
+                    };
                 })
                 .filter((x): x is NonNullable<typeof x> => x !== null);
             return [{ type: "slashCommands", commands }];

@@ -125,6 +125,27 @@ function appendToolCall(
     status: ToolCallStatus | undefined,
     subtitle: string | undefined
 ): ChatState {
+    const existingIdx = state.toolIndexById.get(toolCallId);
+    if (existingIdx !== undefined) {
+        const existing = state.trace[existingIdx];
+        if (existing?.type === "tool") {
+            const mergedSubtitle =
+                subtitle !== undefined && subtitle.trim().length > 0 ? subtitle.trim() : existing.subtitle;
+            const trace = state.trace.slice();
+            trace[existingIdx] = {
+                ...existing,
+                title,
+                kind: kind !== undefined ? kind : existing.kind,
+                status: status ?? existing.status,
+                subtitle: mergedSubtitle,
+            };
+            return {
+                ...state,
+                trace,
+                openStreamIndex: null,
+            };
+        }
+    }
     const newItem: TraceToolItem = {
         type: "tool",
         toolCallId,

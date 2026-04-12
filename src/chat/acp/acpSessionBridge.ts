@@ -8,10 +8,10 @@ import {
 } from "./agentSession/ibChatSessionModels";
 import {
     createToolCallKindTracking,
+    extensionMessagesForPermissionRequest,
     sessionUpdateToWebviewMessages,
-    toolCallExecuteCommandSubtitle,
 } from "./acpSessionUpdateMapping";
-import type { ExtensionToWebviewMessage, ToolCallStatus } from "../protocol/ibChatProtocol";
+import type { ExtensionToWebviewMessage } from "../protocol/ibChatProtocol";
 
 /** Callback that forwards an extension-to-webview message to the panel. */
 export type PostToWebview = (message: ExtensionToWebviewMessage) => void;
@@ -40,31 +40,10 @@ export class AcpSessionBridge {
 
     private async queuePermissionRequest(params: acp.RequestPermissionRequest): Promise<acp.RequestPermissionResponse> {
         const requestId = `perm-${this.nextPermissionRequestId++}`;
-        const toolCall = params.toolCall;
-        const commandSubtitle = toolCallExecuteCommandSubtitle(toolCall);
         return new Promise((resolve) => {
             this.permissionWaiters.set(requestId, resolve);
-            this.postToWebview({
-                type: "permissionRequest",
-                requestId,
-                toolTitle: toolCall.title ?? "Tool",
-                options: params.options.map((o) => ({ optionId: o.optionId, name: o.name })),
-            });
-            if (commandSubtitle !== undefined && typeof toolCall.toolCallId === "string" && toolCall.toolCallId.length > 0) {
-                const rawStatus = toolCall.status;
-                const status: ToolCallStatus =
-                    rawStatus === "failed" ||
-                    rawStatus === "completed" ||
-                    rawStatus === "in_progress" ||
-                    rawStatus === "pending"
-                        ? rawStatus
-                        : "pending";
-                this.postToWebview({
-                    type: "updateToolCall",
-                    toolCallId: toolCall.toolCallId,
-                    status,
-                    subtitle: commandSubtitle,
-                });
+            for (const msg of extensionMessagesForPermissionRequest(requestId, params)) {
+                this.postToWebview(msg);
             }
         });
     }

@@ -35,7 +35,11 @@ import {
     type IbChatSessionModelSelection,
 } from "../../src/chat/acp/agentSession/ibChatSessionModels";
 import { parseSessionModelsFromReadmeNdjson } from "../../src/chat/acp/agentSession/readmeSessionNew";
-import { createToolCallKindTracking, sessionUpdateToWebviewMessages } from "../../src/chat/acp/acpSessionUpdateMapping";
+import {
+    createToolCallKindTracking,
+    extensionMessagesForPermissionRequest,
+    sessionUpdateToWebviewMessages,
+} from "../../src/chat/acp/acpSessionUpdateMapping";
 import {
     parseAcpAgentsJsonFileContent,
     type AcpAgentSpawnConfig,
@@ -188,6 +192,16 @@ async function replayFixture(fixturePath: string, send: (msg: ExtensionToWebview
             continue;
         }
 
+        if ("method" in msg && msg.method === "session/request_permission") {
+            const params = (msg as JsonRpcNotification).params as acp.RequestPermissionRequest;
+            const requestId = `perm-replay-${i}`;
+            for (const webviewMessage of extensionMessagesForPermissionRequest(requestId, params)) {
+                send(webviewMessage);
+                await new Promise<void>((resolve) => setImmediate(resolve));
+            }
+            continue;
+        }
+
         if (!("method" in msg) && "result" in msg) {
             const result = (msg as JsonRpcResponse).result;
             if (typeof result["stopReason"] === "string") {
@@ -315,12 +329,9 @@ wss.on("connection", (ws: WebSocket) => {
                 const requestId = `perm-${nextPermissionRequestId++}`;
                 return new Promise((resolve) => {
                     permissionWaiters.set(requestId, resolve);
-                    send({
-                        type: "permissionRequest",
-                        requestId,
-                        toolTitle: params.toolCall.title ?? "Tool",
-                        options: params.options.map((o) => ({ optionId: o.optionId, name: o.name })),
-                    });
+                    for (const msg of extensionMessagesForPermissionRequest(requestId, params)) {
+                        send(msg);
+                    }
                 });
             },
             sessionUpdate: async (params) => {

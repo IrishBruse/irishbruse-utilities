@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { sessionUpdateToWebviewMessages, type ToolCallKindTracking } from "./acpSessionUpdateMapping";
+import {
+    extensionMessagesForPermissionRequest,
+    sessionUpdateToWebviewMessages,
+    type ToolCallKindTracking,
+} from "./acpSessionUpdateMapping";
 
 describe("sessionUpdateToWebviewMessages", () => {
     it("maps agent_message_chunk text to appendAgentText", () => {
@@ -203,20 +207,39 @@ describe("sessionUpdateToWebviewMessages", () => {
         ]);
     });
 
+    it("appends terminal rawOutput after terminal content piece", () => {
+        const messages = sessionUpdateToWebviewMessages({
+            sessionUpdate: "tool_call_update",
+            toolCallId: "t2",
+            status: "completed",
+            rawInput: { command: "npm test" },
+            rawOutput: { exitCode: 0, stdout: "PASS\n", stderr: "" },
+            content: [{ type: "terminal", terminalId: "term-2" }],
+        });
+        expect(messages).toEqual([
+            {
+                type: "updateToolCall",
+                toolCallId: "t2",
+                status: "completed",
+                content: "$ npm test\nTerminal: term-2\n\nexit 0\nPASS",
+            },
+        ]);
+    });
+
     it("maps available_commands_update to slashCommands", () => {
         const messages = sessionUpdateToWebviewMessages({
             sessionUpdate: "available_commands_update",
             availableCommands: [
-                { name: "plan", description: "Plan work", input: { hint: "topic" } },
-                { name: "test", description: "Run tests" },
+                { name: "plan", description: "Plan work", input: { hint: "topic" }, source: "workspace" },
+                { name: "test", description: "Run tests", scope: "global" },
             ],
         } as never);
         expect(messages).toEqual([
             {
                 type: "slashCommands",
                 commands: [
-                    { name: "plan", description: "Plan work", inputHint: "topic" },
-                    { name: "test", description: "Run tests" },
+                    { name: "plan", description: "Plan work", inputHint: "topic", source: "workspace" },
+                    { name: "test", description: "Run tests", source: "global" },
                 ],
             },
         ]);
@@ -335,3 +358,33 @@ describe("sessionUpdateToWebviewMessages", () => {
     });
 
 });
+
+describe("extensionMessagesForPermissionRequest", () => {
+    it("adds updateToolCall subtitle from execute backtick title (e.g. ask …)", () => {
+        const messages = extensionMessagesForPermissionRequest("perm-0", {
+            toolCall: {
+                toolCallId: "tool_x",
+                title: '`ask "Review.md?"`',
+                kind: "execute",
+                status: "pending",
+                content: [],
+            },
+            options: [{ optionId: "allow-once", name: "Allow once", kind: "allow_once" }],
+        } as never);
+        expect(messages).toEqual([
+            {
+                type: "permissionRequest",
+                requestId: "perm-0",
+                toolTitle: '`ask "Review.md?"`',
+                options: [{ optionId: "allow-once", name: "Allow once" }],
+            },
+            {
+                type: "updateToolCall",
+                toolCallId: "tool_x",
+                status: "pending",
+                subtitle: 'ask "Review.md?"',
+            },
+        ]);
+    });
+});
+

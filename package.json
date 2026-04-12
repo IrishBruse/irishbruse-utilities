@@ -22,7 +22,7 @@
     "scripts": {
         "vscode:prepublish": "npm run package",
         "build:webview": "vite build --config webview/ib-chat/vite.config.ts",
-        "dev:standalone": "concurrently --names ui,server --prefix-colors cyan,yellow \"vite --config webview/ib-chat-standalone/vite.config.ts\" \"tsx --watch webview/ib-chat-standalone/server.ts\"",
+        "dev:standalone": "concurrently --names FE,BE --prefix-colors cyan,yellow \"vite --config webview/ib-chat-standalone/vite.config.ts\" \"tsx --watch webview/ib-chat-standalone/server.ts\"",
         "build": "npm run build:webview && node esbuild.mjs",
         "watch": "node esbuild.mjs --watch",
         "package": "npm run build:webview && node esbuild.mjs --production",

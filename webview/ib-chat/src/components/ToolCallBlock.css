@@ -22,12 +22,43 @@
     min-width: 0;
 }
 
+.tool-call-terminal-line--expandable {
+    cursor: pointer;
+    border-radius: 2px;
+    outline-offset: 1px;
+}
+
+.tool-call-terminal-line--expandable:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder);
+}
+
 .tool-call-terminal-prompt {
     flex-shrink: 0;
     user-select: none;
     color: var(--vscode-terminal-ansiGreen, var(--vscode-textLink-foreground));
     font-weight: 600;
     margin-right: 2px;
+}
+
+.tool-call-terminal-title--execute {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0 4px;
+}
+
+.tool-call-terminal-prompt--inline {
+    flex-shrink: 0;
+    user-select: none;
+    color: var(--vscode-descriptionForeground, var(--vscode-list-deemphasizedForeground));
+    font-weight: 600;
+}
+
+.tool-call-terminal-command-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    word-break: break-word;
+    color: inherit;
 }
 
 .tool-call-terminal-status {
@@ -70,6 +101,10 @@
     color: color-mix(in srgb, var(--vscode-terminal-foreground, var(--vscode-foreground)) 82%, var(--vscode-descriptionForeground));
 }
 
+.tool-call-terminal[data-status="completed"] .tool-call-terminal-prompt--inline {
+    color: var(--vscode-descriptionForeground, var(--vscode-list-deemphasizedForeground));
+}
+
 .tool-call-terminal-kind {
     flex-shrink: 0;
     font-size: 10px;
@@ -96,6 +131,11 @@
 }
 
 .tool-call-collapsible-hint {
+    display: flex;
+    flex-direction: row;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 6px 8px;
     margin: 0;
     padding: 0 0 1px 0;
     font-family: inherit;
@@ -103,6 +143,31 @@
     font-style: italic;
     line-height: 1.35;
     color: var(--vscode-descriptionForeground);
+}
+
+.tool-call-collapsible-expand {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0 5px;
+    border: 1px solid var(--vscode-button-border, var(--vscode-widget-border));
+    border-radius: 3px;
+    background: var(--vscode-button-secondaryBackground, color-mix(in srgb, var(--vscode-editor-background) 92%, var(--vscode-foreground)));
+    color: var(--vscode-button-secondaryForeground, var(--vscode-foreground));
+    font: inherit;
+    font-size: 10px;
+    font-style: normal;
+    line-height: 1.35;
+    cursor: pointer;
+}
+
+.tool-call-collapsible-expand:hover {
+    background: var(--vscode-button-secondaryHoverBackground, var(--vscode-toolbar-hoverBackground));
+}
+
+.tool-call-collapsible-hint-text {
+    flex: 1 1 auto;
+    min-width: 0;
+    font-style: italic;
 }
 
 .tool-call-terminal-pre {

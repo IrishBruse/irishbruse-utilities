@@ -233,7 +233,13 @@ export function IbChatApp({
             </div>
             <main ref={traceRef} className="agent-trace" role="log" aria-label="Conversation" onScroll={onTraceScroll}>
                 <div ref={traceContentRef}>
-                    <TraceList items={state.trace} expandAllToolOutputs={expandAllToolOutputs} />
+                    <TraceList
+                        items={state.trace}
+                        expandAllToolOutputs={expandAllToolOutputs}
+                        onCollapseExpandAll={() => {
+                            setExpandAllToolOutputs(false);
+                        }}
+                    />
                 </div>
             </main>
             <ChatComposer

@@ -1,7 +1,0 @@
-[
-    {
-        "name": "Cursor",
-        "command": "agent",
-        "args": ["acp"]
-    }
-]

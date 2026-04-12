@@ -3,5 +3,3 @@ dist
 node_modules
 .vscode-test/
 *.vsix
-webview/ib-chat-standalone/acp-rpc.ndjson
-webview/ib-chat-standalone/mock/

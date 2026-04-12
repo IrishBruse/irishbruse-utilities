@@ -24,48 +24,6 @@ export enum Commands {
     ShowSnippetView = `ib-utilities.showSnippetView`,
 
     /**
-     * Focus IB Chat Chats list
-     * Short Title: Focus Chats list
-     * Icon: undefined
-     */
-    FocusIbChatSessions = `ib-utilities.focusIbChatSessions`,
-
-    /**
-     * New IB Chat in Editor
-     * Short Title: New in Editor
-     * Icon: $(add)
-     */
-    NewIbChatEditor = `ib-utilities.newIbChatEditor`,
-
-    /**
-     * Refresh IB Chat list
-     * Short Title: Refresh
-     * Icon: $(refresh)
-     */
-    RefreshIbChatSessions = `ib-utilities.refreshIbChatSessions`,
-
-    /**
-     * Show IB Chat ACP RPC log
-     * Short Title: ACP RPC log
-     * Icon: $(output)
-     */
-    ShowIbChatAcpRpcLog = `ib-utilities.showIbChatAcpRpcLog`,
-
-    /**
-     * Open IB Chat session
-     * Short Title: Open
-     * Icon: undefined
-     */
-    OpenIbChatSession = `ib-utilities.openIbChatSession`,
-
-    /**
-     * Delete IB Chat
-     * Short Title: Delete
-     * Icon: $(trash)
-     */
-    DeleteIbChatSession = `ib-utilities.deleteIbChatSession`,
-
-    /**
      * Open Pull Request
      * Short Title: Open PR
      * Icon: $(github)
@@ -119,11 +77,6 @@ export enum Commands {
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,
 
-    /**
-     * IB Chat
-     */
-    ViewIbChatContainer = `workbench.view.ibChatContainer`,
-
 }
 
 /** View Containers */
@@ -134,12 +87,6 @@ export enum ViewContainers {
      */
       SnippetContainer = `snippetContainer`,
 
-    /**
-     * IB Chat
-     * Icon: media/chat_icon.svg
-     */
-      IbChatContainer = `ibChatContainer`,
-
 }
 
 /** Views */
@@ -149,12 +96,6 @@ export enum Views {
      * ContainerId: snippetContainer
      */
     SnippetView = `snippetView`,
-
-    /**
-     * Header: Chats
-     * ContainerId: ibChatContainer
-     */
-    IbChatSessionsView = `ibChatSessionsView`,
 
 }
 
@@ -169,10 +110,5 @@ export enum Configuration {
      * On the left is the languageId for the snippet to auto generate on the right is the comma delimited array of languages to build it from.
      */
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
-
-    /**
-     * ACP agent configurations. Each entry defines an agent subprocess to launch.
-     */
-    AcpAgents = `ib-utilities.acpAgents`,
 
 }

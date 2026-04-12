@@ -14,7 +14,6 @@
 # Shortcuts
 
 - Run generates to auto generate some parts of the code.
-- `npm run build:webview` rebuilds only `media/ib-chat` (IB Chat editor webview). Full extension build runs it automatically via `npm run build`.
 
 # Tools
 

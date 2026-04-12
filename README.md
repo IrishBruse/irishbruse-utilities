@@ -1,6 +1,6 @@
 # IrishBruse's Utilities
 
-A [Visual Studio Code](https://code.visualstudio.com/) extension: snippet management, an [Agent Client Protocol](https://agentclientprotocol.com/) (ACP) chat UI (**IB Chat**), GitHub shortcuts, and small editor helpers.
+A [Visual Studio Code](https://code.visualstudio.com/) extension: snippet management, GitHub shortcuts, and small editor helpers.
 
 **Install:** search the Marketplace for **IrishBruse's Utilities** ([publisher `irishbruse`](https://marketplace.visualstudio.com/publishers/irishbruse)) or install from a `.vsix` built from [this repository](https://github.com/IrishBruse/irishbruse-utilities).
 
@@ -11,10 +11,6 @@ A [Visual Studio Code](https://code.visualstudio.com/) extension: snippet manage
 ### Snippet Manager
 
 Tree view under the **Snippet Manager** activity bar: create, edit, and delete snippets in folders; map snippet files to [language IDs](https://code.visualstudio.com/docs/languages/overview) for highlighting; and auto-generate snippets from multiple language sources using the settings below.
-
-### IB Chat
-
-**IB Chat** runs as an ACP client: it spawns configured agents, talks to them over JSON-RPC on stdio, and shows the session in an editor webview. Use the **Chats** sidebar to open, refresh, or remove sessions; **New IB Chat in Editor** starts a chat in the editor area. Agent processes are defined in `ib-utilities.acpAgents` (see [Configuration](#configuration)).
 
 ### GitHub
 
@@ -56,21 +52,6 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 }
 ```
 
-Register ACP agents for IB Chat (each entry is a subprocess: `command`, optional `args`, optional `env`):
-
-```json
-{
-  "ib-utilities.acpAgents": [
-    {
-      "name": "Example",
-      "command": "npx",
-      "args": ["-y", "some-acp-agent"],
-      "env": {}
-    }
-  ]
-}
-```
-
 ## Commands
 
 | Command | Title |
@@ -78,11 +59,6 @@ Register ACP agents for IB Chat (each entry is a subprocess: `command`, optional
 | `ib-utilities.relativeGoTo` | Relative goto |
 | `ib-utilities.openSnippet` | Open Snippet |
 | `ib-utilities.showSnippetView` | Show Snippet View |
-| `ib-utilities.focusIbChatSessions` | Focus IB Chat Chats list |
-| `ib-utilities.newIbChatEditor` | New IB Chat in Editor |
-| `ib-utilities.refreshIbChatSessions` | Refresh IB Chat list |
-| `ib-utilities.openIbChatSession` | Open IB Chat session |
-| `ib-utilities.deleteIbChatSession` | Delete IB Chat |
 | `ib-utilities.openPR` | Open Pull Request |
 | `ib-utilities.pasteImage` | Paste Image |
 | `ib-utilities.smartPaste` | Smart paste |
@@ -110,7 +86,7 @@ npm install
 npm run verify
 ```
 
-- **Build:** `npm run build` (includes the IB Chat webview build).
+- **Build:** `npm run build`
 - **Tests:** `npm run test`
 - **Lint:** `npm run lint`
 

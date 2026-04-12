@@ -21,12 +21,10 @@
     ],
     "scripts": {
         "vscode:prepublish": "npm run package",
-        "build:webview": "vite build --config webview/ib-chat/vite.config.ts",
-        "dev:standalone": "concurrently --names FE,BE --prefix-colors cyan,yellow \"vite --config webview/ib-chat-standalone/vite.config.ts\" \"tsx --watch webview/ib-chat-standalone/server.ts\"",
-        "build": "npm run build:webview && node esbuild.mjs",
+        "build": "node esbuild.mjs",
         "watch": "node esbuild.mjs --watch",
-        "package": "npm run build:webview && node esbuild.mjs --production",
-        "lint": "eslint src webview && tsc --noEmit && tsc --noEmit -p webview/ib-chat/tsconfig.json && tsc --noEmit -p webview/ib-chat-standalone/tsconfig.json",
+        "package": "node esbuild.mjs --production",
+        "lint": "eslint src && tsc --noEmit",
         "test": "vitest run",
         "verify": "npm run build && npm run test && npm run lint",
         "test:watch": "vitest watch",
@@ -64,42 +62,6 @@
                         "typescriptreact": "node,react",
                         "javascriptreact": "node,react"
                     }
-                },
-                "ib-utilities.acpAgents": {
-                    "type": "array",
-                    "description": "ACP agent configurations. Each entry defines an agent subprocess to launch.",
-                    "items": {
-                        "type": "object",
-                        "required": [
-                            "name",
-                            "command"
-                        ],
-                        "properties": {
-                            "name": {
-                                "type": "string",
-                                "description": "Display name for the agent."
-                            },
-                            "command": {
-                                "type": "string",
-                                "description": "Executable to spawn (e.g. 'npx', 'gemini', 'claude')."
-                            },
-                            "args": {
-                                "type": "array",
-                                "items": {
-                                    "type": "string"
-                                },
-                                "description": "Arguments passed to the command."
-                            },
-                            "env": {
-                                "type": "object",
-                                "additionalProperties": {
-                                    "type": "string"
-                                },
-                                "description": "Extra environment variables for the agent process."
-                            }
-                        }
-                    },
-                    "default": []
                 }
             }
         },
@@ -116,11 +78,6 @@
                     "id": "snippetContainer",
                     "title": "Snippet Manager",
                     "icon": "media/snippet_icon.svg"
-                },
-                {
-                    "id": "ibChatContainer",
-                    "title": "IB Chat",
-                    "icon": "media/chat_icon.svg"
                 }
             ]
         },
@@ -130,14 +87,6 @@
                     "id": "snippetView",
                     "name": "Groups",
                     "icon": "media/snippet_icon.svg"
-                }
-            ],
-            "ibChatContainer": [
-                {
-                    "id": "ibChatSessionsView",
-                    "name": "Chats",
-                    "type": "tree",
-                    "icon": "media/chat_icon.svg"
                 }
             ]
         },
@@ -156,40 +105,6 @@
                 "command": "ib-utilities.showSnippetView",
                 "title": "Show Snippet View",
                 "shortTitle": "Show Snippet View"
-            },
-            {
-                "command": "ib-utilities.focusIbChatSessions",
-                "title": "Focus IB Chat Chats list",
-                "shortTitle": "Focus Chats list"
-            },
-            {
-                "command": "ib-utilities.newIbChatEditor",
-                "title": "New IB Chat in Editor",
-                "shortTitle": "New in Editor",
-                "icon": "$(add)"
-            },
-            {
-                "command": "ib-utilities.refreshIbChatSessions",
-                "title": "Refresh IB Chat list",
-                "shortTitle": "Refresh",
-                "icon": "$(refresh)"
-            },
-            {
-                "command": "ib-utilities.showIbChatAcpRpcLog",
-                "title": "Show IB Chat ACP RPC log",
-                "shortTitle": "ACP RPC log",
-                "icon": "$(output)"
-            },
-            {
-                "command": "ib-utilities.openIbChatSession",
-                "title": "Open IB Chat session",
-                "shortTitle": "Open"
-            },
-            {
-                "command": "ib-utilities.deleteIbChatSession",
-                "title": "Delete IB Chat",
-                "shortTitle": "Delete",
-                "icon": "$(trash)"
             },
             {
                 "command": "ib-utilities.openPR",
@@ -262,29 +177,9 @@
                     "command": "ib-utilities.deleteSnippet",
                     "when": "view == snippetView && viewItem == file",
                     "group": "inline"
-                },
-                {
-                    "command": "ib-utilities.deleteIbChatSession",
-                    "when": "view == ibChatSessionsView && viewItem == session",
-                    "group": "inline"
                 }
             ],
             "view/title": [
-                {
-                    "command": "ib-utilities.refreshIbChatSessions",
-                    "when": "view == ibChatSessionsView",
-                    "group": "navigation"
-                },
-                {
-                    "command": "ib-utilities.showIbChatAcpRpcLog",
-                    "when": "view == ibChatSessionsView",
-                    "group": "navigation"
-                },
-                {
-                    "command": "ib-utilities.newIbChatEditor",
-                    "when": "view == ibChatSessionsView",
-                    "group": "navigation"
-                },
                 {
                     "command": "ib-utilities.showSnippetView",
                     "when": "view == snippetContainer",
@@ -321,33 +216,21 @@
         "@types/cjson": "^0.5.3",
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.12.2",
-        "@types/react": "^19.2.14",
-        "@types/react-dom": "^19.2.3",
         "@types/vscode": "^1.110.0",
-        "@types/ws": "^8.18.1",
         "@typescript-eslint/eslint-plugin": "^8.58.1",
         "@typescript-eslint/parser": "^8.58.1",
-        "@vitejs/plugin-react": "^6.0.1",
         "@vitest/coverage-v8": "^4.1.0",
         "@vscode/vsce": "^3.3.2",
-        "concurrently": "^9.2.1",
         "esbuild": "0.27.4",
         "eslint": "^9.39.4",
         "ts-loader": "^9.5.4",
         "tsx": "^4.21.0",
         "typescript": "^6.0.2",
-        "vite": "^8.0.1",
         "vitest": "^4.1.0",
         "webpack": "^5.105.4",
         "webpack-cli": "^7.0.2"
     },
     "dependencies": {
-        "@agentclientprotocol/sdk": "^0.18.2",
-        "cjson": "^0.5.0",
-        "react": "^19.2.5",
-        "react-dom": "^19.2.5",
-        "react-markdown": "^10.1.0",
-        "remark-gfm": "^4.0.1",
-        "ws": "^8.20.0"
+        "cjson": "^0.5.0"
     }
 }

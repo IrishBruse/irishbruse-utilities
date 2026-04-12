@@ -214,56 +214,60 @@ export function IbChatApp({
 
     return (
         <Fragment>
-            {permission !== null ? (
-                <PermissionDialog
-                    toolTitle={permission.toolTitle}
-                    options={permission.options}
-                    onSelect={(optionId) => {
-                        postPermissionResponse({ requestId: permission.requestId, selectedOptionId: optionId });
-                        dispatch({ type: "clearPermissionPrompt" });
-                    }}
-                    onDismiss={() => {
-                        postPermissionResponse({ requestId: permission.requestId, cancelled: true });
-                        dispatch({ type: "clearPermissionPrompt" });
-                    }}
-                />
-            ) : null}
             <div className="ib-chat-error" role="alert" hidden={state.errorText === null}>
                 {state.errorText}
             </div>
-            <main ref={traceRef} className="agent-trace" role="log" aria-label="Conversation" onScroll={onTraceScroll}>
-                <div ref={traceContentRef}>
-                    <TraceList
-                        items={state.trace}
-                        expandAllToolOutputs={expandAllToolOutputs}
-                        onCollapseExpandAll={() => {
-                            setExpandAllToolOutputs(false);
+            <div className="ib-chat-shell">
+                <main ref={traceRef} className="agent-trace" role="log" aria-label="Conversation" onScroll={onTraceScroll}>
+                    <div ref={traceContentRef}>
+                        <TraceList
+                            items={state.trace}
+                            expandAllToolOutputs={expandAllToolOutputs}
+                            onCollapseExpandAll={() => {
+                                setExpandAllToolOutputs(false);
+                            }}
+                        />
+                    </div>
+                </main>
+                <div className="ib-chat-composer-stack">
+                    {permission !== null ? (
+                        <PermissionDialog
+                            toolTitle={permission.toolTitle}
+                            options={permission.options}
+                            onSelect={(optionId) => {
+                                postPermissionResponse({ requestId: permission.requestId, selectedOptionId: optionId });
+                                dispatch({ type: "clearPermissionPrompt" });
+                            }}
+                            onDismiss={() => {
+                                postPermissionResponse({ requestId: permission.requestId, cancelled: true });
+                                dispatch({ type: "clearPermissionPrompt" });
+                            }}
+                        />
+                    ) : null}
+                    <ChatComposer
+                        activityLabel={activityLabel}
+                        acpAgentSelection={state.acpAgentSelection}
+                        modelSelection={state.modelSelection}
+                        promptInFlight={state.promptInFlight}
+                        inputBlocked={state.permissionPrompt !== null}
+                        slashCommands={state.slashCommands}
+                        draft={draft}
+                        onDraftChange={onDraftChange}
+                        onPickSessionAgent={(agentName) => {
+                            dispatch({ type: "pickSessionAgent", agentName });
+                            postSetSessionAgent(agentName);
                         }}
+                        onPickSessionModel={(modelId) => {
+                            dispatch({ type: "pickSessionModel", modelId });
+                            postSetSessionModel(modelId);
+                        }}
+                        onSubmit={submit}
+                        onCancel={postCancel}
+                        onKeyDown={onComposerKeyDown}
+                        workspaceText={workspaceText}
                     />
                 </div>
-            </main>
-            <ChatComposer
-                activityLabel={activityLabel}
-                acpAgentSelection={state.acpAgentSelection}
-                modelSelection={state.modelSelection}
-                promptInFlight={state.promptInFlight}
-                inputBlocked={state.permissionPrompt !== null}
-                slashCommands={state.slashCommands}
-                draft={draft}
-                onDraftChange={onDraftChange}
-                onPickSessionAgent={(agentName) => {
-                    dispatch({ type: "pickSessionAgent", agentName });
-                    postSetSessionAgent(agentName);
-                }}
-                onPickSessionModel={(modelId) => {
-                    dispatch({ type: "pickSessionModel", modelId });
-                    postSetSessionModel(modelId);
-                }}
-                onSubmit={submit}
-                onCancel={postCancel}
-                onKeyDown={onComposerKeyDown}
-                workspaceText={workspaceText}
-            />
+            </div>
         </Fragment>
     );
 }

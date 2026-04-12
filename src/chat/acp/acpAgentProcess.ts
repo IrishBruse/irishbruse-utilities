@@ -1,8 +1,62 @@
 import { spawn, ChildProcess } from "node:child_process";
-import { Readable, Writable } from "node:stream";
+import { Readable, Writable, Transform } from "node:stream";
 import * as acp from "@agentclientprotocol/sdk";
 import { workspace } from "vscode";
+import { appendIbChatAcpRpcRawNdjsonLine, isIbChatAcpRpcLoggingActive } from "../ibChatAcpRpcOutput";
 import type { AcpAgentConfig } from "./acpAgentConfig";
+
+/**
+ * Passes bytes through while appending each complete NDJSON line to the IB Chat ACP RPC Output channel and log file.
+ */
+function createNdjsonRpcLogTap(): Transform {
+    let buffer = "";
+    return new Transform({
+        transform(chunk: Buffer, chunkEncoding: BufferEncoding, callback): void {
+            void chunkEncoding;
+            buffer += chunk.toString("utf8");
+            const parts = buffer.split("\n");
+            buffer = parts.pop() ?? "";
+            for (const part of parts) {
+                const trimmed = part.trim();
+                if (trimmed.length > 0) {
+                    appendIbChatAcpRpcRawNdjsonLine(trimmed);
+                }
+            }
+            callback(null, chunk);
+        },
+        flush(callback): void {
+            const trimmed = buffer.trim();
+            if (trimmed.length > 0) {
+                appendIbChatAcpRpcRawNdjsonLine(trimmed);
+            }
+            buffer = "";
+            callback();
+        },
+    });
+}
+
+/**
+ * Builds Web Streams for the agent stdio, optionally tapping NDJSON lines into the ACP RPC Output channel.
+ */
+function ndJsonStreamTapsForChild(child: ChildProcess): {
+    stdinWeb: WritableStream;
+    stdoutWeb: ReadableStream<Uint8Array>;
+} {
+    if (!isIbChatAcpRpcLoggingActive()) {
+        return {
+            stdinWeb: Writable.toWeb(child.stdin!),
+            stdoutWeb: Readable.toWeb(child.stdout!) as ReadableStream<Uint8Array>,
+        };
+    }
+    const towardAgent = createNdjsonRpcLogTap();
+    const fromAgent = createNdjsonRpcLogTap();
+    towardAgent.pipe(child.stdin!);
+    child.stdout!.pipe(fromAgent);
+    return {
+        stdinWeb: Writable.toWeb(towardAgent),
+        stdoutWeb: Readable.toWeb(fromAgent) as ReadableStream<Uint8Array>,
+    };
+}
 
 /** Callback invoked whenever the agent sends a session/update notification. */
 export type SessionUpdateHandler = (params: acp.SessionNotification) => void;
@@ -53,9 +107,8 @@ export class AcpAgentProcess {
             console.error(`[ACP Agent ${this.config.name}] process error:`, err);
         });
 
-        const input = Writable.toWeb(this.child.stdin!);
-        const output = Readable.toWeb(this.child.stdout!) as ReadableStream<Uint8Array>;
-        const stream = acp.ndJsonStream(input, output);
+        const { stdinWeb, stdoutWeb } = ndJsonStreamTapsForChild(this.child);
+        const stream = acp.ndJsonStream(stdinWeb, stdoutWeb);
 
         const client: acp.Client = {
             requestPermission: async (params) => this.requestPermissionHandler(params),

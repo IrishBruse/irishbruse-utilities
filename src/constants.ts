@@ -45,6 +45,13 @@ export enum Commands {
     RefreshIbChatSessions = `ib-utilities.refreshIbChatSessions`,
 
     /**
+     * Show IB Chat ACP RPC log
+     * Short Title: ACP RPC log
+     * Icon: $(output)
+     */
+    ShowIbChatAcpRpcLog = `ib-utilities.showIbChatAcpRpcLog`,
+
+    /**
      * Open IB Chat session
      * Short Title: Open
      * Icon: undefined

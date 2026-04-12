@@ -1,6 +1,7 @@
-import { commands, ExtensionContext } from "vscode";
+import { commands, Disposable, ExtensionContext, Uri, window } from "vscode";
 import { Commands } from "../constants";
 import { openNewIbChatEditor } from "./ibChatEditor";
+import { disposeIbChatAcpRpcLogFile, registerIbChatAcpRpcOutput } from "./ibChatAcpRpcOutput";
 import { IbChatSessionsViewProvider } from "./IbChatSessionsView";
 import { pickAcpAgentConfig } from "./ibChatAgentPicker";
 import {
@@ -14,6 +15,19 @@ import { registerCommandIB } from "../utils/vscode";
  * Registers IB Chat sessions (sidebar tree) and editor webview commands. There is no docked chat webview.
  */
 export function activateIbChatView(context: ExtensionContext): void {
+    const acpRpcLog = window.createOutputChannel("IB Chat ACP RPC");
+    const acpRpcLogFileUri = Uri.joinPath(context.globalStorageUri, "ib-chat-acp-rpc.ndjson");
+    const acpRpcLogFilePath = acpRpcLogFileUri.fsPath;
+    registerIbChatAcpRpcOutput(acpRpcLog, acpRpcLogFilePath);
+    context.subscriptions.push(acpRpcLog);
+    context.subscriptions.push(new Disposable(() => disposeIbChatAcpRpcLogFile()));
+    registerCommandIB(
+        Commands.ShowIbChatAcpRpcLog,
+        () => {
+            acpRpcLog.show(true);
+        },
+        context
+    );
     IbChatSessionsViewProvider.activate(context);
     registerCommandIB(
         Commands.NewIbChatEditor,

@@ -54,7 +54,7 @@ export function openOrRevealIbChatEditor(
             const workspaceLabel = folder !== undefined ? folder.uri.fsPath : undefined;
             const availableNames = getAcpAgentConfigs().map((c) => c.name);
             const promptHistory = getIbChatPromptHistoryEntries(context, sessionId);
-            post({
+            const initPayload: ExtensionToWebviewMessage = {
                 type: "init",
                 sessionId,
                 title,
@@ -63,6 +63,10 @@ export function openOrRevealIbChatEditor(
                 acpAgentName: agentConfig?.name,
                 ...(availableNames.length > 0 ? { availableAcpAgents: availableNames } : {}),
                 ...(promptHistory.length > 0 ? { promptHistory } : {}),
+            };
+            void Promise.resolve().then(() => {
+                post(initPayload);
+                void ensureBridgeConnected(sessionId, post);
             });
         }
         if (parsed.type === "savePromptHistory") {
@@ -119,30 +123,43 @@ export function openNewIbChatEditor(
     openOrRevealIbChatEditor(context, sessionId, title, agentConfig);
 }
 
-async function handleSend(sessionId: string, body: string, post: (msg: ExtensionToWebviewMessage) => void): Promise<void> {
-    let bridge = bridgesBySessionId.get(sessionId);
-
-    if (!bridge) {
-        const config = agentConfigBySessionId.get(sessionId) ?? pickAgentConfig();
-        if (!config) {
-            post({ type: "error", message: "No ACP agents configured. Add agents in settings (ib-utilities.acpAgents)." });
-            return;
-        }
-        bridge = new AcpSessionBridge(config, post);
-        bridgesBySessionId.set(sessionId, bridge);
-        const preferredModelId = pendingModelIdBySessionId.get(sessionId);
-        try {
-            await bridge.connect(preferredModelId);
-            pendingModelIdBySessionId.delete(sessionId);
-        } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : String(err);
-            post({ type: "error", message: `Failed to connect to agent: ${message}` });
-            bridge.dispose();
-            bridgesBySessionId.delete(sessionId);
-            return;
-        }
+/**
+ * Spawns the agent if needed, runs ACP initialize and session/new, and forwards models and session updates to the webview.
+ */
+async function ensureBridgeConnected(
+    sessionId: string,
+    post: (msg: ExtensionToWebviewMessage) => void
+): Promise<AcpSessionBridge | undefined> {
+    const existing = bridgesBySessionId.get(sessionId);
+    if (existing !== undefined) {
+        return existing;
     }
+    const config = agentConfigBySessionId.get(sessionId) ?? pickAgentConfig();
+    if (!config) {
+        post({ type: "error", message: "No ACP agents configured. Add agents in settings (ib-utilities.acpAgents)." });
+        return undefined;
+    }
+    const bridge = new AcpSessionBridge(config, post);
+    bridgesBySessionId.set(sessionId, bridge);
+    const preferredModelId = pendingModelIdBySessionId.get(sessionId);
+    try {
+        await bridge.connect(preferredModelId);
+        pendingModelIdBySessionId.delete(sessionId);
+        return bridge;
+    } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        post({ type: "error", message: `Failed to connect to agent: ${message}` });
+        bridge.dispose();
+        bridgesBySessionId.delete(sessionId);
+        return undefined;
+    }
+}
 
+async function handleSend(sessionId: string, body: string, post: (msg: ExtensionToWebviewMessage) => void): Promise<void> {
+    const bridge = await ensureBridgeConnected(sessionId, post);
+    if (bridge === undefined) {
+        return;
+    }
     void bridge.prompt(body);
 }
 
@@ -190,6 +207,7 @@ function handleSetSessionAgent(sessionId: string, agentName: string, post: (msg:
         currentAgentName: config.name,
         availableAgentNames: getAcpAgentConfigs().map((c) => c.name),
     });
+    void ensureBridgeConnected(sessionId, post);
 }
 
 function pickAgentConfig(): AcpAgentConfig | undefined {

@@ -22,12 +22,15 @@ mount.appendChild(bootLine);
 
 const host = createVsCodeIbChatHost();
 let view: ChatView | null = null;
+let initReceived = false;
 
 host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
     if (isInitPayload(message)) {
         if (view !== null) {
             return;
         }
+        initReceived = true;
+        clearTimeout(initRetryTimer);
         view = mountChatView(
             mount,
             message,
@@ -56,3 +59,8 @@ host.onExtensionMessage((message: ExtensionToWebviewMessage) => {
 });
 
 host.post({ type: "ready" });
+const initRetryTimer = window.setTimeout(() => {
+    if (!initReceived) {
+        host.post({ type: "ready" });
+    }
+}, 750);

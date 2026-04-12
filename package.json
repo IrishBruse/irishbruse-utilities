@@ -175,6 +175,12 @@
                 "icon": "$(refresh)"
             },
             {
+                "command": "ib-utilities.showIbChatAcpRpcLog",
+                "title": "Show IB Chat ACP RPC log",
+                "shortTitle": "ACP RPC log",
+                "icon": "$(output)"
+            },
+            {
                 "command": "ib-utilities.openIbChatSession",
                 "title": "Open IB Chat session",
                 "shortTitle": "Open"
@@ -266,6 +272,11 @@
             "view/title": [
                 {
                     "command": "ib-utilities.refreshIbChatSessions",
+                    "when": "view == ibChatSessionsView",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.showIbChatAcpRpcLog",
                     "when": "view == ibChatSessionsView",
                     "group": "navigation"
                 },

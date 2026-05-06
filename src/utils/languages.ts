@@ -1,8 +1,11 @@
 import { readFile } from "fs/promises";
 import path from "path";
-import { extensions, window } from "vscode";
+import type { Extension } from "vscode";
+import { extensions } from "vscode";
 
-const mapping: Record<string, string> = {
+import { contributedLanguageIdToExtension } from "../constants";
+
+const builtinLanguageIdToExtension: Record<string, string> = {
     bat: ".bat",
     c: ".c",
     cpp: ".cpp",
@@ -43,34 +46,74 @@ const mapping: Record<string, string> = {
     yaml: ".yaml",
 };
 
+const mapping: Record<string, string> = {
+    ...builtinLanguageIdToExtension,
+    ...contributedLanguageIdToExtension,
+};
+
 export function getExtensionFromLanguageId(languageId: string): string | undefined {
     return mapping[languageId];
 }
 
+type ContributedLanguageEntry = {
+    id: string;
+    configuration?: string;
+};
+
+function contributedLanguageEntries(extension: Extension<unknown>): ContributedLanguageEntry[] {
+    const raw = extension.packageJSON.contributes?.languages;
+    if (!Array.isArray(raw)) {
+        return [];
+    }
+    const entries: ContributedLanguageEntry[] = [];
+    for (const item of raw) {
+        if (typeof item !== "object" || item === null || !("id" in item)) {
+            continue;
+        }
+        const id = (item as { id: unknown }).id;
+        if (typeof id !== "string") {
+            continue;
+        }
+        const configuration =
+            "configuration" in item && typeof (item as { configuration: unknown }).configuration === "string"
+                ? (item as { configuration: string }).configuration
+                : undefined;
+        entries.push({ id, configuration });
+    }
+    return entries;
+}
+
+function lineCommentFromLanguageConfigFile(configData: unknown): string {
+    if (typeof configData !== "object" || configData === null) {
+        return "//";
+    }
+    const comments = (configData as { comments?: unknown }).comments;
+    if (typeof comments !== "object" || comments === null) {
+        return "//";
+    }
+    const lineComment = (comments as { lineComment?: unknown }).lineComment;
+    if (typeof lineComment !== "string") {
+        return "//";
+    }
+    return lineComment;
+}
+
 export async function getLineCommentSyntax(languageId: string): Promise<string> {
-    const languageExtension = extensions.all.find((ext) =>
-        ext.packageJSON.contributes?.languages?.some((lang: any) => lang.id === languageId)
-    );
-
-    if (!languageExtension) {
-        return "//";
+    for (const extension of extensions.all) {
+        const lang = contributedLanguageEntries(extension).find((entry) => entry.id === languageId);
+        if (!lang) {
+            continue;
+        }
+        if (!lang.configuration) {
+            return "//";
+        }
+        const configFilePath = path.join(extension.extensionPath, lang.configuration);
+        try {
+            const configData: unknown = JSON.parse(await readFile(configFilePath, "utf8"));
+            return lineCommentFromLanguageConfigFile(configData);
+        } catch {
+            return "//";
+        }
     }
-
-    // Locate the language-configuration.json file
-    const languageConfigPath = languageExtension.packageJSON.contributes.languages.find(
-        (lang: any) => lang.id === languageId
-    )?.configuration;
-
-    if (!languageConfigPath) {
-        return "//";
-    }
-
-    const configFilePath = path.join(languageExtension.extensionPath, languageConfigPath);
-
-    try {
-        const configData = JSON.parse(await readFile(configFilePath, "utf8"));
-        return configData.comments.lineComment ?? "//";
-    } catch (error) {
-        return "//";
-    }
+    return "//";
 }

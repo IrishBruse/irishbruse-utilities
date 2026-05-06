@@ -1,3 +1,10 @@
+export type ContributedLanguage = {
+    id: string;
+    aliases?: string[];
+    extensions?: string[];
+    configuration?: string;
+};
+
 export type Contributes = {
     configuration: Configuration;
     themes: Theme[];
@@ -5,6 +12,7 @@ export type Contributes = {
     views: ViewContainersViews;
     commands: Command[];
     menus: Menus;
+    languages?: ContributedLanguage[];
 };
 
 export type Package = {

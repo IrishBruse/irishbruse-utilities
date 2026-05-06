@@ -141,4 +141,20 @@ if (contributes.configuration) {
     l();
 }
 
+if (contributes.languages && contributes.languages.length > 0) {
+    inlineDoc("Primary file extension per language id from this extension contributes.languages");
+    l("export const contributedLanguageIdToExtension: Record<string, string> = {");
+    indent();
+    for (const lang of contributes.languages) {
+        const primaryExtension = lang.extensions?.[0];
+        if (!primaryExtension) {
+            continue;
+        }
+        l(`${JSON.stringify(lang.id)}: ${JSON.stringify(primaryExtension)},`);
+    }
+    dedent();
+    l("};");
+    l();
+}
+
 outputFile("src/constants.ts");

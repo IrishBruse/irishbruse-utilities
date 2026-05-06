@@ -65,6 +65,29 @@
                 }
             }
         },
+        "languages": [
+            {
+                "id": "gherkin",
+                "aliases": ["Gherkin", "feature", "cucumber"],
+                "extensions": [".feature"],
+                "configuration": "./syntaxes/gherkin.language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "gherkin",
+                "scopeName": "text.gherkin.feature",
+                "path": "./syntaxes/gherkin.tmLanguage"
+            },
+            {
+                "scopeName": "markdown.gherkin.codeblock",
+                "path": "./syntaxes/gherkin.markdown-injection.tmLanguage.json",
+                "injectTo": ["text.html.markdown"],
+                "embeddedLanguages": {
+                    "meta.embedded.block.gherkin": "gherkin"
+                }
+            }
+        ],
         "themes": [
             {
                 "label": "Empty Dark Theme",

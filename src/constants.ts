@@ -112,3 +112,8 @@ export enum Configuration {
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
 
 }
+
+/** Primary file extension per language id from this extension contributes.languages */
+export const contributedLanguageIdToExtension: Record<string, string> = {
+    "gherkin": ".feature",
+};

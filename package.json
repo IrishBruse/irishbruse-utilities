@@ -8,7 +8,7 @@
     },
     "publisher": "irishbruse",
     "author": "Ethan Conneely",
-    "version": "0.8.0",
+    "version": "0.9.0",
     "license": "MIT",
     "engines": {
         "vscode": "^1.110.0"
@@ -166,6 +166,11 @@
                 "title": "Delete snippet",
                 "shortTitle": "Delete snippet",
                 "icon": "$(trash)"
+            },
+            {
+                "command": "ib-utilities.clipboardHasImage",
+                "title": "Detect Clipboard Image",
+                "shortTitle": "Clipboard image?"
             }
         ],
         "menus": {

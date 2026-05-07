@@ -59,6 +59,13 @@ export enum Commands {
     DeleteSnippet = `ib-utilities.deleteSnippet`,
 
     /**
+     * Detect Clipboard Image
+     * Short Title: Clipboard image?
+     * Icon: undefined
+     */
+    ClipboardHasImage = `ib-utilities.clipboardHasImage`,
+
+    /**
      * Snippet Manager
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,

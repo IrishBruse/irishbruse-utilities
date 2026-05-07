@@ -1758,6 +1758,7 @@ declare module "vscode" {
             | "workbench.action.terminal.openFileLink"
             | "workbench.action.terminal.openSettings"
             | "workbench.action.terminal.openUrlLink"
+            | "workbench.action.terminal.paste"
             | "workbench.action.terminal.recordSession"
             | "workbench.action.terminal.relaunch"
             | "workbench.action.terminal.rename"

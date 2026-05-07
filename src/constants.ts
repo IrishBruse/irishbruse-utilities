@@ -31,20 +31,6 @@ export enum Commands {
     OpenPR = `ib-utilities.openPR`,
 
     /**
-     * Paste Image
-     * Short Title: Paste Image
-     * Icon: $(clippy)
-     */
-    PasteImage = `ib-utilities.pasteImage`,
-
-    /**
-     * Smart paste
-     * Short Title: Paste
-     * Icon: undefined
-     */
-    SmartPaste = `ib-utilities.smartPaste`,
-
-    /**
      * Refresh Snippets
      * Short Title: Refresh
      * Icon: $(refresh)

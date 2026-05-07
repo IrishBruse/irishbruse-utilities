@@ -68,8 +68,14 @@
         "languages": [
             {
                 "id": "gherkin",
-                "aliases": ["Gherkin", "feature", "cucumber"],
-                "extensions": [".feature"],
+                "aliases": [
+                    "Gherkin",
+                    "feature",
+                    "cucumber"
+                ],
+                "extensions": [
+                    ".feature"
+                ],
                 "configuration": "./syntaxes/gherkin.language-configuration.json"
             }
         ],
@@ -82,7 +88,9 @@
             {
                 "scopeName": "markdown.gherkin.codeblock",
                 "path": "./syntaxes/gherkin.markdown-injection.tmLanguage.json",
-                "injectTo": ["text.html.markdown"],
+                "injectTo": [
+                    "text.html.markdown"
+                ],
                 "embeddedLanguages": {
                     "meta.embedded.block.gherkin": "gherkin"
                 }
@@ -136,17 +144,6 @@
                 "icon": "$(github)"
             },
             {
-                "command": "ib-utilities.pasteImage",
-                "title": "Paste Image",
-                "shortTitle": "Paste Image",
-                "icon": "$(clippy)"
-            },
-            {
-                "command": "ib-utilities.smartPaste",
-                "title": "Smart paste",
-                "shortTitle": "Paste"
-            },
-            {
                 "command": "ib-utilities.refreshSnippetView",
                 "title": "Refresh Snippets",
                 "shortTitle": "Refresh",
@@ -172,12 +169,6 @@
             }
         ],
         "menus": {
-            "explorer/context": [
-                {
-                    "command": "ib-utilities.pasteImage",
-                    "group": "copypaste"
-                }
-            ],
             "scm/title": [
                 {
                     "command": "ib-utilities.openPR",
@@ -215,25 +206,7 @@
                 }
             ]
         },
-        "keybindings": [
-            {
-                "command": "ib-utilities.pasteImage",
-                "key": "ctrl+shift+v",
-                "when": "filesExplorerFocus"
-            },
-            {
-                "command": "ib-utilities.smartPaste",
-                "key": "ctrl+v",
-                "when": "editorTextFocus",
-                "args": "editor"
-            },
-            {
-                "command": "ib-utilities.smartPaste",
-                "key": "ctrl+v",
-                "when": "filesExplorerFocus",
-                "args": "explorer"
-            }
-        ]
+        "keybindings": []
     },
     "devDependencies": {
         "@types/cjson": "^0.5.3",

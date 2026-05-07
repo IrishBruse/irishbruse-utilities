@@ -205,8 +205,7 @@
                     "group": "navigation"
                 }
             ]
-        },
-        "keybindings": []
+        }
     },
     "devDependencies": {
         "@types/cjson": "^0.5.3",

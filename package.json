@@ -166,11 +166,6 @@
                 "title": "Delete snippet",
                 "shortTitle": "Delete snippet",
                 "icon": "$(trash)"
-            },
-            {
-                "command": "ib-utilities.clipboardHasImage",
-                "title": "Detect Clipboard Image",
-                "shortTitle": "Clipboard image?"
             }
         ],
         "menus": {

@@ -251,8 +251,8 @@
         set("loopTextColor", ...text);
         set("activationBkgColor", ...selection);
         set("activationBorderColor", ...accent, ...border);
-        // Sequence autonumber: muted circle fill, dark digits
-        set("sequenceNumberColor", ...canvas);
+        // Sequence autonumber: editor background circle, foreground digits
+        set("sequenceNumberColor", ...text);
 
         // Gantt
         set("sectionBkgColor", "--vscode-sideBar-background", "--vscode-editor-background");

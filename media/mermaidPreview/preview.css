@@ -96,13 +96,10 @@ body {
     border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
     border-radius: 8px;
 
-    /* Modern Glass Effect */
-    background: color-mix(in srgb, var(--vscode-editorWidget-background) 85%, transparent);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-
+    background: var(--vscode-editorWidget-background);
     box-shadow: 0 4px 12px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.25));
     pointer-events: auto;
+    transition: none;
 }
 
 .toolbar-group {
@@ -126,7 +123,7 @@ body {
     font-size: 14px;
     line-height: 1;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
 #toolbar button:hover:not(:disabled) {
@@ -251,14 +248,14 @@ body {
     font-family: inherit;
 }
 
-/* Autonumber: solid muted circle, dark digits */
+/* Autonumber: editor background circle, foreground digits, bordered outline */
 #diagram marker[id$="-sequencenumber"] {
     fill: none;
     opacity: 1;
 }
 
 #diagram marker[id$="-sequencenumber"] circle {
-    fill: var(--vscode-editorWidget-background, var(--vscode-input-background)) !important;
+    fill: var(--vscode-editor-background) !important;
     fill-opacity: 1 !important;
     opacity: 1 !important;
     stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
@@ -266,7 +263,7 @@ body {
 }
 
 #diagram text.sequenceNumber {
-    fill: var(--vscode-editor-background) !important;
+    fill: var(--vscode-editor-foreground) !important;
     stroke: none;
 }
 

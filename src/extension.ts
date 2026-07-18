@@ -1,5 +1,4 @@
 import { ExtensionContext, Uri } from "vscode";
-import { openPR } from "./commands/openPR";
 import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
@@ -20,7 +19,6 @@ export function activate(context: ExtensionContext) {
     SnippetsPath = snippetsFolderUri.fsPath;
 
     registerCommandIB(Commands.RelativeGoTo, relativeGoTo, context);
-    registerCommandIB(Commands.OpenPR, openPR, context);
     registerCommandIB(Commands.OpenMermaidPreview, openMermaidPreview, context);
     registerCommandIB(Commands.OpenMermaidSource, openMermaidSource, context);
 

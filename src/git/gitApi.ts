@@ -52,6 +52,11 @@ export interface DiffChange extends Change {
     readonly deletions: number;
 }
 
+export interface RepositoryUIState {
+    readonly selected: boolean;
+    readonly onDidChange: Event<void>;
+}
+
 export interface RepositoryState {
     readonly HEAD: Branch | undefined;
     readonly onDidChange: Event<void>;
@@ -60,6 +65,7 @@ export interface RepositoryState {
 export interface Repository {
     readonly rootUri: Uri;
     readonly state: RepositoryState;
+    readonly ui: RepositoryUIState;
     getBranch(name: string): Promise<Branch>;
     getBranchBase(name: string): Promise<Branch | undefined>;
     getMergeBase(ref1: string, ref2: string): Promise<string | undefined>;
@@ -74,6 +80,7 @@ export interface API {
     readonly repositories: Repository[];
     readonly onDidOpenRepository: Event<{ repository: Repository }>;
     readonly onDidCloseRepository: Event<{ repository: Repository }>;
+    getRepository(uri: Uri): Repository | null;
     toGitUri(uri: Uri, ref: string): Uri;
 }
 

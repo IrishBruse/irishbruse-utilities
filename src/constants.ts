@@ -73,13 +73,6 @@ export enum Commands {
     OpenMermaidSource = `ib-utilities.openMermaidSource`,
 
     /**
-     * Refresh Git Helpers
-     * Short Title: Refresh
-     * Icon: $(refresh)
-     */
-    RefreshGitHelpers = `ib-utilities.refreshGitHelpers`,
-
-    /**
      * Show Git Helpers
      * Short Title: Git Helpers
      * Icon: $(git-branch)

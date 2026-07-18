@@ -207,12 +207,6 @@
                 "icon": "$(code)"
             },
             {
-                "command": "ib-utilities.refreshGitHelpers",
-                "title": "Refresh Git Helpers",
-                "shortTitle": "Refresh",
-                "icon": "$(refresh)"
-            },
-            {
                 "command": "ib-utilities.showGitHelpers",
                 "title": "Show Git Helpers",
                 "shortTitle": "Git Helpers",
@@ -292,18 +286,6 @@
                     "group": "ib-utilities@2"
                 }
             ],
-            "scm/title": [
-                {
-                    "command": "ib-utilities.showGitHelpers",
-                    "when": "scmProvider == git",
-                    "group": "navigation"
-                },
-                {
-                    "command": "ib-utilities.openPR",
-                    "when": "scmProvider == git",
-                    "group": "navigation"
-                }
-            ],
             "view/item/context": [
                 {
                     "command": "ib-utilities.editSnippet",
@@ -322,7 +304,7 @@
                 },
                 {
                     "command": "ib-utilities.diffWithBase",
-                    "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == header",
                     "group": "inline"
                 },
                 {
@@ -343,7 +325,7 @@
                     "group": "navigation"
                 },
                 {
-                    "command": "ib-utilities.refreshGitHelpers",
+                    "command": "ib-utilities.openPR",
                     "when": "view == ib-utilities.gitHelpers",
                     "group": "navigation"
                 }

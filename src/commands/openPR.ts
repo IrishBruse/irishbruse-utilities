@@ -2,9 +2,9 @@ import { env, SourceControl, Uri, window } from "vscode";
 import { asyncSpawn, Process } from "../utils/asyncSpawn";
 import { resolveRepositoryPath } from "../git/resolveRepositoryPath";
 
-export async function openPR(sourceControl?: SourceControl): Promise<void> {
-    const repoPath = await resolveRepositoryPath(sourceControl);
-    if (!repoPath) {
+export async function openPR(sourceControl?: SourceControl, repoPath?: string): Promise<void> {
+    const resolvedPath = repoPath ?? (await resolveRepositoryPath(sourceControl));
+    if (!resolvedPath) {
         window.showWarningMessage("Could not determine repository path.");
         return;
     }
@@ -13,8 +13,8 @@ export async function openPR(sourceControl?: SourceControl): Promise<void> {
 
     try {
         commands = await Promise.all([
-            asyncSpawn("gh", ["pr", "view", "--json", "number", "--jq", ".number"], { cwd: repoPath }),
-            asyncSpawn("git", ["remote", "get-url", "origin"], { cwd: repoPath }),
+            asyncSpawn("gh", ["pr", "view", "--json", "number", "--jq", ".number"], { cwd: resolvedPath }),
+            asyncSpawn("git", ["remote", "get-url", "origin"], { cwd: resolvedPath }),
         ]);
     } catch (error) {
         window.showErrorMessage("Failed to run git commands ", (error as Error).message);

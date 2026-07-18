@@ -194,27 +194,15 @@ body {
 /* ==========================================================================
    Mermaid Clusters (Subgraphs)
    ========================================================================== */
-#diagram .clusters > .cluster > rect,
-#diagram .clusters > .cluster > path {
-    fill: var(--vscode-sideBar-background) !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
+#diagram .cluster rect,
+#diagram .cluster path {
+    fill: var(--vscode-editor-selectionBackground) !important;
+    fill-opacity: 0.08 !important;
+    stroke: var(--vscode-editorGroup-border) !important;
     stroke-width: 1.5px !important;
-}
-
-#diagram .clusters > .cluster ~ .cluster > rect,
-#diagram .clusters > .cluster ~ .cluster > path {
-    fill: var(--vscode-sideBarSectionHeader-background, var(--vscode-input-background)) !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
-}
-
-#diagram .clusters > .cluster ~ .cluster ~ .cluster > rect,
-#diagram .clusters > .cluster ~ .cluster ~ .cluster > path {
-    fill: var(--vscode-sideBar-background) !important;
-}
-
-#diagram .clusters > .cluster ~ .cluster ~ .cluster ~ .cluster > rect,
-#diagram .clusters > .cluster ~ .cluster ~ .cluster ~ .cluster > path {
-    fill: var(--vscode-sideBarSectionHeader-background, var(--vscode-input-background)) !important;
+    stroke-dasharray: 4 6 !important;
+    rx: 0 !important;
+    ry: 0 !important;
 }
 
 /* ==========================================================================

@@ -14,27 +14,15 @@ import { Commands, Views } from "../constants";
 import type { Repository } from "../git/gitApi";
 import { getGitApi, getGitApiAsync } from "../git/getGitApi";
 import { countUnpublishedNotes, loadReviewNotes } from "../git/reviewNotes";
-import { getActiveReviewSession, isReviewActive } from "../git/reviewSession";
 import { resolveActiveRepository } from "../git/resolveActiveRepository";
 import { resolveBaseBranch } from "../git/resolveBaseBranch";
 import { registerCommandIB } from "../utils/vscode";
 import { openBranchDiff } from "../git/openBranchDiff";
-import { abortBranchReview, startBranchReview } from "../git/reviewSession";
-import { exportReviewSummary, publishReviewToPR } from "../git/publishReview";
-import { excludeFromReview } from "../git/excludeFromReview";
-import { promptAndAddReviewNote } from "../git/publishReview";
+import { clearLegacyBranchReviewState } from "../git/clearLegacyReviewState";
 import { getActiveRepository } from "../git/resolveActiveRepository";
 import { openPR } from "../commands/openPR";
 
-export type GitHelperAction =
-    | "diffWithBase"
-    | "openPR"
-    | "startReview"
-    | "abortReview"
-    | "openStaged"
-    | "publishReview"
-    | "exportReview"
-    | "addNote";
+export type GitHelperAction = "diffWithBase" | "openPR";
 
 export type GitHelperItemKind = "info" | "header" | "action";
 
@@ -58,14 +46,6 @@ export class GitHelperTreeItem extends TreeItem {
             this.iconPath = new ThemeIcon("diff");
         } else if (action === "openPR") {
             this.iconPath = new ThemeIcon("github");
-        } else if (action === "startReview" || action === "openStaged") {
-            this.iconPath = new ThemeIcon("eye");
-        } else if (action === "abortReview") {
-            this.iconPath = new ThemeIcon("discard");
-        } else if (action === "publishReview" || action === "exportReview") {
-            this.iconPath = new ThemeIcon("comment");
-        } else if (action === "addNote") {
-            this.iconPath = new ThemeIcon("note");
         }
     }
 }
@@ -97,6 +77,8 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         context.subscriptions.push(window.registerTreeDataProvider(Views.IbUtilitiesGitHelpers, provider));
 
+        void clearLegacyBranchReviewState(context);
+
         registerCommandIB(
             Commands.ShowGitHelpers,
             async () => {
@@ -108,13 +90,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         );
         registerCommandIB(Commands.DiffWithBase, (item) => provider.runAction(item, "diffWithBase"), context);
         registerCommandIB(Commands.OpenPR, (repoPath) => provider.runAction(repoPath, "openPR"), context);
-        registerCommandIB(Commands.StartBranchReview, (item) => provider.runAction(item, "startReview"), context);
-        registerCommandIB(Commands.AbortBranchReview, (item) => provider.runAction(item, "abortReview"), context);
-        registerCommandIB(Commands.OpenStagedReview, (item) => provider.runAction(item, "openStaged"), context);
-        registerCommandIB(Commands.PublishReviewToPR, (item) => provider.runAction(item, "publishReview"), context);
-        registerCommandIB(Commands.ExportReviewSummary, (item) => provider.runAction(item, "exportReview"), context);
-        registerCommandIB(Commands.AddReviewNote, (item) => provider.runAction(item, "addNote"), context);
-        registerCommandIB(Commands.ExcludeFromReview, () => excludeFromReview(), context);
 
         const wireApi = (api: NonNullable<ReturnType<typeof getGitApi>>) => {
             const refresh = () => provider.refresh();
@@ -140,7 +115,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         context.subscriptions.push(window.onDidChangeActiveTextEditor(() => provider.refresh()));
 
-        void restoreReviewSession(context);
         return provider;
     }
 
@@ -154,37 +128,12 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             return;
         }
 
-        const repository = (await getActiveRepository()) ?? undefined;
-        const branch = repository?.state.HEAD?.name ?? "unknown";
-
         switch (action) {
             case "diffWithBase":
                 await openBranchDiff(repoRoot);
                 break;
             case "openPR":
                 await openPR(undefined, repoRoot);
-                break;
-            case "startReview":
-                await startBranchReview(this.context, repoRoot);
-                this.refresh();
-                break;
-            case "abortReview":
-                await abortBranchReview(this.context, repoRoot);
-                this.refresh();
-                break;
-            case "openStaged":
-                await import("../git/reviewSession").then((m) => m.openStagedReview(repoRoot));
-                break;
-            case "publishReview":
-                await publishReviewToPR(repoRoot, branch);
-                this.refresh();
-                break;
-            case "exportReview":
-                await exportReviewSummary(repoRoot, branch);
-                break;
-            case "addNote":
-                await promptAndAddReviewNote(repoRoot);
-                this.refresh();
                 break;
         }
     }
@@ -229,7 +178,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot = repository.rootUri.fsPath;
         const head = repository.state.HEAD;
         const base = await resolveBaseBranch(repository);
-        const inReview = isReviewActive(repoRoot);
         const notes = head?.name ? await loadReviewNotes(repoRoot, head.name) : undefined;
         const noteCount = notes ? countUnpublishedNotes(notes) : 0;
 
@@ -240,9 +188,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         if (base) {
             headerParts.push(`→ ${base.name}`);
         }
-        if (inReview) {
-            headerParts.push("reviewing");
-        }
         if (noteCount > 0) {
             headerParts.push(`${noteCount} note${noteCount === 1 ? "" : "s"}`);
         }
@@ -251,24 +196,8 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             headerItem(repoRoot, path.basename(repoRoot), headerParts.join(" · ")),
         ];
 
-        if (inReview) {
-            items.push(
-                actionItem(repoRoot, "Staged review", "openStaged", Commands.OpenStagedReview),
-                actionItem(repoRoot, "Add note", "addNote", Commands.AddReviewNote),
-                actionItem(repoRoot, "Publish notes", "publishReview", Commands.PublishReviewToPR),
-                actionItem(repoRoot, "Export summary", "exportReview", Commands.ExportReviewSummary),
-                actionItem(repoRoot, "Abort review", "abortReview", Commands.AbortBranchReview)
-            );
-        } else {
-            if (head?.name && base) {
-                items.push(actionItem(repoRoot, "Start branch review", "startReview", Commands.StartBranchReview));
-            }
-            if (noteCount > 0) {
-                items.push(
-                    actionItem(repoRoot, "Publish notes", "publishReview", Commands.PublishReviewToPR),
-                    actionItem(repoRoot, "Export summary", "exportReview", Commands.ExportReviewSummary)
-                );
-            }
+        if (head?.name && base) {
+            items.push(actionItem(repoRoot, "Diff vs base", "diffWithBase", Commands.DiffWithBase));
         }
 
         return items;
@@ -303,9 +232,4 @@ function actionItem(
         undefined,
         { command: commandId, title: label, arguments: [repoRoot] }
     );
-}
-
-async function restoreReviewSession(context: ExtensionContext): Promise<void> {
-    const { restoreReviewSession: restore } = await import("../git/reviewSession");
-    await restore(context);
 }

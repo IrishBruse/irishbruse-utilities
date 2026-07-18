@@ -1,9 +1,7 @@
-import path from "path";
 import { env, Uri, window } from "vscode";
 import { asyncSpawn } from "../utils/asyncSpawn";
-import { getRepositoryByRoot } from "./getGitApi";
 import { formatReviewSummary, loadReviewNotes, markNotesPublished, type ReviewNote } from "./reviewNotes";
-import { getActiveReviewSession } from "./reviewSession";
+import { getReviewCommentController } from "./reviewCommentController";
 
 type GhPrInfo = {
     number: number;
@@ -116,6 +114,7 @@ export async function publishReviewToPR(repoRoot: string, branch: string): Promi
     }
 
     await markNotesPublished(repoRoot, branch, pending.map((n) => n.id));
+    await getReviewCommentController()?.refreshForRepo(repoRoot);
     window.showInformationMessage(`Published ${pending.length} comment(s) to PR #${pr.number}.`, "Open PR").then((choice) => {
         if (choice === "Open PR") {
             env.openExternal(Uri.parse(pr.url));
@@ -124,49 +123,10 @@ export async function publishReviewToPR(repoRoot: string, branch: string): Promi
 }
 
 export async function promptAndAddReviewNote(repoRoot: string): Promise<void> {
-    const repository = getRepositoryByRoot(repoRoot);
-    const editor = window.activeTextEditor;
-    if (!editor) {
-        window.showWarningMessage("Open a file to add a review note.");
+    const controller = getReviewCommentController();
+    if (!controller) {
+        window.showWarningMessage("Review comments are not available.");
         return;
     }
-
-    const head = repository?.state.HEAD;
-    if (!head?.name) {
-        window.showWarningMessage("Could not determine current branch.");
-        return;
-    }
-
-    const session = getActiveReviewSession(repoRoot);
-    const baseBranch = session?.baseBranchName ?? "main";
-
-    let filePath = editor.document.uri.fsPath;
-    const repoRootNorm = path.normalize(repoRoot);
-    if (filePath.startsWith(repoRootNorm)) {
-        filePath = path.relative(repoRoot, filePath);
-    }
-    if (editor.document.uri.scheme === "git") {
-        try {
-            const params = JSON.parse(editor.document.uri.query) as { path?: string };
-            if (params.path) {
-                filePath = path.relative(repoRoot, params.path);
-            }
-        } catch {
-            // keep fsPath relative
-        }
-    }
-
-    const line = editor.selection.active.line + 1;
-    const body = await window.showInputBox({
-        prompt: "Why was this change made?",
-        placeHolder: "Review note (Markdown supported)",
-        ignoreFocusOut: true,
-    });
-    if (!body?.trim()) {
-        return;
-    }
-
-    const { addReviewNote } = await import("./reviewNotes");
-    await addReviewNote(repoRoot, head.name, baseBranch, filePath.replace(/\\/g, "/"), line, "RIGHT", body.trim());
-    window.showInformationMessage("Review note saved.");
+    await controller.startDraftAtCursor(repoRoot);
 }

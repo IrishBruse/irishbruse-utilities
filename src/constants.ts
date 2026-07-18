@@ -87,34 +87,6 @@ export enum Commands {
     DiffWithBase = `ib-utilities.diffWithBase`,
 
     /**
-     * Start Branch Review
-     * Short Title: Start review
-     * Icon: $(eye)
-     */
-    StartBranchReview = `ib-utilities.startBranchReview`,
-
-    /**
-     * Abort Branch Review
-     * Short Title: Abort review
-     * Icon: $(discard)
-     */
-    AbortBranchReview = `ib-utilities.abortBranchReview`,
-
-    /**
-     * Open Staged Review
-     * Short Title: Staged review
-     * Icon: $(list-flat)
-     */
-    OpenStagedReview = `ib-utilities.openStagedReview`,
-
-    /**
-     * Exclude Selection from Review
-     * Short Title: Exclude from review
-     * Icon: $(diff-removed)
-     */
-    ExcludeFromReview = `ib-utilities.excludeFromReview`,
-
-    /**
      * Add Review Note
      * Short Title: Add note
      * Icon: $(note)
@@ -134,6 +106,41 @@ export enum Commands {
      * Icon: $(export)
      */
     ExportReviewSummary = `ib-utilities.exportReviewSummary`,
+
+    /**
+     * Add Review Note
+     * Short Title: undefined
+     * Icon: undefined
+     */
+    ReviewCommentCreate = `ib-utilities.reviewComment.create`,
+
+    /**
+     * Save
+     * Short Title: undefined
+     * Icon: undefined
+     */
+    ReviewCommentSave = `ib-utilities.reviewComment.save`,
+
+    /**
+     * Cancel
+     * Short Title: undefined
+     * Icon: undefined
+     */
+    ReviewCommentCancel = `ib-utilities.reviewComment.cancel`,
+
+    /**
+     * Delete
+     * Short Title: undefined
+     * Icon: $(trash)
+     */
+    ReviewCommentDelete = `ib-utilities.reviewComment.delete`,
+
+    /**
+     * Edit
+     * Short Title: undefined
+     * Icon: $(edit)
+     */
+    ReviewCommentEdit = `ib-utilities.reviewComment.edit`,
 
     /**
      * Snippet Manager

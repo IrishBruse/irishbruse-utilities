@@ -17,9 +17,7 @@ Tree view under the **Snippet Manager** activity bar: create, edit, and delete s
 A **Git Helpers** panel in the Source Control sidebar shows actions for the **active repository** (selected in Repositories, Changes, or from the open editor):
 
 - **Diff vs base** — multi-file diff of your branch against an auto-detected base (`main` / `origin/main`, etc.)
-- **Start branch review** — `git reset --soft` to merge-base, then review staged changes in VS Code
-- **Exclude selection from review** — unstages and reverts selected lines as unstaged removals (editor context menu during review)
-- **Review notes** — document why a change was made; **Publish to PR** posts line comments via `gh` (no GitHub extension required)
+- **Review notes** — add inline comments in git diffs; **Publish to PR** posts line comments via `gh` (no GitHub extension required)
 
 - **Open pull request** — opens the GitHub PR for the current branch (via `gh`)
 
@@ -73,10 +71,6 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 | `ib-utilities.openMermaidPreview` | Open Preview |
 | `ib-utilities.openMermaidSource` | Open Source |
 | `ib-utilities.diffWithBase` | Diff vs Base Branch |
-| `ib-utilities.startBranchReview` | Start Branch Review |
-| `ib-utilities.abortBranchReview` | Abort Branch Review |
-| `ib-utilities.openStagedReview` | Open Staged Review |
-| `ib-utilities.excludeFromReview` | Exclude Selection from Review |
 | `ib-utilities.addReviewNote` | Add Review Note |
 | `ib-utilities.publishReviewToPR` | Publish Review to PR |
 | `ib-utilities.exportReviewSummary` | Export Review Summary |

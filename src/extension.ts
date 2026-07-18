@@ -2,6 +2,9 @@ import { ExtensionContext, Uri } from "vscode";
 import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
+import { activateReviewCommentController } from "./git/reviewCommentController";
+import { exportReviewSummary, promptAndAddReviewNote, publishReviewToPR } from "./git/publishReview";
+import { getActiveRepository } from "./git/resolveActiveRepository";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
@@ -24,7 +27,29 @@ export function activate(context: ExtensionContext) {
 
     registerMermaidCustomEditor(context);
     SnippetViewProvider.activate(context);
+    activateReviewCommentController(context);
     GitHelpersViewProvider.activate(context);
+
+    registerCommandIB(Commands.AddReviewNote, async () => {
+        const repo = await getActiveRepository();
+        if (repo) {
+            await promptAndAddReviewNote(repo.rootUri.fsPath);
+        }
+    }, context);
+    registerCommandIB(Commands.PublishReviewToPR, async () => {
+        const repo = await getActiveRepository();
+        const branch = repo?.state.HEAD?.name;
+        if (repo && branch) {
+            await publishReviewToPR(repo.rootUri.fsPath, branch);
+        }
+    }, context);
+    registerCommandIB(Commands.ExportReviewSummary, async () => {
+        const repo = await getActiveRepository();
+        const branch = repo?.state.HEAD?.name;
+        if (repo && branch) {
+            await exportReviewSummary(repo.rootUri.fsPath, branch);
+        }
+    }, context);
 }
 
 export function deactivate() {

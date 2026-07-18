@@ -70,6 +70,33 @@ export async function addReviewNote(
     return note;
 }
 
+export async function updateReviewNote(
+    repoRoot: string,
+    branch: string,
+    noteId: string,
+    body: string
+): Promise<ReviewNote | undefined> {
+    const data = await loadReviewNotes(repoRoot, branch);
+    const note = data.notes.find((n) => n.id === noteId);
+    if (!note) {
+        return undefined;
+    }
+    note.body = body;
+    await saveReviewNotes(repoRoot, data);
+    return note;
+}
+
+export async function deleteReviewNote(repoRoot: string, branch: string, noteId: string): Promise<boolean> {
+    const data = await loadReviewNotes(repoRoot, branch);
+    const before = data.notes.length;
+    data.notes = data.notes.filter((n) => n.id !== noteId);
+    if (data.notes.length === before) {
+        return false;
+    }
+    await saveReviewNotes(repoRoot, data);
+    return true;
+}
+
 export async function markNotesPublished(repoRoot: string, branch: string, noteIds: string[]): Promise<void> {
     const data = await loadReviewNotes(repoRoot, branch);
     const idSet = new Set(noteIds);

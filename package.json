@@ -219,30 +219,6 @@
                 "icon": "$(diff)"
             },
             {
-                "command": "ib-utilities.startBranchReview",
-                "title": "Start Branch Review",
-                "shortTitle": "Start review",
-                "icon": "$(eye)"
-            },
-            {
-                "command": "ib-utilities.abortBranchReview",
-                "title": "Abort Branch Review",
-                "shortTitle": "Abort review",
-                "icon": "$(discard)"
-            },
-            {
-                "command": "ib-utilities.openStagedReview",
-                "title": "Open Staged Review",
-                "shortTitle": "Staged review",
-                "icon": "$(list-flat)"
-            },
-            {
-                "command": "ib-utilities.excludeFromReview",
-                "title": "Exclude Selection from Review",
-                "shortTitle": "Exclude from review",
-                "icon": "$(diff-removed)"
-            },
-            {
                 "command": "ib-utilities.addReviewNote",
                 "title": "Add Review Note",
                 "shortTitle": "Add note",
@@ -259,6 +235,29 @@
                 "title": "Export Review Summary",
                 "shortTitle": "Export summary",
                 "icon": "$(export)"
+            },
+            {
+                "command": "ib-utilities.reviewComment.create",
+                "title": "Add Review Note",
+                "enablement": "!commentIsEmpty"
+            },
+            {
+                "command": "ib-utilities.reviewComment.save",
+                "title": "Save"
+            },
+            {
+                "command": "ib-utilities.reviewComment.cancel",
+                "title": "Cancel"
+            },
+            {
+                "command": "ib-utilities.reviewComment.delete",
+                "title": "Delete",
+                "icon": "$(trash)"
+            },
+            {
+                "command": "ib-utilities.reviewComment.edit",
+                "title": "Edit",
+                "icon": "$(edit)"
             }
         ],
         "menus": {
@@ -276,14 +275,57 @@
             ],
             "editor/context": [
                 {
-                    "command": "ib-utilities.excludeFromReview",
-                    "when": "ib-utilities.inBranchReview",
+                    "command": "ib-utilities.addReviewNote",
+                    "when": "resourceScheme == git",
                     "group": "ib-utilities@1"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "ib-utilities.reviewComment.create",
+                    "when": "false"
                 },
                 {
-                    "command": "ib-utilities.addReviewNote",
-                    "when": "ib-utilities.inBranchReview",
-                    "group": "ib-utilities@2"
+                    "command": "ib-utilities.reviewComment.delete",
+                    "when": "false"
+                }
+            ],
+            "comments/commentThread/title": [
+                {
+                    "command": "ib-utilities.reviewComment.delete",
+                    "group": "navigation",
+                    "when": "commentController == ib-utilities.review && !commentThreadIsEmpty"
+                }
+            ],
+            "comments/commentThread/context": [
+                {
+                    "command": "ib-utilities.reviewComment.create",
+                    "group": "inline",
+                    "when": "commentController == ib-utilities.review && commentThreadIsEmpty"
+                }
+            ],
+            "comments/comment/title": [
+                {
+                    "command": "ib-utilities.reviewComment.edit",
+                    "group": "group@1",
+                    "when": "commentController == ib-utilities.review && commentThread != draft"
+                },
+                {
+                    "command": "ib-utilities.reviewComment.delete",
+                    "group": "group@2",
+                    "when": "commentController == ib-utilities.review"
+                }
+            ],
+            "comments/comment/context": [
+                {
+                    "command": "ib-utilities.reviewComment.cancel",
+                    "group": "inline@1",
+                    "when": "commentController == ib-utilities.review"
+                },
+                {
+                    "command": "ib-utilities.reviewComment.save",
+                    "group": "inline@2",
+                    "when": "commentController == ib-utilities.review"
                 }
             ],
             "view/item/context": [
@@ -305,11 +347,6 @@
                 {
                     "command": "ib-utilities.diffWithBase",
                     "when": "view == ib-utilities.gitHelpers && viewItem == header",
-                    "group": "inline"
-                },
-                {
-                    "command": "ib-utilities.startBranchReview",
-                    "when": "view == ib-utilities.gitHelpers && viewItem == action-startReview",
                     "group": "inline"
                 }
             ],

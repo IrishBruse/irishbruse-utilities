@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
     blendHex,
+    buildMutedCScaleColors,
     getThemeCSS,
     getThemeVariables,
     getTokens,
@@ -131,6 +132,16 @@ describe("mermaidEditor/vsCodeTheme", () => {
             expect(variables.git0).toBeDefined();
             expect(variables.pie1).toBeDefined();
             expect(variables.cScale0).toBeDefined();
+            expect(variables.cScaleLabel1).toBe(variables.textColor);
+            expect(variables.cScaleInv2).toBe(variables.primaryBorderColor);
+        });
+
+        it("uses muted cScale colors instead of saturated chart palette", () => {
+            const tokens = getMockTokens();
+            const scales = buildMutedCScaleColors(tokens);
+            const chartPurple = tokens.chartPurple;
+            expect(scales[0]).not.toBe(chartPurple);
+            expect(scales.every((color) => isValidHexColor(color))).toBe(true);
         });
     });
 
@@ -143,6 +154,8 @@ describe("mermaidEditor/vsCodeTheme", () => {
             expect(css).toContain("foreignObject");
             expect(css).toContain(".grid .tick text");
             expect(css).toContain(".task0, .task1");
+            expect(css).toContain(".timeline-node text");
+            expect(css).toContain(".section-root path");
             expect(css).toContain(".commit-label-bkg");
         });
 

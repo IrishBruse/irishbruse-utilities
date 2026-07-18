@@ -70,6 +70,28 @@
   ];
   var PIE_PALETTE_VARS = CHART_PALETTE_VARS;
   var GIT_PALETTE_VARS = CHART_PALETTE_VARS.slice(0, 8);
+  var C_SCALE_LIMIT = 12;
+  function buildMutedCScaleColors(tokens) {
+    const { surface, surfaceAlt, sidebar, accent, chartBlue, chartPurple, muted } = tokens;
+    const recipes = [
+      blendHex(surface, chartBlue, 0.22) ?? surface,
+      blendHex(surfaceAlt, muted, 0.2) ?? surfaceAlt,
+      blendHex(surface, chartPurple, 0.18) ?? surface,
+      blendHex(sidebar, accent, 0.12) ?? sidebar,
+      blendHex(surface, accent, 0.15) ?? surface,
+      blendHex(surfaceAlt, chartBlue, 0.12) ?? surfaceAlt
+    ];
+    return Array.from({ length: C_SCALE_LIMIT }, (_, i) => recipes[i % recipes.length]);
+  }
+  function applyCScaleTheme(variables, tokens) {
+    const scales = buildMutedCScaleColors(tokens);
+    for (let i = 0; i < C_SCALE_LIMIT; i++) {
+      variables[`cScale${i}`] = scales[i];
+      variables[`cScaleLabel${i}`] = tokens.fg;
+      variables[`cScaleInv${i}`] = tokens.border;
+    }
+    variables.scaleLabelColor = tokens.fg;
+  }
   function parseHex(hex) {
     const match = hex.match(/^#([0-9a-f]{6})(?:[0-9a-f]{2})?$/i);
     if (!match) {
@@ -181,8 +203,7 @@
       connectorMuted,
       chartBlue,
       chartRed,
-      fontFamily,
-      charts
+      fontFamily
     } = tokens;
     setValue("background", canvasColor);
     setValue("textColor", foreground);
@@ -286,9 +307,7 @@
     for (let i = 0; i < PIE_PALETTE_VARS.length; i++) {
       set(`pie${i + 1}`, PIE_PALETTE_VARS[i]);
     }
-    for (let i = 0; i < charts.length; i++) {
-      setValue(`cScale${i}`, charts[i]);
-    }
+    applyCScaleTheme(variables, tokens);
     variables.fontFamily = fontFamily;
     return variables;
   }
@@ -460,6 +479,33 @@ rect.task.milestone {
 .commit-merge, .commit-highlight-inner {
   fill: ${chartBlue};
   stroke: ${chartBlue};
+}
+
+/* Timeline / journey / mindmap sections */
+.section-root rect, .section-root path, .section-root circle {
+  fill: ${blendHex(surface, accent, 0.1) ?? surface};
+  stroke: ${border};
+}
+.section-root text {
+  fill: ${fg};
+  font-family: ${fontFamily};
+}
+.timeline-node text, .section-0 text, .section-1 text, .section-2 text, .section-3 text {
+  fill: ${fg};
+  font-family: ${fontFamily};
+}
+.timeline-node path, .timeline-node rect,
+.section-0 path, .section-1 path, .section-2 path, .section-3 path,
+.section-0 rect, .section-1 rect, .section-2 rect, .section-3 rect {
+  stroke: ${border};
+}
+.timeline-node line, .section-0 line, .section-1 line, .section-2 line, .section-3 line {
+  stroke: ${border} !important;
+  stroke-width: 1px !important;
+}
+.lineWrapper line {
+  stroke: ${muted} !important;
+  stroke-width: 1px !important;
 }
 
 /* Pie */

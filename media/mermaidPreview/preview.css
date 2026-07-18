@@ -10,7 +10,6 @@ body {
     overflow: hidden;
     background: var(--vscode-editor-background);
     color: var(--vscode-editor-foreground);
-    /* Falls back to Cascadia Code NF if editor font isn't passed */
     font-family: var(--vscode-editor-font-family, "Cascadia Code NF", monospace);
 }
 
@@ -19,7 +18,6 @@ body {
     inset: 0;
     overflow: hidden;
     touch-action: none;
-    /* Soft grid background for the canvas (optional, remove if you prefer solid) */
     background-image: radial-gradient(var(--vscode-editorIndentGuide-background) 1px, transparent 1px);
     background-size: 24px 24px;
 }
@@ -45,7 +43,7 @@ body {
 #diagram svg {
     display: block;
     max-width: none;
-    font-family: var(--vscode-font-family, var(--vscode-editor-font-family, sans-serif)) !important;
+    font-family: var(--ib-font-family, var(--vscode-font-family, var(--vscode-editor-font-family, sans-serif))) !important;
 }
 
 /* Make all text easily selectable */
@@ -58,28 +56,61 @@ body {
 }
 
 /* ==========================================================================
-   Error Overlay
+   Error toast
    ========================================================================== */
-#error {
+#error.error-toast {
     position: fixed;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    padding: 12px 16px;
+    left: 16px;
+    bottom: 16px;
+    z-index: 15;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: min(420px, calc(100% - 32px));
+    padding: 8px 10px;
+    border: 1px solid var(--vscode-inputValidation-errorBorder);
+    border-radius: 6px;
     color: var(--vscode-errorForeground);
     background: var(--vscode-inputValidation-errorBackground);
-    border-top: 2px solid var(--vscode-inputValidation-errorBorder);
-    font-size: 13px;
+    font-size: 12px;
+    line-height: 1.4;
     font-family: var(--vscode-editor-font-family);
-    white-space: pre-wrap;
-    z-index: 10;
-    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
-    transition: transform 0.2s ease-in-out;
+    box-shadow: 0 4px 12px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.25));
 }
 
-#error[hidden] {
+#error.error-toast[hidden] {
     display: none;
-    transform: translateY(100%);
+}
+
+.error-message {
+    flex: 1;
+    min-width: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.error-dismiss {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--vscode-errorForeground);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.error-dismiss:hover {
+    background: var(--vscode-toolbar-hoverBackground);
+    opacity: 1;
 }
 
 /* ==========================================================================
@@ -96,7 +127,6 @@ body {
     padding: 6px;
     border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
     border-radius: 8px;
-
     background: var(--vscode-editorWidget-background);
     box-shadow: 0 4px 12px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.25));
     pointer-events: auto;
@@ -157,152 +187,65 @@ body {
 }
 
 /* ==========================================================================
-   Mermaid Nodes & Shapes
+   Mermaid structural exceptions (colors via --ib-* tokens from vsCodeTheme)
    ========================================================================== */
-/* Flowchart / state nodes — exclude ER entity tables (they use .divider grids) */
+
+/* Node depth — not expressible via themeVariables */
 #diagram .node:not(:has(.divider)) rect,
 #diagram .node:not(:has(.divider)) circle,
 #diagram .node:not(:has(.divider)) ellipse,
 #diagram .node:not(:has(.divider)) polygon,
 #diagram .node:not(:has(.divider)) path {
-    fill: var(--vscode-editorWidget-background, var(--vscode-input-background));
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
-    stroke-width: 1.5px;
     filter: drop-shadow(0 2px 4px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.12)));
-    transition:
-        fill 0.2s ease,
-        stroke 0.2s ease;
+    transition: fill 0.2s ease, stroke 0.2s ease;
 }
 
-/* Lift inner nodes off their parent cluster background */
-#diagram .cluster .node:not(:has(.divider)) rect,
-#diagram .cluster .node:not(:has(.divider)) circle,
-#diagram .cluster .node:not(:has(.divider)) ellipse,
-#diagram .cluster .node:not(:has(.divider)) polygon,
-#diagram .cluster .node:not(:has(.divider)) path {
-    fill: var(--vscode-editorWidget-background);
-}
-
-/* Overrides for specific states/actors */
-#diagram .actor {
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
-    fill: var(--vscode-editorWidget-background);
-}
-
-/* ==========================================================================
-   Mermaid Clusters (Subgraphs)
-   ========================================================================== */
-#diagram .cluster rect,
-#diagram .cluster path {
-    fill: var(--vscode-editor-selectionBackground) !important;
-    fill-opacity: 0.08 !important;
-    stroke: var(--vscode-editorGroup-border) !important;
-    stroke-width: 1.5px !important;
-    stroke-dasharray: 4 6 !important;
-    rx: 0 !important;
-    ry: 0 !important;
-}
-
-/* ==========================================================================
-   Mermaid Edges & Flow Lines
-   ========================================================================== */
-#diagram .edgePath path,
-#diagram .flowchart-link,
-#diagram .messageLine0,
-#diagram .messageLine1,
-#diagram .relationshipLine {
-    stroke: var(--vscode-editor-foreground);
-    stroke-width: 1.5px;
-}
-
-#diagram marker polygon,
-#diagram marker path {
-    fill: var(--vscode-editor-foreground);
-    stroke: none;
-}
-
-/* ==========================================================================
-   Typography & Labels
-   ========================================================================== */
-/* Ensures label text perfectly matches your editor theme */
-#diagram .edgeLabel,
-#diagram .edgeLabel p,
-#diagram .edgeLabel span,
-#diagram .labelBkg {
-    color: var(--vscode-editor-foreground);
-    background-color: var(--vscode-editor-background);
-}
-
-#diagram .messageText,
-#diagram .loopText,
-#diagram .actor > text,
-#diagram .nodeLabel,
-#diagram .cluster-label,
-#diagram .titleText,
-#diagram .stateLabel text,
-#diagram g.stateGroup text,
-#diagram g.stateGroup .state-title,
-#diagram .statediagramTitleText,
-#diagram .noteText {
-    fill: var(--vscode-editor-foreground) !important;
-    color: var(--vscode-editor-foreground) !important;
-    font-family: inherit;
-}
-
-/* Autonumber: editor background circle, foreground digits, bordered outline */
+/* Sequence autonumber markers */
 #diagram marker[id$="-sequencenumber"] {
     fill: none;
     opacity: 1;
 }
 
 #diagram marker[id$="-sequencenumber"] circle {
-    fill: var(--vscode-editor-background, var(--vscode-sideBar-background)) !important;
+    fill: var(--ib-bg) !important;
     fill-opacity: 1 !important;
     opacity: 1 !important;
-    stroke: var(--vscode-editor-foreground);
+    stroke: var(--ib-fg);
     stroke-width: 1px;
 }
 
 #diagram text.sequenceNumber {
-    fill: var(--vscode-editor-foreground) !important;
+    fill: var(--ib-fg) !important;
     stroke: none;
     font-weight: bold;
 }
 
-/* Notes and specific sequence diagram blocks */
-#diagram .note {
-    fill: var(--vscode-editorWarning-background, var(--vscode-editorWidget-background));
-    stroke: var(--vscode-editorWarning-border, var(--vscode-focusBorder));
-}
-
-/* ==========================================================================
-   ER Diagram Entity Tables
-   ========================================================================== */
+/* ER entity tables — unique grid DOM */
 #diagram .node:has(.divider) {
     filter: drop-shadow(0 2px 6px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.24)));
 }
 
 #diagram .node:has(.divider) .outer-path path {
-    fill: var(--vscode-input-background, var(--vscode-sideBarSectionHeader-background)) !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    fill: var(--ib-surface-alt) !important;
+    stroke: var(--ib-border);
     stroke-width: 1px;
 }
 
 #diagram .node:has(.divider) .row-rect-odd path {
-    fill: var(--vscode-sideBar-background, var(--vscode-editor-background)) !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    fill: var(--ib-sidebar) !important;
+    stroke: var(--ib-border);
     stroke-width: 1px;
 }
 
 #diagram .node:has(.divider) .row-rect-even path {
-    fill: var(--vscode-input-background, var(--vscode-sideBarSectionHeader-background)) !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    fill: var(--ib-surface-alt) !important;
+    stroke: var(--ib-border);
     stroke-width: 1px;
 }
 
 #diagram .node:has(.divider) .divider path {
-    fill: var(--vscode-editorWidget-border, var(--vscode-panel-border));
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    fill: var(--ib-border);
+    stroke: var(--ib-border);
     stroke-width: 1px;
 }
 
@@ -312,8 +255,8 @@ body {
 #diagram .node:has(.divider) .attribute-type,
 #diagram .node:has(.divider) .attribute-name,
 #diagram .node:has(.divider) .attribute-keys {
-    fill: var(--vscode-editor-foreground) !important;
-    color: var(--vscode-editor-foreground) !important;
+    fill: var(--ib-fg) !important;
+    color: var(--ib-fg) !important;
     font-family: inherit;
 }
 
@@ -321,156 +264,25 @@ body {
     font-weight: 600;
 }
 
-#diagram .relationshipLabelBox {
-    fill: var(--vscode-editorWidget-background);
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
-}
-
-/* ==========================================================================
-   Gantt Charts
-   ========================================================================== */
-#diagram svg[aria-roledescription="gantt"] .taskText,
-#diagram svg[aria-roledescription="gantt"] .taskText0,
-#diagram svg[aria-roledescription="gantt"] .taskText1,
-#diagram svg[aria-roledescription="gantt"] .taskText2,
-#diagram svg[aria-roledescription="gantt"] .taskText3,
-#diagram svg[aria-roledescription="gantt"] .taskTextOutsideLeft,
-#diagram svg[aria-roledescription="gantt"] .taskTextOutsideRight,
-#diagram svg[aria-roledescription="gantt"] .taskTextOutside0,
-#diagram svg[aria-roledescription="gantt"] .taskTextOutside1,
-#diagram svg[aria-roledescription="gantt"] .taskTextOutside2,
-#diagram svg[aria-roledescription="gantt"] .taskTextOutside3,
-#diagram svg[aria-roledescription="gantt"] .activeText0,
-#diagram svg[aria-roledescription="gantt"] .activeText1,
-#diagram svg[aria-roledescription="gantt"] .activeText2,
-#diagram svg[aria-roledescription="gantt"] .activeText3,
-#diagram svg[aria-roledescription="gantt"] .doneText0,
-#diagram svg[aria-roledescription="gantt"] .doneText1,
-#diagram svg[aria-roledescription="gantt"] .doneText2,
-#diagram svg[aria-roledescription="gantt"] .doneText3,
-#diagram svg[aria-roledescription="gantt"] .milestoneText {
-    font-family: var(--vscode-font-family, sans-serif) !important;
-}
-
-#diagram .sectionTitle,
-#diagram .sectionTitle tspan {
-    fill: var(--vscode-editor-foreground) !important;
-    font-family: inherit;
-    font-weight: 600;
-}
-
-#diagram .grid .tick text {
-    fill: var(--vscode-descriptionForeground, var(--vscode-editorLineNumber-foreground)) !important;
-    font-family: var(--vscode-font-family, sans-serif) !important;
-}
-
-#diagram .grid .tick line {
-    stroke: var(--vscode-editorIndentGuide-background, var(--vscode-panel-border));
-    opacity: 0.55;
-}
-
-#diagram .grid .domain {
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
-    opacity: 0.6;
-}
-
-/* Outside-bar labels sit on the canvas, not the bar fill */
-#diagram .taskTextOutsideLeft,
-#diagram .taskTextOutsideRight,
-#diagram .taskTextOutside0,
-#diagram .taskTextOutside1,
-#diagram .taskTextOutside2,
-#diagram .taskTextOutside3,
-#diagram .milestoneText {
-    fill: var(--vscode-editor-foreground) !important;
-    font-family: inherit;
-}
-
-/* White text on red critical bars */
-#diagram .critText0,
-#diagram .critText1,
-#diagram .critText2,
-#diagram .critText3 {
-    fill: var(--vscode-editor-foreground) !important;
-    font-family: inherit;
-}
-
-/* Milestone diamond — bright like the official theme */
-#diagram rect.task.milestone {
-    fill: var(--vscode-editor-foreground) !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
-}
-
-/* ==========================================================================
-   Pie Charts
-   ========================================================================== */
-#diagram svg[aria-roledescription="pie"] .pieTitleText,
-#diagram svg[aria-roledescription="pie"] .legend text {
-    fill: var(--vscode-editor-foreground) !important;
-    font-family: var(--vscode-font-family, sans-serif) !important;
-}
-
-/* Slice % labels: high-contrast fill plus background-colored stroke halo */
+/* Pie slice % labels — readability halo */
 #diagram svg[aria-roledescription="pie"] .slice {
-    fill: var(--vscode-editor-foreground) !important;
-    font-family: var(--vscode-font-family, sans-serif) !important;
+    fill: var(--ib-fg) !important;
     font-weight: 600;
     paint-order: stroke fill;
-    stroke: var(--vscode-editor-background);
+    stroke: var(--ib-bg);
     stroke-width: 4px;
     stroke-linejoin: round;
 }
 
-#diagram svg[aria-roledescription="pie"] .pieCircle {
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
-    opacity: 1;
-}
-
-#diagram svg[aria-roledescription="pie"] .pieOuterCircle {
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
-}
-
-/* ==========================================================================
-   Git Graphs
-   ========================================================================== */
-#diagram svg[aria-roledescription="git"] .gitTitleText,
-#diagram svg[aria-roledescription="git"] .branch-label,
-#diagram svg[aria-roledescription="git"] [class*="branch-label"],
-#diagram svg[aria-roledescription="git"] .commit-label,
-#diagram svg[aria-roledescription="git"] .commit-id,
-#diagram svg[aria-roledescription="git"] .commit-msg,
-#diagram svg[aria-roledescription="git"] .tag-label {
-    fill: var(--vscode-editor-foreground) !important;
-    font-family: var(--vscode-font-family, sans-serif) !important;
-}
-
+/* Git commit labels on branch lines */
 #diagram svg[aria-roledescription="git"] .commit-label {
     font-weight: 500;
     paint-order: stroke fill;
-    stroke: var(--vscode-editor-background);
+    stroke: var(--ib-bg);
     stroke-width: 3px;
     stroke-linejoin: round;
 }
 
 #diagram svg[aria-roledescription="git"] .commit-label-bkg {
-    fill: var(--vscode-editorWidget-background) !important;
     opacity: 0.92 !important;
-}
-
-#diagram svg[aria-roledescription="git"] .branchLabelBkg,
-#diagram svg[aria-roledescription="git"] [class*="branchLabelBkg"] {
-    fill: var(--vscode-editorWidget-background) !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
-    stroke-width: 1px;
-}
-
-#diagram svg[aria-roledescription="git"] .branch {
-    stroke: var(--vscode-descriptionForeground, var(--vscode-editorLineNumber-foreground));
-    opacity: 0.85;
-}
-
-#diagram svg[aria-roledescription="git"] .commit-merge,
-#diagram svg[aria-roledescription="git"] .commit-highlight-inner {
-    fill: var(--vscode-charts-blue, var(--vscode-textLink-foreground)) !important;
-    stroke: var(--vscode-charts-blue, var(--vscode-textLink-foreground)) !important;
 }

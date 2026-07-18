@@ -46,7 +46,10 @@ export function getPreviewHtml(webview: Webview, context: ExtensionContext, nonc
             <div id="diagram" class="mermaid"></div>
         </div>
     </div>
-    <div id="error" hidden></div>
+    <div id="error" class="error-toast" hidden role="alert">
+        <span id="error-message" class="error-message"></span>
+        <button type="button" id="error-dismiss" class="error-dismiss" title="Dismiss" aria-label="Dismiss error">&times;</button>
+    </div>
     <script nonce="${nonce}" src="${mermaidUri}"></script>
     <script nonce="${nonce}" src="${themeUri}"></script>
     <script nonce="${nonce}" src="${scriptUri}"></script>

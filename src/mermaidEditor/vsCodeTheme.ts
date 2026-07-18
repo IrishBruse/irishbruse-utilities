@@ -1,7 +1,31 @@
-"use strict";
-(() => {
-  // src/mermaidEditor/vsCodeTheme.ts
-  var TOKEN_CSS_VARS = {
+export type ColorPicker = (...varNames: string[]) => string | undefined;
+
+export type CssVarReader = (name: string) => string;
+
+export interface MermaidTokens {
+    dark: boolean;
+    fg: string;
+    bg: string;
+    surface: string;
+    surfaceAlt: string;
+    sidebar: string;
+    border: string;
+    line: string;
+    muted: string;
+    accent: string;
+    selection: string;
+    warning: string;
+    warningBorder: string;
+    connectorMuted: string;
+    chartBlue: string;
+    chartPurple: string;
+    chartRed: string;
+    chartYellow: string;
+    fontFamily: string;
+    charts: string[];
+}
+
+export const TOKEN_CSS_VARS: Record<keyof MermaidTokens, string | null> = {
     dark: null,
     fg: "--ib-fg",
     bg: "--ib-bg",
@@ -21,40 +45,51 @@
     chartRed: "--ib-chart-red",
     chartYellow: "--ib-chart-yellow",
     fontFamily: "--ib-font-family",
-    charts: null
-  };
-  var BORDER_VARS = [
+    charts: null,
+};
+
+const BORDER_VARS = [
     "--vscode-editorWidget-border",
     "--vscode-panel-border",
     "--vscode-editorGroup-border",
-    "--vscode-sideBarSectionHeader-border"
-  ];
-  var CANVAS_VARS = ["--vscode-editor-background"];
-  var SIDEBAR_VARS = ["--vscode-sideBar-background"];
-  var NODE_SURFACE_VARS = ["--vscode-editorWidget-background", "--vscode-input-background"];
-  var SURFACE_ALT_VARS = [
+    "--vscode-sideBarSectionHeader-border",
+];
+
+const CANVAS_VARS = ["--vscode-editor-background"];
+
+const SIDEBAR_VARS = ["--vscode-sideBar-background"];
+
+const NODE_SURFACE_VARS = ["--vscode-editorWidget-background", "--vscode-input-background"];
+
+const SURFACE_ALT_VARS = [
     "--vscode-input-background",
     "--vscode-sideBar-background",
-    "--vscode-editorWidget-background"
-  ];
-  var TEXT_VARS = ["--vscode-editor-foreground", "--vscode-foreground"];
-  var TEXT_MUTED_VARS = [
+    "--vscode-editorWidget-background",
+];
+
+const TEXT_VARS = ["--vscode-editor-foreground", "--vscode-foreground"];
+
+const TEXT_MUTED_VARS = [
     "--vscode-descriptionForeground",
     "--vscode-editorLineNumber-foreground",
-    ...TEXT_VARS
-  ];
-  var ACCENT_VARS = [
+    ...TEXT_VARS,
+];
+
+const ACCENT_VARS = [
     "--vscode-focusBorder",
     "--vscode-textLink-foreground",
-    "--vscode-button-background"
-  ];
-  var SELECTION_VARS = [
+    "--vscode-button-background",
+];
+
+const SELECTION_VARS = [
     "--vscode-list-activeSelectionBackground",
     "--vscode-editor-selectionBackground",
-    "--vscode-list-focusBackground"
-  ];
-  var CHARTS_PURPLE_VARS = ["--vscode-charts-purple", ...ACCENT_VARS];
-  var CHART_PALETTE_VARS = [
+    "--vscode-list-focusBackground",
+];
+
+const CHARTS_PURPLE_VARS = ["--vscode-charts-purple", ...ACCENT_VARS];
+
+const CHART_PALETTE_VARS = [
     "--vscode-charts-blue",
     "--vscode-charts-orange",
     "--vscode-charts-purple",
@@ -66,130 +101,163 @@
     "--vscode-button-secondaryBackground",
     "--vscode-list-activeSelectionBackground",
     "--vscode-focusBorder",
-    "--vscode-button-background"
-  ];
-  var PIE_PALETTE_VARS = CHART_PALETTE_VARS;
-  var GIT_PALETTE_VARS = CHART_PALETTE_VARS.slice(0, 8);
-  function parseHex(hex) {
+    "--vscode-button-background",
+];
+
+const PIE_PALETTE_VARS = CHART_PALETTE_VARS;
+
+const GIT_PALETTE_VARS = CHART_PALETTE_VARS.slice(0, 8);
+
+export function parseHex(hex: string): { r: number; g: number; b: number } | undefined {
     const match = hex.match(/^#([0-9a-f]{6})(?:[0-9a-f]{2})?$/i);
     if (!match) {
-      return void 0;
+        return undefined;
     }
+
     return {
-      r: parseInt(match[1].slice(0, 2), 16),
-      g: parseInt(match[1].slice(2, 4), 16),
-      b: parseInt(match[1].slice(4, 6), 16)
+        r: parseInt(match[1].slice(0, 2), 16),
+        g: parseInt(match[1].slice(2, 4), 16),
+        b: parseInt(match[1].slice(4, 6), 16),
     };
-  }
-  function blendHex(base, accent, accentWeight) {
+}
+
+export function blendHex(base: string, accent: string, accentWeight: number): string | undefined {
     const baseRgb = parseHex(base);
     const accentRgb = parseHex(accent);
     if (!baseRgb || !accentRgb) {
-      return void 0;
+        return undefined;
     }
+
     const weight = Math.max(0, Math.min(1, accentWeight));
     const inverse = 1 - weight;
-    const toHex = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0");
+    const toHex = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0");
+
     return `#${toHex(Math.round(baseRgb.r * inverse + accentRgb.r * weight))}${toHex(
-      Math.round(baseRgb.g * inverse + accentRgb.g * weight)
+        Math.round(baseRgb.g * inverse + accentRgb.g * weight)
     )}${toHex(Math.round(baseRgb.b * inverse + accentRgb.b * weight))}`;
-  }
-  function pickBlended(pickColor2, baseVars, accentVars, weight) {
-    const base = pickColor2(...baseVars);
-    const accent = pickColor2(...accentVars);
+}
+
+export function pickBlended(
+    pickColor: ColorPicker,
+    baseVars: string[],
+    accentVars: string[],
+    weight: number
+): string | undefined {
+    const base = pickColor(...baseVars);
+    const accent = pickColor(...accentVars);
     if (base && accent) {
-      return blendHex(base, accent, weight) ?? base;
+        return blendHex(base, accent, weight) ?? base;
     }
     return base ?? accent;
-  }
-  function requireColor(pickColor2, ...varNames) {
-    return pickColor2(...varNames) ?? "#000000";
-  }
-  function getTokens(pickColor2, readCssVar2, isDark) {
+}
+
+function requireColor(pickColor: ColorPicker, ...varNames: string[]): string {
+    return pickColor(...varNames) ?? "#000000";
+}
+
+/**
+ * Semantic VS Code → diagram tokens. Single source for themeVariables, themeCSS, and --ib-* vars.
+ */
+export function getTokens(
+    pickColor: ColorPicker,
+    readCssVar: CssVarReader,
+    isDark: () => boolean
+): MermaidTokens {
     const dark = isDark();
-    const fg = requireColor(pickColor2, ...TEXT_VARS);
-    const bg = requireColor(pickColor2, ...CANVAS_VARS);
-    const surface = requireColor(pickColor2, ...NODE_SURFACE_VARS);
-    const surfaceAlt = requireColor(pickColor2, ...SURFACE_ALT_VARS);
-    const sidebar = requireColor(pickColor2, ...SIDEBAR_VARS);
-    const border = requireColor(pickColor2, ...BORDER_VARS);
-    const muted = requireColor(pickColor2, ...TEXT_MUTED_VARS);
-    const accent = requireColor(pickColor2, ...ACCENT_VARS);
-    const selection = requireColor(pickColor2, ...SELECTION_VARS);
-    const connectorMuted = pickBlended(pickColor2, BORDER_VARS, TEXT_VARS, 0.6) ?? muted ?? border;
-    const chartBlue = requireColor(pickColor2, "--vscode-charts-blue", "--vscode-textLink-foreground");
-    const chartPurple = requireColor(pickColor2, "--vscode-charts-purple", "--vscode-focusBorder");
-    const chartRed = requireColor(pickColor2, "--vscode-charts-red", "--vscode-editorError-foreground");
-    const chartYellow = pickColor2("--vscode-charts-yellow") ?? chartBlue;
+    const fg = requireColor(pickColor, ...TEXT_VARS);
+    const bg = requireColor(pickColor, ...CANVAS_VARS);
+    const surface = requireColor(pickColor, ...NODE_SURFACE_VARS);
+    const surfaceAlt = requireColor(pickColor, ...SURFACE_ALT_VARS);
+    const sidebar = requireColor(pickColor, ...SIDEBAR_VARS);
+    const border = requireColor(pickColor, ...BORDER_VARS);
+    const muted = requireColor(pickColor, ...TEXT_MUTED_VARS);
+    const accent = requireColor(pickColor, ...ACCENT_VARS);
+    const selection = requireColor(pickColor, ...SELECTION_VARS);
+    const connectorMuted = pickBlended(pickColor, BORDER_VARS, TEXT_VARS, 0.6) ?? muted ?? border;
+    const chartBlue = requireColor(pickColor, "--vscode-charts-blue", "--vscode-textLink-foreground");
+    const chartPurple = requireColor(pickColor, "--vscode-charts-purple", "--vscode-focusBorder");
+    const chartRed = requireColor(pickColor, "--vscode-charts-red", "--vscode-editorError-foreground");
+    const chartYellow = pickColor("--vscode-charts-yellow") ?? chartBlue;
     const warning = requireColor(
-      pickColor2,
-      "--vscode-editorWarning-background",
-      "--vscode-editorWidget-background"
+        pickColor,
+        "--vscode-editorWarning-background",
+        "--vscode-editorWidget-background"
     );
-    const warningBorder = requireColor(pickColor2, "--vscode-editorWarning-border", "--vscode-focusBorder");
-    const fontFamily = readCssVar2("--vscode-font-family") || "sans-serif";
-    const charts = CHART_PALETTE_VARS.map((name) => requireColor(pickColor2, name));
+    const warningBorder = requireColor(pickColor, "--vscode-editorWarning-border", "--vscode-focusBorder");
+    const fontFamily = readCssVar("--vscode-font-family") || "sans-serif";
+    const charts = CHART_PALETTE_VARS.map((name) => requireColor(pickColor, name));
+
     return {
-      dark,
-      fg,
-      bg,
-      surface,
-      surfaceAlt,
-      sidebar,
-      border,
-      line: fg,
-      muted,
-      accent,
-      selection,
-      warning,
-      warningBorder,
-      connectorMuted,
-      chartBlue,
-      chartPurple,
-      chartRed,
-      chartYellow,
-      fontFamily,
-      charts
+        dark,
+        fg,
+        bg,
+        surface,
+        surfaceAlt,
+        sidebar,
+        border,
+        line: fg,
+        muted,
+        accent,
+        selection,
+        warning,
+        warningBorder,
+        connectorMuted,
+        chartBlue,
+        chartPurple,
+        chartRed,
+        chartYellow,
+        fontFamily,
+        charts,
     };
-  }
-  function getThemeVariables(tokens, pickColor2) {
-    const variables = {
-      darkMode: tokens.dark
+}
+
+export function getThemeVariables(
+    tokens: MermaidTokens,
+    pickColor: ColorPicker
+): Record<string, string | boolean> {
+    const variables: Record<string, string | boolean> = {
+        darkMode: tokens.dark,
     };
-    const setValue = (key, color) => {
-      if (color) {
-        variables[key] = color;
-      }
+
+    const setValue = (key: string, color: string | undefined) => {
+        if (color) {
+            variables[key] = color;
+        }
     };
-    const set = (key, ...varNames) => {
-      setValue(key, pickColor2(...varNames));
+
+    const set = (key: string, ...varNames: string[]) => {
+        setValue(key, pickColor(...varNames));
     };
-    const setBlended = (key, weight, baseVars, accentVars) => {
-      setValue(key, pickBlended(pickColor2, baseVars, accentVars, weight));
+
+    const setBlended = (key: string, weight: number, baseVars: string[], accentVars: string[]) => {
+        setValue(key, pickBlended(pickColor, baseVars, accentVars, weight));
     };
+
     const {
-      dark,
-      fg: foreground,
-      bg: canvasColor,
-      surface,
-      surfaceAlt,
-      sidebar,
-      border,
-      muted,
-      accent,
-      selection,
-      connectorMuted,
-      chartBlue,
-      chartRed,
-      fontFamily,
-      charts
+        dark,
+        fg: foreground,
+        bg: canvasColor,
+        surface,
+        surfaceAlt,
+        sidebar,
+        border,
+        muted,
+        accent,
+        selection,
+        connectorMuted,
+        chartBlue,
+        chartRed,
+        fontFamily,
+        charts,
     } = tokens;
+
     setValue("background", canvasColor);
     setValue("textColor", foreground);
     setValue("titleColor", foreground);
     setValue("lineColor", foreground);
     setValue("arrowheadColor", foreground);
     setValue("defaultLinkColor", foreground);
+
     setValue("primaryColor", surface);
     setValue("primaryTextColor", foreground);
     setValue("mainBkg", surface);
@@ -200,20 +268,24 @@
     setValue("nodeTextColor", foreground);
     setValue("primaryBorderColor", border);
     setValue("nodeBorder", border);
+
     setValue("secondaryColor", surface);
     setValue("secondaryTextColor", foreground);
     setValue("secondaryBorderColor", border);
+
     setValue("tertiaryColor", sidebar);
     setValue("tertiaryTextColor", foreground);
     setValue("tertiaryBorderColor", border);
     setValue("clusterBkg", sidebar);
     setValue("clusterBorder", border);
+
     setBlended("altBackground", 0.14, SELECTION_VARS, CHARTS_PURPLE_VARS);
     setValue("compositeBackground", canvasColor);
     setValue("compositeTitleBackground", sidebar);
     setValue("transitionColor", foreground);
     setValue("transitionLabelColor", foreground);
     setValue("specialStateColor", foreground);
+
     setValue("actorBkg", surface);
     setValue("actorBorder", border);
     setValue("actorTextColor", foreground);
@@ -227,21 +299,25 @@
     setValue("activationBkgColor", selection);
     set("activationBorderColor", ...ACCENT_VARS, ...BORDER_VARS);
     setValue("sequenceNumberColor", foreground);
+
     const taskBkg = blendHex(surface, accent, 0.12) ?? surface;
     const activeBkg = blendHex(surface, chartBlue, 0.38) ?? surface;
     const doneBkg = blendHex(canvasColor, muted, 0.35) ?? surfaceAlt;
     const critBkg = blendHex(chartRed, canvasColor, 0.18) ?? chartRed;
+
     if (dark) {
-      setValue("sectionBkgColor", blendHex(canvasColor, surface, 0.35) ?? surface);
-      setValue("altSectionBkgColor", blendHex(canvasColor, sidebar, 0.25) ?? sidebar);
-      setValue("sectionBkgColor2", blendHex(canvasColor, surfaceAlt, 0.35) ?? surfaceAlt);
+        setValue("sectionBkgColor", blendHex(canvasColor, surface, 0.35) ?? surface);
+        setValue("altSectionBkgColor", blendHex(canvasColor, sidebar, 0.25) ?? sidebar);
+        setValue("sectionBkgColor2", blendHex(canvasColor, surfaceAlt, 0.35) ?? surfaceAlt);
     } else {
-      setValue("sectionBkgColor", surfaceAlt);
-      setValue("altSectionBkgColor", canvasColor);
-      setValue("sectionBkgColor2", surface);
+        setValue("sectionBkgColor", surfaceAlt);
+        setValue("altSectionBkgColor", canvasColor);
+        setValue("sectionBkgColor2", surface);
     }
+
     setValue("gridColor", border);
     setValue("vertLineColor", border);
+
     setValue("taskBkgColor", taskBkg);
     setValue("taskBorderColor", border);
     setValue("doneTaskBkgColor", doneBkg);
@@ -255,15 +331,19 @@
     setValue("taskTextOutsideColor", foreground);
     setValue("taskTextLightColor", dark ? "#ffffff" : foreground);
     setValue("todayLineColor", accent);
+
     setBlended("noteBkgColor", 0.12, SURFACE_ALT_VARS, TEXT_VARS);
     setValue("noteTextColor", foreground);
     setValue("noteBorderColor", connectorMuted);
     setValue("edgeLabelBackground", canvasColor);
     setValue("edgeLabelColor", foreground);
+
     setValue("rowOdd", sidebar);
     set("rowEven", "--vscode-input-background", "--vscode-sideBarSectionHeader-background", ...NODE_SURFACE_VARS);
+
     set("errorBkgColor", "--vscode-inputValidation-errorBackground", "--vscode-editorError-background");
     set("errorTextColor", "--vscode-editorError-foreground", ...TEXT_VARS);
+
     setValue("branchLabelColor", foreground);
     setValue("commitLabelColor", foreground);
     setValue("commitLabelBackground", canvasColor);
@@ -272,56 +352,65 @@
     setValue("tagLabelBorder", border);
     setValue("commitLineColor", tokens.muted);
     for (let i = 0; i < 8; i++) {
-      setValue(`gitBranchLabel${i}`, foreground);
+        setValue(`gitBranchLabel${i}`, foreground);
     }
     for (let i = 0; i < GIT_PALETTE_VARS.length; i++) {
-      set(`git${i}`, GIT_PALETTE_VARS[i]);
+        set(`git${i}`, GIT_PALETTE_VARS[i]);
     }
+
     setValue("pieTitleTextColor", foreground);
     setValue("pieLegendTextColor", foreground);
     setValue("pieSectionTextColor", dark ? "#ffffff" : canvasColor);
     setValue("pieStrokeColor", border);
     setValue("pieOuterStrokeColor", border);
     setValue("pieOpacity", "1");
+
     for (let i = 0; i < PIE_PALETTE_VARS.length; i++) {
-      set(`pie${i + 1}`, PIE_PALETTE_VARS[i]);
+        set(`pie${i + 1}`, PIE_PALETTE_VARS[i]);
     }
+
     for (let i = 0; i < charts.length; i++) {
-      setValue(`cScale${i}`, charts[i]);
+        setValue(`cScale${i}`, charts[i]);
     }
+
     variables.fontFamily = fontFamily;
+
     return variables;
-  }
-  function getThemeCSS(tokens) {
+}
+
+export function getThemeCSS(tokens: MermaidTokens): string {
     const {
-      fg,
-      bg,
-      surface,
-      surfaceAlt,
-      sidebar,
-      border,
-      line,
-      muted,
-      selection,
-      accent,
-      warning,
-      warningBorder,
-      fontFamily,
-      chartBlue,
-      chartRed
+        fg,
+        bg,
+        surface,
+        surfaceAlt,
+        sidebar,
+        border,
+        line,
+        muted,
+        selection,
+        accent,
+        warning,
+        warningBorder,
+        fontFamily,
+        chartBlue,
+        chartRed,
     } = tokens;
+
     const taskBkg = blendHex(surface, accent, 0.12) ?? surface;
     const activeBkg = blendHex(surface, chartBlue, 0.38) ?? surface;
     const doneBkg = blendHex(bg, muted, 0.35) ?? surfaceAlt;
     const critBkg = blendHex(chartRed, bg, 0.18) ?? chartRed;
     const sectionBkg = blendHex(bg, surface, 0.35) ?? surface;
     const altSectionBkg = blendHex(bg, sidebar, 0.25) ?? sidebar;
-    const nodeShape = `
+
+  const nodeShape = `
 .node:not(:has(.divider)) rect,
 .node:not(:has(.divider)) circle,
 .node:not(:has(.divider)) ellipse,
 .node:not(:has(.divider)) polygon,
 .node:not(:has(.divider)) path`;
+
     return `
 /* Generic typography */
 text { fill: ${fg}; }
@@ -468,77 +557,23 @@ rect.task.milestone {
   opacity: 1;
 }
 `.trim();
-  }
-  function applyDiagramTokens(element, tokens) {
-    for (const [key, cssVar] of Object.entries(TOKEN_CSS_VARS)) {
-      if (!cssVar) {
-        continue;
-      }
-      const value = tokens[key];
-      if (typeof value === "string") {
-        element.style.setProperty(cssVar, value);
-      }
-    }
-  }
+}
 
-  // src/mermaidEditor/vsCodeTheme.browser.ts
-  function isDarkVsCodeTheme() {
-    return document.body.classList.contains("vscode-dark") || document.body.classList.contains("vscode-high-contrast") && !document.body.classList.contains("vscode-high-contrast-light");
-  }
-  function readCssVar(name) {
-    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  }
-  function rgbStringToHex(value) {
-    const match = value.match(/^rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)$/);
-    if (!match) {
-      return void 0;
+export function applyDiagramTokens(
+    element: { style: { setProperty(name: string, value: string): void } },
+    tokens: MermaidTokens
+): void {
+    for (const [key, cssVar] of Object.entries(TOKEN_CSS_VARS)) {
+        if (!cssVar) {
+            continue;
+        }
+        const value = tokens[key as keyof MermaidTokens];
+        if (typeof value === "string") {
+            element.style.setProperty(cssVar, value);
+        }
     }
-    const r = parseInt(match[1], 10);
-    const g = parseInt(match[2], 10);
-    const b = parseInt(match[3], 10);
-    const a = match[4] !== void 0 ? Math.round(parseFloat(match[4]) * 255) : 255;
-    const hex = (n) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0");
-    return a < 255 ? `#${hex(r)}${hex(g)}${hex(b)}${hex(a)}` : `#${hex(r)}${hex(g)}${hex(b)}`;
-  }
-  function resolveCssColor(cssValue) {
-    const probe = document.createElement("span");
-    probe.style.display = "none";
-    probe.style.color = cssValue;
-    document.body.appendChild(probe);
-    try {
-      return rgbStringToHex(getComputedStyle(probe).color);
-    } finally {
-      probe.remove();
-    }
-  }
-  function pickColor(...varNames) {
-    for (const name of varNames) {
-      if (!readCssVar(name)) {
-        continue;
-      }
-      const hex = resolveCssColor(`var(${name})`);
-      if (hex) {
-        return hex;
-      }
-    }
-    return void 0;
-  }
-  window.IbMermaidVsCodeTheme = {
-    getTokens() {
-      return getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
-    },
-    getThemeVariables(tokens) {
-      const resolved = tokens ?? getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
-      return getThemeVariables(resolved, pickColor);
-    },
-    getThemeCSS(tokens) {
-      const resolved = tokens ?? getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
-      return getThemeCSS(resolved);
-    },
-    applyDiagramTokens(element) {
-      const tokens = getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
-      applyDiagramTokens(element, tokens);
-    }
-  };
-})();
-//# sourceMappingURL=vsCodeTheme.js.map
+}
+
+export function isValidHexColor(value: string): boolean {
+    return /^#[0-9a-f]{6}(?:[0-9a-f]{2})?$/i.test(value);
+}

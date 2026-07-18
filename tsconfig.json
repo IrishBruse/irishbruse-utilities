@@ -14,5 +14,5 @@
         "types": ["node"]
     },
     "include": ["src/**/*.ts"],
-    "exclude": ["generators/", "src/**/*.test.ts", "src/test/**"]
+    "exclude": ["generators/", "src/**/*.test.ts", "src/**/*.browser.ts", "src/test/**"]
 }

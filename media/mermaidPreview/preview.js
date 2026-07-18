@@ -10,6 +10,10 @@
     const diagram = document.getElementById("diagram");
     /** @type {HTMLElement} */
     const errorEl = document.getElementById("error");
+    /** @type {HTMLElement} */
+    const errorMessageEl = document.getElementById("error-message");
+    /** @type {HTMLButtonElement} */
+    const errorDismissBtn = document.getElementById("error-dismiss");
     /** @type {HTMLButtonElement} */
     const zoomOutBtn = document.getElementById("zoom-out");
     /** @type {HTMLButtonElement} */
@@ -164,12 +168,15 @@
     }
 
     function initializeMermaid() {
-        const themeVariables = window.IbMermaidVsCodeTheme.getThemeVariables();
+        const tokens = window.IbMermaidVsCodeTheme.getTokens();
+        window.IbMermaidVsCodeTheme.applyDiagramTokens(diagram);
         mermaid.initialize({
             startOnLoad: false,
             theme: "base",
-            themeVariables,
+            themeVariables: window.IbMermaidVsCodeTheme.getThemeVariables(tokens),
+            themeCSS: window.IbMermaidVsCodeTheme.getThemeCSS(tokens),
             securityLevel: "strict",
+            suppressErrorRendering: true,
             logLevel: "fatal",
             gantt: {
                 fontSize: 11,
@@ -177,6 +184,37 @@
                 barHeight: 22,
             },
         });
+    }
+
+    /**
+     * @param {SVGSVGElement | null | undefined} svg
+     * @returns {boolean}
+     */
+    function isMermaidErrorSvg(svg) {
+        if (!svg) {
+            return false;
+        }
+        return svg.querySelector(".error-icon, .error-text") !== null;
+    }
+
+    /**
+     * @param {string} message
+     * @returns {string}
+     */
+    function formatErrorMessage(message) {
+        const trimmed = message.trim();
+        const withoutVersion = trimmed.replace(/\s*mermaid version\s+[\d.]+/gi, "").trim();
+        return withoutVersion || "Syntax error in diagram";
+    }
+
+    function showError(message) {
+        errorMessageEl.textContent = formatErrorMessage(message);
+        errorEl.hidden = false;
+    }
+
+    function clearError() {
+        errorMessageEl.textContent = "";
+        errorEl.hidden = true;
     }
 
     function fitToView() {
@@ -208,16 +246,6 @@
         applyTransform();
     }
 
-    function showError(message) {
-        errorEl.textContent = message;
-        errorEl.hidden = false;
-    }
-
-    function clearError() {
-        errorEl.textContent = "";
-        errorEl.hidden = true;
-    }
-
     async function renderDiagram(source) {
         currentSource = source;
         const id = ++renderId;
@@ -240,6 +268,12 @@
             }
             diagram.innerHTML = svg;
             const renderedSvg = diagram.querySelector("svg");
+            if (isMermaidErrorSvg(renderedSvg)) {
+                diagram.replaceChildren();
+                setCopyEnabled(false);
+                showError("Syntax error in diagram");
+                return;
+            }
             if (renderedSvg) {
                 stabilizeSvgSize(renderedSvg);
             }
@@ -370,6 +404,11 @@
     copyPngBtn.addEventListener("click", (event) => {
         event.stopPropagation();
         void copyPng();
+    });
+
+    errorDismissBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        clearError();
     });
 
     initializeMermaid();

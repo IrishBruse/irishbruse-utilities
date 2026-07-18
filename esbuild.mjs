@@ -41,7 +41,7 @@ function printHelp() {
 }
 
 /** @type {import("esbuild").BuildOptions} */
-const config = {
+const extensionConfig = {
     entryPoints: ["src/extension.ts"],
     bundle: true,
     platform: "node",
@@ -54,11 +54,30 @@ const config = {
     outfile: "dist/extension.js",
 };
 
+/** @type {import("esbuild").BuildOptions} */
+const mermaidThemeConfig = {
+    entryPoints: ["src/mermaidEditor/vsCodeTheme.browser.ts"],
+    bundle: true,
+    platform: "browser",
+    target: "es2020",
+    sourcemap: !isProd,
+    minify: isProd,
+    logLevel: "info",
+    outfile: join(mermaidDestDir, "vsCodeTheme.js"),
+};
+
+async function buildAll() {
+    copyMermaidAssets();
+    await Promise.all([esbuild.build(extensionConfig), esbuild.build(mermaidThemeConfig)]);
+}
+
 if (isWatch) {
     copyMermaidAssets();
-    const ctx = await esbuild.context(config);
-    await ctx.watch();
+    const [extensionCtx, themeCtx] = await Promise.all([
+        esbuild.context(extensionConfig),
+        esbuild.context(mermaidThemeConfig),
+    ]);
+    await Promise.all([extensionCtx.watch(), themeCtx.watch()]);
 } else {
-    copyMermaidAssets();
-    await esbuild.build(config);
+    await buildAll();
 }

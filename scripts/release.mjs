@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { AzureCliCredential, ChainedTokenCredential, InteractiveBrowserCredential } from "@azure/identity";
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -6,7 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const semverPattern = /^\d+\.\d+\.\d+(-[\w.]+)?$/;
-const bumpTypes = new Set(["patch", "minor", "major"]);
+const AZURE_DEVOPS_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default";
 
 function run(command, options = {}) {
     console.log(`\n> ${command}`);
@@ -98,26 +99,6 @@ function parseArgs(argv) {
     return { flags, versionArg: positionals[0] };
 }
 
-function hasCiPublish() {
-    return existsSync(join(root, ".github/workflows/publish.yml"));
-}
-
-function assertVsceAuth() {
-    if (process.env.VSCE_PAT) {
-        return "local";
-    }
-
-    if (hasCiPublish()) {
-        console.log("No VSCE_PAT set - Marketplace publish will run via GitHub Actions on push");
-        return "ci";
-    }
-
-    throw new Error(
-        "VSCE_PAT is not set and no .github/workflows/publish.yml found. Create a PAT at https://dev.azure.com (Marketplace: Manage) and run:\n" +
-            "  export VSCE_PAT=<token>",
-    );
-}
-
 function assertChangelog(version) {
     const changelog = readFileSync(join(root, "CHANGELOG.md"), "utf8");
     const section = `## ${version}`;
@@ -129,10 +110,30 @@ function assertChangelog(version) {
     }
 }
 
-function publishExtension(mode) {
-    if (mode === "local") {
-        run("npm run publish");
+async function getMarketplaceToken() {
+    const credential = new ChainedTokenCredential(
+        new AzureCliCredential(),
+        new InteractiveBrowserCredential({ tenantId: "organizations" }),
+    );
+
+    console.error("Signing in to the VS Code Marketplace (browser may open on first use)...");
+    const token = await credential.getToken(AZURE_DEVOPS_SCOPE);
+
+    if (!token?.token) {
+        throw new Error("Failed to acquire Marketplace access token");
     }
+
+    return token.token;
+}
+
+async function publishExtension() {
+    const token = await getMarketplaceToken();
+    console.log("\n> npx @vscode/vsce publish");
+    execSync("npx @vscode/vsce publish", {
+        cwd: root,
+        stdio: "inherit",
+        env: { ...process.env, VSCE_PAT: token },
+    });
 }
 
 function bumpVersions(version) {
@@ -146,34 +147,28 @@ function bumpVersions(version) {
     writeJson("package-lock.json", packageLock);
 }
 
-function releaseFiles(version) {
+function releaseFiles() {
     const files = ["package.json", "package-lock.json", "CHANGELOG.md"];
 
     if (fileChanged("README.md")) {
         files.push("README.md");
     }
 
-    if (existsSync(join(root, "scripts/release.mjs"))) {
-        files.push("scripts/release.mjs");
-    }
-
-    if (existsSync(join(root, ".cursor/skills/release/SKILL.md"))) {
-        files.push(".cursor/skills/release/SKILL.md");
-    }
-
-    if (existsSync(join(root, ".github/workflows/publish.yml"))) {
-        files.push(".github/workflows/publish.yml");
-    }
-
-    if (fileChanged("AGENTS.md")) {
-        files.push("AGENTS.md");
+    for (const path of [
+        "scripts/release.mjs",
+        ".cursor/skills/release/SKILL.md",
+        "AGENTS.md",
+    ]) {
+        if (existsSync(join(root, path)) && fileChanged(path)) {
+            files.push(path);
+        }
     }
 
     return files;
 }
 
 function commitRelease(version) {
-    const files = releaseFiles(version);
+    const files = releaseFiles();
     run(`git add ${files.map((file) => `"${file}"`).join(" ")}`);
     run(`git commit -m "${version}"`);
 }
@@ -207,7 +202,6 @@ if (publishOnly && version !== currentVersion) {
 console.log(`Releasing ${version}${publishOnly ? " (publish only)" : ""}`);
 
 try {
-    const publishMode = assertVsceAuth();
     assertChangelog(version);
 
     if (!publishOnly) {
@@ -217,7 +211,7 @@ try {
     run("npm run verify");
     run("npm run package:vsix");
     restorePackagingArtifacts();
-    publishExtension(publishMode);
+    await publishExtension();
 
     if (!flags.has("no-commit")) {
         commitRelease(version);
@@ -231,7 +225,7 @@ try {
         console.log("\nSkipped push (--no-push)");
     }
 
-    console.log(`\nReleased ${version}${publishMode === "ci" ? " (CI publish pending on push)" : " to the Marketplace"}`);
+    console.log(`\nReleased ${version} to the Marketplace`);
 } catch (error) {
     console.error(`\nRelease failed: ${error.message}`);
     process.exit(1);

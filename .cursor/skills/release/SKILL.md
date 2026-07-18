@@ -5,7 +5,7 @@ description: Prepare a release changelog and version, then run npm run release. 
 
 # Release
 
-Your job is limited to **version** and **changelog**. `npm run release` handles verify, VSIX packaging, Marketplace publish, commit, and push.
+Your job is limited to **version** and **changelog**. `npm run release` handles verify, VSIX packaging, browser OAuth publish, commit, and push.
 
 ## 1. Resolve version
 
@@ -60,11 +60,7 @@ If `package.json` is already at the target version and only Marketplace publish 
 npm run release -- {version} --publish-only
 ```
 
-One-time Marketplace auth per machine (optional, without it publish runs via GitHub Actions on push):
-
-```bash
-export VSCE_PAT=<token>   # from https://dev.azure.com, Marketplace: Manage
-```
+First publish on a machine opens a browser for Microsoft sign-in. Tokens are cached locally for later releases.
 
 **Done when:** the command exits 0.
 

@@ -28,7 +28,6 @@
         "test": "vitest run",
         "verify": "npm run build && npm run test && npm run lint",
         "package:vsix": "vsce package --out ib-utilities-$(node -p \"require('./package.json').version\").vsix",
-        "publish": "vsce publish",
         "release": "node scripts/release.mjs",
         "test:watch": "vitest watch",
         "generate:contributes": "tsx --experimental-transform-types generators/contributes.generator.ts",

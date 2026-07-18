@@ -255,16 +255,17 @@ body {
 }
 
 #diagram marker[id$="-sequencenumber"] circle {
-    fill: var(--vscode-editor-background) !important;
+    fill: var(--vscode-editor-background, var(--vscode-sideBar-background)) !important;
     fill-opacity: 1 !important;
     opacity: 1 !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    stroke: var(--vscode-editor-foreground);
     stroke-width: 1px;
 }
 
 #diagram text.sequenceNumber {
     fill: var(--vscode-editor-foreground) !important;
     stroke: none;
+    font-weight: bold;
 }
 
 /* Notes and specific sequence diagram blocks */

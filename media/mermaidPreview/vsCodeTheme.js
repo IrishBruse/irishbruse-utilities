@@ -254,35 +254,73 @@
         // Sequence autonumber: editor background circle, foreground digits
         set("sequenceNumberColor", ...text);
 
-        // Gantt
-        set("sectionBkgColor", "--vscode-sideBar-background", "--vscode-editor-background");
-        set("altSectionBkgColor", "--vscode-input-background", "--vscode-editorWidget-background");
-        set("sectionBkgColor2", "--vscode-editor-background");
-        setValue("gridColor", connectorMuted ?? pickColor("--vscode-editorIndentGuide-background", ...border));
-        setBlended("taskBkgColor", 0.12, surfaceAlt, text);
-        setValue("taskBorderColor", connectorMuted ?? pickColor(...border));
-        set("taskTextColor", ...text);
-        set("taskTextOutsideColor", ...text);
-        set("taskTextLightColor", ...text);
-        set("taskTextDarkColor", ...text);
-        set("activeTaskBkgColor", ...selection);
-        set("activeTaskBorderColor", ...accent);
-        set("doneTaskBkgColor", "--vscode-list-inactiveSelectionBackground", ...selection);
-        set("doneTaskBorderColor", ...border);
-        set(
-            "critBkgColor",
-            "--vscode-editorError-foreground",
-            "--vscode-inputValidation-errorBorder",
-            "--vscode-charts-red"
+        // Gantt — approximate Mermaid default theme using VS Code tokens
+        const dark = isDarkVsCodeTheme();
+        const canvasColor = pickColor(...canvas);
+        const chartBlue = pickColor("--vscode-charts-blue", "--vscode-textLink-foreground");
+        const chartPurple = pickColor("--vscode-charts-purple", "--vscode-focusBorder");
+        const chartRed = pickColor("--vscode-charts-red", "--vscode-editorError-foreground");
+        const chartYellow = pickColor("--vscode-charts-yellow");
+
+        // Alternating section bands (section1/3 use altSectionBkgColor at 20% opacity)
+        if (dark) {
+            setValue(
+                "sectionBkgColor",
+                chartBlue && canvasColor ? blendHex(canvasColor, chartBlue, 0.14) : canvasColor
+            );
+            setValue("altSectionBkgColor", foreground ?? "#ffffff");
+            setValue(
+                "sectionBkgColor2",
+                chartYellow && canvasColor ? blendHex(canvasColor, chartYellow, 0.1) : canvasColor
+            );
+        } else {
+            set("sectionBkgColor", "--vscode-sideBarSectionHeader-background", ...surfaceAlt);
+            set("altSectionBkgColor", ...canvas);
+            set("sectionBkgColor2", "--vscode-input-background", ...surfaceAlt);
+        }
+
+        setValue("gridColor", pickColor("--vscode-editorIndentGuide-background", ...border) ?? connectorMuted);
+        setValue("vertLineColor", pickColor("--vscode-editorIndentGuide-background", ...border) ?? connectorMuted);
+
+        // Default tasks — purple-blue bars like the official theme
+        setValue("taskBkgColor", chartPurple ?? pickBlended(surfaceAlt, chartsPurple, 0.55));
+        setValue(
+            "taskBorderColor",
+            chartPurple && canvasColor ? blendHex(chartPurple, canvasColor, 0.35) : pickColor(...border)
         );
-        set(
+
+        // Done tasks — light grey fills
+        setValue(
+            "doneTaskBkgColor",
+            dark
+                ? (canvasColor ? blendHex(canvasColor, "#d3d3d3", 0.82) : "#d3d3d3")
+                : pickBlended(surfaceAlt, text, 0.35)
+        );
+        setValue("doneTaskBorderColor", pickColor(...border) ?? connectorMuted);
+
+        // Active tasks — medium blue fill
+        setValue("activeTaskBkgColor", chartBlue ?? pickBlended(surfaceAlt, ["--vscode-charts-blue"], 0.65));
+        setValue(
+            "activeTaskBorderColor",
+            chartBlue && canvasColor ? blendHex(chartBlue, canvasColor, 0.3) : pickColor(...accent)
+        );
+
+        // Critical tasks — red fill
+        setValue("critBkgColor", chartRed ?? pickColor("--vscode-editorError-foreground"));
+        setValue(
             "critBorderColor",
-            "--vscode-editorError-foreground",
-            "--vscode-inputValidation-errorBorder",
-            "--vscode-charts-red"
+            chartRed && canvasColor ? blendHex(chartRed, "#ffffff", 0.35) : chartRed
         );
+
+        // In-bar text: light on purple/default bars, dark on done/active light bars
+        setValue("taskTextColor", dark ? "#ffffff" : (foreground ?? pickColor(...text)));
+        setValue(
+            "taskTextDarkColor",
+            dark ? (canvasColor ?? "#282c34") : (foreground ?? pickColor(...text))
+        );
+        setValue("taskTextOutsideColor", foreground ?? pickColor(...text));
+        setValue("taskTextLightColor", dark ? "#ffffff" : (foreground ?? pickColor(...text)));
         set("todayLineColor", ...accent);
-        setValue("vertLineColor", connectorMuted ?? pickColor(...border));
 
         // Notes / labels
         setBlended("noteBkgColor", 0.12, surfaceAlt, text);
@@ -322,11 +360,6 @@
         const fontFamily = readCssVar("--vscode-font-family");
         if (fontFamily) {
             variables.fontFamily = fontFamily;
-        }
-
-        const fontSize = readCssVar("--vscode-font-size");
-        if (fontSize) {
-            variables.fontSize = fontSize;
         }
 
         return variables;

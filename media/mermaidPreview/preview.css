@@ -44,7 +44,7 @@ body {
 #diagram svg {
     display: block;
     max-width: none;
-    font-family: inherit !important;
+    font-family: var(--vscode-font-family, var(--vscode-editor-font-family, sans-serif)) !important;
 }
 
 /* Make all text easily selectable */
@@ -323,4 +323,89 @@ body {
 #diagram .relationshipLabelBox {
     fill: var(--vscode-editorWidget-background);
     stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+}
+
+/* ==========================================================================
+   Gantt Charts
+   ========================================================================== */
+#diagram svg[aria-roledescription="gantt"] .taskText,
+#diagram svg[aria-roledescription="gantt"] .taskText0,
+#diagram svg[aria-roledescription="gantt"] .taskText1,
+#diagram svg[aria-roledescription="gantt"] .taskText2,
+#diagram svg[aria-roledescription="gantt"] .taskText3,
+#diagram svg[aria-roledescription="gantt"] .taskTextOutsideLeft,
+#diagram svg[aria-roledescription="gantt"] .taskTextOutsideRight,
+#diagram svg[aria-roledescription="gantt"] .taskTextOutside0,
+#diagram svg[aria-roledescription="gantt"] .taskTextOutside1,
+#diagram svg[aria-roledescription="gantt"] .taskTextOutside2,
+#diagram svg[aria-roledescription="gantt"] .taskTextOutside3,
+#diagram svg[aria-roledescription="gantt"] .activeText0,
+#diagram svg[aria-roledescription="gantt"] .activeText1,
+#diagram svg[aria-roledescription="gantt"] .activeText2,
+#diagram svg[aria-roledescription="gantt"] .activeText3,
+#diagram svg[aria-roledescription="gantt"] .doneText0,
+#diagram svg[aria-roledescription="gantt"] .doneText1,
+#diagram svg[aria-roledescription="gantt"] .doneText2,
+#diagram svg[aria-roledescription="gantt"] .doneText3,
+#diagram svg[aria-roledescription="gantt"] .milestoneText {
+    font-family: var(--vscode-font-family, sans-serif) !important;
+    font-size: 10px;
+}
+
+/* Halo outside-bar labels so they stay readable on the canvas */
+#diagram svg[aria-roledescription="gantt"] .taskTextOutsideLeft,
+#diagram svg[aria-roledescription="gantt"] .taskTextOutsideRight {
+    paint-order: stroke fill;
+    stroke: var(--vscode-editor-background);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+}
+
+#diagram .sectionTitle,
+#diagram .sectionTitle tspan {
+    fill: var(--vscode-editor-foreground) !important;
+    font-family: inherit;
+    font-weight: 600;
+}
+
+#diagram .grid .tick text {
+    fill: var(--vscode-descriptionForeground, var(--vscode-editorLineNumber-foreground)) !important;
+    font-family: inherit;
+}
+
+#diagram .grid .tick line {
+    stroke: var(--vscode-editorIndentGuide-background, var(--vscode-panel-border));
+    opacity: 0.55;
+}
+
+#diagram .grid .domain {
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    opacity: 0.6;
+}
+
+/* Outside-bar labels sit on the canvas, not the bar fill */
+#diagram .taskTextOutsideLeft,
+#diagram .taskTextOutsideRight,
+#diagram .taskTextOutside0,
+#diagram .taskTextOutside1,
+#diagram .taskTextOutside2,
+#diagram .taskTextOutside3,
+#diagram .milestoneText {
+    fill: var(--vscode-editor-foreground) !important;
+    font-family: inherit;
+}
+
+/* White text on red critical bars */
+#diagram .critText0,
+#diagram .critText1,
+#diagram .critText2,
+#diagram .critText3 {
+    fill: var(--vscode-editor-foreground) !important;
+    font-family: inherit;
+}
+
+/* Milestone diamond — bright like the official theme */
+#diagram rect.task.milestone {
+    fill: var(--vscode-editor-foreground) !important;
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
 }

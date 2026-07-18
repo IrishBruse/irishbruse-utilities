@@ -142,6 +142,11 @@
             themeVariables,
             securityLevel: "strict",
             logLevel: "fatal",
+            gantt: {
+                fontSize: 10,
+                sectionFontSize: 11,
+                barHeight: 22,
+            },
         });
     }
 

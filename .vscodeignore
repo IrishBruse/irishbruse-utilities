@@ -13,5 +13,6 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 .github/**
+.cursor/**
 docs/**
 generators/**

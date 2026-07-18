@@ -74,6 +74,29 @@ body {
     fill: var(--vscode-editor-foreground);
 }
 
+/* Node surfaces: sidebar background, border outlines, foreground connectors */
+#diagram .node rect,
+#diagram .node circle,
+#diagram .node ellipse,
+#diagram .node polygon,
+#diagram .node path {
+    fill: var(--vscode-sideBar-background);
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+}
+
+#diagram .edgePath path,
+#diagram .flowchart-link,
+#diagram .messageLine0,
+#diagram .messageLine1,
+#diagram marker path {
+    stroke: var(--vscode-editor-foreground);
+}
+
+#diagram marker polygon,
+#diagram marker path {
+    fill: var(--vscode-editor-foreground);
+}
+
 #diagram svg text,
 #diagram foreignObject,
 #diagram foreignObject * {

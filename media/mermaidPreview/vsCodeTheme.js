@@ -129,9 +129,9 @@
      * accent (#35A854), selection (#3e4451).
      *
      * Contrast rules:
-     * - Connectors use foreground-tinted strokes (borders alone are too faint).
-     * - Node fills are lifted from the canvas so boxes read as surfaces.
-     * - Cluster / actor outlines use muted text, not panel borders alone.
+     * - Node fills use the sidebar surface so boxes read against the editor canvas.
+     * - Outlines use workbench border tokens, not accent / chart blues.
+     * - Connectors and arrowheads use text foreground.
      *
      * @returns {Record<string, string | boolean>}
      */
@@ -176,13 +176,12 @@
             "--vscode-sideBarSectionHeader-border",
         ];
         const canvas = ["--vscode-editor-background"];
-        const surface = ["--vscode-editorWidget-background", "--vscode-input-background"];
+        const sidebar = ["--vscode-sideBar-background"];
         const surfaceAlt = [
             "--vscode-input-background",
             "--vscode-sideBar-background",
             "--vscode-editorWidget-background",
         ];
-        const clusterSurface = ["--vscode-sideBar-background", "--vscode-input-background"];
         const text = ["--vscode-editor-foreground", "--vscode-foreground"];
         const textMuted = ["--vscode-descriptionForeground", "--vscode-editorLineNumber-foreground", ...text];
         const accent = ["--vscode-focusBorder", "--vscode-textLink-foreground", "--vscode-button-background"];
@@ -191,55 +190,52 @@
             "--vscode-editor-selectionBackground",
             "--vscode-list-focusBackground",
         ];
-        const chartsBlue = ["--vscode-charts-blue", ...accent];
-        const chartsGreen = ["--vscode-charts-green", ...accent];
         const chartsPurple = ["--vscode-charts-purple", ...accent];
 
-        // Connectors: border mixed toward foreground (~4.5:1+ on typical dark themes)
-        const connector = pickBlended(border, text, 0.75) ?? pickColor(...text, ...border);
         const connectorMuted = pickBlended(border, text, 0.6) ?? pickColor(...textMuted, ...border);
+        const foreground = pickColor(...text);
 
         // Canvas
         set("background", ...canvas);
         set("textColor", ...text);
         set("titleColor", ...text);
 
-        // Shared lines / arrows — foreground-tinted, not raw borders
-        setValue("lineColor", connector);
-        setValue("arrowheadColor", connector);
-        setValue("defaultLinkColor", connector);
+        // Shared lines / arrows — text foreground
+        setValue("lineColor", foreground);
+        setValue("arrowheadColor", foreground);
+        setValue("defaultLinkColor", foreground);
 
-        // Leaf nodes — lift fill off the canvas so boxes are visible
-        setBlended("primaryColor", 0.22, surface, text);
+        // Leaf nodes — sidebar surface, border outlines
+        set("primaryColor", ...sidebar);
         set("primaryTextColor", ...text);
-        setBlended("mainBkg", 0.22, surface, text);
-        setBlended("stateBkg", 0.22, surface, text);
-        setBlended("labelBackgroundColor", 0.22, surface, text);
+        set("mainBkg", ...sidebar);
+        set("stateBkg", ...sidebar);
+        set("labelBackgroundColor", ...sidebar);
         set("nodeTextColor", ...text);
-        set("primaryBorderColor", ...chartsBlue, ...border);
-        set("nodeBorder", ...chartsBlue, ...border);
+        set("primaryBorderColor", ...border);
+        set("nodeBorder", ...border);
 
-        // Secondary tier — stronger blue tint than before
-        setBlended("secondaryColor", 0.22, surface, chartsBlue);
+        // Secondary tier
+        set("secondaryColor", ...sidebar);
         set("secondaryTextColor", ...text);
-        set("secondaryBorderColor", ...chartsPurple, ...border);
+        set("secondaryBorderColor", ...border);
 
-        // Subgraph / cluster container tier — readable outline + green tint
-        setBlended("tertiaryColor", 0.18, clusterSurface, chartsGreen);
+        // Subgraph / cluster container tier
+        set("tertiaryColor", ...sidebar);
         set("tertiaryTextColor", ...text);
-        setValue("tertiaryBorderColor", connectorMuted ?? pickColor(...border));
-        setBlended("clusterBkg", 0.18, clusterSurface, chartsGreen);
-        setValue("clusterBorder", connectorMuted ?? pickColor(...border));
+        set("tertiaryBorderColor", ...border);
+        set("clusterBkg", ...sidebar);
+        set("clusterBorder", ...border);
 
         // Composite state regions — selection with purple tint
         setBlended("altBackground", 0.14, selection, chartsPurple);
 
         // Sequence diagrams — match flowchart contrast for actors / signals
-        setBlended("actorBkg", 0.22, surface, text);
-        set("actorBorder", ...chartsBlue, ...border);
+        set("actorBkg", ...sidebar);
+        set("actorBorder", ...border);
         set("actorTextColor", ...text);
-        setValue("actorLineColor", connectorMuted ?? connector);
-        setValue("signalColor", connector);
+        setValue("actorLineColor", foreground);
+        setValue("signalColor", foreground);
         set("signalTextColor", ...text);
         setBlended("labelBoxBkgColor", 0.12, surfaceAlt, text);
         setValue("labelBoxBorderColor", connectorMuted ?? pickColor(...border));

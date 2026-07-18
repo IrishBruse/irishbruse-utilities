@@ -161,39 +161,60 @@ body {
 /* ==========================================================================
    Mermaid Nodes & Shapes
    ========================================================================== */
-#diagram .node rect,
-#diagram .node circle,
-#diagram .node ellipse,
-#diagram .node polygon,
-#diagram .node path {
+/* Flowchart / state nodes — exclude ER entity tables (they use .divider grids) */
+#diagram .node:not(:has(.divider)) rect,
+#diagram .node:not(:has(.divider)) circle,
+#diagram .node:not(:has(.divider)) ellipse,
+#diagram .node:not(:has(.divider)) polygon,
+#diagram .node:not(:has(.divider)) path {
     fill: var(--vscode-editorWidget-background, var(--vscode-input-background));
-    stroke: var(--vscode-focusBorder, var(--vscode-panel-border));
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
     stroke-width: 1.5px;
-    /* subtle drop shadow for nodes */
     filter: drop-shadow(0 2px 4px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.12)));
     transition:
         fill 0.2s ease,
         stroke 0.2s ease;
 }
 
+/* Lift inner nodes off their parent cluster background */
+#diagram .cluster .node:not(:has(.divider)) rect,
+#diagram .cluster .node:not(:has(.divider)) circle,
+#diagram .cluster .node:not(:has(.divider)) ellipse,
+#diagram .cluster .node:not(:has(.divider)) polygon,
+#diagram .cluster .node:not(:has(.divider)) path {
+    fill: var(--vscode-editorWidget-background);
+}
+
 /* Overrides for specific states/actors */
 #diagram .actor {
-    stroke: var(--vscode-focusBorder);
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
     fill: var(--vscode-editorWidget-background);
 }
 
 /* ==========================================================================
    Mermaid Clusters (Subgraphs)
    ========================================================================== */
-/* Simplified cluster logic using opacity layering instead of strict ~ selectors */
-#diagram .cluster rect,
-#diagram .cluster path {
-    fill: var(--vscode-editor-selectionBackground) !important;
-    fill-opacity: 0.08 !important;
-    stroke: var(--vscode-editorGroup-border) !important;
+#diagram .clusters > .cluster > rect,
+#diagram .clusters > .cluster > path {
+    fill: var(--vscode-sideBar-background) !important;
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
     stroke-width: 1.5px !important;
-    stroke-dasharray: 4 6 !important;
-    rx: 6px !important; /* Smooth corners for subgraphs */
+}
+
+#diagram .clusters > .cluster ~ .cluster > rect,
+#diagram .clusters > .cluster ~ .cluster > path {
+    fill: var(--vscode-sideBarSectionHeader-background, var(--vscode-input-background)) !important;
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
+}
+
+#diagram .clusters > .cluster ~ .cluster ~ .cluster > rect,
+#diagram .clusters > .cluster ~ .cluster ~ .cluster > path {
+    fill: var(--vscode-sideBar-background) !important;
+}
+
+#diagram .clusters > .cluster ~ .cluster ~ .cluster ~ .cluster > rect,
+#diagram .clusters > .cluster ~ .cluster ~ .cluster ~ .cluster > path {
+    fill: var(--vscode-sideBarSectionHeader-background, var(--vscode-input-background)) !important;
 }
 
 /* ==========================================================================
@@ -203,7 +224,7 @@ body {
 #diagram .flowchart-link,
 #diagram .messageLine0,
 #diagram .messageLine1,
-#diagram .sequenceNumber {
+#diagram .relationshipLine {
     stroke: var(--vscode-editor-foreground);
     stroke-width: 1.5px;
 }
@@ -242,7 +263,7 @@ body {
     font-family: inherit;
 }
 
-/* Autonumber markers styling */
+/* Autonumber markers: light circle, dark digits (inverts on light themes) */
 #diagram .sequenceNumber {
     fill: var(--vscode-editor-background);
     stroke: var(--vscode-editor-foreground);
@@ -257,4 +278,55 @@ body {
 #diagram .note {
     fill: var(--vscode-editorWarning-background, var(--vscode-editorWidget-background));
     stroke: var(--vscode-editorWarning-border, var(--vscode-focusBorder));
+}
+
+/* ==========================================================================
+   ER Diagram Entity Tables
+   ========================================================================== */
+#diagram .node:has(.divider) {
+    filter: drop-shadow(0 2px 6px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.24)));
+}
+
+#diagram .node:has(.divider) .outer-path path {
+    fill: var(--vscode-sideBar-background, var(--vscode-editorWidget-background));
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    stroke-width: 1px;
+}
+
+#diagram .node:has(.divider) .row-rect-odd path {
+    fill: var(--vscode-sideBar-background, var(--vscode-editorWidget-background));
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    stroke-width: 1px;
+}
+
+#diagram .node:has(.divider) .row-rect-even path {
+    fill: var(--vscode-input-background, var(--vscode-sideBarSectionHeader-background));
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    stroke-width: 1px;
+}
+
+#diagram .node:has(.divider) .divider path {
+    fill: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    stroke-width: 1px;
+}
+
+#diagram .node:has(.divider) .label,
+#diagram .node:has(.divider) .label span,
+#diagram .node:has(.divider) text,
+#diagram .node:has(.divider) .attribute-type,
+#diagram .node:has(.divider) .attribute-name,
+#diagram .node:has(.divider) .attribute-keys {
+    fill: var(--vscode-editor-foreground) !important;
+    color: var(--vscode-editor-foreground) !important;
+    font-family: inherit;
+}
+
+#diagram .node:has(.divider) .name {
+    font-weight: 600;
+}
+
+#diagram .relationshipLabelBox {
+    fill: var(--vscode-editorWidget-background);
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
 }

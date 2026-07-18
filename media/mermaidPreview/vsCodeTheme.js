@@ -291,6 +291,10 @@
         set("edgeLabelBackground", ...canvas);
         set("edgeLabelColor", ...text);
 
+        // ER diagram entity tables — accent grid, alternating row surfaces
+        set("rowOdd", ...sidebar);
+        set("rowEven", "--vscode-input-background", "--vscode-sideBarSectionHeader-background", ...nodeSurface);
+
         // Errors
         set("errorBkgColor", "--vscode-inputValidation-errorBackground", "--vscode-editorError-background");
         set("errorTextColor", "--vscode-editorError-foreground", ...text);

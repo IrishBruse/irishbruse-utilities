@@ -31,6 +31,22 @@
     let renderId = 0;
 
     const FIT_MARGIN = 48;
+    const PNG_EXPORT_MIN_SCALE = 2;
+    const PNG_EXPORT_MAX_DIMENSION = 8192;
+
+    /**
+     * @param {number} width
+     * @param {number} height
+     * @returns {number}
+     */
+    function getPngExportScale(width, height) {
+        const baseScale = Math.max(window.devicePixelRatio || 1, PNG_EXPORT_MIN_SCALE);
+        const maxDimension = Math.max(width, height);
+        if (maxDimension * baseScale > PNG_EXPORT_MAX_DIMENSION) {
+            return PNG_EXPORT_MAX_DIMENSION / maxDimension;
+        }
+        return baseScale;
+    }
 
     function applyTransform() {
         canvas.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
@@ -72,18 +88,23 @@
         return new Promise((resolve, reject) => {
             const image = new Image();
             image.onload = () => {
+                const exportScale = getPngExportScale(width, height);
+                const outputWidth = Math.ceil(width * exportScale);
+                const outputHeight = Math.ceil(height * exportScale);
                 const canvas = document.createElement("canvas");
-                canvas.width = Math.ceil(width);
-                canvas.height = Math.ceil(height);
+                canvas.width = outputWidth;
+                canvas.height = outputHeight;
                 const context = canvas.getContext("2d");
                 if (!context) {
                     reject(new Error("Could not create canvas context"));
                     return;
                 }
 
+                context.imageSmoothingEnabled = true;
+                context.imageSmoothingQuality = "high";
                 context.fillStyle = getComputedStyle(document.body).backgroundColor;
-                context.fillRect(0, 0, canvas.width, canvas.height);
-                context.drawImage(image, 0, 0, canvas.width, canvas.height);
+                context.fillRect(0, 0, outputWidth, outputHeight);
+                context.drawImage(image, 0, 0, outputWidth, outputHeight);
 
                 canvas.toBlob((blob) => {
                     if (!blob) {

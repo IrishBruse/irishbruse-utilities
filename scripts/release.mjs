@@ -70,31 +70,14 @@ function restorePackagingArtifacts() {
     }
 }
 
-function parseArgs(argv) {
+function parseVersionArg(argv) {
     const args = argv.slice(2);
-    const flags = new Set();
-    const positionals = [];
 
-    for (const arg of args) {
-        if (arg === "--no-push") {
-            flags.add("no-push");
-            continue;
-        }
-
-        if (arg === "--no-commit") {
-            flags.add("no-commit");
-            continue;
-        }
-
-        if (arg === "--publish-only") {
-            flags.add("publish-only");
-            continue;
-        }
-
-        positionals.push(arg);
+    if (args.length !== 1) {
+        return null;
     }
 
-    return { flags, versionArg: positionals[0] };
+    return args[0];
 }
 
 function assertChangelog(version) {
@@ -151,58 +134,37 @@ function commitRelease(version) {
     run(`git commit -m "${version}"`);
 }
 
-const { flags, versionArg } = parseArgs(process.argv);
+const versionArg = parseVersionArg(process.argv);
 
 if (!versionArg) {
-    console.error("Usage: npm run release -- <version|patch|minor|major> [--publish-only] [--no-commit] [--no-push]");
+    console.error("Usage: npm run release -- <version|patch|minor|major>");
     process.exit(1);
 }
 
 const currentVersion = readJson("package.json").version;
 const version = nextVersion(currentVersion, versionArg);
-const publishOnly = flags.has("publish-only") || version === currentVersion;
 
 if (!semverPattern.test(version)) {
     console.error(`Invalid semver: ${version}`);
     process.exit(1);
 }
 
-if (!publishOnly && compareSemver(version, currentVersion) <= 0) {
+if (compareSemver(version, currentVersion) <= 0) {
     console.error(`Version ${version} must be greater than current version ${currentVersion}`);
     process.exit(1);
 }
 
-if (publishOnly && version !== currentVersion) {
-    console.error(`Publish-only requires package.json version ${version}, found ${currentVersion}`);
-    process.exit(1);
-}
-
-console.log(`Releasing ${version}${publishOnly ? " (publish only)" : ""}`);
+console.log(`Releasing ${version}`);
 
 try {
     assertChangelog(version);
-
-    if (!publishOnly) {
-        bumpVersions(version);
-    }
-
+    bumpVersions(version);
     run("npm run verify");
     run("npm run package:vsix");
     restorePackagingArtifacts();
     publishExtension();
-
-    if (!flags.has("no-commit")) {
-        commitRelease(version);
-    } else {
-        console.log("\nSkipped commit (--no-commit)");
-    }
-
-    if (!flags.has("no-push")) {
-        run("git push");
-    } else {
-        console.log("\nSkipped push (--no-push)");
-    }
-
+    commitRelease(version);
+    run("git push");
     console.log(`\nReleased ${version} to the Marketplace`);
 } catch (error) {
     console.error(`\nRelease failed: ${error.message}`);

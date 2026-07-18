@@ -337,6 +337,32 @@
         set("errorBkgColor", "--vscode-inputValidation-errorBackground", "--vscode-editorError-background");
         set("errorTextColor", "--vscode-editorError-foreground", ...text);
 
+        // Git graph — Mermaid defaults branchLabelColor to black in darkMode
+        set("branchLabelColor", ...text);
+        set("commitLabelColor", ...text);
+        set("commitLabelBackground", ...canvas);
+        set("labelTextColor", ...text);
+        set("tagLabelColor", ...text);
+        set("tagLabelBackground", ...nodeSurface);
+        set("tagLabelBorder", ...border);
+        setValue("commitLineColor", foreground ?? pickColor(...textMuted));
+        for (let i = 0; i < 8; i++) {
+            set(`gitBranchLabel${i}`, ...text);
+        }
+        const gitPalette = [
+            "--vscode-charts-blue",
+            "--vscode-charts-orange",
+            "--vscode-charts-purple",
+            "--vscode-charts-green",
+            "--vscode-charts-red",
+            "--vscode-charts-yellow",
+            "--vscode-textLink-foreground",
+            "--vscode-badge-background",
+        ];
+        for (let i = 0; i < gitPalette.length; i++) {
+            set(`git${i}`, gitPalette[i]);
+        }
+
         // Pie charts — legend/title on canvas; slice % labels on colored fills
         set("pieTitleTextColor", ...text);
         set("pieLegendTextColor", ...text);

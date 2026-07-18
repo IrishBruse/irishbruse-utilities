@@ -429,3 +429,48 @@ body {
 #diagram svg[aria-roledescription="pie"] .pieOuterCircle {
     stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
 }
+
+/* ==========================================================================
+   Git Graphs
+   ========================================================================== */
+#diagram svg[aria-roledescription="git"] .gitTitleText,
+#diagram svg[aria-roledescription="git"] .branch-label,
+#diagram svg[aria-roledescription="git"] [class*="branch-label"],
+#diagram svg[aria-roledescription="git"] .commit-label,
+#diagram svg[aria-roledescription="git"] .commit-id,
+#diagram svg[aria-roledescription="git"] .commit-msg,
+#diagram svg[aria-roledescription="git"] .tag-label {
+    fill: var(--vscode-editor-foreground) !important;
+    font-family: var(--vscode-font-family, sans-serif) !important;
+}
+
+#diagram svg[aria-roledescription="git"] .commit-label {
+    font-weight: 500;
+    paint-order: stroke fill;
+    stroke: var(--vscode-editor-background);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+}
+
+#diagram svg[aria-roledescription="git"] .commit-label-bkg {
+    fill: var(--vscode-editorWidget-background) !important;
+    opacity: 0.92 !important;
+}
+
+#diagram svg[aria-roledescription="git"] .branchLabelBkg,
+#diagram svg[aria-roledescription="git"] [class*="branchLabelBkg"] {
+    fill: var(--vscode-editorWidget-background) !important;
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    stroke-width: 1px;
+}
+
+#diagram svg[aria-roledescription="git"] .branch {
+    stroke: var(--vscode-descriptionForeground, var(--vscode-editorLineNumber-foreground));
+    opacity: 0.85;
+}
+
+#diagram svg[aria-roledescription="git"] .commit-merge,
+#diagram svg[aria-roledescription="git"] .commit-highlight-inner {
+    fill: var(--vscode-charts-blue, var(--vscode-textLink-foreground)) !important;
+    stroke: var(--vscode-charts-blue, var(--vscode-textLink-foreground)) !important;
+}

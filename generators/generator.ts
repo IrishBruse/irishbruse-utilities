@@ -14,7 +14,7 @@ export function getPackage(): Package {
 
 export function toPascalCase(str: string) {
     return str
-        .replace(/[-_]+/g, " ")
+        .replace(/[-_.]+/g, " ")
         .split(" ")
         .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
         .join("");

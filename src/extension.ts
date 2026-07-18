@@ -3,6 +3,7 @@ import { openPR } from "./commands/openPR";
 import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
+import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
 import { registerCommandIB } from "./utils/vscode";
@@ -25,6 +26,7 @@ export function activate(context: ExtensionContext) {
 
     registerMermaidCustomEditor(context);
     SnippetViewProvider.activate(context);
+    GitHelpersViewProvider.activate(context);
 }
 
 export function deactivate() {

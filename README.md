@@ -12,7 +12,14 @@ A [Visual Studio Code](https://code.visualstudio.com/) extension: snippet manage
 
 Tree view under the **Snippet Manager** activity bar: create, edit, and delete snippets in folders; map snippet files to [language IDs](https://code.visualstudio.com/docs/languages/overview) for highlighting; and auto-generate snippets from multiple language sources using the settings below.
 
-### GitHub
+### Git Helpers (Source Control)
+
+A **Git Helpers** panel in the Source Control sidebar (alongside Changes):
+
+- **Diff vs base** — multi-file diff of your branch against an auto-detected base (`main` / `origin/main`, etc.)
+- **Start branch review** — `git reset --soft` to merge-base, then review staged changes in VS Code
+- **Exclude selection from review** — unstages and reverts selected lines as unstaged removals (editor context menu during review)
+- **Review notes** — document why a change was made; **Publish to PR** posts line comments via `gh` (no GitHub extension required)
 
 From the Source Control title bar (when using Git), **Open Pull Request** opens the PR for the current branch in the browser (via `git`, not the GitHub CLI).
 
@@ -65,6 +72,15 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 | `ib-utilities.deleteSnippet` | Delete snippet |
 | `ib-utilities.openMermaidPreview` | Open Preview |
 | `ib-utilities.openMermaidSource` | Open Source |
+| `ib-utilities.refreshGitHelpers` | Refresh Git Helpers |
+| `ib-utilities.diffWithBase` | Diff vs Base Branch |
+| `ib-utilities.startBranchReview` | Start Branch Review |
+| `ib-utilities.abortBranchReview` | Abort Branch Review |
+| `ib-utilities.openStagedReview` | Open Staged Review |
+| `ib-utilities.excludeFromReview` | Exclude Selection from Review |
+| `ib-utilities.addReviewNote` | Add Review Note |
+| `ib-utilities.publishReviewToPR` | Publish Review to PR |
+| `ib-utilities.exportReviewSummary` | Export Review Summary |
 
 ## Development
 

@@ -73,6 +73,76 @@ export enum Commands {
     OpenMermaidSource = `ib-utilities.openMermaidSource`,
 
     /**
+     * Refresh Git Helpers
+     * Short Title: Refresh
+     * Icon: $(refresh)
+     */
+    RefreshGitHelpers = `ib-utilities.refreshGitHelpers`,
+
+    /**
+     * Show Git Helpers
+     * Short Title: Git Helpers
+     * Icon: $(git-branch)
+     */
+    ShowGitHelpers = `ib-utilities.showGitHelpers`,
+
+    /**
+     * Diff vs Base Branch
+     * Short Title: Diff vs base
+     * Icon: $(diff)
+     */
+    DiffWithBase = `ib-utilities.diffWithBase`,
+
+    /**
+     * Start Branch Review
+     * Short Title: Start review
+     * Icon: $(eye)
+     */
+    StartBranchReview = `ib-utilities.startBranchReview`,
+
+    /**
+     * Abort Branch Review
+     * Short Title: Abort review
+     * Icon: $(discard)
+     */
+    AbortBranchReview = `ib-utilities.abortBranchReview`,
+
+    /**
+     * Open Staged Review
+     * Short Title: Staged review
+     * Icon: $(list-flat)
+     */
+    OpenStagedReview = `ib-utilities.openStagedReview`,
+
+    /**
+     * Exclude Selection from Review
+     * Short Title: Exclude from review
+     * Icon: $(diff-removed)
+     */
+    ExcludeFromReview = `ib-utilities.excludeFromReview`,
+
+    /**
+     * Add Review Note
+     * Short Title: Add note
+     * Icon: $(note)
+     */
+    AddReviewNote = `ib-utilities.addReviewNote`,
+
+    /**
+     * Publish Review to PR
+     * Short Title: Publish to PR
+     * Icon: $(comment-discussion)
+     */
+    PublishReviewToPR = `ib-utilities.publishReviewToPR`,
+
+    /**
+     * Export Review Summary
+     * Short Title: Export summary
+     * Icon: $(export)
+     */
+    ExportReviewSummary = `ib-utilities.exportReviewSummary`,
+
+    /**
      * Snippet Manager
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,
@@ -96,6 +166,12 @@ export enum Views {
      * ContainerId: snippetContainer
      */
     SnippetView = `snippetView`,
+
+    /**
+     * Header: Git Helpers
+     * ContainerId: scm
+     */
+    IbUtilitiesGitHelpers = `ib-utilities.gitHelpers`,
 
 }
 

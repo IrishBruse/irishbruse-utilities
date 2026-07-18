@@ -17,7 +17,8 @@
         "Other"
     ],
     "activationEvents": [
-        "onStartupFinished"
+        "onStartupFinished",
+        "onView:ib-utilities.gitHelpers"
     ],
     "scripts": {
         "vscode:prepublish": "npm run package",
@@ -136,6 +137,15 @@
                     "name": "Groups",
                     "icon": "media/snippet_icon.svg"
                 }
+            ],
+            "scm": [
+                {
+                    "id": "ib-utilities.gitHelpers",
+                    "name": "Git Helpers",
+                    "icon": "$(git-branch)",
+                    "contextualTitle": "Git Helpers",
+                    "visibility": "visible"
+                }
             ]
         },
         "commands": [
@@ -195,6 +205,66 @@
                 "title": "Open Source",
                 "shortTitle": "Open Source",
                 "icon": "$(code)"
+            },
+            {
+                "command": "ib-utilities.refreshGitHelpers",
+                "title": "Refresh Git Helpers",
+                "shortTitle": "Refresh",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "ib-utilities.showGitHelpers",
+                "title": "Show Git Helpers",
+                "shortTitle": "Git Helpers",
+                "icon": "$(git-branch)"
+            },
+            {
+                "command": "ib-utilities.diffWithBase",
+                "title": "Diff vs Base Branch",
+                "shortTitle": "Diff vs base",
+                "icon": "$(diff)"
+            },
+            {
+                "command": "ib-utilities.startBranchReview",
+                "title": "Start Branch Review",
+                "shortTitle": "Start review",
+                "icon": "$(eye)"
+            },
+            {
+                "command": "ib-utilities.abortBranchReview",
+                "title": "Abort Branch Review",
+                "shortTitle": "Abort review",
+                "icon": "$(discard)"
+            },
+            {
+                "command": "ib-utilities.openStagedReview",
+                "title": "Open Staged Review",
+                "shortTitle": "Staged review",
+                "icon": "$(list-flat)"
+            },
+            {
+                "command": "ib-utilities.excludeFromReview",
+                "title": "Exclude Selection from Review",
+                "shortTitle": "Exclude from review",
+                "icon": "$(diff-removed)"
+            },
+            {
+                "command": "ib-utilities.addReviewNote",
+                "title": "Add Review Note",
+                "shortTitle": "Add note",
+                "icon": "$(note)"
+            },
+            {
+                "command": "ib-utilities.publishReviewToPR",
+                "title": "Publish Review to PR",
+                "shortTitle": "Publish to PR",
+                "icon": "$(comment-discussion)"
+            },
+            {
+                "command": "ib-utilities.exportReviewSummary",
+                "title": "Export Review Summary",
+                "shortTitle": "Export summary",
+                "icon": "$(export)"
             }
         ],
         "menus": {
@@ -210,7 +280,24 @@
                     "group": "navigation"
                 }
             ],
+            "editor/context": [
+                {
+                    "command": "ib-utilities.excludeFromReview",
+                    "when": "ib-utilities.inBranchReview",
+                    "group": "ib-utilities@1"
+                },
+                {
+                    "command": "ib-utilities.addReviewNote",
+                    "when": "ib-utilities.inBranchReview",
+                    "group": "ib-utilities@2"
+                }
+            ],
             "scm/title": [
+                {
+                    "command": "ib-utilities.showGitHelpers",
+                    "when": "scmProvider == git",
+                    "group": "navigation"
+                },
                 {
                     "command": "ib-utilities.openPR",
                     "when": "scmProvider == git",
@@ -232,6 +319,16 @@
                     "command": "ib-utilities.deleteSnippet",
                     "when": "view == snippetView && viewItem == file",
                     "group": "inline"
+                },
+                {
+                    "command": "ib-utilities.diffWithBase",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase",
+                    "group": "inline"
+                },
+                {
+                    "command": "ib-utilities.startBranchReview",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == action-startReview",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -243,6 +340,11 @@
                 {
                     "command": "ib-utilities.refreshSnippetView",
                     "when": "view == snippetView",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.refreshGitHelpers",
+                    "when": "view == ib-utilities.gitHelpers",
                     "group": "navigation"
                 }
             ]

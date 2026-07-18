@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.0
+
+-   Add: Mermaid preview custom editor for `.mmd` and `.mermaid` files
+-   Add: Live diagram rendering with VS Code theme integration
+-   Add: Zoom, pan, fit-to-view, and copy diagram as PNG
+-   Add: Open Preview / Open Source commands in the editor title bar
+
 ## 0.3
 
 -   Add: Snippet View

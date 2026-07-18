@@ -24,6 +24,10 @@ From the Source Control title bar (when using Git), **Open Pull Request** opens 
 
 **Empty Dark Theme** is contributed as an optional dark UI theme (see **Preferences: Color Theme**).
 
+### Mermaid Preview
+
+Open `.mmd` or `.mermaid` files in the **Mermaid Preview** custom editor for live diagram rendering that follows your VS Code color theme. Use the toolbar to zoom, pan, fit to view, or copy the diagram as PNG. Switch back to source with **Open Source** from the editor title bar.
+
 ## Configuration
 
 Map snippet file labels to VS Code language IDs:
@@ -59,6 +63,8 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 | `ib-utilities.addSnippet` | Add new snippet |
 | `ib-utilities.editSnippet` | Edit snippet |
 | `ib-utilities.deleteSnippet` | Delete snippet |
+| `ib-utilities.openMermaidPreview` | Open Preview |
+| `ib-utilities.openMermaidSource` | Open Source |
 
 ## Development
 

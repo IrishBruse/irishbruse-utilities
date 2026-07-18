@@ -405,10 +405,20 @@ body {
    Pie Charts
    ========================================================================== */
 #diagram svg[aria-roledescription="pie"] .pieTitleText,
-#diagram svg[aria-roledescription="pie"] .slice,
 #diagram svg[aria-roledescription="pie"] .legend text {
     fill: var(--vscode-editor-foreground) !important;
     font-family: var(--vscode-font-family, sans-serif) !important;
+}
+
+/* Slice % labels: high-contrast fill plus background-colored stroke halo */
+#diagram svg[aria-roledescription="pie"] .slice {
+    fill: var(--vscode-editor-foreground) !important;
+    font-family: var(--vscode-font-family, sans-serif) !important;
+    font-weight: 600;
+    paint-order: stroke fill;
+    stroke: var(--vscode-editor-background);
+    stroke-width: 4px;
+    stroke-linejoin: round;
 }
 
 #diagram svg[aria-roledescription="pie"] .pieCircle {

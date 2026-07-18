@@ -337,10 +337,13 @@
         set("errorBkgColor", "--vscode-inputValidation-errorBackground", "--vscode-editorError-background");
         set("errorTextColor", "--vscode-editorError-foreground", ...text);
 
-        // Pie charts — legend/title must use foreground, not taskTextDarkColor (canvas)
+        // Pie charts — legend/title on canvas; slice % labels on colored fills
         set("pieTitleTextColor", ...text);
-        set("pieSectionTextColor", ...text);
         set("pieLegendTextColor", ...text);
+        setValue(
+            "pieSectionTextColor",
+            dark ? "#ffffff" : (canvasColor ?? pickColor(...canvas) ?? "#ffffff")
+        );
         setValue("pieStrokeColor", pickColor(...border) ?? connectorMuted ?? foreground);
         setValue("pieOuterStrokeColor", pickColor(...border) ?? connectorMuted ?? foreground);
         setValue("pieOpacity", "1");

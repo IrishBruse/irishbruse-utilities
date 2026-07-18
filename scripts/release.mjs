@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import { AzureCliCredential, ChainedTokenCredential, InteractiveBrowserCredential } from "@azure/identity";
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -7,7 +6,6 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const semverPattern = /^\d+\.\d+\.\d+(-[\w.]+)?$/;
-const AZURE_DEVOPS_SCOPE = "499b84ac-1321-427f-aa17-267ca6975798/.default";
 
 function run(command, options = {}) {
     console.log(`\n> ${command}`);
@@ -110,30 +108,10 @@ function assertChangelog(version) {
     }
 }
 
-async function getMarketplaceToken() {
-    const credential = new ChainedTokenCredential(
-        new AzureCliCredential(),
-        new InteractiveBrowserCredential({ tenantId: "organizations" }),
-    );
-
-    console.error("Signing in to the VS Code Marketplace (browser may open on first use)...");
-    const token = await credential.getToken(AZURE_DEVOPS_SCOPE);
-
-    if (!token?.token) {
-        throw new Error("Failed to acquire Marketplace access token");
-    }
-
-    return token.token;
-}
-
-async function publishExtension() {
-    const token = await getMarketplaceToken();
-    console.log("\n> npx @vscode/vsce publish");
-    execSync("npx @vscode/vsce publish", {
-        cwd: root,
-        stdio: "inherit",
-        env: { ...process.env, VSCE_PAT: token },
-    });
+function publishExtension() {
+    const env = { ...process.env };
+    delete env.VSCE_PAT;
+    run("npx @vscode/vsce publish --azure-credential", { env });
 }
 
 function bumpVersions(version) {
@@ -211,7 +189,7 @@ try {
     run("npm run verify");
     run("npm run package:vsix");
     restorePackagingArtifacts();
-    await publishExtension();
+    publishExtension();
 
     if (!flags.has("no-commit")) {
         commitRelease(version);

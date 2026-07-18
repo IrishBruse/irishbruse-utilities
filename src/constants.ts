@@ -115,6 +115,5 @@ export enum Configuration {
 
 /** Primary file extension per language id from this extension contributes.languages */
 export const contributedLanguageIdToExtension: Record<string, string> = {
-    "mermaid": ".mmd",
     "gherkin": ".feature",
 };

@@ -25,6 +25,7 @@ const builtinLanguageIdToExtension: Record<string, string> = {
     lua: ".lua",
     makefile: "Makefile",
     markdown: ".md",
+    mermaid: ".mmd",
     "objective-c": ".m",
     "objective-cpp": ".mm",
     perl: ".pl",

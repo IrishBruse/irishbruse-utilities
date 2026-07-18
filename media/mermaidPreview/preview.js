@@ -134,6 +134,35 @@
         }
     }
 
+    /**
+     * Mermaid emits width="100%" which makes layout depend on the parent and
+     * breaks fit-to-view measurements after live source updates.
+     * @param {SVGSVGElement} svg
+     */
+    function stabilizeSvgSize(svg) {
+        const viewBox = svg.viewBox?.baseVal;
+        const width = viewBox?.width || svg.width?.baseVal?.value;
+        const height = viewBox?.height || svg.height?.baseVal?.value;
+        if (!width || !height) {
+            return;
+        }
+
+        svg.setAttribute("width", String(width));
+        svg.setAttribute("height", String(height));
+        svg.style.width = `${width}px`;
+        svg.style.height = `${height}px`;
+        svg.style.maxWidth = "none";
+    }
+
+    function scheduleFitToView() {
+        requestAnimationFrame(() => {
+            fitToView();
+            if (diagram.querySelector("svg") && canvas.offsetWidth === 0) {
+                requestAnimationFrame(() => fitToView());
+            }
+        });
+    }
+
     function initializeMermaid() {
         const themeVariables = window.IbMermaidVsCodeTheme.getThemeVariables();
         mermaid.initialize({
@@ -143,7 +172,7 @@
             securityLevel: "strict",
             logLevel: "fatal",
             gantt: {
-                fontSize: 10,
+                fontSize: 11,
                 sectionFontSize: 11,
                 barHeight: 22,
             },
@@ -210,8 +239,12 @@
                 return;
             }
             diagram.innerHTML = svg;
+            const renderedSvg = diagram.querySelector("svg");
+            if (renderedSvg) {
+                stabilizeSvgSize(renderedSvg);
+            }
             setCopyEnabled(true);
-            requestAnimationFrame(() => fitToView());
+            scheduleFitToView();
         } catch (err) {
             if (id !== renderId) {
                 return;
@@ -230,7 +263,9 @@
                 break;
             case "theme":
                 initializeMermaid();
-                void renderDiagram(currentSource);
+                if (currentSource.trim()) {
+                    void renderDiagram(currentSource);
+                }
                 break;
         }
     });

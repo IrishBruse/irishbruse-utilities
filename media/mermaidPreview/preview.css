@@ -39,6 +39,7 @@ body {
     margin: 0;
     padding: 0;
     background: transparent;
+    white-space: normal;
 }
 
 #diagram svg {
@@ -349,16 +350,6 @@ body {
 #diagram svg[aria-roledescription="gantt"] .doneText3,
 #diagram svg[aria-roledescription="gantt"] .milestoneText {
     font-family: var(--vscode-font-family, sans-serif) !important;
-    font-size: 10px;
-}
-
-/* Halo outside-bar labels so they stay readable on the canvas */
-#diagram svg[aria-roledescription="gantt"] .taskTextOutsideLeft,
-#diagram svg[aria-roledescription="gantt"] .taskTextOutsideRight {
-    paint-order: stroke fill;
-    stroke: var(--vscode-editor-background);
-    stroke-width: 4px;
-    stroke-linejoin: round;
 }
 
 #diagram .sectionTitle,
@@ -370,7 +361,7 @@ body {
 
 #diagram .grid .tick text {
     fill: var(--vscode-descriptionForeground, var(--vscode-editorLineNumber-foreground)) !important;
-    font-family: inherit;
+    font-family: var(--vscode-font-family, sans-serif) !important;
 }
 
 #diagram .grid .tick line {
@@ -408,4 +399,23 @@ body {
 #diagram rect.task.milestone {
     fill: var(--vscode-editor-foreground) !important;
     stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
+}
+
+/* ==========================================================================
+   Pie Charts
+   ========================================================================== */
+#diagram svg[aria-roledescription="pie"] .pieTitleText,
+#diagram svg[aria-roledescription="pie"] .slice,
+#diagram svg[aria-roledescription="pie"] .legend text {
+    fill: var(--vscode-editor-foreground) !important;
+    font-family: var(--vscode-font-family, sans-serif) !important;
+}
+
+#diagram svg[aria-roledescription="pie"] .pieCircle {
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    opacity: 1;
+}
+
+#diagram svg[aria-roledescription="pie"] .pieOuterCircle {
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
 }

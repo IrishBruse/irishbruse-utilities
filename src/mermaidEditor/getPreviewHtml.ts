@@ -43,7 +43,7 @@ export function getPreviewHtml(webview: Webview, context: ExtensionContext, nonc
     </div>
     <div id="viewport">
         <div id="canvas">
-            <pre id="diagram" class="mermaid"></pre>
+            <div id="diagram" class="mermaid"></div>
         </div>
     </div>
     <div id="error" hidden></div>

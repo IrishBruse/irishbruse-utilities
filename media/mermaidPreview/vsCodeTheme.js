@@ -337,23 +337,48 @@
         set("errorBkgColor", "--vscode-inputValidation-errorBackground", "--vscode-editorError-background");
         set("errorTextColor", "--vscode-editorError-foreground", ...text);
 
-        // Accent palette for pie charts, quadrant charts, git branches, etc.
-        const palette = [
-            "--vscode-focusBorder",
-            "--vscode-textLink-foreground",
-            "--vscode-button-background",
-            "--vscode-list-activeSelectionBackground",
-            "--vscode-button-secondaryBackground",
-            "--vscode-badge-background",
+        // Pie charts — legend/title must use foreground, not taskTextDarkColor (canvas)
+        set("pieTitleTextColor", ...text);
+        set("pieSectionTextColor", ...text);
+        set("pieLegendTextColor", ...text);
+        setValue("pieStrokeColor", pickColor(...border) ?? connectorMuted ?? foreground);
+        setValue("pieOuterStrokeColor", pickColor(...border) ?? connectorMuted ?? foreground);
+        setValue("pieOpacity", "1");
+
+        const piePalette = [
             "--vscode-charts-blue",
-            "--vscode-charts-green",
             "--vscode-charts-orange",
-            "--vscode-charts-red",
             "--vscode-charts-purple",
+            "--vscode-charts-red",
             "--vscode-charts-yellow",
+            "--vscode-charts-green",
+            "--vscode-textLink-foreground",
+            "--vscode-badge-background",
+            "--vscode-button-secondaryBackground",
+            "--vscode-list-activeSelectionBackground",
+            "--vscode-focusBorder",
+            "--vscode-button-background",
+        ];
+        for (let i = 0; i < piePalette.length; i++) {
+            set(`pie${i + 1}`, piePalette[i]);
+        }
+
+        // Accent palette for quadrant charts, git branches, etc.
+        const palette = [
+            "--vscode-charts-blue",
+            "--vscode-charts-orange",
+            "--vscode-charts-purple",
+            "--vscode-charts-red",
+            "--vscode-charts-yellow",
+            "--vscode-charts-green",
+            "--vscode-textLink-foreground",
+            "--vscode-badge-background",
+            "--vscode-button-secondaryBackground",
+            "--vscode-list-activeSelectionBackground",
+            "--vscode-focusBorder",
+            "--vscode-button-background",
         ];
         for (let i = 0; i < palette.length; i++) {
-            set(`pie${i + 1}`, palette[i]);
             set(`cScale${i}`, palette[i]);
         }
 

@@ -79,6 +79,11 @@ export class MermaidCustomEditorProvider implements CustomTextEditorProvider {
                 }
                 postTheme();
             }),
+            webviewPanel.onDidChangeViewState((event) => {
+                if (event.webviewPanel.visible && isReady) {
+                    postUpdate();
+                }
+            }),
             webviewPanel.onDidDispose(() => {
                 if (updateTimer) {
                     clearTimeout(updateTimer);

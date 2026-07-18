@@ -66,11 +66,19 @@ body {
 
 #diagram .messageText,
 #diagram .loopText,
-#diagram .sequenceNumber,
 #diagram .actor > text,
 #diagram .nodeLabel,
 #diagram .cluster-label,
 #diagram .titleText {
+    fill: var(--vscode-editor-foreground);
+}
+
+/* Autonumber markers: light circle, dark digits (theme-inverted on light themes) */
+#diagram .sequenceNumber {
+    fill: var(--vscode-editor-background);
+}
+
+#diagram [id$="-sequencenumber"] {
     fill: var(--vscode-editor-foreground);
 }
 
@@ -82,6 +90,38 @@ body {
 #diagram .node path {
     fill: var(--vscode-sideBar-background);
     stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+}
+
+/* Lift inner nodes off their parent cluster background */
+#diagram .cluster .node rect,
+#diagram .cluster .node circle,
+#diagram .cluster .node ellipse,
+#diagram .cluster .node polygon,
+#diagram .cluster .node path {
+    fill: var(--vscode-editorWidget-background);
+}
+
+/* Subgraph containers — alternate workbench surfaces (e.g. Client vs Server) */
+#diagram .clusters > .cluster > rect,
+#diagram .clusters > .cluster > path {
+    fill: var(--vscode-sideBar-background) !important;
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
+}
+
+#diagram .clusters > .cluster ~ .cluster > rect,
+#diagram .clusters > .cluster ~ .cluster > path {
+    fill: var(--vscode-sideBarSectionHeader-background, var(--vscode-input-background)) !important;
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
+}
+
+#diagram .clusters > .cluster ~ .cluster ~ .cluster > rect,
+#diagram .clusters > .cluster ~ .cluster ~ .cluster > path {
+    fill: var(--vscode-sideBar-background) !important;
+}
+
+#diagram .clusters > .cluster ~ .cluster ~ .cluster ~ .cluster > rect,
+#diagram .clusters > .cluster ~ .cluster ~ .cluster ~ .cluster > path {
+    fill: var(--vscode-sideBarSectionHeader-background, var(--vscode-input-background)) !important;
 }
 
 #diagram .edgePath path,

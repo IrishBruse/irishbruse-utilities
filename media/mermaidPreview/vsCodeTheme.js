@@ -220,7 +220,7 @@
         set("secondaryTextColor", ...text);
         set("secondaryBorderColor", ...border);
 
-        // Subgraph / cluster container tier
+        // Subgraph / cluster container tier — CSS alternates odd/even cluster fills
         set("tertiaryColor", ...sidebar);
         set("tertiaryTextColor", ...text);
         set("tertiaryBorderColor", ...border);
@@ -243,7 +243,8 @@
         set("loopTextColor", ...text);
         set("activationBkgColor", ...selection);
         set("activationBorderColor", ...accent, ...border);
-        set("sequenceNumberColor", ...text);
+        // Sequence autonumber circles use foreground fill; digits use canvas for contrast
+        set("sequenceNumberColor", ...canvas);
 
         // Gantt
         set("sectionBkgColor", "--vscode-sideBar-background", "--vscode-editor-background");

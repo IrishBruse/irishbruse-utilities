@@ -69,8 +69,13 @@ body {
 #diagram .actor > text,
 #diagram .nodeLabel,
 #diagram .cluster-label,
-#diagram .titleText {
+#diagram .titleText,
+#diagram .stateLabel text,
+#diagram g.stateGroup text,
+#diagram g.stateGroup .state-title,
+#diagram .statediagramTitleText {
     fill: var(--vscode-editor-foreground);
+    color: var(--vscode-editor-foreground);
 }
 
 /* Autonumber markers: light circle, dark digits (theme-inverted on light themes) */
@@ -82,46 +87,45 @@ body {
     fill: var(--vscode-editor-foreground);
 }
 
-/* Node surfaces: sidebar background, border outlines, foreground connectors */
+/* Nodes — solid card surfaces (standalone and inside subgraphs) */
 #diagram .node rect,
 #diagram .node circle,
 #diagram .node ellipse,
 #diagram .node polygon,
 #diagram .node path {
-    fill: var(--vscode-sideBar-background);
+    fill: var(--vscode-editorWidget-background, var(--vscode-input-background));
     stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
 }
 
-/* Lift inner nodes off their parent cluster background */
-#diagram .cluster .node rect,
-#diagram .cluster .node circle,
-#diagram .cluster .node ellipse,
-#diagram .cluster .node polygon,
-#diagram .cluster .node path {
-    fill: var(--vscode-editorWidget-background);
-}
-
-/* Subgraph containers — alternate workbench surfaces (e.g. Client vs Server) */
+/* Subgraph frames — translucent tinted regions with dashed borders */
 #diagram .clusters > .cluster > rect,
 #diagram .clusters > .cluster > path {
     fill: var(--vscode-sideBar-background) !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
+    fill-opacity: 0.38 !important;
+    stroke: var(--vscode-panel-border) !important;
+    stroke-width: 1.5px !important;
+    stroke-dasharray: 8 5 !important;
 }
 
 #diagram .clusters > .cluster ~ .cluster > rect,
 #diagram .clusters > .cluster ~ .cluster > path {
     fill: var(--vscode-sideBarSectionHeader-background, var(--vscode-input-background)) !important;
-    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border)) !important;
+    fill-opacity: 0.42 !important;
+    stroke: var(--vscode-panel-border) !important;
+    stroke-width: 1.5px !important;
+    stroke-dasharray: 8 5 !important;
 }
 
 #diagram .clusters > .cluster ~ .cluster ~ .cluster > rect,
 #diagram .clusters > .cluster ~ .cluster ~ .cluster > path {
     fill: var(--vscode-sideBar-background) !important;
+    fill-opacity: 0.38 !important;
 }
 
 #diagram .clusters > .cluster ~ .cluster ~ .cluster ~ .cluster > rect,
 #diagram .clusters > .cluster ~ .cluster ~ .cluster ~ .cluster > path {
     fill: var(--vscode-sideBarSectionHeader-background, var(--vscode-input-background)) !important;
+    fill-opacity: 0.42 !important;
 }
 
 #diagram .edgePath path,

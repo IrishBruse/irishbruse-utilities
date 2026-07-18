@@ -177,6 +177,7 @@
         ];
         const canvas = ["--vscode-editor-background"];
         const sidebar = ["--vscode-sideBar-background"];
+        const nodeSurface = ["--vscode-editorWidget-background", "--vscode-input-background"];
         const surfaceAlt = [
             "--vscode-input-background",
             "--vscode-sideBar-background",
@@ -205,18 +206,20 @@
         setValue("arrowheadColor", foreground);
         setValue("defaultLinkColor", foreground);
 
-        // Leaf nodes — sidebar surface, border outlines
-        set("primaryColor", ...sidebar);
+        // Leaf nodes — solid widget surfaces inside subgraph frames
+        set("primaryColor", ...nodeSurface);
         set("primaryTextColor", ...text);
-        set("mainBkg", ...sidebar);
-        set("stateBkg", ...sidebar);
+        set("mainBkg", ...nodeSurface);
+        set("stateBkg", ...nodeSurface);
+        set("stateLabelColor", ...text);
+        set("stateBorder", ...border);
         set("labelBackgroundColor", ...sidebar);
         set("nodeTextColor", ...text);
         set("primaryBorderColor", ...border);
         set("nodeBorder", ...border);
 
         // Secondary tier
-        set("secondaryColor", ...sidebar);
+        set("secondaryColor", ...nodeSurface);
         set("secondaryTextColor", ...text);
         set("secondaryBorderColor", ...border);
 
@@ -229,9 +232,14 @@
 
         // Composite state regions — selection with purple tint
         setBlended("altBackground", 0.14, selection, chartsPurple);
+        set("compositeBackground", ...canvas);
+        set("compositeTitleBackground", ...sidebar);
+        setValue("transitionColor", foreground);
+        set("transitionLabelColor", ...text);
+        set("specialStateColor", ...text);
 
         // Sequence diagrams — match flowchart contrast for actors / signals
-        set("actorBkg", ...sidebar);
+        set("actorBkg", ...nodeSurface);
         set("actorBorder", ...border);
         set("actorTextColor", ...text);
         setValue("actorLineColor", foreground);

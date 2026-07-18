@@ -1,5 +1,6 @@
 import { env, Uri, window } from "vscode";
 import { asyncSpawn } from "../utils/asyncSpawn";
+import { getOriginUrl, parseGithubOwnerRepo } from "./githubUrl";
 import { formatReviewSummary, loadReviewNotes, markNotesPublished, type ReviewNote } from "./reviewNotes";
 import { getReviewCommentController } from "./reviewCommentController";
 
@@ -8,19 +9,6 @@ type GhPrInfo = {
     headRefOid: string;
     url: string;
 };
-
-function parseGithubOwnerRepo(remoteUrl: string): { owner: string; repo: string } | undefined {
-    const trimmed = remoteUrl.trim().replace(/\.git$/, "");
-    const sshMatch = trimmed.match(/git@[^:]+:([^/]+)\/(.+)$/);
-    if (sshMatch) {
-        return { owner: sshMatch[1], repo: sshMatch[2] };
-    }
-    const httpsMatch = trimmed.match(/github\.com[:/]([^/]+)\/([^/]+)$/);
-    if (httpsMatch) {
-        return { owner: httpsMatch[1], repo: httpsMatch[2] };
-    }
-    return undefined;
-}
 
 async function getPrInfo(repoRoot: string): Promise<GhPrInfo | undefined> {
     const result = await asyncSpawn(
@@ -37,14 +25,6 @@ async function getPrInfo(repoRoot: string): Promise<GhPrInfo | undefined> {
     } catch {
         return undefined;
     }
-}
-
-async function getOriginUrl(repoRoot: string): Promise<string | undefined> {
-    const result = await asyncSpawn("git", ["remote", "get-url", "origin"], { cwd: repoRoot });
-    if (result.status !== 0) {
-        return undefined;
-    }
-    return result.stdout.trim();
 }
 
 export async function exportReviewSummary(repoRoot: string, branch: string): Promise<void> {

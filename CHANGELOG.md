@@ -6,6 +6,7 @@
 -   Add: Live diagram rendering with VS Code theme integration
 -   Add: Zoom, pan, fit-to-view, and copy diagram as PNG
 -   Add: Open Preview / Open Source commands in the editor title bar
+-   Fix: Open PR falls back to GitHub repo when no PR exists, gh is missing, or origin uses SSH
 
 ## 0.3
 

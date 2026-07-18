@@ -1,5 +1,5 @@
 import { env, SourceControl, Uri, window } from "vscode";
-import { asyncSpawn, Process } from "../utils/asyncSpawn";
+import { getOriginUrl, getPrWebUrl, githubRepoWebUrl } from "../git/githubUrl";
 import { resolveRepositoryPath } from "../git/resolveRepositoryPath";
 
 export async function openPR(sourceControl?: SourceControl, repoPath?: string): Promise<void> {
@@ -9,26 +9,18 @@ export async function openPR(sourceControl?: SourceControl, repoPath?: string): 
         return;
     }
 
-    let commands: Process[] = [];
-
-    try {
-        commands = await Promise.all([
-            asyncSpawn("gh", ["pr", "view", "--json", "number", "--jq", ".number"], { cwd: resolvedPath }),
-            asyncSpawn("git", ["remote", "get-url", "origin"], { cwd: resolvedPath }),
-        ]);
-    } catch (error) {
-        window.showErrorMessage("Failed to run git commands ", (error as Error).message);
+    const origin = await getOriginUrl(resolvedPath);
+    if (!origin) {
+        window.showWarningMessage("Could not read origin remote.");
         return;
     }
 
-    const prNumber = commands[0].stdout.trim();
-    const remoteUrl = commands[1].stdout.trim().replace(".git", "");
-
-    let prUrl = `${remoteUrl}/pull/${prNumber}`;
-    if (commands[0].status !== 0) {
-        env.openExternal(Uri.parse(remoteUrl));
+    const repoWebUrl = githubRepoWebUrl(origin);
+    if (!repoWebUrl) {
+        window.showWarningMessage("Origin is not a recognized GitHub remote.");
         return;
     }
 
-    env.openExternal(Uri.parse(prUrl));
+    const prUrl = await getPrWebUrl(resolvedPath);
+    env.openExternal(Uri.parse(prUrl ?? repoWebUrl));
 }

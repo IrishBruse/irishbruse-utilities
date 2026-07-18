@@ -3,3 +3,5 @@ dist
 node_modules
 .vscode-test/
 *.vsix
+media/mermaidPreview/mermaid.min.js
+docs/mermaid/

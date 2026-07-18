@@ -57,6 +57,13 @@ vi.mock("vscode", () => ({
         Expanded: 2,
     },
     TabInputText: class {},
+    TabInputCustom: class {},
+    ColorThemeKind: {
+        Light: 1,
+        Dark: 2,
+        HighContrast: 3,
+        HighContrastLight: 4,
+    },
 }));
 
 vi.mock("../utils/languages", () => ({

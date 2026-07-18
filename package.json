@@ -65,7 +65,32 @@
                 }
             }
         },
+        "customEditors": [
+            {
+                "viewType": "ib-utilities.mermaidPreview",
+                "displayName": "Mermaid Preview",
+                "selector": [
+                    {
+                        "filenamePattern": "*.mmd"
+                    },
+                    {
+                        "filenamePattern": "*.mermaid"
+                    }
+                ],
+                "priority": "default"
+            }
+        ],
         "languages": [
+            {
+                "id": "mermaid",
+                "aliases": [
+                    "Mermaid"
+                ],
+                "extensions": [
+                    ".mmd",
+                    ".mermaid"
+                ]
+            },
             {
                 "id": "gherkin",
                 "aliases": [
@@ -166,9 +191,33 @@
                 "title": "Delete snippet",
                 "shortTitle": "Delete snippet",
                 "icon": "$(trash)"
+            },
+            {
+                "command": "ib-utilities.openMermaidPreview",
+                "title": "Open Preview",
+                "shortTitle": "Open Preview",
+                "icon": "$(open-preview)"
+            },
+            {
+                "command": "ib-utilities.openMermaidSource",
+                "title": "Open Source",
+                "shortTitle": "Open Source",
+                "icon": "$(code)"
             }
         ],
         "menus": {
+            "editor/title": [
+                {
+                    "command": "ib-utilities.openMermaidPreview",
+                    "when": "(resourceExtname == .mmd || resourceExtname == .mermaid) && activeCustomEditorId != 'ib-utilities.mermaidPreview'",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.openMermaidSource",
+                    "when": "activeCustomEditorId == 'ib-utilities.mermaidPreview'",
+                    "group": "navigation"
+                }
+            ],
             "scm/title": [
                 {
                     "command": "ib-utilities.openPR",
@@ -226,6 +275,7 @@
         "webpack-cli": "^7.0.2"
     },
     "dependencies": {
-        "cjson": "^0.5.0"
+        "cjson": "^0.5.0",
+        "mermaid": "^11.12.0"
     }
 }

@@ -59,6 +59,20 @@ export enum Commands {
     DeleteSnippet = `ib-utilities.deleteSnippet`,
 
     /**
+     * Open Preview
+     * Short Title: Open Preview
+     * Icon: $(open-preview)
+     */
+    OpenMermaidPreview = `ib-utilities.openMermaidPreview`,
+
+    /**
+     * Open Source
+     * Short Title: Open Source
+     * Icon: $(code)
+     */
+    OpenMermaidSource = `ib-utilities.openMermaidSource`,
+
+    /**
      * Snippet Manager
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,
@@ -101,5 +115,6 @@ export enum Configuration {
 
 /** Primary file extension per language id from this extension contributes.languages */
 export const contributedLanguageIdToExtension: Record<string, string> = {
+    "mermaid": ".mmd",
     "gherkin": ".feature",
 };

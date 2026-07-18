@@ -1,4 +1,17 @@
 import * as esbuild from "esbuild";
+import { copyFileSync, mkdirSync } from "fs";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const mermaidSource = join(__dirname, "node_modules", "mermaid", "dist", "mermaid.min.js");
+const mermaidDestDir = join(__dirname, "media", "mermaidPreview");
+const mermaidDest = join(mermaidDestDir, "mermaid.min.js");
+
+function copyMermaidAssets() {
+    mkdirSync(mermaidDestDir, { recursive: true });
+    copyFileSync(mermaidSource, mermaidDest);
+}
 
 const args = process.argv.splice(2);
 
@@ -42,8 +55,10 @@ const config = {
 };
 
 if (isWatch) {
+    copyMermaidAssets();
     const ctx = await esbuild.context(config);
     await ctx.watch();
 } else {
+    copyMermaidAssets();
     await esbuild.build(config);
 }

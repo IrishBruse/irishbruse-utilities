@@ -1,6 +1,9 @@
 import { ExtensionContext, Uri } from "vscode";
 import { openPR } from "./commands/openPR";
+import { openMermaidPreview } from "./commands/openMermaidPreview";
+import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
+import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
 import { registerCommandIB } from "./utils/vscode";
 import { Commands } from "./constants";
@@ -17,7 +20,10 @@ export function activate(context: ExtensionContext) {
 
     registerCommandIB(Commands.RelativeGoTo, relativeGoTo, context);
     registerCommandIB(Commands.OpenPR, openPR, context);
+    registerCommandIB(Commands.OpenMermaidPreview, openMermaidPreview, context);
+    registerCommandIB(Commands.OpenMermaidSource, openMermaidSource, context);
 
+    registerMermaidCustomEditor(context);
     SnippetViewProvider.activate(context);
 }
 

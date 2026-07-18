@@ -80,6 +80,20 @@ export enum Commands {
     ShowGitHelpers = `ib-utilities.showGitHelpers`,
 
     /**
+     * Show Action Panel
+     * Short Title: Actions
+     * Icon: $(run-all)
+     */
+    ShowActionPanel = `ib-utilities.showActionPanel`,
+
+    /**
+     * Run Action Panel Item
+     * Short Title: undefined
+     * Icon: $(run)
+     */
+    RunActionPanelItem = `ib-utilities.runActionPanelItem`,
+
+    /**
      * Diff vs Base Branch
      * Short Title: Diff vs base
      * Icon: $(diff)
@@ -147,6 +161,11 @@ export enum Commands {
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,
 
+    /**
+     * Actions
+     */
+    ViewActionPanel = `workbench.view.actionPanel`,
+
 }
 
 /** View Containers */
@@ -157,6 +176,12 @@ export enum ViewContainers {
      */
       SnippetContainer = `snippetContainer`,
 
+    /**
+     * Actions
+     * Icon: $(run-all)
+     */
+      ActionPanel = `actionPanel`,
+
 }
 
 /** Views */
@@ -166,6 +191,12 @@ export enum Views {
      * ContainerId: snippetContainer
      */
     SnippetView = `snippetView`,
+
+    /**
+     * Header: Actions
+     * ContainerId: actionPanel
+     */
+    IbUtilitiesActionPanel = `ib-utilities.actionPanel`,
 
     /**
      * Header: Git Helpers
@@ -186,6 +217,11 @@ export enum Configuration {
      * On the left is the languageId for the snippet to auto generate on the right is the comma delimited array of languages to build it from.
      */
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
+
+    /**
+     * Actions shown in the Action Panel. Built-in actions use type "builtin"; Cursor agent prompts use type "agent"; VS Code commands use type "command".
+     */
+    ActionPanelActions = `ib-utilities.actionPanel.actions`,
 
 }
 

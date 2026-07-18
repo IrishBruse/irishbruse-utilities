@@ -14,12 +14,15 @@ Tree view under the **Snippet Manager** activity bar: create, edit, and delete s
 
 ### Git Helpers (Source Control)
 
-A **Git Helpers** panel in the Source Control sidebar shows actions for the **active repository** (selected in Repositories, Changes, or from the open editor):
+A **Git Helpers** panel in the Source Control sidebar shows hardcoded git workflow actions for the **active repository**:
 
 - **Diff vs base** — multi-file diff of your branch against an auto-detected base (`main` / `origin/main`, etc.)
-- **Review notes** — add inline comments in git diffs; **Publish to PR** posts line comments via `gh` (no GitHub extension required)
+- **Review notes** — add inline comments in git diffs; **Publish to PR** posts line comments via `gh`
+- **Open pull request** — title bar button opens the GitHub PR for the current branch, or the repo homepage when no PR exists
 
-- **Open pull request** — opens the GitHub PR for the current branch (via `gh`)
+### Action Panel
+
+An **Actions** activity bar panel for customizable shortcuts: built-in actions, Cursor agent prompts, and VS Code commands via `ib-utilities.actionPanel.actions`.
 
 ### Relative goto
 
@@ -56,6 +59,31 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 }
 ```
 
+Customize Action Panel entries (built-in, Cursor agent prompt, or VS Code command):
+
+```json
+{
+  "ib-utilities.actionPanel.actions": [
+    {
+      "id": "createPR",
+      "label": "Create PR",
+      "icon": "git-pull-request-create",
+      "type": "agent",
+      "prompt": "/pr create",
+      "terminalName": "Create PR"
+    },
+    {
+      "id": "custom",
+      "label": "Run tests",
+      "icon": "beaker",
+      "type": "command",
+      "command": "workbench.action.tasks.runTask",
+      "args": ["test"]
+    }
+  ]
+}
+```
+
 ## Commands
 
 | Command | Title |
@@ -70,6 +98,9 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 | `ib-utilities.deleteSnippet` | Delete snippet |
 | `ib-utilities.openMermaidPreview` | Open Preview |
 | `ib-utilities.openMermaidSource` | Open Source |
+| `ib-utilities.showActionPanel` | Show Action Panel |
+| `ib-utilities.showGitHelpers` | Show Git Helpers |
+| `ib-utilities.runActionPanelItem` | Run Action Panel Item |
 | `ib-utilities.diffWithBase` | Diff vs Base Branch |
 | `ib-utilities.addReviewNote` | Add Review Note |
 | `ib-utilities.publishReviewToPR` | Publish Review to PR |

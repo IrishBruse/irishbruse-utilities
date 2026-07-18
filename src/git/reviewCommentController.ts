@@ -33,6 +33,7 @@ import {
     type ReviewNoteSide,
 } from "./reviewNotes";
 import { resolveBaseBranch, resolveMergeBaseSha } from "./resolveBaseBranch";
+import { refreshGitPanels } from "./refreshPanels";
 
 const CONTROLLER_ID = "ib-utilities.review";
 const AUTHOR = { name: "Review note" };
@@ -298,11 +299,13 @@ export class ReviewCommentController {
             comment.body = body;
             comment.mode = CommentMode.Preview;
             comment.savedBody = body;
+            refreshGitPanels();
             return;
         }
 
         if (meta.noteId) {
             await updateReviewNote(meta.repoRoot, meta.branch, meta.noteId, body);
+            refreshGitPanels();
         }
     }
 

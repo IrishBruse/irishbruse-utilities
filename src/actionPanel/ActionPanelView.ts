@@ -10,46 +10,47 @@ import {
     TreeItemCollapsibleState,
     TreeView,
     window,
+    workspace,
 } from "vscode";
-import { Commands, Views } from "../constants";
+import { Commands, ViewContainers, Views } from "../constants";
 import type { Repository } from "../git/gitApi";
 import { getGitApi, getGitApiAsync } from "../git/getGitApi";
-import { clearLegacyBranchReviewState } from "../git/clearLegacyReviewState";
 import { countUnpublishedNotes, loadReviewNotes } from "../git/reviewNotes";
 import { getActiveRepository, resolveActiveRepository } from "../git/resolveActiveRepository";
 import { resolveBaseBranch } from "../git/resolveBaseBranch";
-import { openBranchDiff } from "../git/openBranchDiff";
-import { publishReviewToPR } from "../git/publishReview";
-import { openPR } from "../commands/openPR";
 import { registerCommandIB } from "../utils/vscode";
-import { registerGitHelpersRefresh } from "./refresh";
+import { getConfiguredActionPanelActions } from "./getActionPanelActions";
+import { registerActionPanelRefresh } from "./refresh";
+import { runActionPanelItem } from "./runAction";
+import type { ActionPanelAction, ActionPanelContext, ActionPanelWhen } from "./types";
 
-export type GitHelperItemKind = "info" | "action";
+export type ActionPanelItemKind = "info" | "action";
 
-export class GitHelperTreeItem extends TreeItem {
+export class ActionPanelTreeItem extends TreeItem {
     constructor(
-        public readonly kind: GitHelperItemKind,
-        public readonly repoRoot: string | undefined,
+        public readonly kind: ActionPanelItemKind,
+        public readonly context: ActionPanelContext | undefined,
         label: string,
         collapsibleState: TreeItemCollapsibleState,
-        public readonly action?: "diffWithBase" | "publishReview",
+        public readonly actionId?: string,
         description?: string,
         command?: Command
     ) {
         super(label, collapsibleState);
         this.description = description;
         this.command = command;
-        this.contextValue = action ? `action-${action}` : kind;
-        if (action === "diffWithBase") {
-            this.iconPath = new ThemeIcon("diff");
-        } else if (action === "publishReview") {
-            this.iconPath = new ThemeIcon("comment-discussion");
+        this.contextValue = actionId ? `action-${actionId}` : kind;
+        if (actionId) {
+            const action = getConfiguredActionPanelActions().find((entry) => entry.id === actionId);
+            if (action?.icon) {
+                this.iconPath = new ThemeIcon(action.icon);
+            }
         }
     }
 }
 
 function trackRepository(
-    provider: GitHelpersViewProvider,
+    provider: ActionPanelViewProvider,
     context: ExtensionContext,
     repository: Repository
 ): void {
@@ -57,11 +58,26 @@ function trackRepository(
     context.subscriptions.push(repository.ui.onDidChange(() => provider.refresh()));
 }
 
-export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeItem> {
-    private changeEvent = new EventEmitter<GitHelperTreeItem | undefined | null>();
-    private treeView: TreeView<GitHelperTreeItem> | undefined;
+function matchesWhen(
+    when: ActionPanelWhen | undefined,
+    options: { hasBaseBranch: boolean; hasUnpublishedNotes: boolean }
+): boolean {
+    switch (when ?? "always") {
+        case "hasBaseBranch":
+            return options.hasBaseBranch;
+        case "hasUnpublishedNotes":
+            return options.hasUnpublishedNotes;
+        default:
+            return true;
+    }
+}
 
-    get onDidChangeTreeData(): Event<GitHelperTreeItem | undefined | null> {
+export class ActionPanelViewProvider implements TreeDataProvider<ActionPanelTreeItem> {
+    private changeEvent = new EventEmitter<ActionPanelTreeItem | undefined | null>();
+    private context: ExtensionContext | undefined;
+    private treeView: TreeView<ActionPanelTreeItem> | undefined;
+
+    get onDidChangeTreeData(): Event<ActionPanelTreeItem | undefined | null> {
         return this.changeEvent.event;
     }
 
@@ -70,30 +86,40 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         this.changeEvent.fire(null);
     }
 
-    static activate(context: ExtensionContext): GitHelpersViewProvider {
-        const provider = new GitHelpersViewProvider();
+    static activate(context: ExtensionContext): ActionPanelViewProvider {
+        const provider = new ActionPanelViewProvider();
+        provider.context = context;
 
-        provider.treeView = window.createTreeView(Views.IbUtilitiesGitHelpers, {
+        provider.treeView = window.createTreeView(Views.IbUtilitiesActionPanel, {
             treeDataProvider: provider,
         });
         context.subscriptions.push(provider.treeView);
 
-        void clearLegacyBranchReviewState(context);
         void provider.updateViewTitle();
-        registerGitHelpersRefresh(() => provider.refresh());
+        registerActionPanelRefresh(() => provider.refresh());
 
         registerCommandIB(
-            Commands.ShowGitHelpers,
+            Commands.ShowActionPanel,
             async () => {
                 const { commands: vscodeCommands } = await import("vscode");
-                await vscodeCommands.executeCommand("workbench.view.scm");
-                await vscodeCommands.executeCommand(`${Views.IbUtilitiesGitHelpers}.focus`);
+                await vscodeCommands.executeCommand(`workbench.view.${ViewContainers.ActionPanel}`);
+                await vscodeCommands.executeCommand(`${Views.IbUtilitiesActionPanel}.focus`);
             },
             context
         );
-        registerCommandIB(Commands.DiffWithBase, (item) => provider.runAction(item, "diffWithBase"), context);
-        registerCommandIB(Commands.PublishReviewToPR, (item) => provider.runAction(item, "publishReview"), context);
-        registerCommandIB(Commands.OpenPR, (repoPath) => provider.runOpenPr(repoPath), context);
+        registerCommandIB(
+            Commands.RunActionPanelItem,
+            (actionId: string, panelContext?: ActionPanelContext) => provider.runAction(actionId, panelContext),
+            context
+        );
+
+        context.subscriptions.push(
+            workspace.onDidChangeConfiguration((event) => {
+                if (event.affectsConfiguration("ib-utilities.actionPanel.actions")) {
+                    provider.refresh();
+                }
+            })
+        );
 
         const wireApi = (api: NonNullable<ReturnType<typeof getGitApi>>) => {
             const refresh = () => provider.refresh();
@@ -122,43 +148,34 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         return provider;
     }
 
-    private async runOpenPr(repoPath?: string): Promise<void> {
-        const repoRoot =
-            typeof repoPath === "string" ? repoPath : (await getActiveRepository())?.rootUri.fsPath;
-        if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
-            return;
+    private async resolvePanelContext(repoRoot?: string): Promise<ActionPanelContext | undefined> {
+        const repository = (await getActiveRepository()) ?? undefined;
+        const resolvedRepoRoot = repoRoot ?? repository?.rootUri.fsPath;
+        if (!resolvedRepoRoot) {
+            return undefined;
         }
-        await openPR(undefined, repoRoot);
+
+        const branch = repository?.rootUri.fsPath === resolvedRepoRoot ? repository.state.HEAD?.name : undefined;
+        let baseBranch: string | undefined;
+        if (repository?.rootUri.fsPath === resolvedRepoRoot) {
+            const base = await resolveBaseBranch(repository);
+            baseBranch = base?.name;
+        }
+
+        return {
+            repoRoot: resolvedRepoRoot,
+            branch,
+            baseBranch,
+        };
     }
 
-    private async runAction(
-        item: GitHelperTreeItem | string | undefined,
-        action: "diffWithBase" | "publishReview"
-    ): Promise<void> {
-        const repoRoot =
-            typeof item === "string"
-                ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
-        if (!repoRoot) {
+    private async runAction(actionId: string, panelContext?: ActionPanelContext): Promise<void> {
+        const context = panelContext ?? (await this.resolvePanelContext());
+        if (!context) {
             window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
-
-        const repository = (await getActiveRepository()) ?? undefined;
-        const branch = repository?.state.HEAD?.name;
-
-        switch (action) {
-            case "diffWithBase":
-                await openBranchDiff(repoRoot);
-                break;
-            case "publishReview":
-                if (branch) {
-                    await publishReviewToPR(repoRoot, branch);
-                    this.refresh();
-                }
-                break;
-        }
+        await runActionPanelItem(actionId, context);
     }
 
     private async updateViewTitle(): Promise<void> {
@@ -171,20 +188,20 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             api = await getGitApiAsync();
         }
         if (!api) {
-            this.treeView.title = "Git Helpers";
+            this.treeView.title = "Actions";
             this.treeView.description = undefined;
             return;
         }
 
         if (api.repositories.length === 0) {
-            this.treeView.title = "Git Helpers";
+            this.treeView.title = "Actions";
             this.treeView.description = "No repositories open";
             return;
         }
 
         const repository = resolveActiveRepository(api);
         if (!repository) {
-            this.treeView.title = "Git Helpers";
+            this.treeView.title = "Actions";
             this.treeView.description = "Select a repository";
             return;
         }
@@ -210,11 +227,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         this.treeView.description = detailParts.length > 0 ? detailParts.join(" · ") : undefined;
     }
 
-    getTreeItem(element: GitHelperTreeItem): GitHelperTreeItem {
+    getTreeItem(element: ActionPanelTreeItem): ActionPanelTreeItem {
         return element;
     }
 
-    async getChildren(element?: GitHelperTreeItem): Promise<GitHelperTreeItem[]> {
+    async getChildren(element?: ActionPanelTreeItem): Promise<ActionPanelTreeItem[]> {
         if (element) {
             return [];
         }
@@ -224,17 +241,17 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             api = await getGitApiAsync();
         }
         if (!api) {
-            return [new GitHelperTreeItem("info", undefined, "Git extension unavailable", TreeItemCollapsibleState.None)];
+            return [new ActionPanelTreeItem("info", undefined, "Git extension unavailable", TreeItemCollapsibleState.None)];
         }
 
         if (api.repositories.length === 0) {
-            return [new GitHelperTreeItem("info", undefined, "No git repositories open", TreeItemCollapsibleState.None)];
+            return [new ActionPanelTreeItem("info", undefined, "No git repositories open", TreeItemCollapsibleState.None)];
         }
 
         const repository = resolveActiveRepository(api);
         if (!repository) {
             return [
-                new GitHelperTreeItem(
+                new ActionPanelTreeItem(
                     "info",
                     undefined,
                     "Select a repository in Source Control",
@@ -248,33 +265,35 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const base = await resolveBaseBranch(repository);
         const notes = head?.name ? await loadReviewNotes(repoRoot, head.name) : undefined;
         const noteCount = notes ? countUnpublishedNotes(notes) : 0;
+        const panelContext: ActionPanelContext = {
+            repoRoot,
+            branch: head?.name,
+            baseBranch: base?.name,
+        };
 
-        const items: GitHelperTreeItem[] = [];
+        const visibility = {
+            hasBaseBranch: Boolean(head?.name && base),
+            hasUnpublishedNotes: noteCount > 0 && Boolean(head?.name),
+        };
 
-        if (head?.name && base) {
-            items.push(actionItem(repoRoot, "Diff vs base", "diffWithBase", Commands.DiffWithBase));
-        }
-        if (noteCount > 0 && head?.name) {
-            items.push(actionItem(repoRoot, "Publish to PR", "publishReview", Commands.PublishReviewToPR));
-        }
-
-        return items;
+        return getConfiguredActionPanelActions()
+            .filter((action) => matchesWhen(action.when, visibility))
+            .map((action) => actionItem(panelContext, action));
     }
 }
 
-function actionItem(
-    repoRoot: string,
-    label: string,
-    action: "diffWithBase" | "publishReview",
-    commandId: Commands
-): GitHelperTreeItem {
-    return new GitHelperTreeItem(
+function actionItem(panelContext: ActionPanelContext, action: ActionPanelAction): ActionPanelTreeItem {
+    return new ActionPanelTreeItem(
         "action",
-        repoRoot,
-        label,
+        panelContext,
+        action.label,
         TreeItemCollapsibleState.None,
-        action,
+        action.id,
         undefined,
-        { command: commandId, title: label, arguments: [repoRoot] }
+        {
+            command: Commands.RunActionPanelItem,
+            title: action.label,
+            arguments: [action.id, panelContext],
+        }
     );
 }

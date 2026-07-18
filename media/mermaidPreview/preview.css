@@ -251,15 +251,23 @@ body {
     font-family: inherit;
 }
 
-/* Autonumber markers: light circle, dark digits (inverts on light themes) */
-#diagram .sequenceNumber {
-    fill: var(--vscode-editor-background);
-    stroke: var(--vscode-editor-foreground);
+/* Autonumber: solid muted circle, dark digits */
+#diagram marker[id$="-sequencenumber"] {
+    fill: none;
+    opacity: 1;
 }
 
-#diagram [id$="-sequencenumber"] {
-    fill: var(--vscode-editor-foreground);
-    font-weight: bold;
+#diagram marker[id$="-sequencenumber"] circle {
+    fill: var(--vscode-editorWidget-background, var(--vscode-input-background)) !important;
+    fill-opacity: 1 !important;
+    opacity: 1 !important;
+    stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    stroke-width: 1px;
+}
+
+#diagram text.sequenceNumber {
+    fill: var(--vscode-editor-background) !important;
+    stroke: none;
 }
 
 /* Notes and specific sequence diagram blocks */
@@ -276,19 +284,19 @@ body {
 }
 
 #diagram .node:has(.divider) .outer-path path {
-    fill: var(--vscode-sideBar-background, var(--vscode-editorWidget-background));
+    fill: var(--vscode-input-background, var(--vscode-sideBarSectionHeader-background)) !important;
     stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
     stroke-width: 1px;
 }
 
 #diagram .node:has(.divider) .row-rect-odd path {
-    fill: var(--vscode-sideBar-background, var(--vscode-editorWidget-background));
+    fill: var(--vscode-sideBar-background, var(--vscode-editor-background)) !important;
     stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
     stroke-width: 1px;
 }
 
 #diagram .node:has(.divider) .row-rect-even path {
-    fill: var(--vscode-input-background, var(--vscode-sideBarSectionHeader-background));
+    fill: var(--vscode-input-background, var(--vscode-sideBarSectionHeader-background)) !important;
     stroke: var(--vscode-editorWidget-border, var(--vscode-panel-border));
     stroke-width: 1px;
 }

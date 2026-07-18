@@ -251,7 +251,7 @@
         set("loopTextColor", ...text);
         set("activationBkgColor", ...selection);
         set("activationBorderColor", ...accent, ...border);
-        // Sequence autonumber circles use foreground fill; digits use canvas for contrast
+        // Sequence autonumber: muted circle fill, dark digits
         set("sequenceNumberColor", ...canvas);
 
         // Gantt

@@ -31,6 +31,13 @@ export enum Commands {
     OpenPR = `ib-utilities.openPR`,
 
     /**
+     * Create Draft Pull Request
+     * Short Title: Create draft PR
+     * Icon: $(git-pull-request-create)
+     */
+    CreateDraftPR = `ib-utilities.createDraftPR`,
+
+    /**
      * Refresh Snippets
      * Short Title: Refresh
      * Icon: $(refresh)

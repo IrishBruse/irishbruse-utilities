@@ -234,6 +234,12 @@
                 "icon": "$(github)"
             },
             {
+                "command": "ib-utilities.createDraftPR",
+                "title": "Create Draft Pull Request",
+                "shortTitle": "Create draft PR",
+                "icon": "$(git-pull-request-create)"
+            },
+            {
                 "command": "ib-utilities.refreshSnippetView",
                 "title": "Refresh Snippets",
                 "shortTitle": "Refresh",

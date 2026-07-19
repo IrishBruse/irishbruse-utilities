@@ -1,6 +1,7 @@
 import path from "path";
 import {
     Command,
+    env,
     Event,
     EventEmitter,
     ExtensionContext,
@@ -10,11 +11,13 @@ import {
     TreeItem,
     TreeItemCollapsibleState,
     TreeView,
+    Uri,
     window,
 } from "vscode";
 import { Commands, Views } from "../constants";
-import { getGitApi, getGitApiAsync } from "../git/getGitApi";
+import { getGitApi, getGitApiAsync, getRepositoryByRoot } from "../git/getGitApi";
 import { clearLegacyBranchReviewState } from "../git/clearLegacyReviewState";
+import { createBlankDraftPullRequest } from "../git/createDraftPR";
 import { countUnpublishedNotes, loadReviewNotes } from "../git/reviewNotes";
 import { getActiveRepository, resolveActiveRepository } from "../git/resolveActiveRepository";
 import { registerBaseBranchOverrideStorage } from "../git/baseBranchOverride";
@@ -37,7 +40,7 @@ export class GitHelperTreeItem extends TreeItem {
         label: string,
         collapsibleState: TreeItemCollapsibleState,
         id: string,
-        public readonly action?: "diffWithBase" | "publishReview" | "openPr",
+        public readonly action?: "diffWithBase" | "publishReview" | "openPr" | "createDraftPr",
         description?: string,
         command?: Command
     ) {
@@ -52,6 +55,8 @@ export class GitHelperTreeItem extends TreeItem {
             this.iconPath = new ThemeIcon("comment-discussion");
         } else if (action === "openPr") {
             this.iconPath = new ThemeIcon("git-pull-request");
+        } else if (action === "createDraftPr") {
+            this.iconPath = new ThemeIcon("git-pull-request-create");
         }
     }
 }
@@ -139,6 +144,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         registerCommandIB(Commands.SetBaseBranch, (item?: GitHelperTreeItem) => pickBaseBranchTarget(item?.repoRoot), context);
         registerCommandIB(Commands.PublishReviewToPR, (item) => provider.runAction(item, "publishReview"), context);
         registerCommandIB(Commands.OpenPR, (repoPath) => provider.runOpenPr(repoPath), context);
+        registerCommandIB(Commands.CreateDraftPR, (item) => provider.runCreateDraftPr(item), context);
 
         wireGitRepositories(context, { onChange: () => provider.refresh() });
         context.subscriptions.push(window.onDidChangeActiveTextEditor(() => provider.refresh()));
@@ -157,6 +163,34 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
         const sourceControl = repoPath && typeof repoPath !== "string" ? repoPath : undefined;
         await openPR(sourceControl, repoRoot);
+    }
+
+    private async runCreateDraftPr(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+
+        const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
+        const branch = repository?.state.HEAD?.name;
+        if (!repository || !branch) {
+            window.showWarningMessage("No named branch checked out.");
+            return;
+        }
+
+        const base = await resolveBaseBranch(repository);
+        const baseBranch = base ? base.name.replace(/^origin\//, "") : "main";
+        const pr = await createBlankDraftPullRequest(repoRoot, branch, baseBranch);
+        if (!pr) {
+            return;
+        }
+
+        this.refresh();
+        await env.openExternal(Uri.parse(pr.url));
     }
 
     private async runAction(
@@ -282,19 +316,38 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             items.push(actionItem(repoRoot, "Diff vs base", "diffWithBase", Commands.DiffWithBase, base.name));
         }
 
-        if (pr) {
-            items.push(
-                new GitHelperTreeItem(
-                    "action",
-                    repoRoot,
-                    `PR #${pr.number}: ${pr.title}`,
-                    TreeItemCollapsibleState.None,
-                    `${repoRoot}:openPr:${pr.number}`,
-                    "openPr",
-                    undefined,
-                    { command: Commands.OpenPR, title: "Open PR", arguments: [repoRoot] }
-                )
-            );
+        if (head?.name) {
+            if (pr) {
+                items.push(
+                    new GitHelperTreeItem(
+                        "action",
+                        repoRoot,
+                        `PR #${pr.number}: ${pr.title}`,
+                        TreeItemCollapsibleState.None,
+                        `${repoRoot}:openPr:${pr.number}`,
+                        "openPr",
+                        undefined,
+                        { command: Commands.OpenPR, title: "Open PR", arguments: [repoRoot] }
+                    )
+                );
+            } else {
+                items.push(
+                    new GitHelperTreeItem(
+                        "action",
+                        repoRoot,
+                        "Create draft PR",
+                        TreeItemCollapsibleState.None,
+                        `${repoRoot}:createDraftPr`,
+                        "createDraftPr",
+                        undefined,
+                        {
+                            command: Commands.CreateDraftPR,
+                            title: "Create draft PR",
+                            arguments: [repoRoot],
+                        }
+                    )
+                );
+            }
         }
 
         if (noteCount > 0 && head?.name) {

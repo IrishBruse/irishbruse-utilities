@@ -23,6 +23,7 @@
 -   Fix: Restore Action Panel editor icon picker to CSS codicons after sidebar SVG change broke the webview
 -   Fix: Review notes on the right side of branch diffs (working-tree files) can be added from the gutter again
 -   Fix: Git Helpers panel now refreshes when git state changes, including branch checkouts
+-   Add: Git Helpers shows Create draft PR when none exists and creates a blank draft via `gh`
 
 ## 0.3
 

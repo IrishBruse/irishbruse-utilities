@@ -330,13 +330,16 @@
             },
             {
                 "command": "ib-utilities.reviewComment.create",
-                "title": "Write note",
+                "title": "Save",
                 "enablement": "!commentIsEmpty"
             },
             {
-                "command": "ib-utilities.reviewComment.openEditor",
-                "title": "Write note",
-                "icon": "$(edit)"
+                "command": "ib-utilities.reviewComment.save",
+                "title": "Save"
+            },
+            {
+                "command": "ib-utilities.reviewComment.cancel",
+                "title": "Cancel"
             },
             {
                 "command": "ib-utilities.reviewComment.delete",
@@ -385,7 +388,11 @@
                     "when": "false"
                 },
                 {
-                    "command": "ib-utilities.reviewComment.openEditor",
+                    "command": "ib-utilities.reviewComment.save",
+                    "when": "false"
+                },
+                {
+                    "command": "ib-utilities.reviewComment.cancel",
                     "when": "false"
                 },
                 {
@@ -394,11 +401,6 @@
                 }
             ],
             "comments/commentThread/title": [
-                {
-                    "command": "ib-utilities.reviewComment.openEditor",
-                    "group": "navigation@1",
-                    "when": "commentController == ib-utilities.review && commentThreadIsEmpty"
-                },
                 {
                     "command": "ib-utilities.reviewComment.delete",
                     "group": "navigation@2",
@@ -410,11 +412,18 @@
                     "command": "ib-utilities.reviewComment.create",
                     "group": "inline",
                     "when": "commentController == ib-utilities.review && commentThreadIsEmpty"
+                }
+            ],
+            "comments/comment/context": [
+                {
+                    "command": "ib-utilities.reviewComment.save",
+                    "group": "inline@1",
+                    "when": "commentController == ib-utilities.review && comment == editing"
                 },
                 {
-                    "command": "ib-utilities.reviewComment.openEditor",
-                    "group": "inline",
-                    "when": "commentController == ib-utilities.review && commentThreadIsEmpty"
+                    "command": "ib-utilities.reviewComment.cancel",
+                    "group": "inline@2",
+                    "when": "commentController == ib-utilities.review && comment == editing"
                 }
             ],
             "comments/comment/title": [

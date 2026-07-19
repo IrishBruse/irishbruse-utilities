@@ -159,11 +159,17 @@
         }
 
         .icon-preview {
+            display: flex;
             flex: 0 0 18px;
+            align-items: center;
+            justify-content: center;
             width: 18px;
             height: 18px;
+        }
+
+        .icon-preview .codicon {
+            flex: 0 0 16px;
             font-size: 16px;
-            line-height: 18px;
             color: var(--vscode-foreground);
         }
 
@@ -274,7 +280,7 @@
         <label for="icon-search">Icon</label>
         <div class="icon-picker" id="icon-picker">
             <div class="icon-picker-control">
-                <span class="icon-preview icon-preview-empty" id="icon-preview" aria-hidden="true"></span>
+                <span class="icon-preview icon-preview-empty" id="icon-preview" aria-hidden="true"><span id="icon-preview-glyph" hidden></span></span>
                 <input id="icon-search" type="text" placeholder="Search icons..." autocomplete="off" />
                 <button class="icon-clear" id="icon-clear" type="button" aria-label="Clear icon" title="Clear icon">×</button>
             </div>

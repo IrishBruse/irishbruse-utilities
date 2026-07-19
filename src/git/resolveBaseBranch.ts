@@ -1,4 +1,6 @@
 import type { Branch, Repository } from "./gitApi";
+import { asyncSpawn } from "../utils/asyncSpawn";
+import { getBaseBranchOverride } from "./baseBranchOverride";
 
 export type ResolvedBaseBranch = {
     /** Display name, e.g. main or origin/main */
@@ -23,10 +25,40 @@ export function isSameBranch(a: string | undefined, b: string | undefined): bool
     return a === b || a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
 }
 
+export async function resolveRefTarget(
+    repository: Repository,
+    repoRoot: string,
+    ref: string
+): Promise<ResolvedBaseBranch | undefined> {
+    const headName = repository.state.HEAD?.name;
+    if (isSameBranch(headName, ref)) {
+        return undefined;
+    }
+
+    try {
+        const branch = await repository.getBranch(ref);
+        return {
+            name: formatBranchName(branch),
+            ref: branch.commit ?? ref,
+        };
+    } catch {
+        // fall through to raw ref resolution
+    }
+
+    const result = await asyncSpawn("git", ["rev-parse", "--verify", ref], { cwd: repoRoot });
+    if (result.status !== 0) {
+        return undefined;
+    }
+
+    const sha = result.stdout.trim();
+    const name = sha.length >= 40 && ref.length >= 40 ? sha.slice(0, 7) : ref;
+    return { name, ref: sha };
+}
+
 /**
  * Resolves the integration branch to compare against for the current HEAD.
  */
-export async function resolveBaseBranch(repository: Repository): Promise<ResolvedBaseBranch | undefined> {
+export async function resolveAutoBaseBranch(repository: Repository): Promise<ResolvedBaseBranch | undefined> {
     const head = repository.state.HEAD;
     if (!head?.name) {
         return undefined;
@@ -59,6 +91,18 @@ export async function resolveBaseBranch(repository: Repository): Promise<Resolve
     }
 
     return undefined;
+}
+
+export async function resolveBaseBranch(repository: Repository): Promise<ResolvedBaseBranch | undefined> {
+    const override = getBaseBranchOverride(repository.rootUri.fsPath);
+    if (override) {
+        const resolved = await resolveRefTarget(repository, repository.rootUri.fsPath, override);
+        if (resolved) {
+            return resolved;
+        }
+    }
+
+    return resolveAutoBaseBranch(repository);
 }
 
 export async function resolveMergeBaseSha(

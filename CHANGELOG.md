@@ -13,6 +13,8 @@
 -   Change: Review notes are single editable comments per line (no reply thread UI)
 -   Change: Review notes open in a polished side panel editor instead of the inline comment widget
 -   Fix: Open PR falls back to GitHub repo when no PR exists, gh is missing, or origin uses SSH
+-   Fix: Action editor icon preview now matches the highlighted icon in the searchable picker
+-   Fix: Update bundled codicons so icons like `git-pull-request-create` render distinctly from `git-pull-request`
 
 ## 0.3
 

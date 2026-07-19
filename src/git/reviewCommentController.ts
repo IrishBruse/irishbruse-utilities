@@ -37,7 +37,6 @@ import {
 import { resolveBaseBranch, resolveMergeBaseSha } from "./resolveBaseBranch";
 import { refreshGitPanels } from "./refreshPanels";
 import { isReviewCommentableDocument, reviewCommentingRanges } from "./reviewCommentingRanges";
-import { ReviewNoteEditor } from "./reviewNoteEditor";
 
 const CONTROLLER_ID = "ib-utilities.review";
 const AUTHOR = { name: "" };
@@ -72,14 +71,12 @@ export function activateReviewCommentController(context: ExtensionContext): Revi
 
 export class ReviewCommentController {
     private readonly controller: CommentController;
-    private readonly noteEditor: ReviewNoteEditor;
     private readonly threadMeta = new WeakMap<CommentThread, ThreadMeta>();
     private readonly threadByNoteId = new Map<string, CommentThread>();
     private readonly draftThreads = new Set<CommentThread>();
     private activeRepoRoot: string | undefined;
 
     constructor(context: ExtensionContext) {
-        this.noteEditor = new ReviewNoteEditor(context);
         this.controller = comments.createCommentController(CONTROLLER_ID, "Review note");
         this.controller.options = {
             prompt: "Why was this change made?",
@@ -97,7 +94,7 @@ export class ReviewCommentController {
             },
         };
 
-        context.subscriptions.push(this.controller, this.noteEditor);
+        context.subscriptions.push(this.controller);
         context.subscriptions.push(
             window.onDidChangeActiveTextEditor((editor) => {
                 if (editor?.document.uri.scheme === "git") {
@@ -110,7 +107,8 @@ export class ReviewCommentController {
         );
 
         registerCommandIB(Commands.ReviewCommentCreate, (reply) => this.handleCreate(reply), context);
-        registerCommandIB(Commands.ReviewCommentOpenEditor, (thread) => this.handleOpenEditor(thread), context);
+        registerCommandIB(Commands.ReviewCommentSave, (comment) => this.handleSave(comment), context);
+        registerCommandIB(Commands.ReviewCommentCancel, (comment) => this.handleCancel(comment), context);
         registerCommandIB(Commands.ReviewCommentDelete, (thread) => this.handleDelete(thread), context);
         registerCommandIB(Commands.ReviewCommentEdit, (comment) => this.handleEdit(comment), context);
     }
@@ -172,14 +170,23 @@ export class ReviewCommentController {
             return;
         }
 
-        await this.openNoteEditor(undefined, meta, editor.document.uri);
+        const range = new Range(line - 1, 0, line - 1, 0);
+        const thread = this.controller.createCommentThread(editor.document.uri, range, []);
+        this.configureThread(thread);
+        thread.collapsibleState = CommentThreadCollapsibleState.Expanded;
+        thread.contextValue = "draft";
+        this.threadMeta.set(thread, meta);
+        this.draftThreads.add(thread);
     }
 
     private async handleCreate(reply: CommentReply): Promise<void> {
-        await this.handleOpenEditor(reply.thread, reply.text);
-    }
+        const thread = reply.thread;
+        const text = this.commentText(reply.text);
+        if (!text) {
+            window.showWarningMessage("Review note cannot be empty.");
+            return;
+        }
 
-    private async handleOpenEditor(thread: CommentThread, initialText = ""): Promise<void> {
         const meta = await this.ensureThreadMeta(thread);
         if (!meta) {
             return;
@@ -187,23 +194,76 @@ export class ReviewCommentController {
 
         const data = await loadReviewNotes(meta.repoRoot, meta.branch);
         const existing = findNoteAtLocation(data, meta.file, meta.line, meta.side);
-        const prefilled = this.commentText(initialText) || existing?.body || "";
+        const note = await this.saveNote(meta, existing, text);
+        if (!note) {
+            return;
+        }
 
-        await this.openNoteEditor(thread, meta, thread.uri, prefilled);
+        await this.applySavedNote(thread, meta, note);
+        refreshGitPanels();
     }
 
-    private async handleEdit(comment: ReviewComment): Promise<void> {
+    private handleEdit(comment: ReviewComment): void {
         const thread = this.findThreadForComment(comment);
         if (!thread || this.isPublishedThread(thread)) {
             return;
         }
 
-        const meta = this.threadMeta.get(thread);
+        comment.savedBody = comment.body;
+        comment.mode = CommentMode.Editing;
+        comment.contextValue = "editing";
+    }
+
+    private async handleSave(comment: ReviewComment): Promise<void> {
+        const thread = this.findThreadForComment(comment);
+        if (!thread || this.isPublishedThread(thread)) {
+            return;
+        }
+
+        const text = this.commentText(comment.body);
+        if (!text) {
+            window.showWarningMessage("Review note cannot be empty.");
+            return;
+        }
+
+        const meta = this.threadMeta.get(thread) ?? (await this.ensureThreadMeta(thread));
         if (!meta) {
             return;
         }
 
-        await this.openNoteEditor(thread, meta, thread.uri);
+        const data = await loadReviewNotes(meta.repoRoot, meta.branch);
+        const existing =
+            (meta.noteId ? data.notes.find((note) => note.id === meta.noteId) : undefined) ??
+            findNoteAtLocation(data, meta.file, meta.line, meta.side);
+        const note = await this.saveNote(meta, existing, text);
+        if (!note) {
+            return;
+        }
+
+        await this.applySavedNote(thread, meta, note);
+        comment.body = text;
+        comment.savedBody = text;
+        comment.mode = CommentMode.Preview;
+        comment.contextValue = "note";
+        refreshGitPanels();
+    }
+
+    private handleCancel(comment: ReviewComment): void {
+        comment.body = comment.savedBody;
+        comment.mode = CommentMode.Preview;
+        comment.contextValue = "note";
+    }
+
+    private async applySavedNote(thread: CommentThread, meta: ThreadMeta, note: ReviewNote): Promise<void> {
+        this.draftThreads.delete(thread);
+        const savedMeta: ThreadMeta = {
+            ...meta,
+            isDraft: false,
+            noteId: note.id,
+        };
+        this.threadMeta.set(thread, savedMeta);
+        this.threadByNoteId.set(note.id, thread);
+        this.updateThreadBody(thread, note);
     }
 
     private async handleDelete(thread: CommentThread): Promise<void> {
@@ -227,45 +287,6 @@ export class ReviewCommentController {
         refreshGitPanels();
     }
 
-    private async openNoteEditor(
-        gutterThread: CommentThread | undefined,
-        meta: ThreadMeta,
-        uri: Uri,
-        prefilledBody?: string
-    ): Promise<void> {
-        const data = await loadReviewNotes(meta.repoRoot, meta.branch);
-        const existing = findNoteAtLocation(data, meta.file, meta.line, meta.side);
-        const readOnly = existing?.published ?? false;
-
-        if (gutterThread) {
-            this.disposeGutterThread(gutterThread);
-        }
-
-        const result = await this.noteEditor.open({
-            location: this.formatLocation(meta),
-            body: prefilledBody ?? existing?.body ?? "",
-            readOnly,
-        });
-
-        if (result === undefined) {
-            return;
-        }
-
-        const text = result.trim();
-        if (!text) {
-            window.showWarningMessage("Review note cannot be empty.");
-            return;
-        }
-
-        const note = await this.saveNote(meta, existing, text);
-        if (!note) {
-            return;
-        }
-
-        this.upsertThreadForNote(uri, note, meta);
-        refreshGitPanels();
-    }
-
     private async saveNote(
         meta: ThreadMeta,
         existing: ReviewNote | undefined,
@@ -284,27 +305,6 @@ export class ReviewCommentController {
             meta.side,
             body
         );
-    }
-
-    private upsertThreadForNote(uri: Uri, note: ReviewNote, meta: ThreadMeta): void {
-        const existingThread = this.threadByNoteId.get(note.id);
-        if (existingThread) {
-            this.updateThreadBody(existingThread, note);
-            this.threadMeta.set(existingThread, {
-                ...meta,
-                isDraft: false,
-                noteId: note.id,
-            });
-            return;
-        }
-
-        this.createThreadForNote(uri, note, meta.repoRoot, meta.baseBranch, meta.branch);
-    }
-
-    private disposeGutterThread(thread: CommentThread): void {
-        this.draftThreads.delete(thread);
-        this.threadMeta.delete(thread);
-        thread.dispose();
     }
 
     private createThreadForNote(
@@ -414,12 +414,7 @@ export class ReviewCommentController {
         const existingThread = this.threadByNoteId.get(existing.id);
         if (existingThread && existingThread !== thread) {
             thread.dispose();
-            const existingMeta = this.threadMeta.get(existingThread) ?? {
-                ...meta,
-                isDraft: false,
-                noteId: existing.id,
-            };
-            void this.openNoteEditor(existingThread, existingMeta, existingThread.uri);
+            existingThread.collapsibleState = CommentThreadCollapsibleState.Expanded;
             return undefined;
         }
 
@@ -429,7 +424,6 @@ export class ReviewCommentController {
         this.setThreadDisplayComment(thread, existing.body);
         thread.contextValue = existing.published ? "published" : undefined;
         this.configureThread(thread);
-        void this.openNoteEditor(thread, meta, thread.uri);
         return meta;
     }
 
@@ -445,12 +439,6 @@ export class ReviewCommentController {
     private setThreadDisplayComment(thread: CommentThread, body: string): void {
         thread.comments = [this.makeComment(body, thread)];
         this.configureThread(thread);
-    }
-
-    private formatLocation(meta: ThreadMeta): string {
-        const fileName = meta.file.split("/").pop() ?? meta.file;
-        const sideLabel = meta.side === "LEFT" ? "base" : "branch";
-        return `${fileName} · line ${meta.line} · ${sideLabel}`;
     }
 
     private async buildThreadMeta(

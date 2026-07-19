@@ -5,6 +5,7 @@ const labelEl = document.getElementById("label");
 const typeEl = document.getElementById("type");
 const iconSearchEl = document.getElementById("icon-search");
 const iconPreviewEl = document.getElementById("icon-preview");
+const iconPreviewGlyphEl = document.getElementById("icon-preview-glyph");
 const iconClearEl = document.getElementById("icon-clear");
 const iconListEl = document.getElementById("icon-list");
 const iconPickerEl = document.getElementById("icon-picker");
@@ -50,10 +51,33 @@ function updateTypeSections() {
 
 function updateIconPreview(icon) {
     if (icon) {
-        iconPreviewEl.className = `codicon codicon-${icon} icon-preview`;
+        iconPreviewEl.classList.remove("icon-preview-empty");
+        iconPreviewGlyphEl.className = `codicon codicon-${icon}`;
+        iconPreviewGlyphEl.hidden = false;
     } else {
-        iconPreviewEl.className = "icon-preview icon-preview-empty";
+        iconPreviewEl.classList.add("icon-preview-empty");
+        iconPreviewGlyphEl.className = "";
+        iconPreviewGlyphEl.hidden = true;
     }
+}
+
+function getListPreviewIcon() {
+    const options = [...iconListEl.querySelectorAll(".icon-option")];
+    if (activeIconIndex >= 0) {
+        return options[activeIconIndex]?.dataset.icon ?? "";
+    }
+
+    const matches = filterIcons(iconSearchEl.value);
+    return matches[0] ?? "";
+}
+
+function refreshIconPreview() {
+    if (iconListEl.hidden) {
+        updateIconPreview(selectedIcon);
+        return;
+    }
+
+    updateIconPreview(getListPreviewIcon() || selectedIcon);
 }
 
 function setIcon(icon, updateSearch = true) {
@@ -64,18 +88,44 @@ function setIcon(icon, updateSearch = true) {
     updateIconPreview(icon);
 }
 
+function iconMatchRank(icon, normalized) {
+    if (icon === normalized) {
+        return 0;
+    }
+    if (icon.startsWith(normalized)) {
+        return 1;
+    }
+    return 2;
+}
+
+function compareIconMatches(a, b, normalized) {
+    const rankA = iconMatchRank(a, normalized);
+    const rankB = iconMatchRank(b, normalized);
+    if (rankA !== rankB) {
+        return rankA - rankB;
+    }
+    if (a.length !== b.length) {
+        return b.length - a.length;
+    }
+    return a.localeCompare(b);
+}
+
 function filterIcons(query) {
     const normalized = query.trim().toLowerCase();
     if (!normalized) {
         return codicons.slice(0, maxIconResults);
     }
-    return codicons.filter((icon) => icon.includes(normalized)).slice(0, maxIconResults);
+    return codicons
+        .filter((icon) => icon.includes(normalized))
+        .sort((a, b) => compareIconMatches(a, b, normalized))
+        .slice(0, maxIconResults);
 }
 
 function renderIconList(query = iconSearchEl.value) {
     const matches = filterIcons(query);
     iconListEl.replaceChildren();
-    activeIconIndex = -1;
+    const selectedIndex = selectedIcon ? matches.indexOf(selectedIcon) : -1;
+    activeIconIndex = selectedIndex >= 0 ? selectedIndex : matches.length > 0 ? 0 : -1;
 
     if (matches.length === 0) {
         const empty = document.createElement("div");
@@ -83,6 +133,7 @@ function renderIconList(query = iconSearchEl.value) {
         empty.textContent = "No matching icons.";
         iconListEl.appendChild(empty);
         iconListEl.hidden = false;
+        refreshIconPreview();
         return;
     }
 
@@ -96,10 +147,18 @@ function renderIconList(query = iconSearchEl.value) {
             event.preventDefault();
             selectIcon(icon);
         });
+        button.addEventListener("mouseenter", () => {
+            const options = [...iconListEl.querySelectorAll(".icon-option")];
+            activeIconIndex = options.indexOf(button);
+            updateActiveIconOption();
+            refreshIconPreview();
+        });
         iconListEl.appendChild(button);
     }
 
     iconListEl.hidden = false;
+    updateActiveIconOption();
+    refreshIconPreview();
 }
 
 function openIconList() {
@@ -110,6 +169,7 @@ function closeIconList() {
     iconListEl.hidden = true;
     activeIconIndex = -1;
     updateActiveIconOption();
+    updateIconPreview(selectedIcon);
 }
 
 function updateActiveIconOption() {
@@ -222,7 +282,6 @@ iconSearchEl.addEventListener("input", () => {
     const query = iconSearchEl.value;
     const exact = codicons.find((icon) => icon === query);
     selectedIcon = exact ?? "";
-    updateIconPreview(selectedIcon);
     renderIconList(query);
 });
 
@@ -236,12 +295,14 @@ iconSearchEl.addEventListener("keydown", (event) => {
         }
         activeIconIndex = Math.min(activeIconIndex + 1, options.length - 1);
         updateActiveIconOption();
+        refreshIconPreview();
         return;
     }
     if (event.key === "ArrowUp") {
         event.preventDefault();
         activeIconIndex = Math.max(activeIconIndex - 1, 0);
         updateActiveIconOption();
+        refreshIconPreview();
         return;
     }
     if (event.key === "Enter" && !iconListEl.hidden && activeIconIndex >= 0) {

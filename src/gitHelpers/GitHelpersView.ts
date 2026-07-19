@@ -4,6 +4,7 @@ import {
     Event,
     EventEmitter,
     ExtensionContext,
+    SourceControl,
     ThemeIcon,
     TreeDataProvider,
     TreeItem,
@@ -12,7 +13,6 @@ import {
     window,
 } from "vscode";
 import { Commands, Views } from "../constants";
-import type { Repository } from "../git/gitApi";
 import { getGitApi, getGitApiAsync } from "../git/getGitApi";
 import { clearLegacyBranchReviewState } from "../git/clearLegacyReviewState";
 import { countUnpublishedNotes, loadReviewNotes } from "../git/reviewNotes";
@@ -20,9 +20,12 @@ import { getActiveRepository, resolveActiveRepository } from "../git/resolveActi
 import { registerBaseBranchOverrideStorage } from "../git/baseBranchOverride";
 import { pickBaseBranchTarget } from "../git/pickBaseBranch";
 import { resolveBaseBranch } from "../git/resolveBaseBranch";
+import { wireGitRepositories } from "../git/wireGitRepositories";
 import { openBranchDiff } from "../git/openBranchDiff";
 import { publishReviewToPR } from "../git/publishReview";
 import { openPR } from "../commands/openPR";
+import { getPrInfo } from "../git/githubUrl";
+import { refreshOpenPrContext } from "../git/openPrContext";
 import { registerCommandIB } from "../utils/vscode";
 import { registerGitHelpersRefresh } from "./refresh";
 
@@ -34,7 +37,7 @@ export class GitHelperTreeItem extends TreeItem {
         public readonly repoRoot: string | undefined,
         label: string,
         collapsibleState: TreeItemCollapsibleState,
-        public readonly action?: "diffWithBase" | "publishReview",
+        public readonly action?: "diffWithBase" | "publishReview" | "openPr",
         description?: string,
         command?: Command
     ) {
@@ -46,17 +49,10 @@ export class GitHelperTreeItem extends TreeItem {
             this.iconPath = new ThemeIcon("diff");
         } else if (action === "publishReview") {
             this.iconPath = new ThemeIcon("comment-discussion");
+        } else if (action === "openPr") {
+            this.iconPath = new ThemeIcon("git-pull-request");
         }
     }
-}
-
-function trackRepository(
-    provider: GitHelpersViewProvider,
-    context: ExtensionContext,
-    repository: Repository
-): void {
-    context.subscriptions.push(repository.state.onDidChange(() => provider.refresh()));
-    context.subscriptions.push(repository.ui.onDidChange(() => provider.refresh()));
 }
 
 export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeItem> {
@@ -69,6 +65,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
     refresh(): void {
         void this.updateViewTitle();
+        refreshOpenPrContext();
         this.changeEvent.fire(null);
     }
 
@@ -99,41 +96,23 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         registerCommandIB(Commands.PublishReviewToPR, (item) => provider.runAction(item, "publishReview"), context);
         registerCommandIB(Commands.OpenPR, (repoPath) => provider.runOpenPr(repoPath), context);
 
-        const wireApi = (api: NonNullable<ReturnType<typeof getGitApi>>) => {
-            const refresh = () => provider.refresh();
-            context.subscriptions.push(api.onDidChangeState(refresh));
-            context.subscriptions.push(api.onDidOpenRepository((e) => trackRepository(provider, context, e.repository)));
-            context.subscriptions.push(api.onDidCloseRepository(refresh));
-            for (const repo of api.repositories) {
-                trackRepository(provider, context, repo);
-            }
-        };
-
-        const api = getGitApi();
-        if (api) {
-            wireApi(api);
-        } else {
-            void getGitApiAsync().then((loaded) => {
-                if (loaded) {
-                    wireApi(loaded);
-                    provider.refresh();
-                }
-            });
-        }
-
+        wireGitRepositories(context, { onChange: () => provider.refresh() });
         context.subscriptions.push(window.onDidChangeActiveTextEditor(() => provider.refresh()));
 
         return provider;
     }
 
-    private async runOpenPr(repoPath?: string): Promise<void> {
+    private async runOpenPr(repoPath?: string | SourceControl): Promise<void> {
         const repoRoot =
-            typeof repoPath === "string" ? repoPath : (await getActiveRepository())?.rootUri.fsPath;
+            typeof repoPath === "string"
+                ? repoPath
+                : repoPath?.rootUri?.fsPath ?? (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
             window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
-        await openPR(undefined, repoRoot);
+        const sourceControl = repoPath && typeof repoPath !== "string" ? repoPath : undefined;
+        await openPR(sourceControl, repoRoot);
     }
 
     private async runAction(
@@ -194,24 +173,8 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
 
         const repoRoot = repository.rootUri.fsPath;
-        const head = repository.state.HEAD;
-        const base = await resolveBaseBranch(repository);
-        const notes = head?.name ? await loadReviewNotes(repoRoot, head.name) : undefined;
-        const noteCount = notes ? countUnpublishedNotes(notes) : 0;
-
         this.treeView.title = path.basename(repoRoot);
-
-        const detailParts: string[] = [];
-        if (head?.name) {
-            detailParts.push(head.name);
-        }
-        if (base) {
-            detailParts.push(`→ ${base.name}`);
-        }
-        if (noteCount > 0) {
-            detailParts.push(`${noteCount} note${noteCount === 1 ? "" : "s"}`);
-        }
-        this.treeView.description = detailParts.length > 0 ? detailParts.join(" · ") : undefined;
+        this.treeView.description = undefined;
     }
 
     getTreeItem(element: GitHelperTreeItem): GitHelperTreeItem {
@@ -249,7 +212,9 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         const repoRoot = repository.rootUri.fsPath;
         const head = repository.state.HEAD;
+        const branch = head?.name;
         const base = await resolveBaseBranch(repository);
+        const pr = branch ? await getPrInfo(repoRoot, branch) : undefined;
         const notes = head?.name ? await loadReviewNotes(repoRoot, head.name) : undefined;
         const noteCount = notes ? countUnpublishedNotes(notes) : 0;
 
@@ -258,6 +223,21 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         if (head?.name && base) {
             items.push(actionItem(repoRoot, "Diff vs base", "diffWithBase", Commands.DiffWithBase, base.name));
         }
+
+        if (pr) {
+            items.push(
+                new GitHelperTreeItem(
+                    "action",
+                    repoRoot,
+                    `PR #${pr.number}: ${pr.title}`,
+                    TreeItemCollapsibleState.None,
+                    "openPr",
+                    undefined,
+                    { command: Commands.OpenPR, title: "Open PR", arguments: [repoRoot] }
+                )
+            );
+        }
+
         if (noteCount > 0 && head?.name) {
             items.push(actionItem(repoRoot, "Publish to PR", "publishReview", Commands.PublishReviewToPR));
         }

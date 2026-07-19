@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vitest";
 import { Uri } from "vscode";
+import { clearBranchDiffSession, setBranchDiffSession } from "./branchDiffFiles";
 import {
     noteMatchesGitUri,
     parseGitDocumentUri,
     repoRelativePath,
+    repoRootForDocumentUri,
     sideFromGitRef,
     uriForNote,
 } from "./gitDocument";
@@ -38,6 +40,25 @@ describe("repoRelativePath", () => {
 
     it("returns repo-relative path from file URI", () => {
         expect(repoRelativePath(Uri.file(filePath), repoRoot)).toBe("src/a.ts");
+    });
+});
+
+describe("repoRootForDocumentUri", () => {
+    beforeEach(() => {
+        clearBranchDiffSession();
+    });
+
+    it("resolves repo root from git URI via active repo fallback", () => {
+        expect(repoRootForDocumentUri(gitUri("HEAD"), repoRoot)).toBe(repoRoot);
+    });
+
+    it("resolves repo root from branch diff working tree file", () => {
+        setBranchDiffSession(repoRoot, "abc123", [filePath]);
+        expect(repoRootForDocumentUri(Uri.file(filePath))).toBe(repoRoot);
+    });
+
+    it("falls back to active repo root for unknown URIs", () => {
+        expect(repoRootForDocumentUri(Uri.file("/elsewhere/a.ts"), "/fallback")).toBe("/fallback");
     });
 });
 
@@ -97,5 +118,9 @@ describe("noteMatchesGitUri", () => {
 
     it("does not match different side", () => {
         expect(noteMatchesGitUri(note, gitUri("abc123"), repoRoot, "abc123")).toBe(false);
+    });
+
+    it("matches working tree file URI for RIGHT side notes", () => {
+        expect(noteMatchesGitUri(note, Uri.file(filePath), repoRoot, "abc123")).toBe(true);
     });
 });

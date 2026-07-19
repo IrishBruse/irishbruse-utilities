@@ -4,6 +4,7 @@ import {
     clearBranchDiffSession,
     isBranchDiffWorkingTreeFile,
     setBranchDiffSession,
+    workingTreeUriForBranchDiffFile,
 } from "./branchDiffFiles";
 
 describe("branchDiffFiles", () => {
@@ -29,5 +30,10 @@ describe("branchDiffFiles", () => {
                 Uri.from({ scheme: "git", path: "/repo/src/a.ts", query: "{}" })
             )
         ).toBe(false);
+    });
+
+    it("returns working tree URI for tracked branch diff files", () => {
+        setBranchDiffSession("/repo", "abc123", ["/repo/src/a.ts"]);
+        expect(workingTreeUriForBranchDiffFile("/repo", "src/a.ts")?.fsPath).toBe("/repo/src/a.ts");
     });
 });

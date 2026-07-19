@@ -7,6 +7,7 @@ import { relativeGoTo } from "./commands/relativeGoTo";
 import { terminalPaste } from "./commands/terminalPaste";
 import { activateReviewCommentController } from "./git/reviewCommentController";
 import { exportReviewSummary, promptAndAddReviewNote } from "./git/publishReview";
+import { activateOpenPrContext } from "./git/openPrContext";
 import { getActiveRepository } from "./git/resolveActiveRepository";
 import { ActionPanelViewProvider } from "./actionPanel/ActionPanelView";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
@@ -36,6 +37,7 @@ export function activate(context: ExtensionContext) {
     activateBranchDiffRevert(context);
     context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));
     ActionPanelViewProvider.activate(context);
+    activateOpenPrContext(context);
     GitHelpersViewProvider.activate(context);
 
     registerCommandIB(Commands.AddReviewNote, async () => {

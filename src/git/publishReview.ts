@@ -1,34 +1,13 @@
 import { env, Uri, window } from "vscode";
 import { asyncSpawn } from "../utils/asyncSpawn";
 import { getRepositoryByRoot } from "./getGitApi";
-import { getOriginUrl, parseGithubOwnerRepo } from "./githubUrl";
+import { getOriginUrl, getPrInfo, parseGithubOwnerRepo } from "./githubUrl";
 import { resolveBaseBranch } from "./resolveBaseBranch";
 import { formatReviewSummary, loadReviewNotes, markNotesPublished, type ReviewNote } from "./reviewNotes";
 import { getReviewCommentController } from "./reviewCommentController";
 import { refreshGitPanels } from "./refreshPanels";
 
-type GhPrInfo = {
-    number: number;
-    headRefOid: string;
-    url: string;
-};
-
-async function getPrInfo(repoRoot: string): Promise<GhPrInfo | undefined> {
-    const result = await asyncSpawn(
-        "gh",
-        ["pr", "view", "--json", "number,headRefOid,url"],
-        { cwd: repoRoot }
-    );
-    if (result.status !== 0) {
-        return undefined;
-    }
-    try {
-        const parsed = JSON.parse(result.stdout) as GhPrInfo;
-        return parsed.number ? parsed : undefined;
-    } catch {
-        return undefined;
-    }
-}
+import type { GhPrInfo } from "./githubUrl";
 
 function normalizeBaseBranchRef(name: string): string {
     return name.replace(/^origin\//, "");
@@ -112,7 +91,7 @@ export async function publishReviewToPR(repoRoot: string, branch: string): Promi
     }
 
     const baseBranch = await resolveBaseBranchName(repoRoot, branch);
-    let pr = await getPrInfo(repoRoot);
+    let pr = await getPrInfo(repoRoot, branch);
     if (!pr) {
         const choice = await window.showInformationMessage(
             `No pull request for ${branch}. Create a draft PR on GitHub and publish ${pending.length} comment(s)?`,

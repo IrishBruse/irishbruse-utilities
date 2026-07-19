@@ -1,4 +1,3 @@
-import path from "path";
 import {
     Comment,
     CommentController,
@@ -16,15 +15,17 @@ import {
 } from "vscode";
 import { Commands } from "../constants";
 import { registerCommandIB } from "../utils/vscode";
+import { workingTreeUriForBranchDiffFile } from "./branchDiffFiles";
 import {
     noteMatchesGitUri,
     parseGitDocumentUri,
     repoRelativePath,
+    repoRootForDocumentUri,
     sideFromGitRef,
     uriForNote,
     type NoteUriRefs,
 } from "./gitDocument";
-import { getGitApi, getRepositoryByRoot } from "./getGitApi";
+import { getRepositoryByRoot } from "./getGitApi";
 import {
     addReviewNote,
     deleteReviewNote,
@@ -354,6 +355,13 @@ export class ReviewCommentController {
             }
         }
 
+        if (note.side === "RIGHT") {
+            const workingTreeUri = workingTreeUriForBranchDiffFile(repoRoot, note.file);
+            if (workingTreeUri) {
+                return workingTreeUri;
+            }
+        }
+
         if (!refs) {
             return undefined;
         }
@@ -447,7 +455,7 @@ export class ReviewCommentController {
         isDraft: boolean,
         repoRootHint?: string
     ): Promise<ThreadMeta | undefined> {
-        const repoRoot = repoRootHint ?? this.repoRootForGitUri(uri);
+        const repoRoot = repoRootHint ?? repoRootForDocumentUri(uri, this.activeRepoRoot);
         if (!repoRoot) {
             return undefined;
         }
@@ -481,26 +489,7 @@ export class ReviewCommentController {
     }
 
     private repoRootForEditor(editor: TextEditor): string | undefined {
-        return this.repoRootForGitUri(editor.document.uri);
-    }
-
-    private repoRootForGitUri(uri: Uri): string | undefined {
-        const parsed = parseGitDocumentUri(uri);
-        if (!parsed) {
-            return undefined;
-        }
-        const gitApi = getGitApi();
-        if (!gitApi) {
-            return this.activeRepoRoot;
-        }
-        const filePath = path.normalize(parsed.filePath);
-        for (const repo of gitApi.repositories) {
-            const root = path.normalize(repo.rootUri.fsPath);
-            if (filePath === root || filePath.startsWith(root + path.sep)) {
-                return repo.rootUri.fsPath;
-            }
-        }
-        return this.activeRepoRoot;
+        return repoRootForDocumentUri(editor.document.uri, this.activeRepoRoot);
     }
 
     private findThreadForComment(comment: Comment): CommentThread | undefined {

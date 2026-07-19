@@ -58,6 +58,17 @@ export function isBranchDiffWorkingTreeFile(uri: Uri): boolean {
     return uri.scheme === "file" && (session?.files.has(path.normalize(uri.fsPath)) ?? false);
 }
 
+export function workingTreeUriForBranchDiffFile(repoRoot: string, relativePath: string): Uri | undefined {
+    if (!session || session.repoRoot !== repoRoot) {
+        return undefined;
+    }
+    const absPath = path.normalize(path.join(repoRoot, relativePath));
+    if (!session.files.has(absPath)) {
+        return undefined;
+    }
+    return Uri.file(absPath);
+}
+
 export function hasOpenBranchDiffEditor(): boolean {
     for (const group of window.tabGroups.all) {
         for (const tab of group.tabs) {

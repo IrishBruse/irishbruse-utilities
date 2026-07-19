@@ -8,6 +8,9 @@
 -   Add: Open Preview / Open Source commands in the editor title bar
 -   Add: Action Panel activity bar view with configurable actions, agent prompts, and VS Code commands
 -   Add: Git Helpers panel in Source Control with hardcoded diff and review actions
+-   Add: Open PR for the current branch shown in Git Helpers panel header and as a clickable row
+-   Add: Open PR button in the Source Control title bar beside Collapse All Repositories when the current branch has an open PR
+-   Fix: Source Control Open PR visibility uses URI-based context keys compatible with scm/repository matching
 -   Add: Gutter comment buttons on base branch diff lines for review notes
 -   Fix: Saved review notes now appear in the diff after submitting from the gutter
 -   Change: Review notes are single editable comments per line (no reply thread UI)
@@ -19,6 +22,8 @@
 -   Fix: Action Panel icons like `git-pull-request-create` now render correctly in the sidebar and icon picker
 -   Fix: Action Panel sidebar icons now use theme-aware light/dark SVG colors instead of black
 -   Fix: Restore Action Panel editor icon picker to CSS codicons after sidebar SVG change broke the webview
+-   Fix: Review notes on the right side of branch diffs (working-tree files) can be added from the gutter again
+-   Fix: Git Helpers panel now refreshes when git state changes, including branch checkouts
 
 ## 0.3
 

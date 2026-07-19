@@ -47,7 +47,10 @@ vi.mock("vscode", () => ({
         Expanded: 2,
     },
     MarkdownString: vi.fn().mockImplementation((value: string) => ({ value })),
-    extensions: { all: [] },
+    extensions: {
+        all: [],
+        getExtension: vi.fn().mockReturnValue(undefined),
+    },
     languages: {
         setTextDocumentLanguage: vi.fn().mockResolvedValue(undefined),
     },

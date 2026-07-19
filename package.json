@@ -389,7 +389,7 @@
                 },
                 {
                     "command": "ib-utilities.addReviewNote",
-                    "when": "resourceScheme == git",
+                    "when": "resourceScheme == git || ib-utilities.inBranchDiffFile",
                     "group": "navigation@1"
                 },
                 {
@@ -496,6 +496,20 @@
                     "command": "ib-utilities.setBaseBranch",
                     "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase",
                     "group": "inline"
+                }
+            ],
+            "scm/title": [
+                {
+                    "command": "ib-utilities.openPR",
+                    "when": "view == workbench.scm && ibUtilitiesHasOpenPr",
+                    "group": "navigation"
+                }
+            ],
+            "scm/repository": [
+                {
+                    "command": "ib-utilities.openPR",
+                    "when": "scmProvider == git && scmProviderRootUri in ibUtilitiesOpenPrRepoRoots",
+                    "group": "inline@0"
                 }
             ],
             "view/title": [

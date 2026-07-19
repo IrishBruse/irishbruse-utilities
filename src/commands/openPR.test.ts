@@ -38,7 +38,12 @@ describe("openPR", () => {
             }
             if (command === "gh" && args?.includes("pr")) {
                 return {
-                    stdout: JSON.stringify({ url: "https://github.com/o/r/pull/42" }),
+                    stdout: JSON.stringify({
+                        number: 42,
+                        title: "Fix widget",
+                        url: "https://github.com/o/r/pull/42",
+                        headRefOid: "abc123",
+                    }),
                     stderr: "",
                     status: 0,
                 };

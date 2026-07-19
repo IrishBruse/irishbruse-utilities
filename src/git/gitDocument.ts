@@ -1,5 +1,7 @@
 import path from "path";
 import { Uri } from "vscode";
+import { getBranchDiffSession } from "./branchDiffFiles";
+import { getGitApi } from "./getGitApi";
 import type { ReviewNote, ReviewNoteSide } from "./reviewNotes";
 import { toGitUri } from "./gitUri";
 
@@ -26,6 +28,44 @@ export function parseGitDocumentUri(uri: Uri): ParsedGitDocument | undefined {
     } catch {
         return undefined;
     }
+}
+
+export function repoRootForDocumentUri(uri: Uri, activeRepoRoot?: string): string | undefined {
+    if (uri.scheme === "git") {
+        const parsed = parseGitDocumentUri(uri);
+        if (!parsed) {
+            return activeRepoRoot;
+        }
+        return repoRootContainingPath(parsed.filePath, activeRepoRoot);
+    }
+
+    const fsPath = path.normalize(uri.fsPath);
+    const session = getBranchDiffSession();
+    if (session?.repoRoot && session.files.has(fsPath)) {
+        return session.repoRoot;
+    }
+
+    const gitApi = getGitApi();
+    const fromGitApi = gitApi?.getRepository(uri)?.rootUri.fsPath;
+    if (fromGitApi) {
+        return fromGitApi;
+    }
+
+    return repoRootContainingPath(fsPath, activeRepoRoot);
+}
+
+function repoRootContainingPath(filePath: string, activeRepoRoot?: string): string | undefined {
+    const normalizedPath = path.normalize(filePath);
+    const gitApi = getGitApi();
+    if (gitApi) {
+        for (const repo of gitApi.repositories) {
+            const root = path.normalize(repo.rootUri.fsPath);
+            if (normalizedPath === root || normalizedPath.startsWith(root + path.sep)) {
+                return repo.rootUri.fsPath;
+            }
+        }
+    }
+    return activeRepoRoot;
 }
 
 export function repoRelativePath(uri: Uri, repoRoot: string): string | undefined {

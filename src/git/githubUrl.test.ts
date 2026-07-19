@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { githubRepoWebUrl, getOriginUrl, parseGithubOwnerRepo } from "./githubUrl";
+import { githubRepoWebUrl, getOriginUrl, getPrInfo, parseGithubOwnerRepo } from "./githubUrl";
 
 vi.mock("../utils/asyncSpawn", () => ({
     asyncSpawn: vi.fn(),
@@ -67,5 +67,102 @@ describe("getOriginUrl", () => {
         });
 
         await expect(getOriginUrl("/repo")).resolves.toBeUndefined();
+    });
+});
+
+describe("getPrInfo", () => {
+    beforeEach(() => {
+        mockAsyncSpawn.mockReset();
+    });
+
+    it("returns PR details when gh finds a pull request", async () => {
+        mockAsyncSpawn.mockResolvedValue({
+            stdout: JSON.stringify({
+                number: 7,
+                title: "Add feature",
+                headRefOid: "deadbeef",
+                url: "https://github.com/o/r/pull/7",
+            }),
+            stderr: "",
+            status: 0,
+        });
+
+        await expect(getPrInfo("/repo")).resolves.toEqual({
+            number: 7,
+            title: "Add feature",
+            headRefOid: "deadbeef",
+            url: "https://github.com/o/r/pull/7",
+        });
+        expect(mockAsyncSpawn).toHaveBeenCalledWith(
+            "gh",
+            ["pr", "view", "--json", "number,title,headRefOid,url"],
+            expect.objectContaining({ cwd: "/repo" })
+        );
+    });
+
+    it("falls back to gh pr list when view fails for a branch", async () => {
+        mockAsyncSpawn.mockImplementation(async (_command, args) => {
+            if (args?.[0] === "pr" && args?.[1] === "view") {
+                return { stdout: "", stderr: "not found", status: 1 };
+            }
+            if (args?.[0] === "pr" && args?.[1] === "list") {
+                return {
+                    stdout: JSON.stringify([
+                        {
+                            number: 9,
+                            title: "Listed PR",
+                            headRefOid: "abc",
+                            url: "https://github.com/o/r/pull/9",
+                        },
+                    ]),
+                    stderr: "",
+                    status: 0,
+                };
+            }
+            throw new Error(`unexpected args: ${args?.join(" ")}`);
+        });
+
+        await expect(getPrInfo("/repo", "feature")).resolves.toEqual({
+            number: 9,
+            title: "Listed PR",
+            headRefOid: "abc",
+            url: "https://github.com/o/r/pull/9",
+        });
+    });
+
+    it("queries gh with the branch name when provided", async () => {
+        mockAsyncSpawn.mockResolvedValue({
+            stdout: JSON.stringify({
+                number: 3,
+                title: "Branch PR",
+                headRefOid: "abc",
+                url: "https://github.com/o/r/pull/3",
+            }),
+            stderr: "",
+            status: 0,
+        });
+
+        await expect(getPrInfo("/repo", "feature")).resolves.toMatchObject({ number: 3 });
+        expect(mockAsyncSpawn).toHaveBeenCalledWith(
+            "gh",
+            ["pr", "view", "feature", "--json", "number,title,headRefOid,url"],
+            expect.objectContaining({ cwd: "/repo" })
+        );
+    });
+
+    it("returns undefined when gh reports no PR", async () => {
+        mockAsyncSpawn.mockResolvedValue({
+            stdout: "",
+            stderr: "no pull requests found",
+            status: 1,
+        });
+
+        await expect(getPrInfo("/repo")).resolves.toBeUndefined();
+    });
+
+    it("returns undefined when gh is unavailable", async () => {
+        mockAsyncSpawn.mockRejectedValue(new Error("spawn gh ENOENT"));
+
+        await expect(getPrInfo("/repo")).resolves.toBeUndefined();
     });
 });

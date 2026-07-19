@@ -36,6 +36,7 @@
 -   Add: Git Helpers shows Open failed job log when PR checks are failing
 -   Add: Git Helpers shows files changed with line stats; click opens the PR Changes tab on GitHub
 -   Add: Git Helpers shows one PR review row for replies, changes requested, unresolved threads, or awaiting reviewers
+-   Add: Git Helpers title bar refresh button beside Open PR
 
 ## 0.3
 

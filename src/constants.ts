@@ -129,6 +129,13 @@ export enum Commands {
     ShowGitHelpers = `ib-utilities.showGitHelpers`,
 
     /**
+     * Refresh Git Helpers
+     * Short Title: Refresh
+     * Icon: $(refresh)
+     */
+    RefreshGitHelpers = `ib-utilities.refreshGitHelpers`,
+
+    /**
      * Show Action Panel
      * Short Title: Actions
      * Icon: $(run-all)

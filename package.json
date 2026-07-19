@@ -317,6 +317,12 @@
                 "icon": "$(git-branch)"
             },
             {
+                "command": "ib-utilities.refreshGitHelpers",
+                "title": "Refresh Git Helpers",
+                "shortTitle": "Refresh",
+                "icon": "$(refresh)"
+            },
+            {
                 "command": "ib-utilities.showActionPanel",
                 "title": "Show Action Panel",
                 "shortTitle": "Actions",
@@ -557,6 +563,11 @@
                 },
                 {
                     "command": "ib-utilities.openPR",
+                    "when": "view == ib-utilities.gitHelpers",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.refreshGitHelpers",
                     "when": "view == ib-utilities.gitHelpers",
                     "group": "navigation"
                 },

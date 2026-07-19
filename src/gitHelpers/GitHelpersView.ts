@@ -34,6 +34,7 @@ import {
     getPrChangesUrl,
     getPrInfo,
 } from "../git/githubUrl";
+import { getFailedPrCheck } from "../git/prChecks";
 import { getPrReviewStatus } from "../git/prReviewStatus";
 import { registerCommandIB } from "../utils/vscode";
 import { registerGitHelpersRefresh } from "./refresh";
@@ -86,6 +87,10 @@ export class GitHelperTreeItem extends TreeItem {
     }
 }
 
+function prRowDescription(pr: { title: string; isDraft: boolean }): string {
+    return pr.isDraft ? `Draft · ${pr.title}` : pr.title;
+}
+
 function childrenSignature(items: readonly GitHelperTreeItem[]): string {
     return items
         .map((item) => `${item.id ?? ""}:${item.label}:${item.description ?? ""}:${item.contextValue ?? ""}`)
@@ -111,7 +116,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         return this.changeEvent.event;
     }
 
-    refresh(): void {
+    refresh(force = false): void {
+        if (force) {
+            this.cachedChildren = [];
+            this.childrenSignatureValue = "";
+        }
         void this.updateViewTitle();
         this.scheduleChildrenRefresh();
     }
@@ -171,6 +180,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         registerCommandIB(Commands.SetBaseBranch, (item?: GitHelperTreeItem) => pickBaseBranchTarget(item?.repoRoot), context);
         registerCommandIB(Commands.PublishReviewToPR, (item) => provider.runAction(item, "publishReview"), context);
         registerCommandIB(Commands.OpenPR, (repoPath) => provider.runOpenPr(repoPath), context);
+        registerCommandIB(Commands.RefreshGitHelpers, () => provider.refresh(true), context);
         registerCommandIB(Commands.CreateDraftPR, (item) => provider.runCreateDraftPr(item), context);
         registerCommandIB(Commands.MarkPrReady, (item) => provider.runMarkPrReady(item), context);
         registerCommandIB(Commands.CopyPrUrl, (item) => provider.runCopyPrUrl(item), context);
@@ -566,11 +576,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 const prItem = new GitHelperTreeItem(
                     "action",
                     repoRoot,
-                    `PR #${pr.number}: ${pr.title}`,
+                    `PR #${pr.number}`,
                     TreeItemCollapsibleState.None,
                     `${repoRoot}:openPr:${pr.number}`,
                     "openPr",
-                    pr.isDraft ? "Draft" : undefined,
+                    prRowDescription(pr),
                     { command: Commands.OpenPR, title: "Open PR", arguments: [repoRoot] }
                 );
                 prItem.contextValue = pr.isDraft ? "action-openPr-draft" : "action-openPr";

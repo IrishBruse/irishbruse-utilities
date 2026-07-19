@@ -270,14 +270,6 @@
     </div>
 
     <div class="field">
-        <label for="type">Type</label>
-        <select id="type">
-            <option value="agent">Agent prompt</option>
-            <option value="command">VS Code command</option>
-        </select>
-    </div>
-
-    <div class="field">
         <label for="icon-search">Icon</label>
         <div class="icon-picker" id="icon-picker">
             <div class="icon-picker-control">
@@ -290,11 +282,19 @@
         <p class="hint">Optional. Search codicons or clear to use no icon.</p>
     </div>
 
+    <div class="field">
+        <label for="type">Type</label>
+        <select id="type">
+            <option value="agent">Agent prompt</option>
+            <option value="command">VS Code command</option>
+        </select>
+    </div>
+
     <div class="section" id="agent-fields">
         <div class="field">
             <label for="prompt">Prompt</label>
             <textarea id="prompt" placeholder="/pr create"></textarea>
-            <p class="hint">Supports ${branch}, ${repoRoot}, and ${baseBranch} when git is available.</p>
+            <p class="hint">Supports ${branch}, ${repoRoot}, ${baseBranch}, ${file}, and ${selection}.</p>
         </div>
     </div>
 

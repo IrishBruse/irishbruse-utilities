@@ -1,5 +1,6 @@
 import { env, Uri, window } from "vscode";
 import { asyncSpawn } from "../utils/asyncSpawn";
+import { pushBranchToOrigin } from "./createDraftPR";
 import { getRepositoryByRoot } from "./getGitApi";
 import { getOriginUrl, getPrInfo, parseGithubOwnerRepo } from "./githubUrl";
 import { resolveBaseBranch } from "./resolveBaseBranch";
@@ -46,13 +47,16 @@ async function createDraftPullRequest(
         summary ||
         `Draft PR created from VS Code (${pendingCount} review comment${pendingCount === 1 ? "" : "s"}).`;
 
+    if (!(await pushBranchToOrigin(repoRoot, branch))) {
+        return undefined;
+    }
+
     const result = await asyncSpawn(
         "gh",
         [
             "pr",
             "create",
             "--draft",
-            "--push",
             "--base",
             baseBranch,
             "--title",

@@ -100,7 +100,7 @@
                             },
                             "prompt": {
                                 "type": "string",
-                                "description": "Agent prompt when type is agent. Supports ${branch}, ${repoRoot}, and ${baseBranch} when git is available."
+                                "description": "Agent prompt when type is agent. Supports ${branch}, ${repoRoot}, ${baseBranch}, ${file}, and ${selection}."
                             },
                             "command": {
                                 "type": "string",
@@ -238,6 +238,36 @@
                 "title": "Create Draft Pull Request",
                 "shortTitle": "Create draft PR",
                 "icon": "$(git-pull-request-create)"
+            },
+            {
+                "command": "ib-utilities.markPrReady",
+                "title": "Mark Pull Request Ready",
+                "shortTitle": "Mark ready",
+                "icon": "$(check)"
+            },
+            {
+                "command": "ib-utilities.copyPrUrl",
+                "title": "Copy Pull Request URL",
+                "shortTitle": "Copy PR URL",
+                "icon": "$(copy)"
+            },
+            {
+                "command": "ib-utilities.openFailedJobLog",
+                "title": "Open Failed Job Log",
+                "shortTitle": "Open failed job log",
+                "icon": "$(warning)"
+            },
+            {
+                "command": "ib-utilities.openPrChanges",
+                "title": "Open Pull Request Changes",
+                "shortTitle": "Open PR changes",
+                "icon": "$(git-compare)"
+            },
+            {
+                "command": "ib-utilities.openPrReview",
+                "title": "Open Pull Request Review",
+                "shortTitle": "Open PR review",
+                "icon": "$(comment-discussion)"
             },
             {
                 "command": "ib-utilities.refreshSnippetView",
@@ -502,6 +532,16 @@
                     "command": "ib-utilities.setBaseBranch",
                     "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase",
                     "group": "inline"
+                },
+                {
+                    "command": "ib-utilities.markPrReady",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == action-openPr-draft",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "ib-utilities.copyPrUrl",
+                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr || viewItem == action-openPr-draft)",
+                    "group": "inline@2"
                 }
             ],
             "view/title": [

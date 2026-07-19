@@ -46,9 +46,24 @@ function normalizeAction(raw: unknown): ActionPanelAction | undefined {
     return action;
 }
 
+function getConfiguredActionPanelActionEntries(): unknown[] {
+    const inspect = workspace.getConfiguration("ib-utilities").inspect<unknown[]>("actionPanel.actions");
+    if (inspect?.globalValue !== undefined) {
+        return inspect.globalValue;
+    }
+    if (inspect?.workspaceValue !== undefined) {
+        return inspect.workspaceValue;
+    }
+    if (inspect?.workspaceFolderValue !== undefined) {
+        return inspect.workspaceFolderValue;
+    }
+
+    return inspect?.defaultValue ?? [];
+}
+
 export function getConfiguredActionPanelActions(): ActionPanelAction[] {
-    const configured = workspace.getConfiguration("ib-utilities").get<unknown[]>("actionPanel.actions");
-    if (!configured?.length) {
+    const configured = getConfiguredActionPanelActionEntries();
+    if (!configured.length) {
         return [];
     }
 

@@ -5,6 +5,8 @@ vi.mock("vscode", () => ({
         getConfiguration: vi.fn().mockReturnValue({
             get: vi.fn().mockReturnValue({}),
         }),
+        asRelativePath: vi.fn((uri: { fsPath: string }) => uri.fsPath),
+        getWorkspaceFolder: vi.fn(),
         fs: {
             writeFile: vi.fn().mockResolvedValue(undefined),
             readFile: vi.fn().mockResolvedValue(Buffer.from("")),
@@ -21,6 +23,7 @@ vi.mock("vscode", () => ({
         }),
         showInputBox: vi.fn().mockResolvedValue(undefined),
         createTextEditorDecorationType: vi.fn().mockReturnValue({}),
+        activeTextEditor: undefined,
         tabGroups: { all: [] },
     },
     commands: {

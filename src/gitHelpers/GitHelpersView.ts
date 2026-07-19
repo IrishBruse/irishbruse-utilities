@@ -26,21 +26,40 @@ import { resolveBaseBranch } from "../git/resolveBaseBranch";
 import { wireGitRepositories } from "../git/wireGitRepositories";
 import { openBranchDiff } from "../git/openBranchDiff";
 import { publishReviewToPR } from "../git/publishReview";
+import { markPullRequestReady } from "../git/markPrReady";
 import { openPR } from "../commands/openPR";
-import { getPrInfo } from "../git/githubUrl";
+import {
+    formatPrFileChangeLabel,
+    formatPrLineChangeDescription,
+    getPrChangesUrl,
+    getPrInfo,
+} from "../git/githubUrl";
+import { getPrReviewStatus } from "../git/prReviewStatus";
 import { registerCommandIB } from "../utils/vscode";
 import { registerGitHelpersRefresh } from "./refresh";
 
 export type GitHelperItemKind = "info" | "action";
 
 export class GitHelperTreeItem extends TreeItem {
+    public prUrl?: string;
+    public logUrl?: string;
+    public changesUrl?: string;
+    public reviewUrl?: string;
+
     constructor(
         public readonly kind: GitHelperItemKind,
         public readonly repoRoot: string | undefined,
         label: string,
         collapsibleState: TreeItemCollapsibleState,
         id: string,
-        public readonly action?: "diffWithBase" | "publishReview" | "openPr" | "createDraftPr",
+        public readonly action?:
+            | "diffWithBase"
+            | "publishReview"
+            | "openPr"
+            | "createDraftPr"
+            | "openFailedJobLog"
+            | "openPrChanges"
+            | "openPrReview",
         description?: string,
         command?: Command
     ) {
@@ -57,6 +76,12 @@ export class GitHelperTreeItem extends TreeItem {
             this.iconPath = new ThemeIcon("git-pull-request");
         } else if (action === "createDraftPr") {
             this.iconPath = new ThemeIcon("git-pull-request-create");
+        } else if (action === "openFailedJobLog") {
+            this.iconPath = new ThemeIcon("warning");
+        } else if (action === "openPrChanges") {
+            this.iconPath = new ThemeIcon("git-compare");
+        } else if (action === "openPrReview") {
+            this.iconPath = new ThemeIcon("comment-discussion");
         }
     }
 }
@@ -79,6 +104,8 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     private lastRepoRoot: string | undefined;
     private refreshTimer: ReturnType<typeof setTimeout> | undefined;
     private buildGeneration = 0;
+    private creatingDraftPrFor: string | undefined;
+    private markingPrReadyFor: string | undefined;
 
     get onDidChangeTreeData(): Event<GitHelperTreeItem | undefined | null> {
         return this.changeEvent.event;
@@ -145,6 +172,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         registerCommandIB(Commands.PublishReviewToPR, (item) => provider.runAction(item, "publishReview"), context);
         registerCommandIB(Commands.OpenPR, (repoPath) => provider.runOpenPr(repoPath), context);
         registerCommandIB(Commands.CreateDraftPR, (item) => provider.runCreateDraftPr(item), context);
+        registerCommandIB(Commands.MarkPrReady, (item) => provider.runMarkPrReady(item), context);
+        registerCommandIB(Commands.CopyPrUrl, (item) => provider.runCopyPrUrl(item), context);
+        registerCommandIB(Commands.OpenFailedJobLog, (item) => provider.runOpenFailedJobLog(item), context);
+        registerCommandIB(Commands.OpenPrChanges, (item) => provider.runOpenPrChanges(item), context);
+        registerCommandIB(Commands.OpenPrReview, (item) => provider.runOpenPrReview(item), context);
 
         wireGitRepositories(context, { onChange: () => provider.refresh() });
         context.subscriptions.push(window.onDidChangeActiveTextEditor(() => provider.refresh()));
@@ -175,6 +207,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             return;
         }
 
+        if (this.creatingDraftPrFor === repoRoot) {
+            return;
+        }
+
         const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
         const branch = repository?.state.HEAD?.name;
         if (!repository || !branch) {
@@ -184,13 +220,194 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         const base = await resolveBaseBranch(repository);
         const baseBranch = base ? base.name.replace(/^origin\//, "") : "main";
-        const pr = await createBlankDraftPullRequest(repoRoot, branch, baseBranch);
-        if (!pr) {
+
+        this.creatingDraftPrFor = repoRoot;
+        this.changeEvent.fire(null);
+        try {
+            const pr = await createBlankDraftPullRequest(repoRoot, branch, baseBranch);
+            if (!pr) {
+                return;
+            }
+
+            this.refresh();
+            await env.openExternal(Uri.parse(pr.url));
+        } finally {
+            if (this.creatingDraftPrFor === repoRoot) {
+                this.creatingDraftPrFor = undefined;
+                this.changeEvent.fire(null);
+            }
+        }
+    }
+
+    private async runOpenPrReview(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
 
-        this.refresh();
-        await env.openExternal(Uri.parse(pr.url));
+        let reviewUrl = typeof item !== "string" ? item?.reviewUrl : undefined;
+        if (!reviewUrl) {
+            const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
+            const branch = repository?.state.HEAD?.name;
+            if (!branch) {
+                window.showWarningMessage("No named branch checked out.");
+                return;
+            }
+
+            const pr = await getPrInfo(repoRoot, branch);
+            if (!pr) {
+                window.showWarningMessage("No pull request found for the current branch.");
+                return;
+            }
+
+            reviewUrl = (await getPrReviewStatus(repoRoot, pr.number))?.url;
+        }
+
+        if (!reviewUrl) {
+            window.showWarningMessage("No PR review activity to open.");
+            return;
+        }
+
+        await env.openExternal(Uri.parse(reviewUrl));
+    }
+
+    private async runOpenPrChanges(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+
+        let changesUrl = typeof item !== "string" ? item?.changesUrl : undefined;
+        if (!changesUrl) {
+            const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
+            const branch = repository?.state.HEAD?.name;
+            if (!branch) {
+                window.showWarningMessage("No named branch checked out.");
+                return;
+            }
+
+            const pr = await getPrInfo(repoRoot, branch);
+            if (!pr) {
+                window.showWarningMessage("No pull request found for the current branch.");
+                return;
+            }
+
+            changesUrl = getPrChangesUrl(pr.url);
+        }
+
+        await env.openExternal(Uri.parse(changesUrl));
+    }
+
+    private async runOpenFailedJobLog(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+
+        let logUrl = typeof item !== "string" ? item?.logUrl : undefined;
+        if (!logUrl) {
+            const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
+            const branch = repository?.state.HEAD?.name;
+            if (!branch) {
+                window.showWarningMessage("No named branch checked out.");
+                return;
+            }
+
+            const pr = await getPrInfo(repoRoot, branch);
+            if (!pr) {
+                window.showWarningMessage("No pull request found for the current branch.");
+                return;
+            }
+
+            logUrl = (await getFailedPrCheck(repoRoot, pr.headRefOid))?.logUrl;
+        }
+
+        if (!logUrl) {
+            window.showWarningMessage("No failed check log available.");
+            return;
+        }
+
+        await env.openExternal(Uri.parse(logUrl));
+    }
+
+    private async runCopyPrUrl(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+
+        let url = typeof item !== "string" ? item?.prUrl : undefined;
+        if (!url) {
+            const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
+            const branch = repository?.state.HEAD?.name;
+            if (!branch) {
+                window.showWarningMessage("No named branch checked out.");
+                return;
+            }
+            url = (await getPrInfo(repoRoot, branch))?.url;
+        }
+
+        if (!url) {
+            window.showWarningMessage("No pull request URL available.");
+            return;
+        }
+
+        await env.clipboard.writeText(url);
+        window.showInformationMessage("PR URL copied to clipboard.");
+    }
+
+    private async runMarkPrReady(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+
+        if (this.markingPrReadyFor === repoRoot) {
+            return;
+        }
+
+        const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
+        const branch = repository?.state.HEAD?.name;
+        if (!repository || !branch) {
+            window.showWarningMessage("No named branch checked out.");
+            return;
+        }
+
+        this.markingPrReadyFor = repoRoot;
+        this.changeEvent.fire(null);
+        try {
+            const pr = await markPullRequestReady(repoRoot, branch);
+            if (!pr) {
+                return;
+            }
+
+            this.refresh();
+        } finally {
+            if (this.markingPrReadyFor === repoRoot) {
+                this.markingPrReadyFor = undefined;
+                this.changeEvent.fire(null);
+            }
+        }
     }
 
     private async runAction(
@@ -256,6 +473,34 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     getTreeItem(element: GitHelperTreeItem): GitHelperTreeItem {
+        if (element.action === "createDraftPr" && element.repoRoot === this.creatingDraftPrFor) {
+            const item = new GitHelperTreeItem(
+                element.kind,
+                element.repoRoot,
+                "Creating draft PR…",
+                element.collapsibleState ?? TreeItemCollapsibleState.None,
+                element.id ?? `${element.repoRoot}:createDraftPr`,
+                element.action
+            );
+            item.contextValue = "action-createDraftPr-loading";
+            item.iconPath = new ThemeIcon("sync~spin");
+            return item;
+        }
+        if (element.action === "openPr" && element.repoRoot === this.markingPrReadyFor) {
+            const item = new GitHelperTreeItem(
+                element.kind,
+                element.repoRoot,
+                element.label as string,
+                element.collapsibleState ?? TreeItemCollapsibleState.None,
+                element.id ?? `${element.repoRoot}:openPr`,
+                element.action,
+                element.description as string | undefined
+            );
+            item.contextValue = "action-openPr-markReady-loading";
+            item.iconPath = new ThemeIcon("sync~spin");
+            item.prUrl = element.prUrl;
+            return item;
+        }
         return element;
     }
 
@@ -318,18 +563,76 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         if (head?.name) {
             if (pr) {
-                items.push(
-                    new GitHelperTreeItem(
+                const prItem = new GitHelperTreeItem(
+                    "action",
+                    repoRoot,
+                    `PR #${pr.number}: ${pr.title}`,
+                    TreeItemCollapsibleState.None,
+                    `${repoRoot}:openPr:${pr.number}`,
+                    "openPr",
+                    pr.isDraft ? "Draft" : undefined,
+                    { command: Commands.OpenPR, title: "Open PR", arguments: [repoRoot] }
+                );
+                prItem.contextValue = pr.isDraft ? "action-openPr-draft" : "action-openPr";
+                prItem.prUrl = pr.url;
+                items.push(prItem);
+
+                const changesItem = new GitHelperTreeItem(
+                    "action",
+                    repoRoot,
+                    formatPrFileChangeLabel(pr.changedFiles),
+                    TreeItemCollapsibleState.None,
+                    `${repoRoot}:openPrChanges:${pr.number}`,
+                    "openPrChanges",
+                    formatPrLineChangeDescription(pr.additions, pr.deletions),
+                    {
+                        command: Commands.OpenPrChanges,
+                        title: "Open PR changes",
+                        arguments: [repoRoot],
+                    }
+                );
+                changesItem.changesUrl = getPrChangesUrl(pr.url);
+                items.push(changesItem);
+
+                const reviewStatus = await getPrReviewStatus(repoRoot, pr.number);
+                if (reviewStatus) {
+                    const reviewItem = new GitHelperTreeItem(
                         "action",
                         repoRoot,
-                        `PR #${pr.number}: ${pr.title}`,
+                        reviewStatus.label,
                         TreeItemCollapsibleState.None,
-                        `${repoRoot}:openPr:${pr.number}`,
-                        "openPr",
-                        undefined,
-                        { command: Commands.OpenPR, title: "Open PR", arguments: [repoRoot] }
-                    )
-                );
+                        `${repoRoot}:openPrReview:${pr.number}`,
+                        "openPrReview",
+                        reviewStatus.description,
+                        {
+                            command: Commands.OpenPrReview,
+                            title: "Open PR review",
+                            arguments: [repoRoot],
+                        }
+                    );
+                    reviewItem.reviewUrl = reviewStatus.url;
+                    items.push(reviewItem);
+                }
+
+                const failedCheck = await getFailedPrCheck(repoRoot, pr.headRefOid);
+                if (failedCheck) {
+                    const failedLogItem = new GitHelperTreeItem(
+                        "action",
+                        repoRoot,
+                        "Open failed job log",
+                        TreeItemCollapsibleState.None,
+                        `${repoRoot}:openFailedJobLog:${pr.number}`,
+                        "openFailedJobLog",
+                        "Checks failing",
+                        {
+                            command: Commands.OpenFailedJobLog,
+                            title: "Open failed job log",
+                            arguments: [repoRoot],
+                        }
+                    );
+                    failedLogItem.logUrl = failedCheck.logUrl;
+                    items.push(failedLogItem);
+                }
             } else {
                 items.push(
                     new GitHelperTreeItem(

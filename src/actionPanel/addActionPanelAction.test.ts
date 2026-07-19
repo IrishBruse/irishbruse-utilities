@@ -5,7 +5,7 @@ const mockGet = vi.fn().mockReturnValue(undefined);
 const mockOpen = vi.fn();
 
 vi.mock("vscode", () => ({
-    ConfigurationTarget: { Workspace: 1 },
+    ConfigurationTarget: { Workspace: 1, Global: 2 },
     window: {
         showInformationMessage: vi.fn(),
         showWarningMessage: vi.fn(),
@@ -25,7 +25,14 @@ vi.mock("./refresh", () => ({
 }));
 
 import { window, workspace } from "vscode";
-import { addActionPanelAction, appendActionPanelAction, deleteActionPanelAction, updateActionPanelAction } from "./addActionPanelAction";
+import {
+    addActionPanelAction,
+    affectsActionPanelActions,
+    appendActionPanelAction,
+    deleteActionPanelAction,
+    migrateActionPanelSettingsFromWorkspace,
+    updateActionPanelAction,
+} from "./addActionPanelAction";
 import { getActionPanelAction, getConfiguredActionPanelActions } from "./getActionPanelActions";
 import { refreshActionPanel } from "./refresh";
 
@@ -79,8 +86,9 @@ describe("appendActionPanelAction", () => {
                     prompt: "/deploy",
                 },
             ],
-            1
+            2
         );
+        expect(mockUpdate).toHaveBeenCalledWith("actionPanel.actions", undefined, 1);
         expect(mockRefreshActionPanel).toHaveBeenCalled();
     });
 });
@@ -121,7 +129,7 @@ describe("addActionPanelAction", () => {
                     icon: "git-pull-request-create",
                 }),
             ],
-            1
+            2
         );
     });
 
@@ -131,6 +139,80 @@ describe("addActionPanelAction", () => {
         await addActionPanelAction({ open: mockOpen } as never);
 
         expect(mockUpdate).not.toHaveBeenCalled();
+    });
+});
+
+describe("affectsActionPanelActions", () => {
+    it("matches action panel settings changes", () => {
+        expect(
+            affectsActionPanelActions({
+                affectsConfiguration: (section: string) =>
+                    section === "ib-utilities.actionPanel.actions" || section === "ib-utilities",
+            } as never)
+        ).toBe(true);
+    });
+
+    it("ignores unrelated settings changes", () => {
+        expect(
+            affectsActionPanelActions({
+                affectsConfiguration: () => false,
+            } as never)
+        ).toBe(false);
+    });
+});
+
+describe("migrateActionPanelSettingsFromWorkspace", () => {
+    beforeEach(() => {
+        mockUpdate.mockClear();
+        mockRefreshActionPanel.mockReset();
+        vi.mocked(workspace.getConfiguration).mockReturnValue({
+            inspect: vi.fn(),
+            update: mockUpdate,
+        } as never);
+    });
+
+    it("moves workspace actions to user settings when global is empty", async () => {
+        const workspaceActions = [
+            {
+                id: "createPR",
+                label: "Create PR",
+                type: "agent" as const,
+                prompt: "/pr create",
+            },
+        ];
+        vi.mocked(workspace.getConfiguration).mockReturnValue({
+            inspect: vi.fn().mockReturnValue({
+                workspaceValue: workspaceActions,
+                globalValue: undefined,
+            }),
+            update: mockUpdate,
+        } as never);
+
+        await migrateActionPanelSettingsFromWorkspace();
+
+        expect(mockUpdate).toHaveBeenCalledWith("actionPanel.actions", workspaceActions, 2);
+        expect(mockUpdate).toHaveBeenCalledWith("actionPanel.actions", undefined, 1);
+        expect(mockRefreshActionPanel).toHaveBeenCalled();
+    });
+
+    it("clears workspace overrides even when global settings already exist", async () => {
+        vi.mocked(workspace.getConfiguration).mockReturnValue({
+            inspect: vi.fn().mockReturnValue({
+                workspaceValue: [{ id: "createPR", label: "Create PR", type: "agent", prompt: "/pr create" }],
+                globalValue: [{ id: "deploy", label: "Deploy", type: "agent", prompt: "/deploy" }],
+            }),
+            update: mockUpdate,
+        } as never);
+
+        await migrateActionPanelSettingsFromWorkspace();
+
+        expect(mockUpdate).not.toHaveBeenCalledWith(
+            "actionPanel.actions",
+            expect.anything(),
+            2
+        );
+        expect(mockUpdate).toHaveBeenCalledWith("actionPanel.actions", undefined, 1);
+        expect(mockRefreshActionPanel).toHaveBeenCalled();
     });
 });
 
@@ -172,7 +254,7 @@ describe("updateActionPanelAction", () => {
                     prompt: "/pr create",
                 },
             ],
-            1
+            2
         );
     });
 });
@@ -206,7 +288,7 @@ describe("deleteActionPanelAction", () => {
 
         await deleteActionPanelAction("createPR");
 
-        expect(mockUpdate).toHaveBeenCalledWith("actionPanel.actions", [], 1);
+        expect(mockUpdate).toHaveBeenCalledWith("actionPanel.actions", [], 2);
     });
 
     it("does nothing when delete is cancelled", async () => {

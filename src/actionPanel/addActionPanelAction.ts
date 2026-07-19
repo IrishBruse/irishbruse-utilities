@@ -1,12 +1,46 @@
-import { ConfigurationTarget, window, workspace } from "vscode";
+import { ConfigurationTarget, window, workspace, type ConfigurationChangeEvent } from "vscode";
 import type { ActionPanelActionEditor } from "./ActionPanelActionEditor";
 import { getActionPanelAction, getConfiguredActionPanelActions } from "./getActionPanelActions";
 import { refreshActionPanel } from "./refresh";
 import type { ActionPanelAction } from "./types";
 
+export function affectsActionPanelActions(event: ConfigurationChangeEvent): boolean {
+    return (
+        event.affectsConfiguration("ib-utilities.actionPanel.actions") ||
+        event.affectsConfiguration("ib-utilities")
+    );
+}
+
+export async function migrateActionPanelSettingsFromWorkspace(): Promise<void> {
+    const config = workspace.getConfiguration("ib-utilities");
+    const inspect = config.inspect<ActionPanelAction[]>("actionPanel.actions");
+    const workspaceActions = inspect?.workspaceValue;
+    if (workspaceActions === undefined) {
+        return;
+    }
+
+    const globalActions = inspect?.globalValue;
+    if (!globalActions?.length && workspaceActions.length) {
+        await config.update("actionPanel.actions", workspaceActions, ConfigurationTarget.Global);
+    }
+
+    await clearActionPanelWorkspaceOverrides(config);
+    refreshActionPanel();
+}
+
+async function clearActionPanelWorkspaceOverrides(
+    config: ReturnType<typeof workspace.getConfiguration>
+): Promise<void> {
+    await config.update("actionPanel.actions", undefined, ConfigurationTarget.Workspace);
+    for (const folder of workspace.workspaceFolders ?? []) {
+        await config.update("actionPanel.actions", undefined, ConfigurationTarget.WorkspaceFolder, folder.uri);
+    }
+}
+
 async function saveActionPanelActions(actions: ActionPanelAction[]): Promise<void> {
     const config = workspace.getConfiguration("ib-utilities");
-    await config.update("actionPanel.actions", actions, ConfigurationTarget.Workspace);
+    await config.update("actionPanel.actions", actions, ConfigurationTarget.Global);
+    await clearActionPanelWorkspaceOverrides(config);
     refreshActionPanel();
 }
 

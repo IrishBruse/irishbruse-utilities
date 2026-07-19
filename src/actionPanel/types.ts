@@ -14,4 +14,6 @@ export type ActionPanelContext = {
     repoRoot: string;
     branch?: string;
     baseBranch?: string;
+    file: string;
+    selection: string;
 };

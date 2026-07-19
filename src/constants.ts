@@ -38,6 +38,41 @@ export enum Commands {
     CreateDraftPR = `ib-utilities.createDraftPR`,
 
     /**
+     * Mark Pull Request Ready
+     * Short Title: Mark ready
+     * Icon: $(check)
+     */
+    MarkPrReady = `ib-utilities.markPrReady`,
+
+    /**
+     * Copy Pull Request URL
+     * Short Title: Copy PR URL
+     * Icon: $(copy)
+     */
+    CopyPrUrl = `ib-utilities.copyPrUrl`,
+
+    /**
+     * Open Failed Job Log
+     * Short Title: Open failed job log
+     * Icon: $(warning)
+     */
+    OpenFailedJobLog = `ib-utilities.openFailedJobLog`,
+
+    /**
+     * Open Pull Request Changes
+     * Short Title: Open PR changes
+     * Icon: $(git-compare)
+     */
+    OpenPrChanges = `ib-utilities.openPrChanges`,
+
+    /**
+     * Open Pull Request Review
+     * Short Title: Open PR review
+     * Icon: $(comment-discussion)
+     */
+    OpenPrReview = `ib-utilities.openPrReview`,
+
+    /**
      * Refresh Snippets
      * Short Title: Refresh
      * Icon: $(refresh)

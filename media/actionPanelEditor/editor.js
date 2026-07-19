@@ -239,7 +239,7 @@ function applyState(state) {
     const isEdit = state.mode === "edit";
     titleEl.textContent = isEdit ? "Edit Action" : "Add Action";
     saveBtn.textContent = isEdit ? "Save" : "Add";
-    templateFieldEl.hidden = isEdit;
+    templateFieldEl.hidden = isEdit || (state.templates ?? []).every((template) => template.id === "custom");
 
     populateTemplates(state.templates ?? []);
     codicons = state.codicons ?? [];

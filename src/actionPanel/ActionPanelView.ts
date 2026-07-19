@@ -13,7 +13,13 @@ import {
 } from "vscode";
 import { Commands, ViewContainers, Views } from "../constants";
 import { registerCommandIB } from "../utils/vscode";
-import { addActionPanelAction, deleteActionPanelAction, editActionPanelAction } from "./addActionPanelAction";
+import {
+    addActionPanelAction,
+    affectsActionPanelActions,
+    deleteActionPanelAction,
+    editActionPanelAction,
+    migrateActionPanelSettingsFromWorkspace,
+} from "./addActionPanelAction";
 import { ActionPanelActionEditor } from "./ActionPanelActionEditor";
 import { getCodiconUri } from "./getCodiconUri";
 import { getConfiguredActionPanelActions } from "./getActionPanelActions";
@@ -39,6 +45,9 @@ export class ActionPanelTreeItem extends TreeItem {
         this.description = description;
         this.command = command;
         this.contextValue = kind === "action" ? "action" : kind;
+        if (actionId) {
+            this.id = actionId;
+        }
         if (icon && extensionContext) {
             this.iconPath = getCodiconUri(extensionContext, icon) ?? new ThemeIcon(icon);
         }
@@ -105,11 +114,14 @@ export class ActionPanelViewProvider implements TreeDataProvider<ActionPanelTree
             context
         );
 
+        void migrateActionPanelSettingsFromWorkspace();
+
         context.subscriptions.push(
             workspace.onDidChangeConfiguration((event) => {
-                if (event.affectsConfiguration("ib-utilities.actionPanel.actions")) {
-                    provider.refresh();
+                if (!affectsActionPanelActions(event)) {
+                    return;
                 }
+                setTimeout(() => provider.refresh(), 0);
             })
         );
 

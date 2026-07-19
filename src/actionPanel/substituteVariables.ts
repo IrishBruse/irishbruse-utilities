@@ -4,5 +4,7 @@ export function substituteVariables(template: string, context: ActionPanelContex
     return template
         .replaceAll("${repoRoot}", context.repoRoot)
         .replaceAll("${branch}", context.branch ?? "")
-        .replaceAll("${baseBranch}", context.baseBranch ?? "");
+        .replaceAll("${baseBranch}", context.baseBranch ?? "")
+        .replaceAll("${file}", context.file)
+        .replaceAll("${selection}", context.selection);
 }

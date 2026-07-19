@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { githubRepoWebUrl, getOriginUrl, getPrInfo, parseGithubOwnerRepo } from "./githubUrl";
+import {
+    formatPrFileChangeLabel,
+    formatPrLineChangeDescription,
+    getPrChangesUrl,
+    githubRepoWebUrl,
+    getOriginUrl,
+    getPrInfo,
+    parseGithubOwnerRepo,
+} from "./githubUrl";
 
 vi.mock("../utils/asyncSpawn", () => ({
     asyncSpawn: vi.fn(),
@@ -70,6 +78,28 @@ describe("getOriginUrl", () => {
     });
 });
 
+describe("formatPrFileChangeLabel", () => {
+    it("uses singular copy for one file", () => {
+        expect(formatPrFileChangeLabel(1)).toBe("1 file changed");
+    });
+
+    it("uses plural copy for multiple files", () => {
+        expect(formatPrFileChangeLabel(12)).toBe("12 files changed");
+    });
+});
+
+describe("formatPrLineChangeDescription", () => {
+    it("formats additions and deletions", () => {
+        expect(formatPrLineChangeDescription(340, 28)).toBe("+340 −28");
+    });
+});
+
+describe("getPrChangesUrl", () => {
+    it("appends /changes to the PR web URL", () => {
+        expect(getPrChangesUrl("https://github.com/o/r/pull/7")).toBe("https://github.com/o/r/pull/7/changes");
+    });
+});
+
 describe("getPrInfo", () => {
     beforeEach(() => {
         mockAsyncSpawn.mockReset();
@@ -82,6 +112,9 @@ describe("getPrInfo", () => {
                 title: "Add feature",
                 headRefOid: "deadbeef",
                 url: "https://github.com/o/r/pull/7",
+                additions: 10,
+                deletions: 2,
+                changedFiles: 3,
             }),
             stderr: "",
             status: 0,
@@ -92,10 +125,14 @@ describe("getPrInfo", () => {
             title: "Add feature",
             headRefOid: "deadbeef",
             url: "https://github.com/o/r/pull/7",
+            isDraft: false,
+            additions: 10,
+            deletions: 2,
+            changedFiles: 3,
         });
         expect(mockAsyncSpawn).toHaveBeenCalledWith(
             "gh",
-            ["pr", "view", "--json", "number,title,headRefOid,url"],
+            ["pr", "view", "--json", "number,title,headRefOid,url,state,isDraft,additions,deletions,changedFiles"],
             expect.objectContaining({ cwd: "/repo" })
         );
     });
@@ -127,6 +164,10 @@ describe("getPrInfo", () => {
             title: "Listed PR",
             headRefOid: "abc",
             url: "https://github.com/o/r/pull/9",
+            isDraft: false,
+            additions: 0,
+            deletions: 0,
+            changedFiles: 0,
         });
     });
 
@@ -145,9 +186,92 @@ describe("getPrInfo", () => {
         await expect(getPrInfo("/repo", "feature")).resolves.toMatchObject({ number: 3 });
         expect(mockAsyncSpawn).toHaveBeenCalledWith(
             "gh",
-            ["pr", "view", "feature", "--json", "number,title,headRefOid,url"],
+            ["pr", "view", "feature", "--json", "number,title,headRefOid,url,state,isDraft,additions,deletions,changedFiles"],
             expect.objectContaining({ cwd: "/repo" })
         );
+    });
+
+    it("ignores closed PRs from gh pr view and falls back to open PR list", async () => {
+        mockAsyncSpawn.mockImplementation(async (_command, args) => {
+            if (args?.[0] === "pr" && args?.[1] === "view") {
+                return {
+                    stdout: JSON.stringify({
+                        number: 4,
+                        title: "Closed PR",
+                        headRefOid: "deadbeef",
+                        url: "https://github.com/o/r/pull/4",
+                        state: "CLOSED",
+                    }),
+                    stderr: "",
+                    status: 0,
+                };
+            }
+            if (args?.[0] === "pr" && args?.[1] === "list") {
+                return {
+                    stdout: JSON.stringify([
+                        {
+                            number: 11,
+                            title: "Open PR",
+                            headRefOid: "abc",
+                            url: "https://github.com/o/r/pull/11",
+                            state: "OPEN",
+                        },
+                    ]),
+                    stderr: "",
+                    status: 0,
+                };
+            }
+            if (args?.[0] === "remote") {
+                return {
+                    stdout: "git@github.com:o/r.git\n",
+                    stderr: "",
+                    status: 0,
+                };
+            }
+            throw new Error(`unexpected args: ${args?.join(" ")}`);
+        });
+
+        await expect(getPrInfo("/repo", "feature")).resolves.toEqual({
+            number: 11,
+            title: "Open PR",
+            headRefOid: "abc",
+            url: "https://github.com/o/r/pull/11",
+            isDraft: false,
+            additions: 0,
+            deletions: 0,
+            changedFiles: 0,
+        });
+    });
+
+    it("returns undefined when only a closed PR exists for the branch", async () => {
+        mockAsyncSpawn.mockImplementation(async (_command, args) => {
+            if (args?.[0] === "pr" && args?.[1] === "view") {
+                return {
+                    stdout: JSON.stringify({
+                        number: 4,
+                        title: "Closed PR",
+                        headRefOid: "deadbeef",
+                        url: "https://github.com/o/r/pull/4",
+                        state: "MERGED",
+                    }),
+                    stderr: "",
+                    status: 0,
+                };
+            }
+            if (args?.[0] === "pr" && args?.[1] === "list") {
+                return { stdout: "[]", stderr: "", status: 0 };
+            }
+            if (args?.[0] === "remote") {
+                return {
+                    stdout: "git@github.com:o/r.git\n",
+                    stderr: "",
+                    status: 0,
+                };
+            }
+            throw new Error(`unexpected args: ${args?.join(" ")}`);
+        });
+
+        await expect(getPrInfo("/repo", "feature")).resolves.toBeUndefined();
     });
 
     it("returns undefined when gh reports no PR", async () => {

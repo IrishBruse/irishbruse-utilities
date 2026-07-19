@@ -18,22 +18,24 @@ describe("getConfiguredActionPanelActions", () => {
 
     it("returns an empty list when setting is missing", () => {
         mockGetConfiguration.mockReturnValue({
-            get: vi.fn().mockReturnValue(undefined),
+            inspect: vi.fn().mockReturnValue(undefined),
         } as never);
 
         expect(getConfiguredActionPanelActions()).toEqual([]);
     });
 
-    it("returns valid custom actions from settings", () => {
+    it("returns valid custom actions from user settings", () => {
         mockGetConfiguration.mockReturnValue({
-            get: vi.fn().mockReturnValue([
-                {
-                    id: "custom",
-                    label: "Custom Agent",
-                    type: "agent",
-                    prompt: "/do ${branch}",
-                },
-            ]),
+            inspect: vi.fn().mockReturnValue({
+                globalValue: [
+                    {
+                        id: "custom",
+                        label: "Custom Agent",
+                        type: "agent",
+                        prompt: "/do ${branch}",
+                    },
+                ],
+            }),
         } as never);
 
         expect(getConfiguredActionPanelActions()).toEqual([
@@ -46,12 +48,51 @@ describe("getConfiguredActionPanelActions", () => {
         ]);
     });
 
+    it("prefers user settings over workspace overrides", () => {
+        mockGetConfiguration.mockReturnValue({
+            inspect: vi.fn().mockReturnValue({
+                globalValue: [
+                    {
+                        id: "createPR",
+                        label: "Create PR",
+                        type: "agent",
+                        prompt: "/pr create",
+                    },
+                    {
+                        id: "updatePR",
+                        label: "Update PR",
+                        type: "agent",
+                        prompt: "/pr update",
+                    },
+                ],
+                workspaceValue: [
+                    {
+                        id: "updatePR",
+                        label: "Update PR",
+                        type: "agent",
+                        prompt: "/pr update",
+                    },
+                    {
+                        id: "createPR",
+                        label: "Create PR",
+                        type: "agent",
+                        prompt: "/pr create",
+                    },
+                ],
+            }),
+        } as never);
+
+        expect(getConfiguredActionPanelActions().map((action) => action.id)).toEqual(["createPR", "updatePR"]);
+    });
+
     it("filters invalid and legacy built-in entries", () => {
         mockGetConfiguration.mockReturnValue({
-            get: vi.fn().mockReturnValue([
-                { id: "broken", label: "Broken", type: "agent" },
-                { id: "legacy", label: "Open PR", type: "builtin", builtin: "openPR" },
-            ]),
+            inspect: vi.fn().mockReturnValue({
+                globalValue: [
+                    { id: "broken", label: "Broken", type: "agent" },
+                    { id: "legacy", label: "Open PR", type: "builtin", builtin: "openPR" },
+                ],
+            }),
         } as never);
 
         expect(getConfiguredActionPanelActions()).toEqual([]);

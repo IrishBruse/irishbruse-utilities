@@ -1,7 +1,7 @@
 import type { Process } from "../utils/asyncSpawn";
 import { asyncSpawn } from "../utils/asyncSpawn";
 
-const PR_JSON_FIELDS = "number,title,headRefOid,url";
+const PR_JSON_FIELDS = "number,title,headRefOid,url,state,isDraft,additions,deletions,changedFiles";
 
 function spawnEnv(): NodeJS.ProcessEnv {
     const env = { ...process.env };
@@ -14,7 +14,7 @@ function spawnEnv(): NodeJS.ProcessEnv {
     return env;
 }
 
-async function runGh(repoRoot: string, args: readonly string[]): Promise<Process | undefined> {
+export async function runGh(repoRoot: string, args: readonly string[]): Promise<Process | undefined> {
     try {
         return await asyncSpawn("gh", args, { cwd: repoRoot, env: spawnEnv() });
     } catch {
@@ -24,9 +24,24 @@ async function runGh(repoRoot: string, args: readonly string[]): Promise<Process
 
 function parsePrInfo(stdout: string): GhPrInfo | undefined {
     try {
-        const parsed = JSON.parse(stdout) as GhPrInfo | GhPrInfo[];
+        const parsed = JSON.parse(stdout) as (GhPrInfo & { state?: string }) | (GhPrInfo & { state?: string })[];
         const pr = Array.isArray(parsed) ? parsed[0] : parsed;
-        return pr?.number ? pr : undefined;
+        if (!pr?.number) {
+            return undefined;
+        }
+        if (pr.state && pr.state !== "OPEN") {
+            return undefined;
+        }
+        return {
+            number: pr.number,
+            title: pr.title,
+            headRefOid: pr.headRefOid,
+            url: pr.url,
+            isDraft: pr.isDraft ?? false,
+            additions: pr.additions ?? 0,
+            deletions: pr.deletions ?? 0,
+            changedFiles: pr.changedFiles ?? 0,
+        };
     } catch {
         return undefined;
     }
@@ -66,7 +81,23 @@ export type GhPrInfo = {
     title: string;
     headRefOid: string;
     url: string;
+    isDraft: boolean;
+    additions: number;
+    deletions: number;
+    changedFiles: number;
 };
+
+export function formatPrFileChangeLabel(changedFiles: number): string {
+    return changedFiles === 1 ? "1 file changed" : `${changedFiles} files changed`;
+}
+
+export function formatPrLineChangeDescription(additions: number, deletions: number): string {
+    return `+${additions} −${deletions}`;
+}
+
+export function getPrChangesUrl(prUrl: string): string {
+    return `${prUrl.replace(/\/$/, "")}/changes`;
+}
 
 export async function getPrInfo(repoRoot: string, branch?: string): Promise<GhPrInfo | undefined> {
     const viewArgs = branch

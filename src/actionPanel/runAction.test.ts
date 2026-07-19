@@ -26,6 +26,8 @@ const context = {
     repoRoot: "/repo",
     branch: "feature/x",
     baseBranch: "main",
+    file: "",
+    selection: "",
 };
 
 describe("runActionPanelItem", () => {

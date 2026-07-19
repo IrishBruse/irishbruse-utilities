@@ -44,6 +44,25 @@ export async function getGitApiAsync(): Promise<API | undefined> {
     }
 }
 
+export type ResolvedGitApi =
+    | { status: "ready"; api: API }
+    | { status: "loading" }
+    | { status: "unavailable" };
+
+export async function resolveGitApi(): Promise<ResolvedGitApi> {
+    let api = getGitApi();
+    if (!api) {
+        api = await getGitApiAsync();
+    }
+    if (!api) {
+        return { status: "unavailable" };
+    }
+    if (api.state !== "initialized") {
+        return { status: "loading" };
+    }
+    return { status: "ready", api };
+}
+
 export function getRepositoryByRoot(rootPath: string): import("./gitApi").Repository | undefined {
     const api = getGitApi();
     if (!api) {

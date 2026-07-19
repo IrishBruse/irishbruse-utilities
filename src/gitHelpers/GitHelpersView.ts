@@ -25,7 +25,6 @@ import { openBranchDiff } from "../git/openBranchDiff";
 import { publishReviewToPR } from "../git/publishReview";
 import { openPR } from "../commands/openPR";
 import { getPrInfo } from "../git/githubUrl";
-import { refreshOpenPrContext } from "../git/openPrContext";
 import { registerCommandIB } from "../utils/vscode";
 import { registerGitHelpersRefresh } from "./refresh";
 
@@ -37,11 +36,13 @@ export class GitHelperTreeItem extends TreeItem {
         public readonly repoRoot: string | undefined,
         label: string,
         collapsibleState: TreeItemCollapsibleState,
+        id: string,
         public readonly action?: "diffWithBase" | "publishReview" | "openPr",
         description?: string,
         command?: Command
     ) {
         super(label, collapsibleState);
+        this.id = id;
         this.description = description;
         this.command = command;
         this.contextValue = action ? `action-${action}` : kind;
@@ -55,9 +56,24 @@ export class GitHelperTreeItem extends TreeItem {
     }
 }
 
+function childrenSignature(items: readonly GitHelperTreeItem[]): string {
+    return items
+        .map((item) => `${item.id ?? ""}:${item.label}:${item.description ?? ""}:${item.contextValue ?? ""}`)
+        .join("|");
+}
+
+function infoItem(id: string, label: string): GitHelperTreeItem {
+    return new GitHelperTreeItem("info", undefined, label, TreeItemCollapsibleState.None, id);
+}
+
 export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeItem> {
     private changeEvent = new EventEmitter<GitHelperTreeItem | undefined | null>();
     private treeView: TreeView<GitHelperTreeItem> | undefined;
+    private cachedChildren: GitHelperTreeItem[] = [];
+    private childrenSignatureValue = "";
+    private lastRepoRoot: string | undefined;
+    private refreshTimer: ReturnType<typeof setTimeout> | undefined;
+    private buildGeneration = 0;
 
     get onDidChangeTreeData(): Event<GitHelperTreeItem | undefined | null> {
         return this.changeEvent.event;
@@ -65,8 +81,36 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
     refresh(): void {
         void this.updateViewTitle();
-        refreshOpenPrContext();
+        this.scheduleChildrenRefresh();
+    }
+
+    private scheduleChildrenRefresh(): void {
+        if (this.refreshTimer) {
+            clearTimeout(this.refreshTimer);
+        }
+        this.refreshTimer = setTimeout(() => {
+            this.refreshTimer = undefined;
+            void this.rebuildChildren();
+        }, 50);
+    }
+
+    private applyChildren(children: GitHelperTreeItem[]): void {
+        const signature = childrenSignature(children);
+        if (signature === this.childrenSignatureValue) {
+            return;
+        }
+        this.cachedChildren = children;
+        this.childrenSignatureValue = signature;
         this.changeEvent.fire(null);
+    }
+
+    private async rebuildChildren(): Promise<void> {
+        const generation = ++this.buildGeneration;
+        const children = await this.buildChildren();
+        if (generation !== this.buildGeneration) {
+            return;
+        }
+        this.applyChildren(children);
     }
 
     static activate(context: ExtensionContext): GitHelpersViewProvider {
@@ -186,29 +230,43 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             return [];
         }
 
+        if (this.cachedChildren.length > 0) {
+            return this.cachedChildren;
+        }
+
+        const children = await this.buildChildren();
+        this.cachedChildren = children;
+        this.childrenSignatureValue = childrenSignature(children);
+        return children;
+    }
+
+    private async buildChildren(): Promise<GitHelperTreeItem[]> {
         let api = getGitApi();
         if (!api) {
             api = await getGitApiAsync();
         }
         if (!api) {
-            return [new GitHelperTreeItem("info", undefined, "Git extension unavailable", TreeItemCollapsibleState.None)];
+            return [infoItem("info:git-unavailable", "Git extension unavailable")];
         }
 
         if (api.repositories.length === 0) {
-            return [new GitHelperTreeItem("info", undefined, "No git repositories open", TreeItemCollapsibleState.None)];
+            return [infoItem("info:no-repos", "No git repositories open")];
         }
 
-        const repository = resolveActiveRepository(api);
-        if (!repository) {
-            return [
-                new GitHelperTreeItem(
-                    "info",
-                    undefined,
-                    "Select a repository in Source Control",
-                    TreeItemCollapsibleState.None
-                ),
-            ];
+        let repository = resolveActiveRepository(api);
+        if (!repository && this.lastRepoRoot) {
+            repository =
+                api.repositories.find((repo) => repo.rootUri.fsPath === this.lastRepoRoot) ??
+                api.repositories.find((repo) => repo.ui.selected);
         }
+        if (!repository) {
+            if (this.cachedChildren.length > 0 && this.cachedChildren[0]?.kind === "action") {
+                return this.cachedChildren;
+            }
+            return [infoItem("info:select-repo", "Select a repository in Source Control")];
+        }
+
+        this.lastRepoRoot = repository.rootUri.fsPath;
 
         const repoRoot = repository.rootUri.fsPath;
         const head = repository.state.HEAD;
@@ -231,6 +289,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                     repoRoot,
                     `PR #${pr.number}: ${pr.title}`,
                     TreeItemCollapsibleState.None,
+                    `${repoRoot}:openPr:${pr.number}`,
                     "openPr",
                     undefined,
                     { command: Commands.OpenPR, title: "Open PR", arguments: [repoRoot] }
@@ -258,6 +317,7 @@ function actionItem(
         repoRoot,
         label,
         TreeItemCollapsibleState.None,
+        `${repoRoot}:${action}`,
         action,
         description,
         { command: commandId, title: label, arguments: [repoRoot] }

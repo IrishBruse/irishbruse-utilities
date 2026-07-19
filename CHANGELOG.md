@@ -8,9 +8,8 @@
 -   Add: Open Preview / Open Source commands in the editor title bar
 -   Add: Action Panel activity bar view with configurable actions, agent prompts, and VS Code commands
 -   Add: Git Helpers panel in Source Control with hardcoded diff and review actions
--   Add: Open PR for the current branch shown in Git Helpers panel header and as a clickable row
--   Add: Open PR button in the Source Control title bar beside Collapse All Repositories when the current branch has an open PR
--   Fix: Source Control Open PR visibility uses URI-based context keys compatible with scm/repository matching
+-   Add: Open PR for the current branch as a clickable row in Git Helpers
+-   Fix: Git Helpers panel keeps stable tree rows while refreshing instead of flickering between states
 -   Add: Gutter comment buttons on base branch diff lines for review notes
 -   Fix: Saved review notes now appear in the diff after submitting from the gutter
 -   Change: Review notes are single editable comments per line (no reply thread UI)

@@ -7,7 +7,7 @@ import { getActiveRepository } from "./resolveActiveRepository";
 import { refreshGitHelpersView } from "../gitHelpers/refresh";
 
 type BaseBranchPickItem = QuickPickItem & {
-    kind: "auto" | "ref" | "custom";
+    target: "auto" | "ref" | "custom";
     ref?: string;
 };
 
@@ -27,7 +27,7 @@ export async function pickBaseBranchTarget(repoRoot?: string): Promise<void> {
     const items: BaseBranchPickItem[] = [];
     if (auto) {
         items.push({
-            kind: "auto",
+            target: "auto",
             label: "$(sparkle) Auto",
             description: auto.name,
             detail: "Use upstream or main/master detection",
@@ -37,7 +37,7 @@ export async function pickBaseBranchTarget(repoRoot?: string): Promise<void> {
 
     for (const ref of refs) {
         items.push({
-            kind: "ref",
+            target: "ref",
             ref,
             label: ref,
             picked: ref === currentOverride,
@@ -45,7 +45,7 @@ export async function pickBaseBranchTarget(repoRoot?: string): Promise<void> {
     }
 
     items.push({
-        kind: "custom",
+        target: "custom",
         label: "$(edit) Enter branch or commit...",
         alwaysShow: true,
     });
@@ -59,13 +59,13 @@ export async function pickBaseBranchTarget(repoRoot?: string): Promise<void> {
         return;
     }
 
-    if (selection.kind === "auto") {
+    if (selection.target === "auto") {
         await setBaseBranchOverride(activeRepoRoot, undefined);
         refreshGitHelpersView();
         return;
     }
 
-    if (selection.kind === "custom") {
+    if (selection.target === "custom") {
         const custom = await window.showInputBox({
             title: "Compare against",
             prompt: "Branch name, remote branch, tag, or commit SHA",

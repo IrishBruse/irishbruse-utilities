@@ -1,6 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Branch, Repository } from "./gitApi";
 import { RefType } from "./gitApi";
+
+vi.mock("./baseBranchOverride", () => ({
+    getBaseBranchOverride: vi.fn().mockReturnValue(undefined),
+}));
+
+import { getBaseBranchOverride } from "./baseBranchOverride";
 import { formatBranchName, isSameBranch, resolveBaseBranch } from "./resolveBaseBranch";
 
 function mockRepository(overrides: {
@@ -68,6 +74,21 @@ describe("resolveBaseBranch", () => {
 
         const base = await resolveBaseBranch(repo);
         expect(base).toEqual({ name: "master", ref: "def" });
+    });
+
+    it("uses a workspace override when set", async () => {
+        vi.mocked(getBaseBranchOverride).mockReturnValue("develop");
+        const repo = mockRepository({
+            head: { type: RefType.Head, name: "feature/x", commit: "abc" },
+            getBranch: vi.fn().mockResolvedValue({
+                type: RefType.Head,
+                name: "develop",
+                commit: "def",
+            }),
+        });
+
+        const base = await resolveBaseBranch(repo);
+        expect(base).toEqual({ name: "develop", ref: "def" });
     });
 });
 

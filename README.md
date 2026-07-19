@@ -16,7 +16,7 @@ Tree view under the **Snippet Manager** activity bar: create, edit, and delete s
 
 A **Git Helpers** panel in the Source Control sidebar shows hardcoded git workflow actions for the **active repository**:
 
-- **Diff vs base** — multi-file diff of your branch against an auto-detected base (`main` / `origin/main`, etc.)
+- **Diff vs base** — multi-file diff of your branch against an auto-detected base (`main` / `origin/main`, etc.), with a gear control to pick a different comparison branch or commit
 - **Review notes** — add inline comments in git diffs; **Publish to PR** posts line comments via `gh`
 - **Open pull request** — title bar button opens the GitHub PR for the current branch, or the repo homepage when no PR exists
 
@@ -102,6 +102,7 @@ Customize Action Panel entries (built-in, Cursor agent prompt, or VS Code comman
 | `ib-utilities.showGitHelpers` | Show Git Helpers |
 | `ib-utilities.runActionPanelItem` | Run Action Panel Item |
 | `ib-utilities.diffWithBase` | Diff vs Base Branch |
+| `ib-utilities.setBaseBranch` | Set base branch for diffs and review notes |
 | `ib-utilities.addReviewNote` | Add Review Note |
 | `ib-utilities.publishReviewToPR` | Publish Review to PR |
 | `ib-utilities.exportReviewSummary` | Export Review Summary |

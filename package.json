@@ -311,6 +311,12 @@
                 "icon": "$(diff)"
             },
             {
+                "command": "ib-utilities.setBaseBranch",
+                "title": "Set Base Branch",
+                "shortTitle": "Set base",
+                "icon": "$(gear)"
+            },
+            {
                 "command": "ib-utilities.addReviewNote",
                 "title": "Add Review Note",
                 "shortTitle": "Add note",
@@ -458,6 +464,11 @@
                     "command": "ib-utilities.deleteActionPanelAction",
                     "when": "view == ib-utilities.actionPanel && viewItem == action",
                     "group": "inline@2"
+                },
+                {
+                    "command": "ib-utilities.setBaseBranch",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase",
+                    "group": "inline"
                 }
             ],
             "view/title": [

@@ -17,6 +17,8 @@ import { getGitApi, getGitApiAsync } from "../git/getGitApi";
 import { clearLegacyBranchReviewState } from "../git/clearLegacyReviewState";
 import { countUnpublishedNotes, loadReviewNotes } from "../git/reviewNotes";
 import { getActiveRepository, resolveActiveRepository } from "../git/resolveActiveRepository";
+import { registerBaseBranchOverrideStorage } from "../git/baseBranchOverride";
+import { pickBaseBranchTarget } from "../git/pickBaseBranch";
 import { resolveBaseBranch } from "../git/resolveBaseBranch";
 import { openBranchDiff } from "../git/openBranchDiff";
 import { publishReviewToPR } from "../git/publishReview";
@@ -79,6 +81,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         context.subscriptions.push(provider.treeView);
 
         void clearLegacyBranchReviewState(context);
+        registerBaseBranchOverrideStorage(context);
         void provider.updateViewTitle();
         registerGitHelpersRefresh(() => provider.refresh());
 
@@ -92,6 +95,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             context
         );
         registerCommandIB(Commands.DiffWithBase, (item) => provider.runAction(item, "diffWithBase"), context);
+        registerCommandIB(Commands.SetBaseBranch, (item?: GitHelperTreeItem) => pickBaseBranchTarget(item?.repoRoot), context);
         registerCommandIB(Commands.PublishReviewToPR, (item) => provider.runAction(item, "publishReview"), context);
         registerCommandIB(Commands.OpenPR, (repoPath) => provider.runOpenPr(repoPath), context);
 
@@ -252,7 +256,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const items: GitHelperTreeItem[] = [];
 
         if (head?.name && base) {
-            items.push(actionItem(repoRoot, "Diff vs base", "diffWithBase", Commands.DiffWithBase));
+            items.push(actionItem(repoRoot, "Diff vs base", "diffWithBase", Commands.DiffWithBase, base.name));
         }
         if (noteCount > 0 && head?.name) {
             items.push(actionItem(repoRoot, "Publish to PR", "publishReview", Commands.PublishReviewToPR));
@@ -266,7 +270,8 @@ function actionItem(
     repoRoot: string,
     label: string,
     action: "diffWithBase" | "publishReview",
-    commandId: Commands
+    commandId: Commands,
+    description?: string
 ): GitHelperTreeItem {
     return new GitHelperTreeItem(
         "action",
@@ -274,7 +279,7 @@ function actionItem(
         label,
         TreeItemCollapsibleState.None,
         action,
-        undefined,
+        description,
         { command: commandId, title: label, arguments: [repoRoot] }
     );
 }

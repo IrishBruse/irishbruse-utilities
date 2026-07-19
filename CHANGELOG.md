@@ -15,6 +15,7 @@
 -   Fix: Open PR falls back to GitHub repo when no PR exists, gh is missing, or origin uses SSH
 -   Fix: Action editor icon preview now matches the highlighted icon in the searchable picker
 -   Fix: Update bundled codicons so icons like `git-pull-request-create` render distinctly from `git-pull-request`
+-   Add: Git Helpers base branch picker — choose `develop`, a release branch, or a commit as the diff target
 
 ## 0.3
 

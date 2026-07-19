@@ -122,6 +122,13 @@ export enum Commands {
     DiffWithBase = `ib-utilities.diffWithBase`,
 
     /**
+     * Set Base Branch
+     * Short Title: Set base
+     * Icon: $(gear)
+     */
+    SetBaseBranch = `ib-utilities.setBaseBranch`,
+
+    /**
      * Add Review Note
      * Short Title: Add note
      * Icon: $(note)

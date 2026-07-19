@@ -14,13 +14,18 @@ export type Process = {
  * @param {object} options - Options to pass to child_process.spawn.
  * @returns {Promise<{ stdout: string, stderr: string, code: number }>} - A Promise that resolves with the stdout, stderr, and exit code.
  */
+export type AsyncSpawnOptions = SpawnOptionsWithoutStdio & {
+    input?: string;
+};
+
 export async function asyncSpawn(
     command: string,
     args: readonly string[] = [],
-    options: SpawnOptionsWithoutStdio = {}
+    options: AsyncSpawnOptions = {}
 ): Promise<Process> {
+    const { input, ...spawnOptions } = options;
     return new Promise((resolve, reject) => {
-        const child = spawn(command, args, options);
+        const child = spawn(command, args, spawnOptions);
         let stdout = "";
         let stderr = "";
 
@@ -39,5 +44,10 @@ export async function asyncSpawn(
         child.on("error", (err) => {
             reject(err);
         });
+
+        if (input !== undefined) {
+            child.stdin.write(input);
+            child.stdin.end();
+        }
     });
 }

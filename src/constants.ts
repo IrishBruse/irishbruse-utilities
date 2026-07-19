@@ -59,6 +59,13 @@ export enum Commands {
     DeleteSnippet = `ib-utilities.deleteSnippet`,
 
     /**
+     * Terminal paste (text or image)
+     * Short Title: Terminal paste
+     * Icon: undefined
+     */
+    TerminalPaste = `ib-utilities.terminalPaste`,
+
+    /**
      * Open Preview
      * Short Title: Open Preview
      * Icon: $(open-preview)

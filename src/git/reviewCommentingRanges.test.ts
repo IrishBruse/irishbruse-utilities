@@ -1,13 +1,24 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { Uri } from "vscode";
+import { clearBranchDiffWorkingTreeFiles, setBranchDiffWorkingTreeFiles } from "./branchDiffFiles";
 import { isReviewCommentableDocument, reviewCommentingRanges } from "./reviewCommentingRanges";
 
 describe("isReviewCommentableDocument", () => {
+    beforeEach(() => {
+        clearBranchDiffWorkingTreeFiles();
+    });
+
     it("allows git scheme documents", () => {
         expect(isReviewCommentableDocument(Uri.from({ scheme: "git", path: "/a.ts" }))).toBe(true);
     });
 
-    it("rejects other schemes", () => {
+    it("allows working tree files from an open branch diff", () => {
+        const filePath = "/repo/src/a.ts";
+        setBranchDiffWorkingTreeFiles([filePath]);
+        expect(isReviewCommentableDocument(Uri.file(filePath))).toBe(true);
+    });
+
+    it("rejects unrelated file scheme documents", () => {
         expect(isReviewCommentableDocument(Uri.file("/a.ts"))).toBe(false);
     });
 });

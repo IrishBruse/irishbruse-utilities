@@ -1,7 +1,9 @@
-import { ExtensionContext, Uri } from "vscode";
+import { ExtensionContext, Uri, window } from "vscode";
+import { syncBranchDiffWorkingTreeFiles } from "./git/branchDiffFiles";
 import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
+import { terminalPaste } from "./commands/terminalPaste";
 import { activateReviewCommentController } from "./git/reviewCommentController";
 import { exportReviewSummary, promptAndAddReviewNote } from "./git/publishReview";
 import { getActiveRepository } from "./git/resolveActiveRepository";
@@ -23,12 +25,14 @@ export function activate(context: ExtensionContext) {
     SnippetsPath = snippetsFolderUri.fsPath;
 
     registerCommandIB(Commands.RelativeGoTo, relativeGoTo, context);
+    registerCommandIB(Commands.TerminalPaste, terminalPaste, context);
     registerCommandIB(Commands.OpenMermaidPreview, openMermaidPreview, context);
     registerCommandIB(Commands.OpenMermaidSource, openMermaidSource, context);
 
     registerMermaidCustomEditor(context);
     SnippetViewProvider.activate(context);
     activateReviewCommentController(context);
+    context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));
     ActionPanelViewProvider.activate(context);
     GitHelpersViewProvider.activate(context);
 

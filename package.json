@@ -258,6 +258,11 @@
                 "icon": "$(trash)"
             },
             {
+                "command": "ib-utilities.terminalPaste",
+                "title": "Terminal paste (text or image)",
+                "shortTitle": "Terminal paste"
+            },
+            {
                 "command": "ib-utilities.openMermaidPreview",
                 "title": "Open Preview",
                 "shortTitle": "Open Preview",

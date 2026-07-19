@@ -1,7 +1,8 @@
 import { Range, Uri } from "vscode";
+import { isBranchDiffWorkingTreeFile } from "./branchDiffFiles";
 
 export function isReviewCommentableDocument(uri: Uri): boolean {
-    return uri.scheme === "git";
+    return uri.scheme === "git" || isBranchDiffWorkingTreeFile(uri);
 }
 
 export function reviewCommentingRanges(lineCount: number): Range[] {

@@ -97,7 +97,7 @@ export class ReviewCommentController {
         context.subscriptions.push(this.controller);
         context.subscriptions.push(
             window.onDidChangeActiveTextEditor((editor) => {
-                if (editor?.document.uri.scheme === "git") {
+                if (editor && isReviewCommentableDocument(editor.document.uri)) {
                     const repoRoot = this.repoRootForEditor(editor);
                     if (repoRoot) {
                         void this.refreshForRepo(repoRoot);

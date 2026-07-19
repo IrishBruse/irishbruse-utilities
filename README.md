@@ -4,7 +4,7 @@ A [Visual Studio Code](https://code.visualstudio.com/) extension: snippet manage
 
 **Install:** search the Marketplace for **IrishBruse's Utilities** ([publisher `irishbruse`](https://marketplace.visualstudio.com/publishers/irishbruse)) or install from a `.vsix` built from [this repository](https://github.com/IrishBruse/irishbruse-utilities).
 
-**Requirements:** VS Code `^1.110.0` (see `engines.vscode` in `package.json`).
+**Requirements:** VS Code `^1.125.0` (see `engines.vscode` in `package.json`).
 
 ## Features
 

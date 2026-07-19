@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { InteractiveBrowserCredential } from "@azure/identity";
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -6,6 +7,7 @@ import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const semverPattern = /^\d+\.\d+\.\d+(-[\w.]+)?$/;
+const marketplaceScope = "499b84ac-1321-427f-aa17-267ca6975798/.default";
 
 function run(command, options = {}) {
     console.log(`\n> ${command}`);
@@ -63,6 +65,25 @@ function fileChanged(path) {
     }
 }
 
+function readText(path) {
+    return readFileSync(join(root, path), "utf8");
+}
+
+function restoreWorkingTreeFiles(packageSnapshot, lockSnapshot) {
+    if (packageSnapshot !== null) {
+        writeFileSync(join(root, "package.json"), packageSnapshot);
+    }
+
+    if (lockSnapshot !== null) {
+        writeFileSync(join(root, "package-lock.json"), lockSnapshot);
+    }
+
+    const artifact = "media/mermaidPreview/vsCodeTheme.js";
+    if (fileChanged(artifact)) {
+        execSync(`git checkout -- "${artifact}"`, { cwd: root, stdio: "ignore" });
+    }
+}
+
 function restorePackagingArtifacts() {
     const artifact = "media/mermaidPreview/vsCodeTheme.js";
     if (fileChanged(artifact)) {
@@ -72,12 +93,7 @@ function restorePackagingArtifacts() {
 
 function parseVersionArg(argv) {
     const args = argv.slice(2);
-
-    if (args.length !== 1) {
-        return null;
-    }
-
-    return args[0];
+    return args.length === 1 ? args[0] : null;
 }
 
 function assertChangelog(version) {
@@ -91,10 +107,74 @@ function assertChangelog(version) {
     }
 }
 
-function publishExtension() {
-    const env = { ...process.env };
-    delete env.VSCE_PAT;
-    run("npx @vscode/vsce publish --azure-credential", { env });
+function hasServicePrincipalAuth() {
+    return Boolean(
+        process.env.AZURE_CLIENT_ID &&
+            process.env.AZURE_CLIENT_SECRET &&
+            process.env.AZURE_TENANT_ID,
+    );
+}
+
+async function getBrowserOAuthToken() {
+    console.log(
+        [
+            "",
+            "Opening a browser for Marketplace sign-in.",
+            "Choose the personal Microsoft account that owns the publisher.",
+        ].join("\n"),
+    );
+
+    const credential = new InteractiveBrowserCredential({
+        clientId: "04b07795-8ddb-461a-bbee-02f9e1bf7b46",
+        tenantId: process.env.AZURE_TENANT_ID ?? "organizations",
+        loginHint: process.env.MARKETPLACE_LOGIN_HINT,
+    });
+
+    const token = await credential.getToken(marketplaceScope);
+    if (!token?.token) {
+        throw new Error("Marketplace browser sign-in did not return an access token.");
+    }
+
+    return token.token;
+}
+
+function runVscePublish(env) {
+    const command = hasServicePrincipalAuth()
+        ? "npx @vscode/vsce publish --azure-credential"
+        : "npx @vscode/vsce publish";
+
+    console.log(`\n> ${command}`);
+
+    try {
+        const output = execSync(command, {
+            cwd: root,
+            encoding: "utf8",
+            env,
+            stdio: ["inherit", "pipe", "pipe"],
+        });
+
+        if (output) {
+            process.stdout.write(output);
+        }
+    } catch (error) {
+        if (error.stdout) {
+            process.stdout.write(error.stdout);
+        }
+
+        if (error.stderr) {
+            process.stderr.write(error.stderr);
+        }
+
+        throw new Error("Publish failed");
+    }
+}
+
+async function publishExtension() {
+    const env = hasServicePrincipalAuth()
+        ? process.env
+        : { ...process.env, VSCE_PAT: await getBrowserOAuthToken() };
+
+    runVscePublish(env);
 }
 
 function bumpVersions(version) {
@@ -115,11 +195,7 @@ function releaseFiles() {
         files.push("README.md");
     }
 
-    for (const path of [
-        "scripts/release.mjs",
-        ".cursor/skills/release/SKILL.md",
-        "AGENTS.md",
-    ]) {
+    for (const path of ["scripts/release.mjs", ".cursor/skills/release/SKILL.md", "AGENTS.md"]) {
         if (existsSync(join(root, path)) && fileChanged(path)) {
             files.push(path);
         }
@@ -143,30 +219,45 @@ if (!versionArg) {
 
 const currentVersion = readJson("package.json").version;
 const version = nextVersion(currentVersion, versionArg);
+const isRetry = versionArg === version && compareSemver(version, currentVersion) === 0;
 
 if (!semverPattern.test(version)) {
     console.error(`Invalid semver: ${version}`);
     process.exit(1);
 }
 
-if (compareSemver(version, currentVersion) <= 0) {
+if (!isRetry && compareSemver(version, currentVersion) <= 0) {
     console.error(`Version ${version} must be greater than current version ${currentVersion}`);
     process.exit(1);
 }
 
-console.log(`Releasing ${version}`);
+console.log(isRetry ? `Retrying release for ${version}` : `Releasing ${version}`);
+
+const packageSnapshot = isRetry ? null : readText("package.json");
+const lockSnapshot = isRetry ? null : readText("package-lock.json");
+let published = false;
 
 try {
     assertChangelog(version);
-    bumpVersions(version);
+
+    if (!isRetry) {
+        bumpVersions(version);
+    }
+
     run("npm run verify");
     run("npm run package:vsix");
     restorePackagingArtifacts();
-    publishExtension();
+    await publishExtension();
+    published = true;
     commitRelease(version);
     run("git push");
     console.log(`\nReleased ${version} to the Marketplace`);
 } catch (error) {
+    if (!published && !isRetry) {
+        restoreWorkingTreeFiles(packageSnapshot, lockSnapshot);
+        console.error("\nRestored package.json and package-lock.json to their pre-release versions.");
+    }
+
     console.error(`\nRelease failed: ${error.message}`);
     process.exit(1);
 }

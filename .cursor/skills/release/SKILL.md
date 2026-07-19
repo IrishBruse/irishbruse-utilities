@@ -56,7 +56,7 @@ The **gate** is the sole path to `npm run release`. Prior bump or changelog work
   - `**Command:**` `npm run release -- {version}`
   - `**Version:**` `{current} -> {target}`
   - `**Steps:**` bump `package.json`/`package-lock.json`, `npm run verify`, `npm run package:vsix`,
-    `npx @vscode/vsce publish --azure-credential`, `git commit`, `git push`
+    `npx @vscode/vsce publish` (browser OAuth, or `--azure-credential` in CI), `git commit`, `git push`
   - `**Changelog:**` confirm `## {version}` exists
   - End with `Run this release?`
 - `options` (exactly these three): `Approve - run this exact release`, `Edit first - change version before running`, `Cancel - do not run release`
@@ -77,7 +77,9 @@ npm run release -- {version}
 
 Examples: `npm run release -- 0.10.0`, `npm run release -- minor`, `npm run release -- patch`.
 
-First publish on a machine needs `az login` (or another vsce credential).
+Publishing uses `vsce publish --azure-credential` in CI when `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, and `AZURE_TENANT_ID` are set.
+
+Otherwise `scripts/release.mjs` opens a browser OAuth sign-in and publishes with the resulting Entra access token.
 
 **Done when:** command exits 0.
 

@@ -1,12 +1,20 @@
 # Changelog
 
-## 0.10.0
+## 0.11.0
 
 -   Add: Git Helpers panel — diff vs base, draft PR workflow, PR status, files changed, review threads, failed checks, and optional Jira ticket row
 -   Add: Action Panel for customizable agent prompts and VS Code command shortcuts
 -   Add: Branch diff review notes with gutter comments, side panel editor, and publish to GitHub PR
 -   Change: Action Panel actions save to user settings, snippet loading uses native JSON instead of `cjson`
 -   Change: Update dependencies and use native Node 24 for contributes generation
+-   Change: Minimum VS Code version `^1.125.0`
+
+## 0.10.0
+
+-   Add: Mermaid preview custom editor for `.mmd` and `.mermaid` files
+-   Add: Live diagram rendering with VS Code theme integration
+-   Add: Zoom, pan, fit-to-view, and copy diagram as PNG
+-   Add: Open Preview / Open Source commands in the editor title bar
 
 ## 0.9
 

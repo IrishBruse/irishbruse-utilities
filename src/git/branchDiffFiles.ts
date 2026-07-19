@@ -3,26 +3,59 @@ import { Uri, window } from "vscode";
 
 const BRANCH_DIFF_SCHEME = "git-ref-compare";
 
+export type BranchDiffSession = {
+    repoRoot: string;
+    mergeBaseRef: string;
+    files: Set<string>;
+};
+
 type MultiDiffTabInput = {
     multiDiffSourceUri?: Uri;
 };
 
-let workingTreeFiles = new Set<string>();
+let session: BranchDiffSession | undefined;
 
 function isMultiDiffTabInput(input: unknown): input is MultiDiffTabInput {
     return typeof input === "object" && input !== null && "multiDiffSourceUri" in input;
 }
 
+export function setBranchDiffSession(repoRoot: string, mergeBaseRef: string, paths: string[]): void {
+    session = {
+        repoRoot,
+        mergeBaseRef,
+        files: new Set(paths.map((filePath) => path.normalize(filePath))),
+    };
+}
+
+export function getBranchDiffSession(): BranchDiffSession | undefined {
+    return session;
+}
+
+export function clearBranchDiffSession(): void {
+    session = undefined;
+}
+
 export function setBranchDiffWorkingTreeFiles(paths: string[]): void {
-    workingTreeFiles = new Set(paths.map((filePath) => path.normalize(filePath)));
+    if (!session) {
+        session = {
+            repoRoot: "",
+            mergeBaseRef: "",
+            files: new Set(paths.map((filePath) => path.normalize(filePath))),
+        };
+        return;
+    }
+    session = {
+        ...session,
+        files: new Set(paths.map((filePath) => path.normalize(filePath))),
+    };
 }
 
 export function clearBranchDiffWorkingTreeFiles(): void {
-    workingTreeFiles.clear();
+    clearBranchDiffSession();
 }
 
 export function isBranchDiffWorkingTreeFile(uri: Uri): boolean {
-    return uri.scheme === "file" && workingTreeFiles.has(path.normalize(uri.fsPath));
+    return uri.scheme === "file" && (session?.files.has(path.normalize(uri.fsPath)) ?? false);
 }
 
 export function hasOpenBranchDiffEditor(): boolean {
@@ -42,6 +75,6 @@ export function hasOpenBranchDiffEditor(): boolean {
 
 export function syncBranchDiffWorkingTreeFiles(): void {
     if (!hasOpenBranchDiffEditor()) {
-        clearBranchDiffWorkingTreeFiles();
+        clearBranchDiffSession();
     }
 }

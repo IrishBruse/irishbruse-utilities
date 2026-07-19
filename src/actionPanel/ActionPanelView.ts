@@ -15,6 +15,7 @@ import { Commands, ViewContainers, Views } from "../constants";
 import { registerCommandIB } from "../utils/vscode";
 import { addActionPanelAction, deleteActionPanelAction, editActionPanelAction } from "./addActionPanelAction";
 import { ActionPanelActionEditor } from "./ActionPanelActionEditor";
+import { getCodiconUri } from "./getCodiconUri";
 import { getConfiguredActionPanelActions } from "./getActionPanelActions";
 import { registerActionPanelRefresh } from "./refresh";
 import { resolveActionPanelContext } from "./resolveActionPanelContext";
@@ -30,17 +31,16 @@ export class ActionPanelTreeItem extends TreeItem {
         collapsibleState: TreeItemCollapsibleState,
         public readonly actionId?: string,
         description?: string,
-        command?: Command
+        command?: Command,
+        icon?: string,
+        extensionContext?: ExtensionContext
     ) {
         super(label, collapsibleState);
         this.description = description;
         this.command = command;
         this.contextValue = kind === "action" ? "action" : kind;
-        if (actionId) {
-            const action = getConfiguredActionPanelActions().find((entry) => entry.id === actionId);
-            if (action?.icon) {
-                this.iconPath = new ThemeIcon(action.icon);
-            }
+        if (icon && extensionContext) {
+            this.iconPath = getCodiconUri(extensionContext, icon) ?? new ThemeIcon(icon);
         }
     }
 }
@@ -48,6 +48,8 @@ export class ActionPanelTreeItem extends TreeItem {
 export class ActionPanelViewProvider implements TreeDataProvider<ActionPanelTreeItem> {
     private changeEvent = new EventEmitter<ActionPanelTreeItem | undefined | null>();
     private treeView: TreeView<ActionPanelTreeItem> | undefined;
+
+    constructor(private readonly context: ExtensionContext) {}
 
     get onDidChangeTreeData(): Event<ActionPanelTreeItem | undefined | null> {
         return this.changeEvent.event;
@@ -58,7 +60,7 @@ export class ActionPanelViewProvider implements TreeDataProvider<ActionPanelTree
     }
 
     static activate(context: ExtensionContext): ActionPanelViewProvider {
-        const provider = new ActionPanelViewProvider();
+        const provider = new ActionPanelViewProvider(context);
         const actionEditor = new ActionPanelActionEditor(context);
         context.subscriptions.push(actionEditor);
 
@@ -139,11 +141,11 @@ export class ActionPanelViewProvider implements TreeDataProvider<ActionPanelTree
             ];
         }
 
-        return actions.map(actionItem);
+        return actions.map((action) => actionItem(action, this.context));
     }
 }
 
-function actionItem(action: ActionPanelAction): ActionPanelTreeItem {
+function actionItem(action: ActionPanelAction, context: ExtensionContext): ActionPanelTreeItem {
     return new ActionPanelTreeItem(
         "action",
         action.label,
@@ -154,6 +156,8 @@ function actionItem(action: ActionPanelAction): ActionPanelTreeItem {
             command: Commands.RunActionPanelItem,
             title: action.label,
             arguments: [action.id],
-        }
+        },
+        action.icon,
+        context
     );
 }

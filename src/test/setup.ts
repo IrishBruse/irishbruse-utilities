@@ -82,6 +82,15 @@ vi.mock("vscode", () => ({
                 query: change.query ?? "",
             }),
         }),
+        joinPath: (base: { fsPath: string }, ...parts: string[]) => {
+            const fsPath = [base.fsPath, ...parts].join("/").replace(/\/+/g, "/");
+            return {
+                scheme: "file",
+                fsPath,
+                path: fsPath,
+                query: "",
+            };
+        },
     },
     Range: class {
         constructor(

@@ -1,4 +1,5 @@
 import { ExtensionContext, Uri, window } from "vscode";
+import { activateBranchDiffRevert } from "./git/branchDiffRevert";
 import { syncBranchDiffWorkingTreeFiles } from "./git/branchDiffFiles";
 import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
@@ -32,6 +33,7 @@ export function activate(context: ExtensionContext) {
     registerMermaidCustomEditor(context);
     SnippetViewProvider.activate(context);
     activateReviewCommentController(context);
+    activateBranchDiffRevert(context);
     context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));
     ActionPanelViewProvider.activate(context);
     GitHelpersViewProvider.activate(context);

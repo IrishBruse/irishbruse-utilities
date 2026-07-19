@@ -1,11 +1,11 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { Uri } from "vscode";
-import { clearBranchDiffWorkingTreeFiles, setBranchDiffWorkingTreeFiles } from "./branchDiffFiles";
+import { clearBranchDiffSession, setBranchDiffSession } from "./branchDiffFiles";
 import { isReviewCommentableDocument, reviewCommentingRanges } from "./reviewCommentingRanges";
 
 describe("isReviewCommentableDocument", () => {
     beforeEach(() => {
-        clearBranchDiffWorkingTreeFiles();
+        clearBranchDiffSession();
     });
 
     it("allows git scheme documents", () => {
@@ -14,7 +14,7 @@ describe("isReviewCommentableDocument", () => {
 
     it("allows working tree files from an open branch diff", () => {
         const filePath = "/repo/src/a.ts";
-        setBranchDiffWorkingTreeFiles([filePath]);
+        setBranchDiffSession("/repo", "abc123", [filePath]);
         expect(isReviewCommentableDocument(Uri.file(filePath))).toBe(true);
     });
 

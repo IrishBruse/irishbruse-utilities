@@ -1,5 +1,5 @@
 import { commands, Uri, window } from "vscode";
-import { setBranchDiffWorkingTreeFiles } from "./branchDiffFiles";
+import { setBranchDiffSession } from "./branchDiffFiles";
 import { getRepositoryByRoot } from "./getGitApi";
 import { toMultiFileDiffEditorUris } from "./gitUri";
 import { getReviewCommentController } from "./reviewCommentController";
@@ -43,7 +43,9 @@ export async function openBranchDiff(repoRoot: string): Promise<void> {
             path: `${repository.rootUri.fsPath}/${mergeBase}..HEAD`,
         });
         const resources = changes.map((change) => toMultiFileDiffEditorUris(change, mergeBase, "HEAD"));
-        setBranchDiffWorkingTreeFiles(
+        setBranchDiffSession(
+            repository.rootUri.fsPath,
+            mergeBase,
             resources
                 .map((resource) => resource.modifiedUri?.fsPath)
                 .filter((filePath): filePath is string => filePath !== undefined)

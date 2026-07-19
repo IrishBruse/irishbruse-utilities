@@ -192,6 +192,20 @@ export enum Commands {
     ReviewCommentEdit = `ib-utilities.reviewComment.edit`,
 
     /**
+     * Revert Hunk to Base
+     * Short Title: Revert hunk
+     * Icon: $(discard)
+     */
+    RevertBranchDiffHunk = `ib-utilities.revertBranchDiffHunk`,
+
+    /**
+     * Revert Selection to Base
+     * Short Title: Revert selection
+     * Icon: $(discard)
+     */
+    RevertBranchDiffSelection = `ib-utilities.revertBranchDiffSelection`,
+
+    /**
      * Snippet Manager
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,

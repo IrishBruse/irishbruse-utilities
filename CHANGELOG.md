@@ -16,6 +16,9 @@
 -   Fix: Action editor icon preview now matches the highlighted icon in the searchable picker
 -   Fix: Update bundled codicons so icons like `git-pull-request-create` render distinctly from `git-pull-request`
 -   Add: Git Helpers base branch picker — choose `develop`, a release branch, or a commit as the diff target
+-   Fix: Action Panel icons like `git-pull-request-create` now render correctly in the sidebar and icon picker
+-   Fix: Action Panel sidebar icons now use theme-aware light/dark SVG colors instead of black
+-   Fix: Restore Action Panel editor icon picker to CSS codicons after sidebar SVG change broke the webview
 
 ## 0.3
 

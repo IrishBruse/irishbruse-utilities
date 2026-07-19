@@ -7,21 +7,6 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("vscode", () => ({
     commands: { executeCommand: mocks.executeCommand },
-    window: {
-        showWarningMessage: vi.fn(),
-    },
-}));
-
-vi.mock("../commands/openPR", () => ({
-    openPR: vi.fn(),
-}));
-
-vi.mock("../git/openBranchDiff", () => ({
-    openBranchDiff: vi.fn(),
-}));
-
-vi.mock("../git/publishReview", () => ({
-    publishReviewToPR: vi.fn(),
 }));
 
 vi.mock("../utils/openAgentTerminal", () => ({
@@ -32,20 +17,10 @@ vi.mock("./getActionPanelActions", () => ({
     getActionPanelAction: vi.fn(),
 }));
 
-vi.mock("./refresh", () => ({
-    refreshActionPanel: vi.fn(),
-}));
-
-import { openPR } from "../commands/openPR";
-import { openBranchDiff } from "../git/openBranchDiff";
-import { publishReviewToPR } from "../git/publishReview";
 import { getActionPanelAction } from "./getActionPanelActions";
 import { runActionPanelItem } from "./runAction";
 
 const mockGetActionPanelAction = vi.mocked(getActionPanelAction);
-const mockOpenPR = vi.mocked(openPR);
-const mockOpenBranchDiff = vi.mocked(openBranchDiff);
-const mockPublishReviewToPR = vi.mocked(publishReviewToPR);
 
 const context = {
     repoRoot: "/repo",
@@ -56,24 +31,8 @@ const context = {
 describe("runActionPanelItem", () => {
     beforeEach(() => {
         mockGetActionPanelAction.mockReset();
-        mockOpenPR.mockReset();
-        mockOpenBranchDiff.mockReset();
-        mockPublishReviewToPR.mockReset();
         mocks.openAgentInEditorTerminal.mockReset();
         mocks.executeCommand.mockReset();
-    });
-
-    it("runs built-in openPR", async () => {
-        mockGetActionPanelAction.mockReturnValue({
-            id: "openPR",
-            label: "Open PR",
-            type: "builtin",
-            builtin: "openPR",
-        });
-
-        await runActionPanelItem("openPR", context);
-
-        expect(mockOpenPR).toHaveBeenCalledWith(undefined, "/repo");
     });
 
     it("runs agent actions with substituted prompts", async () => {
@@ -82,7 +41,6 @@ describe("runActionPanelItem", () => {
             label: "Create PR",
             type: "agent",
             prompt: "/pr create ${branch}",
-            terminalName: "Create PR",
         });
 
         await runActionPanelItem("createPR", context);

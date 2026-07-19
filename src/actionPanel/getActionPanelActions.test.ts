@@ -1,5 +1,4 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { defaultActionPanelActions } from "./defaultActions";
 
 vi.mock("vscode", () => ({
     workspace: {
@@ -17,12 +16,12 @@ describe("getConfiguredActionPanelActions", () => {
         mockGetConfiguration.mockReset();
     });
 
-    it("returns defaults when setting is missing", () => {
+    it("returns an empty list when setting is missing", () => {
         mockGetConfiguration.mockReturnValue({
             get: vi.fn().mockReturnValue(undefined),
         } as never);
 
-        expect(getConfiguredActionPanelActions()).toEqual(defaultActionPanelActions);
+        expect(getConfiguredActionPanelActions()).toEqual([]);
     });
 
     it("returns valid custom actions from settings", () => {
@@ -33,7 +32,6 @@ describe("getConfiguredActionPanelActions", () => {
                     label: "Custom Agent",
                     type: "agent",
                     prompt: "/do ${branch}",
-                    terminalName: "Custom",
                 },
             ]),
         } as never);
@@ -44,17 +42,18 @@ describe("getConfiguredActionPanelActions", () => {
                 label: "Custom Agent",
                 type: "agent",
                 prompt: "/do ${branch}",
-                terminalName: "Custom",
-                when: "always",
             },
         ]);
     });
 
-    it("filters invalid entries and falls back to defaults when none remain", () => {
+    it("filters invalid and legacy built-in entries", () => {
         mockGetConfiguration.mockReturnValue({
-            get: vi.fn().mockReturnValue([{ id: "broken", label: "Broken", type: "agent" }]),
+            get: vi.fn().mockReturnValue([
+                { id: "broken", label: "Broken", type: "agent" },
+                { id: "legacy", label: "Open PR", type: "builtin", builtin: "openPR" },
+            ]),
         } as never);
 
-        expect(getConfiguredActionPanelActions()).toEqual(defaultActionPanelActions);
+        expect(getConfiguredActionPanelActions()).toEqual([]);
     });
 });

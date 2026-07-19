@@ -69,7 +69,7 @@
                 },
                 "ib-utilities.actionPanel.actions": {
                     "type": "array",
-                    "description": "Actions shown in the Action Panel. Built-in actions use type \"builtin\"; Cursor agent prompts use type \"agent\"; VS Code commands use type \"command\".",
+                    "description": "Actions shown in the Action Panel. Cursor agent prompts use type \"agent\"; VS Code commands use type \"command\".",
                     "items": {
                         "type": "object",
                         "required": [
@@ -93,28 +93,14 @@
                             "type": {
                                 "type": "string",
                                 "enum": [
-                                    "builtin",
                                     "agent",
                                     "command"
                                 ],
                                 "description": "Action type."
                             },
-                            "builtin": {
-                                "type": "string",
-                                "enum": [
-                                    "openPR",
-                                    "diffWithBase",
-                                    "publishReview"
-                                ],
-                                "description": "Built-in handler when type is builtin."
-                            },
                             "prompt": {
                                 "type": "string",
-                                "description": "Agent prompt when type is agent. Supports ${branch}, ${repoRoot}, and ${baseBranch}."
-                            },
-                            "terminalName": {
-                                "type": "string",
-                                "description": "Terminal tab name for agent actions."
+                                "description": "Agent prompt when type is agent. Supports ${branch}, ${repoRoot}, and ${baseBranch} when git is available."
                             },
                             "command": {
                                 "type": "string",
@@ -124,37 +110,10 @@
                                 "type": "array",
                                 "description": "Optional arguments passed to the VS Code command.",
                                 "items": {}
-                            },
-                            "when": {
-                                "type": "string",
-                                "enum": [
-                                    "always",
-                                    "hasBaseBranch",
-                                    "hasUnpublishedNotes"
-                                ],
-                                "default": "always",
-                                "description": "When to show this action."
                             }
                         }
                     },
-                    "default": [
-                        {
-                            "id": "createPR",
-                            "label": "Create PR",
-                            "icon": "git-pull-request-create",
-                            "type": "agent",
-                            "prompt": "/pr create",
-                            "terminalName": "Create PR"
-                        },
-                        {
-                            "id": "updatePR",
-                            "label": "Update PR",
-                            "icon": "git-pull-request",
-                            "type": "agent",
-                            "prompt": "/pr update",
-                            "terminalName": "Update PR"
-                        }
-                    ]
+                    "default": []
                 }
             }
         },
@@ -328,6 +287,24 @@
                 "icon": "$(run)"
             },
             {
+                "command": "ib-utilities.addActionPanelAction",
+                "title": "Add Action",
+                "shortTitle": "Add action",
+                "icon": "$(add)"
+            },
+            {
+                "command": "ib-utilities.editActionPanelAction",
+                "title": "Edit Action",
+                "shortTitle": "Edit action",
+                "icon": "$(edit)"
+            },
+            {
+                "command": "ib-utilities.deleteActionPanelAction",
+                "title": "Delete Action",
+                "shortTitle": "Delete action",
+                "icon": "$(trash)"
+            },
+            {
                 "command": "ib-utilities.diffWithBase",
                 "title": "Diff vs Base Branch",
                 "shortTitle": "Diff vs base",
@@ -462,6 +439,16 @@
                     "command": "ib-utilities.deleteSnippet",
                     "when": "view == snippetView && viewItem == file",
                     "group": "inline"
+                },
+                {
+                    "command": "ib-utilities.editActionPanelAction",
+                    "when": "view == ib-utilities.actionPanel && viewItem == action",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "ib-utilities.deleteActionPanelAction",
+                    "when": "view == ib-utilities.actionPanel && viewItem == action",
+                    "group": "inline@2"
                 }
             ],
             "view/title": [
@@ -478,6 +465,11 @@
                 {
                     "command": "ib-utilities.openPR",
                     "when": "view == ib-utilities.gitHelpers",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.addActionPanelAction",
+                    "when": "view == ib-utilities.actionPanel",
                     "group": "navigation"
                 }
             ]

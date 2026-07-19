@@ -94,6 +94,27 @@ export enum Commands {
     RunActionPanelItem = `ib-utilities.runActionPanelItem`,
 
     /**
+     * Add Action
+     * Short Title: Add action
+     * Icon: $(add)
+     */
+    AddActionPanelAction = `ib-utilities.addActionPanelAction`,
+
+    /**
+     * Edit Action
+     * Short Title: Edit action
+     * Icon: $(edit)
+     */
+    EditActionPanelAction = `ib-utilities.editActionPanelAction`,
+
+    /**
+     * Delete Action
+     * Short Title: Delete action
+     * Icon: $(trash)
+     */
+    DeleteActionPanelAction = `ib-utilities.deleteActionPanelAction`,
+
+    /**
      * Diff vs Base Branch
      * Short Title: Diff vs base
      * Icon: $(diff)
@@ -212,7 +233,7 @@ export enum Configuration {
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
 
     /**
-     * Actions shown in the Action Panel. Built-in actions use type "builtin"; Cursor agent prompts use type "agent"; VS Code commands use type "command".
+     * Actions shown in the Action Panel. Cursor agent prompts use type "agent"; VS Code commands use type "command".
      */
     ActionPanelActions = `ib-utilities.actionPanel.actions`,
 

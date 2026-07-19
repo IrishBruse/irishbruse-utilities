@@ -12,9 +12,17 @@ A [Visual Studio Code](https://code.visualstudio.com/) extension: snippet manage
 
 Tree view under the **Snippet Manager** activity bar: create, edit, and delete snippets in folders; map snippet files to [language IDs](https://code.visualstudio.com/docs/languages/overview) for highlighting; and auto-generate snippets from multiple language sources using the settings below.
 
-### GitHub
+### Git Helpers (Source Control)
 
-From the Source Control title bar (when using Git), **Open Pull Request** opens the PR for the current branch in the browser (via `git`, not the GitHub CLI).
+A **Git Helpers** panel in the Source Control sidebar shows hardcoded git workflow actions for the **active repository**:
+
+- **Diff vs base** — multi-file diff of your branch against an auto-detected base (`main` / `origin/main`, etc.), with a gear control to pick a different comparison branch or commit
+- **Review notes** — add inline comments in git diffs. **Publish to PR** posts line comments via `gh`
+- **Pull request** — clickable row opens the GitHub PR for the current branch, or **Create draft PR** creates a blank draft when none exists. Title bar button opens the PR (or repo homepage if none)
+
+### Action Panel
+
+An **Actions** activity bar panel for customizable shortcuts: built-in actions, Cursor agent prompts, and VS Code commands via `ib-utilities.actionPanel.actions`.
 
 ### Relative goto
 
@@ -51,6 +59,31 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 }
 ```
 
+Customize Action Panel entries (built-in, Cursor agent prompt, or VS Code command):
+
+```json
+{
+  "ib-utilities.actionPanel.actions": [
+    {
+      "id": "createPR",
+      "label": "Create PR",
+      "icon": "git-pull-request-create",
+      "type": "agent",
+      "prompt": "/pr create",
+      "terminalName": "Create PR"
+    },
+    {
+      "id": "custom",
+      "label": "Run tests",
+      "icon": "beaker",
+      "type": "command",
+      "command": "workbench.action.tasks.runTask",
+      "args": ["test"]
+    }
+  ]
+}
+```
+
 ## Commands
 
 | Command | Title |
@@ -65,6 +98,15 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 | `ib-utilities.deleteSnippet` | Delete snippet |
 | `ib-utilities.openMermaidPreview` | Open Preview |
 | `ib-utilities.openMermaidSource` | Open Source |
+| `ib-utilities.showActionPanel` | Show Action Panel |
+| `ib-utilities.showGitHelpers` | Show Git Helpers |
+| `ib-utilities.createDraftPR` | Create Draft Pull Request |
+| `ib-utilities.runActionPanelItem` | Run Action Panel Item |
+| `ib-utilities.diffWithBase` | Diff vs Base Branch |
+| `ib-utilities.setBaseBranch` | Set base branch for diffs and review notes |
+| `ib-utilities.addReviewNote` | Add Review Note |
+| `ib-utilities.publishReviewToPR` | Publish Review to PR |
+| `ib-utilities.exportReviewSummary` | Export Review Summary |
 
 ## Development
 

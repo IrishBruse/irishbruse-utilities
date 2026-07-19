@@ -5,6 +5,12 @@
     "tasks": [
         {
             "type": "npm",
+            "script": "build",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "type": "npm",
             "script": "watch",
             "problemMatcher": [],
             "isBackground": true,

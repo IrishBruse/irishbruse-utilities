@@ -17,11 +17,13 @@
         "Other"
     ],
     "activationEvents": [
-        "onStartupFinished"
+        "onStartupFinished",
+        "onView:ib-utilities.actionPanel",
+        "onView:ib-utilities.gitHelpers"
     ],
     "scripts": {
         "vscode:prepublish": "npm run package",
-        "build": "node esbuild.mjs",
+        "build": "node scripts/generate-codicon-assets.mjs && node esbuild.mjs",
         "watch": "node esbuild.mjs --watch",
         "package": "node esbuild.mjs --production",
         "lint": "eslint src && tsc --noEmit",
@@ -30,8 +32,8 @@
         "package:vsix": "vsce package --out ib-utilities-$(node -p \"require('./package.json').version\").vsix",
         "release": "node scripts/release.mjs",
         "test:watch": "vitest watch",
-        "generate:contributes": "tsx --experimental-transform-types generators/contributes.generator.ts",
-        "generate:contributes:watch": "tsx --watch --experimental-transform-types generators/contributes.generator.ts"
+        "generate:contributes": "node generators/contributes.generator.ts",
+        "generate:contributes:watch": "node --watch generators/contributes.generator.ts"
     },
     "main": "./dist/extension.js",
     "contributes": {
@@ -64,6 +66,59 @@
                         "typescriptreact": "node,react",
                         "javascriptreact": "node,react"
                     }
+                },
+                "ib-utilities.jira.keyPattern": {
+                    "type": "string",
+                    "description": "Regular expression used to match Jira issue keys in PR titles and branch names. Defaults to the pattern used by the jira CLI.",
+                    "default": "[A-Z][A-Z0-9_]*-\\d+"
+                },
+                "ib-utilities.actionPanel.actions": {
+                    "type": "array",
+                    "description": "Actions shown in the Action Panel. Cursor agent prompts use type \"agent\"; VS Code commands use type \"command\".",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "id",
+                            "label",
+                            "type"
+                        ],
+                        "properties": {
+                            "id": {
+                                "type": "string",
+                                "description": "Unique action id."
+                            },
+                            "label": {
+                                "type": "string",
+                                "description": "Label shown in the panel."
+                            },
+                            "icon": {
+                                "type": "string",
+                                "description": "Codicon name without $(), e.g. github."
+                            },
+                            "type": {
+                                "type": "string",
+                                "enum": [
+                                    "agent",
+                                    "command"
+                                ],
+                                "description": "Action type."
+                            },
+                            "prompt": {
+                                "type": "string",
+                                "description": "Agent prompt when type is agent. Supports ${branch}, ${repoRoot}, ${baseBranch}, ${file}, and ${selection}."
+                            },
+                            "command": {
+                                "type": "string",
+                                "description": "VS Code command id when type is command."
+                            },
+                            "args": {
+                                "type": "array",
+                                "description": "Optional arguments passed to the VS Code command.",
+                                "items": {}
+                            }
+                        }
+                    },
+                    "default": []
                 }
             }
         },
@@ -126,6 +181,11 @@
                     "id": "snippetContainer",
                     "title": "Snippet Manager",
                     "icon": "media/snippet_icon.svg"
+                },
+                {
+                    "id": "actionPanel",
+                    "title": "Actions",
+                    "icon": "$(run-all)"
                 }
             ]
         },
@@ -135,6 +195,24 @@
                     "id": "snippetView",
                     "name": "Groups",
                     "icon": "media/snippet_icon.svg"
+                }
+            ],
+            "actionPanel": [
+                {
+                    "id": "ib-utilities.actionPanel",
+                    "name": "Actions",
+                    "icon": "$(run-all)",
+                    "contextualTitle": "Actions",
+                    "visibility": "visible"
+                }
+            ],
+            "scm": [
+                {
+                    "id": "ib-utilities.gitHelpers",
+                    "name": "Git Helpers",
+                    "icon": "$(git-branch)",
+                    "contextualTitle": "Git Helpers",
+                    "visibility": "visible"
                 }
             ]
         },
@@ -161,6 +239,60 @@
                 "icon": "$(github)"
             },
             {
+                "command": "ib-utilities.createDraftPR",
+                "title": "Create Draft Pull Request",
+                "shortTitle": "Create draft PR",
+                "icon": "$(git-pull-request-create)"
+            },
+            {
+                "command": "ib-utilities.markPrReady",
+                "title": "Mark Pull Request Ready",
+                "shortTitle": "Mark ready",
+                "icon": "$(check)"
+            },
+            {
+                "command": "ib-utilities.copyPrUrl",
+                "title": "Copy Pull Request URL",
+                "shortTitle": "Copy PR URL",
+                "icon": "$(copy)"
+            },
+            {
+                "command": "ib-utilities.openFailedJobLog",
+                "title": "Open Failed Job Log",
+                "shortTitle": "Open failed job log",
+                "icon": "$(warning)"
+            },
+            {
+                "command": "ib-utilities.openPrChanges",
+                "title": "Open Pull Request Changes",
+                "shortTitle": "Open PR changes",
+                "icon": "$(git-compare)"
+            },
+            {
+                "command": "ib-utilities.openPrReview",
+                "title": "Open Pull Request Review",
+                "shortTitle": "Open PR review",
+                "icon": "$(comment-discussion)"
+            },
+            {
+                "command": "ib-utilities.openJiraTicket",
+                "title": "Open Jira Ticket",
+                "shortTitle": "Open Jira",
+                "icon": "$(link-external)"
+            },
+            {
+                "command": "ib-utilities.copyJiraKey",
+                "title": "Copy Jira Key",
+                "shortTitle": "Copy Jira key",
+                "icon": "$(copy)"
+            },
+            {
+                "command": "ib-utilities.addJiraKeyToPrTitle",
+                "title": "Add Jira Key to PR Title",
+                "shortTitle": "Add Jira key",
+                "icon": "$(edit)"
+            },
+            {
                 "command": "ib-utilities.refreshSnippetView",
                 "title": "Refresh Snippets",
                 "shortTitle": "Refresh",
@@ -185,6 +317,11 @@
                 "icon": "$(trash)"
             },
             {
+                "command": "ib-utilities.terminalPaste",
+                "title": "Terminal paste (text or image)",
+                "shortTitle": "Terminal paste"
+            },
+            {
                 "command": "ib-utilities.openMermaidPreview",
                 "title": "Open Preview",
                 "shortTitle": "Open Preview",
@@ -195,6 +332,112 @@
                 "title": "Open Source",
                 "shortTitle": "Open Source",
                 "icon": "$(code)"
+            },
+            {
+                "command": "ib-utilities.showGitHelpers",
+                "title": "Show Git Helpers",
+                "shortTitle": "Git Helpers",
+                "icon": "$(git-branch)"
+            },
+            {
+                "command": "ib-utilities.refreshGitHelpers",
+                "title": "Refresh Git Helpers",
+                "shortTitle": "Refresh",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "ib-utilities.showActionPanel",
+                "title": "Show Action Panel",
+                "shortTitle": "Actions",
+                "icon": "$(run-all)"
+            },
+            {
+                "command": "ib-utilities.runActionPanelItem",
+                "title": "Run Action Panel Item",
+                "icon": "$(run)"
+            },
+            {
+                "command": "ib-utilities.addActionPanelAction",
+                "title": "Add Action",
+                "shortTitle": "Add action",
+                "icon": "$(add)"
+            },
+            {
+                "command": "ib-utilities.editActionPanelAction",
+                "title": "Edit Action",
+                "shortTitle": "Edit action",
+                "icon": "$(edit)"
+            },
+            {
+                "command": "ib-utilities.deleteActionPanelAction",
+                "title": "Delete Action",
+                "shortTitle": "Delete action",
+                "icon": "$(trash)"
+            },
+            {
+                "command": "ib-utilities.diffWithBase",
+                "title": "Diff vs Base Branch",
+                "shortTitle": "Diff vs base",
+                "icon": "$(diff)"
+            },
+            {
+                "command": "ib-utilities.setBaseBranch",
+                "title": "Set Base Branch",
+                "shortTitle": "Set base",
+                "icon": "$(gear)"
+            },
+            {
+                "command": "ib-utilities.addReviewNote",
+                "title": "Add Review Note",
+                "shortTitle": "Add note",
+                "icon": "$(note)"
+            },
+            {
+                "command": "ib-utilities.publishReviewToPR",
+                "title": "Publish Review to PR",
+                "shortTitle": "Publish to PR",
+                "icon": "$(comment-discussion)"
+            },
+            {
+                "command": "ib-utilities.exportReviewSummary",
+                "title": "Export Review Summary",
+                "shortTitle": "Export summary",
+                "icon": "$(export)"
+            },
+            {
+                "command": "ib-utilities.reviewComment.create",
+                "title": "Save",
+                "enablement": "!commentIsEmpty"
+            },
+            {
+                "command": "ib-utilities.reviewComment.save",
+                "title": "Save"
+            },
+            {
+                "command": "ib-utilities.reviewComment.cancel",
+                "title": "Cancel"
+            },
+            {
+                "command": "ib-utilities.reviewComment.delete",
+                "title": "Delete",
+                "icon": "$(trash)"
+            },
+            {
+                "command": "ib-utilities.reviewComment.edit",
+                "title": "Edit note",
+                "icon": "$(edit)"
+            },
+            {
+                "command": "ib-utilities.revertBranchDiffHunk",
+                "title": "Revert Hunk to Base",
+                "shortTitle": "Revert hunk",
+                "icon": "$(discard)"
+            },
+            {
+                "command": "ib-utilities.revertBranchDiffSelection",
+                "title": "Revert Selection to Base",
+                "shortTitle": "Revert selection",
+                "icon": "$(discard)"
             }
         ],
         "menus": {
@@ -208,13 +451,84 @@
                     "command": "ib-utilities.openMermaidSource",
                     "when": "activeCustomEditorId == 'ib-utilities.mermaidPreview'",
                     "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.addReviewNote",
+                    "when": "resourceScheme == git || ib-utilities.inBranchDiffFile",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "ib-utilities.publishReviewToPR",
+                    "when": "resourceScheme == git",
+                    "group": "navigation@2"
                 }
             ],
-            "scm/title": [
+            "editor/context": [
                 {
-                    "command": "ib-utilities.openPR",
-                    "when": "scmProvider == git",
-                    "group": "navigation"
+                    "command": "ib-utilities.revertBranchDiffSelection",
+                    "when": "ib-utilities.inBranchDiffFile && editorHasSelection && inDiffEditor",
+                    "group": "ib-utilities@0"
+                },
+                {
+                    "command": "ib-utilities.revertBranchDiffHunk",
+                    "when": "ib-utilities.inBranchDiffFile && !editorHasSelection && inDiffEditor",
+                    "group": "ib-utilities@0"
+                },
+                {
+                    "command": "ib-utilities.addReviewNote",
+                    "when": "resourceScheme == git || ib-utilities.inBranchDiffFile",
+                    "group": "ib-utilities@1"
+                }
+            ],
+            "commandPalette": [
+                {
+                    "command": "ib-utilities.reviewComment.create",
+                    "when": "false"
+                },
+                {
+                    "command": "ib-utilities.reviewComment.save",
+                    "when": "false"
+                },
+                {
+                    "command": "ib-utilities.reviewComment.cancel",
+                    "when": "false"
+                },
+                {
+                    "command": "ib-utilities.reviewComment.delete",
+                    "when": "false"
+                }
+            ],
+            "comments/commentThread/title": [
+                {
+                    "command": "ib-utilities.reviewComment.delete",
+                    "group": "navigation@2",
+                    "when": "commentController == ib-utilities.review && !commentThreadIsEmpty"
+                }
+            ],
+            "comments/commentThread/context": [
+                {
+                    "command": "ib-utilities.reviewComment.create",
+                    "group": "inline",
+                    "when": "commentController == ib-utilities.review && commentThreadIsEmpty"
+                }
+            ],
+            "comments/comment/context": [
+                {
+                    "command": "ib-utilities.reviewComment.save",
+                    "group": "inline@1",
+                    "when": "commentController == ib-utilities.review && comment == editing"
+                },
+                {
+                    "command": "ib-utilities.reviewComment.cancel",
+                    "group": "inline@2",
+                    "when": "commentController == ib-utilities.review && comment == editing"
+                }
+            ],
+            "comments/comment/title": [
+                {
+                    "command": "ib-utilities.reviewComment.edit",
+                    "group": "group@1",
+                    "when": "commentController == ib-utilities.review && comment == note && commentThread != published"
                 }
             ],
             "view/item/context": [
@@ -232,6 +546,36 @@
                     "command": "ib-utilities.deleteSnippet",
                     "when": "view == snippetView && viewItem == file",
                     "group": "inline"
+                },
+                {
+                    "command": "ib-utilities.editActionPanelAction",
+                    "when": "view == ib-utilities.actionPanel && viewItem == action",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "ib-utilities.deleteActionPanelAction",
+                    "when": "view == ib-utilities.actionPanel && viewItem == action",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "ib-utilities.setBaseBranch",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase",
+                    "group": "inline"
+                },
+                {
+                    "command": "ib-utilities.markPrReady",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == action-openPr-draft",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "ib-utilities.copyPrUrl",
+                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr || viewItem == action-openPr-draft)",
+                    "group": "inline@2"
+                },
+                {
+                    "command": "ib-utilities.copyJiraKey",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == action-openJira",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -244,30 +588,43 @@
                     "command": "ib-utilities.refreshSnippetView",
                     "when": "view == snippetView",
                     "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.openPR",
+                    "when": "view == ib-utilities.gitHelpers",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.refreshGitHelpers",
+                    "when": "view == ib-utilities.gitHelpers",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.addActionPanelAction",
+                    "when": "view == ib-utilities.actionPanel",
+                    "group": "navigation"
                 }
             ]
         }
     },
     "devDependencies": {
-        "@types/cjson": "^0.5.3",
         "@types/mocha": "^10.0.10",
-        "@types/node": "^24.12.2",
-        "@types/vscode": "^1.110.0",
-        "@typescript-eslint/eslint-plugin": "^8.58.1",
-        "@typescript-eslint/parser": "^8.58.1",
-        "@vitest/coverage-v8": "^4.1.0",
-        "@vscode/vsce": "^3.3.2",
-        "esbuild": "0.27.4",
-        "eslint": "^9.39.4",
-        "ts-loader": "^9.5.4",
-        "tsx": "^4.21.0",
-        "typescript": "^6.0.2",
-        "vitest": "^4.1.0",
-        "webpack": "^5.105.4",
-        "webpack-cli": "^7.0.2"
+        "@types/node": "^24.13.3",
+        "@types/vscode": "^1.125.0",
+        "@typescript-eslint/eslint-plugin": "^8.64.0",
+        "@typescript-eslint/parser": "^8.64.0",
+        "@vitest/coverage-v8": "^4.1.10",
+        "@vscode/vsce": "^3.9.2",
+        "esbuild": "0.28.1",
+        "eslint": "^9.39.5",
+        "opentype.js": "^1.3.4",
+        "ts-loader": "^9.6.2",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.10",
+        "webpack": "^5.108.4",
+        "webpack-cli": "^7.2.1"
     },
     "dependencies": {
-        "cjson": "^0.5.0",
-        "mermaid": "^11.12.0"
+        "mermaid": "^11.16.0"
     }
 }

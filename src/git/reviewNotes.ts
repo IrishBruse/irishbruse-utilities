@@ -128,3 +128,16 @@ export function formatReviewSummary(data: ReviewNotesFile): string {
 export function countUnpublishedNotes(data: ReviewNotesFile): number {
     return data.notes.filter((n) => !n.published).length;
 }
+
+export function findNoteAtLocation(
+    data: ReviewNotesFile,
+    file: string,
+    line: number,
+    side: ReviewNoteSide
+): ReviewNote | undefined {
+    const normalizedFile = file.replace(/\\/g, "/");
+    return data.notes.find(
+        (note) =>
+            note.file.replace(/\\/g, "/") === normalizedFile && note.line === line && note.side === side
+    );
+}

@@ -11,6 +11,7 @@ import {
     MarkdownString,
     Range,
     TextEditor,
+    Uri,
     window,
 } from "vscode";
 import { Commands } from "../constants";
@@ -27,6 +28,7 @@ import { getGitApi, getRepositoryByRoot } from "./getGitApi";
 import {
     addReviewNote,
     deleteReviewNote,
+    findNoteAtLocation,
     loadReviewNotes,
     updateReviewNote,
     type ReviewNote,
@@ -34,9 +36,11 @@ import {
 } from "./reviewNotes";
 import { resolveBaseBranch, resolveMergeBaseSha } from "./resolveBaseBranch";
 import { refreshGitPanels } from "./refreshPanels";
+import { isReviewCommentableDocument, reviewCommentingRanges } from "./reviewCommentingRanges";
+import { ReviewNoteEditor } from "./reviewNoteEditor";
 
 const CONTROLLER_ID = "ib-utilities.review";
-const AUTHOR = { name: "Review note" };
+const AUTHOR = { name: "" };
 
 type ThreadMeta = {
     repoRoot: string;
@@ -68,20 +72,32 @@ export function activateReviewCommentController(context: ExtensionContext): Revi
 
 export class ReviewCommentController {
     private readonly controller: CommentController;
+    private readonly noteEditor: ReviewNoteEditor;
     private readonly threadMeta = new WeakMap<CommentThread, ThreadMeta>();
-    private readonly commentSavedBody = new WeakMap<Comment, string | MarkdownString>();
     private readonly threadByNoteId = new Map<string, CommentThread>();
     private readonly draftThreads = new Set<CommentThread>();
     private activeRepoRoot: string | undefined;
 
     constructor(context: ExtensionContext) {
+        this.noteEditor = new ReviewNoteEditor(context);
         this.controller = comments.createCommentController(CONTROLLER_ID, "Review note");
         this.controller.options = {
             prompt: "Why was this change made?",
             placeHolder: "Review note (Markdown supported)",
         };
+        this.controller.commentingRangeProvider = {
+            provideCommentingRanges: (document) => {
+                if (!isReviewCommentableDocument(document.uri)) {
+                    return null;
+                }
+                return {
+                    ranges: reviewCommentingRanges(document.lineCount),
+                    enableFileComments: false,
+                };
+            },
+        };
 
-        context.subscriptions.push(this.controller);
+        context.subscriptions.push(this.controller, this.noteEditor);
         context.subscriptions.push(
             window.onDidChangeActiveTextEditor((editor) => {
                 if (editor?.document.uri.scheme === "git") {
@@ -94,8 +110,7 @@ export class ReviewCommentController {
         );
 
         registerCommandIB(Commands.ReviewCommentCreate, (reply) => this.handleCreate(reply), context);
-        registerCommandIB(Commands.ReviewCommentSave, (comment) => this.handleSave(comment), context);
-        registerCommandIB(Commands.ReviewCommentCancel, (comment) => this.handleCancel(comment), context);
+        registerCommandIB(Commands.ReviewCommentOpenEditor, (thread) => this.handleOpenEditor(thread), context);
         registerCommandIB(Commands.ReviewCommentDelete, (thread) => this.handleDelete(thread), context);
         registerCommandIB(Commands.ReviewCommentEdit, (comment) => this.handleEdit(comment), context);
     }
@@ -145,64 +160,41 @@ export class ReviewCommentController {
             return;
         }
 
-        const repository = getRepositoryByRoot(repoRoot);
-        const head = repository?.state.HEAD;
-        if (!head?.name) {
-            window.showWarningMessage("Could not determine current branch.");
+        if (!isReviewCommentableDocument(editor.document.uri)) {
+            window.showWarningMessage("Open a git diff to add a review note.");
             return;
         }
 
-        const file = repoRelativePath(editor.document.uri, repoRoot);
-        if (!file) {
+        const line = editor.selection.active.line + 1;
+        const meta = await this.buildThreadMeta(editor.document.uri, line, true, repoRoot);
+        if (!meta) {
             window.showWarningMessage("Open a file in this repository to add a review note.");
             return;
         }
 
-        const baseBranch = (await resolveBaseBranch(repository!))?.name ?? "main";
-        const refs = await this.resolveRefs(repoRoot);
-        const mergeBaseSha = refs?.mergeBaseRef;
-        const parsed = parseGitDocumentUri(editor.document.uri);
-        const side = parsed ? sideFromGitRef(parsed.ref, mergeBaseSha) : "RIGHT";
-        const line = editor.selection.active.line + 1;
-
-        this.disposeDraftThreads();
-
-        const range = new Range(line - 1, 0, line - 1, 0);
-        const thread = this.controller.createCommentThread(editor.document.uri, range, []);
-        const comment = this.makeComment("", CommentMode.Editing, thread);
-        thread.comments = [comment];
-        thread.collapsibleState = CommentThreadCollapsibleState.Expanded;
-        thread.contextValue = "draft";
-
-        this.draftThreads.add(thread);
-        this.threadMeta.set(thread, {
-            repoRoot,
-            branch: head.name,
-            baseBranch,
-            file: file.replace(/\\/g, "/"),
-            line,
-            side,
-            isDraft: true,
-        });
+        await this.openNoteEditor(undefined, meta, editor.document.uri);
     }
 
     private async handleCreate(reply: CommentReply): Promise<void> {
-        const text = this.commentText(reply.text);
-        if (!text) {
-            return;
-        }
-        await this.persistThread(reply.thread, text);
+        await this.handleOpenEditor(reply.thread, reply.text);
     }
 
-    private async handleSave(comment: ReviewComment): Promise<void> {
-        const thread = comment.parent;
-        if (!thread) {
+    private async handleOpenEditor(thread: CommentThread, initialText = ""): Promise<void> {
+        const meta = await this.ensureThreadMeta(thread);
+        if (!meta) {
             return;
         }
 
-        const text = this.commentText(comment.body);
-        if (!text) {
-            window.showWarningMessage("Review note cannot be empty.");
+        const data = await loadReviewNotes(meta.repoRoot, meta.branch);
+        const existing = findNoteAtLocation(data, meta.file, meta.line, meta.side);
+        const prefilled = this.commentText(initialText) || existing?.body || "";
+
+        await this.openNoteEditor(thread, meta, thread.uri, prefilled);
+    }
+
+    private async handleEdit(comment: ReviewComment): Promise<void> {
+        const thread = this.findThreadForComment(comment);
+        if (!thread || this.isPublishedThread(thread)) {
             return;
         }
 
@@ -211,40 +203,7 @@ export class ReviewCommentController {
             return;
         }
 
-        if (meta.isDraft) {
-            await this.persistThread(thread, text);
-            return;
-        }
-
-        if (!meta.noteId) {
-            return;
-        }
-
-        await updateReviewNote(meta.repoRoot, meta.branch, meta.noteId, text);
-        comment.savedBody = comment.body;
-        comment.mode = CommentMode.Preview;
-        this.commentSavedBody.set(comment, comment.body);
-    }
-
-    private handleCancel(comment: ReviewComment): void {
-        const thread = comment.parent;
-        if (!thread) {
-            return;
-        }
-
-        const meta = this.threadMeta.get(thread);
-        if (!meta) {
-            return;
-        }
-
-        if (meta.isDraft) {
-            this.draftThreads.delete(thread);
-            thread.dispose();
-            return;
-        }
-
-        comment.body = comment.savedBody ?? this.commentSavedBody.get(comment) ?? comment.body;
-        comment.mode = CommentMode.Preview;
+        await this.openNoteEditor(thread, meta, thread.uri);
     }
 
     private async handleDelete(thread: CommentThread): Promise<void> {
@@ -265,52 +224,91 @@ export class ReviewCommentController {
             this.threadByNoteId.delete(meta.noteId);
         }
         thread.dispose();
+        refreshGitPanels();
     }
 
-    private handleEdit(comment: ReviewComment): void {
-        this.commentSavedBody.set(comment, comment.body);
-        comment.mode = CommentMode.Editing;
-    }
+    private async openNoteEditor(
+        gutterThread: CommentThread | undefined,
+        meta: ThreadMeta,
+        uri: Uri,
+        prefilledBody?: string
+    ): Promise<void> {
+        const data = await loadReviewNotes(meta.repoRoot, meta.branch);
+        const existing = findNoteAtLocation(data, meta.file, meta.line, meta.side);
+        const readOnly = existing?.published ?? false;
 
-    private async persistThread(thread: CommentThread, body: string): Promise<void> {
-        const meta = this.threadMeta.get(thread);
-        if (!meta) {
+        if (gutterThread) {
+            this.disposeGutterThread(gutterThread);
+        }
+
+        const result = await this.noteEditor.open({
+            location: this.formatLocation(meta),
+            body: prefilledBody ?? existing?.body ?? "",
+            readOnly,
+        });
+
+        if (result === undefined) {
             return;
         }
 
-        if (meta.isDraft) {
-            const note = await addReviewNote(
-                meta.repoRoot,
-                meta.branch,
-                meta.baseBranch,
-                meta.file,
-                meta.line,
-                meta.side,
-                body
-            );
-            meta.isDraft = false;
-            meta.noteId = note.id;
-            thread.contextValue = undefined;
-            thread.collapsibleState = CommentThreadCollapsibleState.Collapsed;
-            this.draftThreads.delete(thread);
-            this.threadByNoteId.set(note.id, thread);
-
-            const comment = thread.comments[0] as ReviewComment;
-            comment.body = body;
-            comment.mode = CommentMode.Preview;
-            comment.savedBody = body;
-            refreshGitPanels();
+        const text = result.trim();
+        if (!text) {
+            window.showWarningMessage("Review note cannot be empty.");
             return;
         }
 
-        if (meta.noteId) {
-            await updateReviewNote(meta.repoRoot, meta.branch, meta.noteId, body);
-            refreshGitPanels();
+        const note = await this.saveNote(meta, existing, text);
+        if (!note) {
+            return;
         }
+
+        this.upsertThreadForNote(uri, note, meta);
+        refreshGitPanels();
+    }
+
+    private async saveNote(
+        meta: ThreadMeta,
+        existing: ReviewNote | undefined,
+        body: string
+    ): Promise<ReviewNote | undefined> {
+        if (existing) {
+            return updateReviewNote(meta.repoRoot, meta.branch, existing.id, body);
+        }
+
+        return addReviewNote(
+            meta.repoRoot,
+            meta.branch,
+            meta.baseBranch,
+            meta.file,
+            meta.line,
+            meta.side,
+            body
+        );
+    }
+
+    private upsertThreadForNote(uri: Uri, note: ReviewNote, meta: ThreadMeta): void {
+        const existingThread = this.threadByNoteId.get(note.id);
+        if (existingThread) {
+            this.updateThreadBody(existingThread, note);
+            this.threadMeta.set(existingThread, {
+                ...meta,
+                isDraft: false,
+                noteId: note.id,
+            });
+            return;
+        }
+
+        this.createThreadForNote(uri, note, meta.repoRoot, meta.baseBranch, meta.branch);
+    }
+
+    private disposeGutterThread(thread: CommentThread): void {
+        this.draftThreads.delete(thread);
+        this.threadMeta.delete(thread);
+        thread.dispose();
     }
 
     private createThreadForNote(
-        uri: import("vscode").Uri,
+        uri: Uri,
         note: ReviewNote,
         repoRoot: string,
         baseBranch: string,
@@ -319,12 +317,10 @@ export class ReviewCommentController {
         const line = Math.max(0, note.line - 1);
         const range = new Range(line, 0, line, 0);
         const thread = this.controller.createCommentThread(uri, range, []);
-        const comment = this.makeComment(note.body, CommentMode.Preview, thread);
-        thread.comments = [comment];
+        this.configureThread(thread);
+        this.setThreadDisplayComment(thread, note.body);
         thread.collapsibleState = CommentThreadCollapsibleState.Collapsed;
-        if (note.published) {
-            thread.contextValue = "published";
-        }
+        thread.contextValue = note.published ? "published" : undefined;
 
         this.threadMeta.set(thread, {
             repoRoot,
@@ -341,16 +337,9 @@ export class ReviewCommentController {
     }
 
     private updateThreadBody(thread: CommentThread, note: ReviewNote): void {
-        if (thread.comments.length === 0) {
-            thread.comments = [this.makeComment(note.body, CommentMode.Preview, thread)];
-            return;
-        }
-        const comment = thread.comments[0] as ReviewComment;
-        comment.parent = thread;
-        comment.body = note.body;
-        comment.savedBody = note.body;
-        comment.mode = CommentMode.Preview;
+        this.setThreadDisplayComment(thread, note.body);
         thread.contextValue = note.published ? "published" : undefined;
+        thread.collapsibleState = CommentThreadCollapsibleState.Collapsed;
     }
 
     private resolveUriForNote(
@@ -358,7 +347,7 @@ export class ReviewCommentController {
         note: ReviewNote,
         refs: NoteUriRefs | undefined,
         mergeBaseSha?: string
-    ): import("vscode").Uri | undefined {
+    ): Uri | undefined {
         for (const editor of window.visibleTextEditors) {
             if (noteMatchesGitUri(note, editor.document.uri, repoRoot, mergeBaseSha)) {
                 return editor.document.uri;
@@ -384,8 +373,131 @@ export class ReviewCommentController {
         };
     }
 
+    private async ensureThreadMeta(thread: CommentThread): Promise<ThreadMeta | undefined> {
+        const existing = this.threadMeta.get(thread);
+        if (existing) {
+            return existing;
+        }
+
+        const range = thread.range;
+        if (!range) {
+            return undefined;
+        }
+
+        const line = range.start.line + 1;
+        const meta = await this.buildThreadMeta(thread.uri, line, true);
+        if (!meta) {
+            return undefined;
+        }
+
+        const adopted = await this.adoptExistingNote(thread, meta);
+        if (!adopted) {
+            return undefined;
+        }
+
+        this.threadMeta.set(thread, adopted);
+        if (adopted.isDraft) {
+            thread.contextValue = "draft";
+            this.draftThreads.add(thread);
+        }
+        this.configureThread(thread);
+        return adopted;
+    }
+
+    private async adoptExistingNote(thread: CommentThread, meta: ThreadMeta): Promise<ThreadMeta | undefined> {
+        const data = await loadReviewNotes(meta.repoRoot, meta.branch);
+        const existing = findNoteAtLocation(data, meta.file, meta.line, meta.side);
+        if (!existing) {
+            return meta;
+        }
+
+        const existingThread = this.threadByNoteId.get(existing.id);
+        if (existingThread && existingThread !== thread) {
+            thread.dispose();
+            const existingMeta = this.threadMeta.get(existingThread) ?? {
+                ...meta,
+                isDraft: false,
+                noteId: existing.id,
+            };
+            void this.openNoteEditor(existingThread, existingMeta, existingThread.uri);
+            return undefined;
+        }
+
+        meta.isDraft = false;
+        meta.noteId = existing.id;
+        this.threadByNoteId.set(existing.id, thread);
+        this.setThreadDisplayComment(thread, existing.body);
+        thread.contextValue = existing.published ? "published" : undefined;
+        this.configureThread(thread);
+        void this.openNoteEditor(thread, meta, thread.uri);
+        return meta;
+    }
+
+    private configureThread(thread: CommentThread): void {
+        thread.canReply = false;
+        thread.label = "Review note";
+    }
+
+    private isPublishedThread(thread: CommentThread): boolean {
+        return thread.contextValue === "published";
+    }
+
+    private setThreadDisplayComment(thread: CommentThread, body: string): void {
+        thread.comments = [this.makeComment(body, thread)];
+        this.configureThread(thread);
+    }
+
+    private formatLocation(meta: ThreadMeta): string {
+        const fileName = meta.file.split("/").pop() ?? meta.file;
+        const sideLabel = meta.side === "LEFT" ? "base" : "branch";
+        return `${fileName} · line ${meta.line} · ${sideLabel}`;
+    }
+
+    private async buildThreadMeta(
+        uri: Uri,
+        line: number,
+        isDraft: boolean,
+        repoRootHint?: string
+    ): Promise<ThreadMeta | undefined> {
+        const repoRoot = repoRootHint ?? this.repoRootForGitUri(uri);
+        if (!repoRoot) {
+            return undefined;
+        }
+
+        const repository = getRepositoryByRoot(repoRoot);
+        const head = repository?.state.HEAD;
+        if (!head?.name) {
+            return undefined;
+        }
+
+        const file = repoRelativePath(uri, repoRoot);
+        if (!file) {
+            return undefined;
+        }
+
+        const baseBranch = (await resolveBaseBranch(repository!))?.name ?? "main";
+        const refs = await this.resolveRefs(repoRoot);
+        const mergeBaseSha = refs?.mergeBaseRef;
+        const parsed = parseGitDocumentUri(uri);
+        const side = parsed ? sideFromGitRef(parsed.ref, mergeBaseSha) : "RIGHT";
+
+        return {
+            repoRoot,
+            branch: head.name,
+            baseBranch,
+            file: file.replace(/\\/g, "/"),
+            line,
+            side,
+            isDraft,
+        };
+    }
+
     private repoRootForEditor(editor: TextEditor): string | undefined {
-        const parsed = parseGitDocumentUri(editor.document.uri);
+        return this.repoRootForGitUri(editor.document.uri);
+    }
+
+    private repoRootForGitUri(uri: Uri): string | undefined {
+        const parsed = parseGitDocumentUri(uri);
         if (!parsed) {
             return undefined;
         }
@@ -403,27 +515,43 @@ export class ReviewCommentController {
         return this.activeRepoRoot;
     }
 
-    private makeComment(body: string, mode: CommentMode, parent?: CommentThread): ReviewComment {
+    private findThreadForComment(comment: Comment): CommentThread | undefined {
+        const withParent = (comment as ReviewComment).parent;
+        if (withParent) {
+            return withParent;
+        }
+
+        for (const thread of this.draftThreads) {
+            if (thread.comments.includes(comment)) {
+                (comment as ReviewComment).parent = thread;
+                return thread;
+            }
+        }
+
+        for (const thread of this.threadByNoteId.values()) {
+            if (thread.comments.includes(comment)) {
+                (comment as ReviewComment).parent = thread;
+                return thread;
+            }
+        }
+
+        return undefined;
+    }
+
+    private makeComment(body: string, parent: CommentThread): ReviewComment {
         const comment: ReviewComment = {
             body,
-            mode,
+            mode: CommentMode.Preview,
             author: AUTHOR,
+            contextValue: "note",
             savedBody: body,
             parent,
         };
-        this.commentSavedBody.set(comment, body);
         return comment;
     }
 
     private commentText(body: string | MarkdownString): string {
         return typeof body === "string" ? body.trim() : body.value.trim();
-    }
-
-    private disposeDraftThreads(): void {
-        for (const thread of this.draftThreads) {
-            thread.dispose();
-        }
-        this.draftThreads.clear();
     }
 
     private clearThreads(): void {

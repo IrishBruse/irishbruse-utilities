@@ -353,16 +353,13 @@
             },
             {
                 "command": "ib-utilities.reviewComment.create",
-                "title": "Add Review Note",
+                "title": "Write note",
                 "enablement": "!commentIsEmpty"
             },
             {
-                "command": "ib-utilities.reviewComment.save",
-                "title": "Save"
-            },
-            {
-                "command": "ib-utilities.reviewComment.cancel",
-                "title": "Cancel"
+                "command": "ib-utilities.reviewComment.openEditor",
+                "title": "Write note",
+                "icon": "$(edit)"
             },
             {
                 "command": "ib-utilities.reviewComment.delete",
@@ -371,7 +368,7 @@
             },
             {
                 "command": "ib-utilities.reviewComment.edit",
-                "title": "Edit",
+                "title": "Edit note",
                 "icon": "$(edit)"
             }
         ],
@@ -411,14 +408,23 @@
                     "when": "false"
                 },
                 {
+                    "command": "ib-utilities.reviewComment.openEditor",
+                    "when": "false"
+                },
+                {
                     "command": "ib-utilities.reviewComment.delete",
                     "when": "false"
                 }
             ],
             "comments/commentThread/title": [
                 {
+                    "command": "ib-utilities.reviewComment.openEditor",
+                    "group": "navigation@1",
+                    "when": "commentController == ib-utilities.review && commentThreadIsEmpty"
+                },
+                {
                     "command": "ib-utilities.reviewComment.delete",
-                    "group": "navigation",
+                    "group": "navigation@2",
                     "when": "commentController == ib-utilities.review && !commentThreadIsEmpty"
                 }
             ],
@@ -427,30 +433,18 @@
                     "command": "ib-utilities.reviewComment.create",
                     "group": "inline",
                     "when": "commentController == ib-utilities.review && commentThreadIsEmpty"
+                },
+                {
+                    "command": "ib-utilities.reviewComment.openEditor",
+                    "group": "inline",
+                    "when": "commentController == ib-utilities.review && commentThreadIsEmpty"
                 }
             ],
             "comments/comment/title": [
                 {
                     "command": "ib-utilities.reviewComment.edit",
                     "group": "group@1",
-                    "when": "commentController == ib-utilities.review && commentThread != draft"
-                },
-                {
-                    "command": "ib-utilities.reviewComment.delete",
-                    "group": "group@2",
-                    "when": "commentController == ib-utilities.review"
-                }
-            ],
-            "comments/comment/context": [
-                {
-                    "command": "ib-utilities.reviewComment.cancel",
-                    "group": "inline@1",
-                    "when": "commentController == ib-utilities.review"
-                },
-                {
-                    "command": "ib-utilities.reviewComment.save",
-                    "group": "inline@2",
-                    "when": "commentController == ib-utilities.review"
+                    "when": "commentController == ib-utilities.review && comment == note && commentThread != published"
                 }
             ],
             "view/item/context": [

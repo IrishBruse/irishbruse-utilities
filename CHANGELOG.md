@@ -8,6 +8,10 @@
 -   Add: Open Preview / Open Source commands in the editor title bar
 -   Add: Action Panel activity bar view with configurable actions, agent prompts, and VS Code commands
 -   Add: Git Helpers panel in Source Control with hardcoded diff and review actions
+-   Add: Gutter comment buttons on base branch diff lines for review notes
+-   Fix: Saved review notes now appear in the diff after submitting from the gutter
+-   Change: Review notes are single editable comments per line (no reply thread UI)
+-   Change: Review notes open in a polished side panel editor instead of the inline comment widget
 -   Fix: Open PR falls back to GitHub repo when no PR exists, gh is missing, or origin uses SSH
 
 ## 0.3

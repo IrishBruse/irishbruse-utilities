@@ -122,25 +122,18 @@ export enum Commands {
     ExportReviewSummary = `ib-utilities.exportReviewSummary`,
 
     /**
-     * Add Review Note
+     * Write note
      * Short Title: undefined
      * Icon: undefined
      */
     ReviewCommentCreate = `ib-utilities.reviewComment.create`,
 
     /**
-     * Save
+     * Write note
      * Short Title: undefined
-     * Icon: undefined
+     * Icon: $(edit)
      */
-    ReviewCommentSave = `ib-utilities.reviewComment.save`,
-
-    /**
-     * Cancel
-     * Short Title: undefined
-     * Icon: undefined
-     */
-    ReviewCommentCancel = `ib-utilities.reviewComment.cancel`,
+    ReviewCommentOpenEditor = `ib-utilities.reviewComment.openEditor`,
 
     /**
      * Delete
@@ -150,7 +143,7 @@ export enum Commands {
     ReviewCommentDelete = `ib-utilities.reviewComment.delete`,
 
     /**
-     * Edit
+     * Edit note
      * Short Title: undefined
      * Icon: $(edit)
      */

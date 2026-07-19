@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-__NONCE__';"
+    />
+    <title>Review note</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 16px 18px 18px;
+            color: var(--vscode-foreground);
+            background: var(--vscode-editor-background);
+            font-family: var(--vscode-font-family);
+            font-size: var(--vscode-font-size);
+        }
+
+        .location {
+            margin: 0 0 14px;
+            font-size: 12px;
+            line-height: 1.4;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        textarea {
+            display: block;
+            width: 100%;
+            min-height: 160px;
+            margin: 0;
+            padding: 10px 12px;
+            border: 1px solid var(--vscode-input-border, transparent);
+            border-radius: 4px;
+            background: var(--vscode-input-background);
+            color: var(--vscode-input-foreground);
+            font-family: var(--vscode-editor-font-family, var(--vscode-font-family));
+            font-size: 13px;
+            line-height: 1.55;
+            resize: vertical;
+        }
+
+        textarea:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: -1px;
+        }
+
+        textarea:disabled {
+            opacity: 0.8;
+        }
+
+        .hint {
+            margin-top: 8px;
+            font-size: 11px;
+            color: var(--vscode-descriptionForeground);
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+            margin-top: 16px;
+        }
+
+        button {
+            min-width: 72px;
+            padding: 6px 14px;
+            border: none;
+            border-radius: 2px;
+            font: inherit;
+            font-size: 13px;
+            cursor: pointer;
+        }
+
+        button:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: 2px;
+        }
+
+        .primary {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+
+        .primary:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .secondary {
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+
+        .secondary:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+    </style>
+</head>
+<body>
+    <p class="location" id="location"></p>
+    <label for="note">Review note</label>
+    <textarea id="note" placeholder="Why was this change made?"></textarea>
+    <p class="hint">Markdown is supported. Press Ctrl+Enter to save.</p>
+    <div class="actions">
+        <button class="secondary" id="cancel" type="button">Cancel</button>
+        <button class="primary" id="save" type="button">Save</button>
+    </div>
+    <script nonce="__NONCE__" src="__SCRIPT_URI__"></script>
+</body>
+</html>

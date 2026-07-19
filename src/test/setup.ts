@@ -83,7 +83,20 @@ vi.mock("vscode", () => ({
             }),
         }),
     },
-    Range: vi.fn().mockImplementation((line: number) => ({ start: { line }, end: { line } })),
+    Range: class {
+        constructor(
+            public readonly startLine: number,
+            public readonly startChar: number,
+            public readonly endLine: number,
+            public readonly endChar: number
+        ) {}
+        get start() {
+            return { line: this.startLine, character: this.startChar };
+        }
+        get end() {
+            return { line: this.endLine, character: this.endChar };
+        }
+    },
     Position: vi.fn(),
     ThemeColor: vi.fn(),
     ThemeIcon: {

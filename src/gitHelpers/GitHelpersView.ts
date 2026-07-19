@@ -46,6 +46,7 @@ import { pickJiraTicketPrTitle } from "../jira/pickJiraTicketForPrTitle";
 import { resolveJiraSummary } from "../jira/jiraSummary";
 import { registerCommandIB } from "../utils/vscode";
 import { registerGitHelpersRefresh } from "./refresh";
+import { RepoChildrenCache } from "./repoChildrenCache";
 
 export type GitHelperItemKind = "info" | "action";
 
@@ -129,6 +130,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     private treeView: TreeView<GitHelperTreeItem> | undefined;
     private cachedChildren: GitHelperTreeItem[] = [];
     private childrenSignatureValue = "";
+    private repoChildrenCache = new RepoChildrenCache<GitHelperTreeItem>();
     private displayedRepoRoot: string | undefined;
     private lastRepoRoot: string | undefined;
     private refreshTimer: ReturnType<typeof setTimeout> | undefined;
@@ -142,6 +144,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
     refresh(force = false): void {
         if (force) {
+            const activeRoot = this.getActiveRepoRootSync();
+            if (activeRoot) {
+                this.repoChildrenCache.delete(activeRoot);
+            }
             this.enterLoadingState();
         } else {
             this.enterLoadingStateIfRepoChanged();
@@ -156,11 +162,16 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             return;
         }
         if (repository.ui.selected && this.displayedRepoRoot !== repoRoot) {
-            this.enterLoadingState();
+            this.restoreCachedOrLoading(repoRoot);
             return;
         }
         if (!repository.ui.selected && this.displayedRepoRoot === repoRoot) {
-            this.enterLoadingState();
+            const nextRoot = this.getActiveRepoRootSync();
+            if (nextRoot) {
+                this.restoreCachedOrLoading(nextRoot);
+            } else {
+                this.enterLoadingState();
+            }
         }
     }
 
@@ -175,6 +186,19 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     private enterLoadingStateIfRepoChanged(): void {
         const activeRoot = this.getActiveRepoRootSync();
         if (!this.displayedRepoRoot || !activeRoot || this.displayedRepoRoot === activeRoot) {
+            return;
+        }
+        this.restoreCachedOrLoading(activeRoot);
+    }
+
+    private restoreCachedOrLoading(repoRoot: string): void {
+        const cached = this.repoChildrenCache.get(repoRoot);
+        if (cached) {
+            ++this.buildGeneration;
+            this.cachedChildren = cached.children;
+            this.childrenSignatureValue = cached.signature;
+            this.displayedRepoRoot = repoRoot;
+            this.changeEvent.fire(null);
             return;
         }
         this.enterLoadingState();
@@ -208,6 +232,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot = children.find((item) => item.repoRoot)?.repoRoot;
         if (repoRoot) {
             this.displayedRepoRoot = repoRoot;
+            this.repoChildrenCache.set(repoRoot, children, signature);
         }
         this.changeEvent.fire(null);
     }

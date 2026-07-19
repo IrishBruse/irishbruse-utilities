@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+-   Add: Git Helpers per-repository cache so switching between local repos shows the last-known panel immediately
+
+
 ## 0.11.0
 
 -   Add: Git Helpers panel — diff vs base, draft PR workflow, PR status, files changed, review threads, failed checks, and optional Jira ticket row

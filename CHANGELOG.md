@@ -41,6 +41,9 @@
 -   Add: Git Helpers shows one PR review row for replies, changes requested, unresolved threads, or awaiting reviewers
 -   Add: Git Helpers title bar refresh button beside Open PR
 -   Fix: Git Helpers shows a loading row immediately when switching repositories or using refresh so stale actions cannot be clicked
+-   Add: Git Helpers shows an optional Jira ticket row when the `jira` CLI board cache exists (`~/.config/jira/board.json`) and a key is found in the PR title or branch name
+-   Add: Git Helpers Jira row uses the synced board summary, local `jira/` tickets, and opens tickets via the configured Jira site
+-   Add: Git Helpers missing-key row opens a synced-board ticket picker and sets the PR title to `KEY summary`
 
 ## 0.3
 

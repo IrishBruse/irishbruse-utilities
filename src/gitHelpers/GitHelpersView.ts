@@ -1,4 +1,5 @@
 import path from "path";
+import os from "os";
 import {
     Command,
     env,
@@ -13,6 +14,7 @@ import {
     TreeView,
     Uri,
     window,
+    workspace,
 } from "vscode";
 import { Commands, Views } from "../constants";
 import { getGitApi, getGitApiAsync, getRepositoryByRoot } from "../git/getGitApi";
@@ -34,9 +36,14 @@ import {
     formatPrLineChangeDescription,
     getPrChangesUrl,
     getPrInfo,
+    runGh,
 } from "../git/githubUrl";
 import { getFailedPrCheck } from "../git/prChecks";
 import { getPrReviewStatus } from "../git/prReviewStatus";
+import { getJiraBrowseUrl, getJiraWorkspace } from "../jira/jiraWorkspace";
+import { extractJiraKeyFromTitle, resolveJiraKey, summaryFromPrTitle } from "../jira/jiraKey";
+import { pickJiraTicketPrTitle } from "../jira/pickJiraTicketForPrTitle";
+import { resolveJiraSummary } from "../jira/jiraSummary";
 import { registerCommandIB } from "../utils/vscode";
 import { registerGitHelpersRefresh } from "./refresh";
 
@@ -47,6 +54,8 @@ export class GitHelperTreeItem extends TreeItem {
     public logUrl?: string;
     public changesUrl?: string;
     public reviewUrl?: string;
+    public jiraUrl?: string;
+    public jiraKey?: string;
 
     constructor(
         public readonly kind: GitHelperItemKind,
@@ -61,7 +70,9 @@ export class GitHelperTreeItem extends TreeItem {
             | "createDraftPr"
             | "openFailedJobLog"
             | "openPrChanges"
-            | "openPrReview",
+            | "openPrReview"
+            | "openJira"
+            | "addJiraKeyToPrTitle",
         description?: string,
         command?: Command
     ) {
@@ -84,6 +95,10 @@ export class GitHelperTreeItem extends TreeItem {
             this.iconPath = new ThemeIcon("git-compare");
         } else if (action === "openPrReview") {
             this.iconPath = new ThemeIcon("comment-discussion");
+        } else if (action === "openJira") {
+            this.iconPath = new ThemeIcon("issue-opened");
+        } else if (action === "addJiraKeyToPrTitle") {
+            this.iconPath = new ThemeIcon("warning");
         }
     }
 }
@@ -239,12 +254,28 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         registerCommandIB(Commands.OpenFailedJobLog, (item) => provider.runOpenFailedJobLog(item), context);
         registerCommandIB(Commands.OpenPrChanges, (item) => provider.runOpenPrChanges(item), context);
         registerCommandIB(Commands.OpenPrReview, (item) => provider.runOpenPrReview(item), context);
+        registerCommandIB(Commands.OpenJiraTicket, (item) => provider.runOpenJiraTicket(item), context);
+        registerCommandIB(Commands.CopyJiraKey, (item) => provider.runCopyJiraKey(item), context);
+        registerCommandIB(Commands.AddJiraKeyToPrTitle, (item) => provider.runAddJiraKeyToPrTitle(item), context);
 
         wireGitRepositories(context, {
             onChange: () => provider.refresh(),
             onRepositoryUiChange: (repository) => provider.onRepositoryUiChange(repository),
         });
         context.subscriptions.push(window.onDidChangeActiveTextEditor(() => provider.refresh()));
+        context.subscriptions.push(
+            workspace.onDidChangeConfiguration((event) => {
+                if (event.affectsConfiguration("ib-utilities.jira.keyPattern")) {
+                    provider.refresh();
+                }
+            })
+        );
+        const jiraBoardPath = path.join(os.homedir(), ".config", "jira", "board.json");
+        const jiraBoardWatcher = workspace.createFileSystemWatcher(jiraBoardPath);
+        jiraBoardWatcher.onDidChange(() => provider.refresh());
+        jiraBoardWatcher.onDidCreate(() => provider.refresh());
+        jiraBoardWatcher.onDidDelete(() => provider.refresh());
+        context.subscriptions.push(jiraBoardWatcher);
 
         return provider;
     }
@@ -369,6 +400,105 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
 
         await env.openExternal(Uri.parse(changesUrl));
+    }
+
+    private async runOpenJiraTicket(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+
+        let jiraUrl = typeof item !== "string" ? item?.jiraUrl : undefined;
+        if (!jiraUrl) {
+            const jiraWorkspace = await getJiraWorkspace();
+            const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
+            const branch = repository?.state.HEAD?.name;
+            const pr = branch ? await getPrInfo(repoRoot, branch) : undefined;
+            const resolved = resolveJiraKey(pr?.title, branch, jiraWorkspace?.keyPattern ?? /[A-Z][A-Z0-9_]*-\d+/);
+            if (!jiraWorkspace || !resolved) {
+                window.showWarningMessage("No Jira ticket available.");
+                return;
+            }
+            jiraUrl = getJiraBrowseUrl(jiraWorkspace.baseUrl, resolved.key);
+        }
+
+        await env.openExternal(Uri.parse(jiraUrl));
+    }
+
+    private async runCopyJiraKey(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+
+        let jiraKey = typeof item !== "string" ? item?.jiraKey : undefined;
+        if (!jiraKey) {
+            const jiraWorkspace = await getJiraWorkspace();
+            const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
+            const branch = repository?.state.HEAD?.name;
+            const pr = branch ? await getPrInfo(repoRoot, branch) : undefined;
+            jiraKey = resolveJiraKey(pr?.title, branch, jiraWorkspace?.keyPattern ?? /[A-Z][A-Z0-9_]*-\d+/)?.key;
+        }
+
+        if (!jiraKey) {
+            window.showWarningMessage("No Jira key available.");
+            return;
+        }
+
+        await env.clipboard.writeText(jiraKey);
+        window.showInformationMessage("Jira key copied to clipboard.");
+    }
+
+    private async runAddJiraKeyToPrTitle(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+
+        const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
+        const branch = repository?.state.HEAD?.name;
+        if (!branch) {
+            window.showWarningMessage("No named branch checked out.");
+            return;
+        }
+
+        const pr = await getPrInfo(repoRoot, branch);
+        if (!pr) {
+            window.showWarningMessage("No pull request found for the current branch.");
+            return;
+        }
+
+        const jiraWorkspace = await getJiraWorkspace();
+        if (!jiraWorkspace) {
+            window.showWarningMessage("No synced Jira board found. Run jira sync first.");
+            return;
+        }
+
+        const nextTitle = await pickJiraTicketPrTitle(jiraWorkspace.board, pr.title);
+        if (!nextTitle || nextTitle === pr.title) {
+            return;
+        }
+
+        const result = await runGh(repoRoot, ["pr", "edit", String(pr.number), "--title", nextTitle]);
+        if (!result || result.status !== 0) {
+            window.showWarningMessage("Could not update the pull request title.");
+            await env.openExternal(Uri.parse(pr.url));
+            return;
+        }
+
+        this.refresh();
     }
 
     private async runOpenFailedJobLog(item: GitHelperTreeItem | string | undefined): Promise<void> {
@@ -644,6 +774,55 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 prItem.contextValue = pr.isDraft ? "action-openPr-draft" : "action-openPr";
                 prItem.prUrl = pr.url;
                 items.push(prItem);
+
+                const jiraWorkspace = await getJiraWorkspace();
+                if (jiraWorkspace) {
+                    const resolvedKey = resolveJiraKey(pr.title, branch, jiraWorkspace.keyPattern);
+                    if (resolvedKey) {
+                        const titleFallback = summaryFromPrTitle(pr.title, resolvedKey.key);
+                        const description = await resolveJiraSummary(
+                            repoRoot,
+                            resolvedKey.key,
+                            jiraWorkspace.board,
+                            titleFallback
+                        );
+                        const jiraItem = new GitHelperTreeItem(
+                            "action",
+                            repoRoot,
+                            resolvedKey.key,
+                            TreeItemCollapsibleState.None,
+                            `${repoRoot}:openJira:${resolvedKey.key}`,
+                            "openJira",
+                            description,
+                            {
+                                command: Commands.OpenJiraTicket,
+                                title: "Open Jira ticket",
+                                arguments: [repoRoot],
+                            }
+                        );
+                        jiraItem.contextValue = "action-openJira";
+                        jiraItem.jiraUrl = getJiraBrowseUrl(jiraWorkspace.baseUrl, resolvedKey.key);
+                        jiraItem.jiraKey = resolvedKey.key;
+                        items.push(jiraItem);
+                    } else {
+                        items.push(
+                            new GitHelperTreeItem(
+                                "action",
+                                repoRoot,
+                                "Add Jira key to PR title",
+                                TreeItemCollapsibleState.None,
+                                `${repoRoot}:addJiraKeyToPrTitle:${pr.number}`,
+                                "addJiraKeyToPrTitle",
+                                "Pick a synced ticket",
+                                {
+                                    command: Commands.AddJiraKeyToPrTitle,
+                                    title: "Add Jira key to PR title",
+                                    arguments: [repoRoot],
+                                }
+                            )
+                        );
+                    }
+                }
 
                 const changesItem = new GitHelperTreeItem(
                     "action",

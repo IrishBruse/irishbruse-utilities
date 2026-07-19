@@ -73,6 +73,27 @@ export enum Commands {
     OpenPrReview = `ib-utilities.openPrReview`,
 
     /**
+     * Open Jira Ticket
+     * Short Title: Open Jira
+     * Icon: $(link-external)
+     */
+    OpenJiraTicket = `ib-utilities.openJiraTicket`,
+
+    /**
+     * Copy Jira Key
+     * Short Title: Copy Jira key
+     * Icon: $(copy)
+     */
+    CopyJiraKey = `ib-utilities.copyJiraKey`,
+
+    /**
+     * Add Jira Key to PR Title
+     * Short Title: Add Jira key
+     * Icon: $(edit)
+     */
+    AddJiraKeyToPrTitle = `ib-utilities.addJiraKeyToPrTitle`,
+
+    /**
      * Refresh Snippets
      * Short Title: Refresh
      * Icon: $(refresh)
@@ -315,6 +336,11 @@ export enum Configuration {
      * On the left is the languageId for the snippet to auto generate on the right is the comma delimited array of languages to build it from.
      */
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
+
+    /**
+     * Regular expression used to match Jira issue keys in PR titles and branch names. Defaults to the pattern used by the jira CLI.
+     */
+    JiraKeyPattern = `ib-utilities.jira.keyPattern`,
 
     /**
      * Actions shown in the Action Panel. Cursor agent prompts use type "agent"; VS Code commands use type "command".

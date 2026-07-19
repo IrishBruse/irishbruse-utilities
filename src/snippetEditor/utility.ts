@@ -1,4 +1,4 @@
-import cjson from "cjson";
+import { readFileSync } from "fs";
 import { readdir } from "fs/promises";
 import path from "path";
 import { commands, Range, TabInputText, Uri, ViewColumn, window, workspace } from "vscode";
@@ -47,9 +47,73 @@ export function isECMA(languageId: string): boolean {
     return ECMA_LANGUAGES.has(languageId);
 }
 
+function stripJsonComments(json: string): string {
+    let result = "";
+    let inString = false;
+    let inSingleLineComment = false;
+    let inMultiLineComment = false;
+    let escape = false;
+
+    for (let i = 0; i < json.length; i++) {
+        const char = json[i];
+        const next = json[i + 1];
+
+        if (inSingleLineComment) {
+            if (char === "\n") {
+                inSingleLineComment = false;
+                result += char;
+            }
+            continue;
+        }
+
+        if (inMultiLineComment) {
+            if (char === "*" && next === "/") {
+                inMultiLineComment = false;
+                i++;
+            }
+            continue;
+        }
+
+        if (inString) {
+            result += char;
+            if (escape) {
+                escape = false;
+            } else if (char === "\\") {
+                escape = true;
+            } else if (char === '"') {
+                inString = false;
+            }
+            continue;
+        }
+
+        if (char === '"') {
+            inString = true;
+            result += char;
+            continue;
+        }
+
+        if (char === "/" && next === "/") {
+            inSingleLineComment = true;
+            i++;
+            continue;
+        }
+
+        if (char === "/" && next === "*") {
+            inMultiLineComment = true;
+            i++;
+            continue;
+        }
+
+        result += char;
+    }
+
+    return result;
+}
+
 export function getSnippetsFile(languageId: string): Snippets {
     const snippetPath = path.join(UserPath, "snippets", `${languageId}.json`);
-    return cjson.load(snippetPath);
+    const content = readFileSync(snippetPath, "utf8");
+    return JSON.parse(stripJsonComments(content)) as Snippets;
 }
 
 export async function setSnippetsByLanguageId(languageId: string, snippets: Snippets): Promise<void> {

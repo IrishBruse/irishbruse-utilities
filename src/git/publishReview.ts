@@ -144,33 +144,50 @@ export async function publishReviewToPR(repoRoot: string, branch: string): Promi
         return;
     }
 
-    const payload = {
-        commit_id: pr.headRefOid,
-        event: "COMMENT",
-        body: `Review notes from VS Code (${pending.length} comment${pending.length === 1 ? "" : "s"})`,
-        comments: pending.map((note: ReviewNote) => ({
-            path: note.file.replace(/\\/g, "/"),
-            line: note.line,
-            side: note.side,
-            body: note.body,
-        })),
-    };
+    const publishedIds: string[] = [];
+    const failures: string[] = [];
 
-    const result = await asyncSpawn(
-        "gh",
-        ["api", `repos/${github.owner}/${github.repo}/pulls/${pr.number}/reviews`, "--input", "-"],
-        { cwd: repoRoot, input: JSON.stringify(payload) }
-    );
+    for (const note of pending) {
+        const result = await asyncSpawn(
+            "gh",
+            ["api", `repos/${github.owner}/${github.repo}/pulls/${pr.number}/comments`, "--input", "-"],
+            {
+                cwd: repoRoot,
+                input: JSON.stringify({
+                    body: note.body,
+                    commit_id: pr.headRefOid,
+                    path: note.file.replace(/\\/g, "/"),
+                    line: note.line,
+                    side: note.side,
+                }),
+            }
+        );
 
-    if (result.status !== 0) {
-        window.showErrorMessage(`Failed to publish review: ${result.stderr || result.stdout}`);
+        if (result.status !== 0) {
+            failures.push(`${note.file}:${note.line}`);
+            continue;
+        }
+
+        publishedIds.push(note.id);
+    }
+
+    if (publishedIds.length === 0) {
+        window.showErrorMessage(`Failed to publish review comments: ${failures.join(", ")}`);
         return;
     }
 
-    await markNotesPublished(repoRoot, branch, pending.map((n) => n.id));
+    await markNotesPublished(repoRoot, branch, publishedIds);
     await getReviewCommentController()?.refreshForRepo(repoRoot);
     refreshGitPanels();
-    window.showInformationMessage(`Published ${pending.length} comment(s) to PR #${pr.number}.`, "Open PR").then((choice) => {
+
+    if (failures.length > 0) {
+        window.showWarningMessage(
+            `Published ${publishedIds.length} comment(s) to PR #${pr.number}. Failed: ${failures.join(", ")}.`
+        );
+        return;
+    }
+
+    window.showInformationMessage(`Published ${publishedIds.length} comment(s) to PR #${pr.number}.`, "Open PR").then((choice) => {
         if (choice === "Open PR") {
             env.openExternal(Uri.parse(pr.url));
         }

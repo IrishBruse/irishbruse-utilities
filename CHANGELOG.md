@@ -2,6 +2,9 @@
 
 ## 0.10.0
 
+-   Change: Snippet JSON loading uses native `fs` and `JSON.parse` instead of the `cjson` dependency
+-   Change: Updated dev and runtime dependencies
+-   Change: Replaced `tsx` with native Node 24 TypeScript execution for contributes generation
 -   Add: Mermaid preview custom editor for `.mmd` and `.mermaid` files
 -   Add: Live diagram rendering with VS Code theme integration
 -   Add: Zoom, pan, fit-to-view, and copy diagram as PNG
@@ -37,6 +40,7 @@
 -   Add: Git Helpers shows files changed with line stats; click opens the PR Changes tab on GitHub
 -   Add: Git Helpers shows one PR review row for replies, changes requested, unresolved threads, or awaiting reviewers
 -   Add: Git Helpers title bar refresh button beside Open PR
+-   Fix: Git Helpers shows a loading row immediately when switching repositories or using refresh so stale actions cannot be clicked
 
 ## 0.3
 

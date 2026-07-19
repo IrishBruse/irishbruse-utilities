@@ -33,7 +33,8 @@ async function clearActionPanelWorkspaceOverrides(
 ): Promise<void> {
     await config.update("actionPanel.actions", undefined, ConfigurationTarget.Workspace);
     for (const folder of workspace.workspaceFolders ?? []) {
-        await config.update("actionPanel.actions", undefined, ConfigurationTarget.WorkspaceFolder, folder.uri);
+        const folderConfig = workspace.getConfiguration("ib-utilities", folder.uri);
+        await folderConfig.update("actionPanel.actions", undefined, ConfigurationTarget.WorkspaceFolder);
     }
 }
 

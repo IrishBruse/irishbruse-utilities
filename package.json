@@ -32,8 +32,8 @@
         "package:vsix": "vsce package --out ib-utilities-$(node -p \"require('./package.json').version\").vsix",
         "release": "node scripts/release.mjs",
         "test:watch": "vitest watch",
-        "generate:contributes": "tsx --experimental-transform-types generators/contributes.generator.ts",
-        "generate:contributes:watch": "tsx --watch --experimental-transform-types generators/contributes.generator.ts"
+        "generate:contributes": "node generators/contributes.generator.ts",
+        "generate:contributes:watch": "node --watch generators/contributes.generator.ts"
     },
     "main": "./dist/extension.js",
     "contributes": {
@@ -580,26 +580,23 @@
         }
     },
     "devDependencies": {
-        "@types/cjson": "^0.5.3",
         "@types/mocha": "^10.0.10",
-        "@types/node": "^24.12.2",
-        "@types/vscode": "^1.110.0",
-        "@typescript-eslint/eslint-plugin": "^8.58.1",
-        "@typescript-eslint/parser": "^8.58.1",
-        "@vitest/coverage-v8": "^4.1.0",
-        "@vscode/vsce": "^3.3.2",
-        "esbuild": "0.27.4",
-        "eslint": "^9.39.4",
+        "@types/node": "^24.13.3",
+        "@types/vscode": "^1.125.0",
+        "@typescript-eslint/eslint-plugin": "^8.64.0",
+        "@typescript-eslint/parser": "^8.64.0",
+        "@vitest/coverage-v8": "^4.1.10",
+        "@vscode/vsce": "^3.9.2",
+        "esbuild": "0.28.1",
+        "eslint": "^9.39.5",
         "opentype.js": "^1.3.4",
-        "ts-loader": "^9.5.4",
-        "tsx": "^4.21.0",
-        "typescript": "^6.0.2",
-        "vitest": "^4.1.0",
-        "webpack": "^5.105.4",
-        "webpack-cli": "^7.0.2"
+        "ts-loader": "^9.6.2",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.10",
+        "webpack": "^5.108.4",
+        "webpack-cli": "^7.2.1"
     },
     "dependencies": {
-        "cjson": "^0.5.0",
-        "mermaid": "^11.12.0"
+        "mermaid": "^11.16.0"
     }
 }

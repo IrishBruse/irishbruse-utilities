@@ -19,6 +19,7 @@ import { getGitApi, getGitApiAsync, getRepositoryByRoot } from "../git/getGitApi
 import { clearLegacyBranchReviewState } from "../git/clearLegacyReviewState";
 import { createBlankDraftPullRequest } from "../git/createDraftPR";
 import { countUnpublishedNotes, loadReviewNotes } from "../git/reviewNotes";
+import type { Repository } from "../git/gitApi";
 import { getActiveRepository, resolveActiveRepository } from "../git/resolveActiveRepository";
 import { registerBaseBranchOverrideStorage } from "../git/baseBranchOverride";
 import { pickBaseBranchTarget } from "../git/pickBaseBranch";
@@ -101,11 +102,19 @@ function infoItem(id: string, label: string): GitHelperTreeItem {
     return new GitHelperTreeItem("info", undefined, label, TreeItemCollapsibleState.None, id);
 }
 
+function loadingItem(): GitHelperTreeItem {
+    const item = infoItem("info:loading", "Loading…");
+    item.iconPath = new ThemeIcon("sync~spin");
+    item.contextValue = "info-loading";
+    return item;
+}
+
 export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeItem> {
     private changeEvent = new EventEmitter<GitHelperTreeItem | undefined | null>();
     private treeView: TreeView<GitHelperTreeItem> | undefined;
     private cachedChildren: GitHelperTreeItem[] = [];
     private childrenSignatureValue = "";
+    private displayedRepoRoot: string | undefined;
     private lastRepoRoot: string | undefined;
     private refreshTimer: ReturnType<typeof setTimeout> | undefined;
     private buildGeneration = 0;
@@ -118,11 +127,50 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
     refresh(force = false): void {
         if (force) {
-            this.cachedChildren = [];
-            this.childrenSignatureValue = "";
+            this.enterLoadingState();
+        } else {
+            this.enterLoadingStateIfRepoChanged();
         }
         void this.updateViewTitle();
         this.scheduleChildrenRefresh();
+    }
+
+    onRepositoryUiChange(repository: Repository): void {
+        const repoRoot = repository.rootUri.fsPath;
+        if (!this.displayedRepoRoot) {
+            return;
+        }
+        if (repository.ui.selected && this.displayedRepoRoot !== repoRoot) {
+            this.enterLoadingState();
+            return;
+        }
+        if (!repository.ui.selected && this.displayedRepoRoot === repoRoot) {
+            this.enterLoadingState();
+        }
+    }
+
+    private getActiveRepoRootSync(): string | undefined {
+        const api = getGitApi();
+        if (!api) {
+            return undefined;
+        }
+        return resolveActiveRepository(api)?.rootUri.fsPath;
+    }
+
+    private enterLoadingStateIfRepoChanged(): void {
+        const activeRoot = this.getActiveRepoRootSync();
+        if (!this.displayedRepoRoot || !activeRoot || this.displayedRepoRoot === activeRoot) {
+            return;
+        }
+        this.enterLoadingState();
+    }
+
+    private enterLoadingState(): void {
+        ++this.buildGeneration;
+        const loading = [loadingItem()];
+        this.cachedChildren = loading;
+        this.childrenSignatureValue = childrenSignature(loading);
+        this.changeEvent.fire(null);
     }
 
     private scheduleChildrenRefresh(): void {
@@ -142,6 +190,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
         this.cachedChildren = children;
         this.childrenSignatureValue = signature;
+        const repoRoot = children.find((item) => item.repoRoot)?.repoRoot;
+        if (repoRoot) {
+            this.displayedRepoRoot = repoRoot;
+        }
         this.changeEvent.fire(null);
     }
 
@@ -188,7 +240,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         registerCommandIB(Commands.OpenPrChanges, (item) => provider.runOpenPrChanges(item), context);
         registerCommandIB(Commands.OpenPrReview, (item) => provider.runOpenPrReview(item), context);
 
-        wireGitRepositories(context, { onChange: () => provider.refresh() });
+        wireGitRepositories(context, {
+            onChange: () => provider.refresh(),
+            onRepositoryUiChange: (repository) => provider.onRepositoryUiChange(repository),
+        });
         context.subscriptions.push(window.onDidChangeActiveTextEditor(() => provider.refresh()));
 
         return provider;
@@ -543,10 +598,13 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
 
         let repository = resolveActiveRepository(api);
-        if (!repository && this.lastRepoRoot) {
-            repository =
-                api.repositories.find((repo) => repo.rootUri.fsPath === this.lastRepoRoot) ??
-                api.repositories.find((repo) => repo.ui.selected);
+        if (!repository) {
+            const selected = api.repositories.filter((repo) => repo.ui.selected);
+            if (selected.length >= 1) {
+                repository = selected[0];
+            } else if (this.lastRepoRoot) {
+                repository = api.repositories.find((repo) => repo.rootUri.fsPath === this.lastRepoRoot);
+            }
         }
         if (!repository) {
             if (this.cachedChildren.length > 0 && this.cachedChildren[0]?.kind === "action") {

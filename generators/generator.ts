@@ -1,7 +1,6 @@
 import { writeFileSync } from "fs";
-// @ts-ignore: prettier doesnt support with
-import pkg from "../package.json" assert { type: "json" };
-import { Package } from "./package.types.js";
+import pkg from "../package.json" with { type: "json" };
+import type { Package } from "./package.types.ts";
 import path from "path";
 
 const prefix = pkg.name;

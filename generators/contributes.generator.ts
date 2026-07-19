@@ -9,7 +9,7 @@ import {
     startDoc,
     stripPackagePrefix,
     toPascalCase,
-} from "./generator.js";
+} from "./generator.ts";
 
 const contributes = getPackage().contributes;
 

@@ -4,6 +4,7 @@ import { getGitApi, getGitApiAsync } from "./getGitApi";
 
 export type WireGitRepositoriesOptions = {
     onChange: () => void;
+    onRepositoryUiChange?: (repository: Repository) => void;
 };
 
 export function wireGitRepositories(context: ExtensionContext, options: WireGitRepositoriesOptions): void {
@@ -15,7 +16,12 @@ export function wireGitRepositories(context: ExtensionContext, options: WireGitR
         }
         tracked.add(repository);
         context.subscriptions.push(repository.state.onDidChange(options.onChange));
-        context.subscriptions.push(repository.ui.onDidChange(options.onChange));
+        context.subscriptions.push(
+            repository.ui.onDidChange(() => {
+                options.onRepositoryUiChange?.(repository);
+                options.onChange();
+            })
+        );
     };
 
     const syncRepositories = (api: API): void => {

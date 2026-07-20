@@ -8,7 +8,7 @@
     },
     "publisher": "irishbruse",
     "author": "Ethan Conneely",
-    "version": "0.11.0",
+    "version": "0.12.0",
     "license": "MIT",
     "engines": {
         "vscode": "^1.125.0"
@@ -23,7 +23,7 @@
     ],
     "scripts": {
         "vscode:prepublish": "npm run package",
-        "build": "node scripts/generate-codicon-assets.mjs && node esbuild.mjs",
+        "build": "node esbuild.mjs",
         "watch": "node esbuild.mjs --watch",
         "package": "node esbuild.mjs --production",
         "lint": "eslint src && tsc --noEmit",
@@ -74,7 +74,7 @@
                 },
                 "ib-utilities.actionPanel.actions": {
                     "type": "array",
-                    "description": "Actions shown in the Action Panel. Cursor agent prompts use type \"agent\"; VS Code commands use type \"command\".",
+                    "description": "Actions shown in the Action Panel. Cursor agent prompts use type \"agent\"; VS Code commands use type \"command\"; shell commands use type \"terminal\".",
                     "items": {
                         "type": "object",
                         "required": [
@@ -99,7 +99,8 @@
                                 "type": "string",
                                 "enum": [
                                     "agent",
-                                    "command"
+                                    "command",
+                                    "terminal"
                                 ],
                                 "description": "Action type."
                             },
@@ -109,12 +110,29 @@
                             },
                             "command": {
                                 "type": "string",
-                                "description": "VS Code command id when type is command."
+                                "description": "VS Code command id when type is command, or shell command when type is terminal."
                             },
                             "args": {
                                 "type": "array",
                                 "description": "Optional arguments passed to the VS Code command.",
                                 "items": {}
+                            },
+                            "runInEditor": {
+                                "type": "boolean",
+                                "markdownDescription": "Deprecated. Use `terminalMode: \"editor\"` instead."
+                            },
+                            "runInBackground": {
+                                "type": "boolean",
+                                "markdownDescription": "Deprecated. Use `terminalMode: \"background\"` instead."
+                            },
+                            "terminalMode": {
+                                "type": "string",
+                                "enum": [
+                                    "panel",
+                                    "editor",
+                                    "background"
+                                ],
+                                "description": "When type is terminal, where to run the command: terminal panel, editor space, or background without focus."
                             }
                         }
                     },
@@ -618,7 +636,6 @@
         "@vscode/vsce": "^3.9.2",
         "esbuild": "0.28.1",
         "eslint": "^9.39.5",
-        "opentype.js": "^1.3.4",
         "ts-loader": "^9.6.2",
         "typescript": "^6.0.3",
         "vitest": "^4.1.10",

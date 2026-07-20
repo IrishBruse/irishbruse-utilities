@@ -2,9 +2,14 @@
 
 ## Unreleased
 
--   Change: Mermaid preview pans with left click on non-text areas, while text labels remain selectable
--   Add: Git Helpers per-repository cache so switching between local repos shows the last-known panel immediately
+## 0.12.0
 
+-   Add: Action Panel terminal command actions with panel, editor space, or background run modes
+-   Add: Git Helpers per-repository cache so switching between local repos shows the last-known panel immediately
+-   Change: Action Panel add/edit form styling aligned with VS Code sidebar panels
+-   Change: Mermaid preview pans with left click on non-text areas, while text labels remain selectable
+-   Change: Mermaid preview shows grab and grabbing cursors while panning with left or middle click
+-   Remove: Generated codicon SVG assets; Action Panel tree icons now use VS Code ThemeIcon
 
 ## 0.11.0
 

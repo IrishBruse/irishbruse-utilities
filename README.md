@@ -14,7 +14,7 @@ Tree view under the **Snippet Manager** activity bar: create, edit, and delete s
 
 ### Git Helpers (Source Control)
 
-A **Git Helpers** panel in the Source Control sidebar shows hardcoded git workflow actions for the **active repository**:
+A **Git Helpers** panel in the Source Control sidebar shows hardcoded git workflow actions for the **active repository**. Panel data is cached per repository so switching between local repos restores the last-known state immediately:
 
 - **Diff vs base** — multi-file diff of your branch against an auto-detected base (`main` / `origin/main`, etc.), with a gear control to pick a different comparison branch or commit
 - **Review notes** — add inline comments in git diffs. **Publish to PR** posts line comments via `gh`
@@ -22,7 +22,7 @@ A **Git Helpers** panel in the Source Control sidebar shows hardcoded git workfl
 
 ### Action Panel
 
-An **Actions** activity bar panel for customizable shortcuts: built-in actions, Cursor agent prompts, and VS Code commands via `ib-utilities.actionPanel.actions`.
+An **Actions** activity bar panel for customizable shortcuts: built-in actions, Cursor agent prompts, VS Code commands, and terminal commands via `ib-utilities.actionPanel.actions`.
 
 ### Relative goto
 
@@ -59,7 +59,7 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 }
 ```
 
-Customize Action Panel entries (built-in, Cursor agent prompt, or VS Code command):
+Customize Action Panel entries (built-in, Cursor agent prompt, VS Code command, or terminal command):
 
 ```json
 {
@@ -79,6 +79,14 @@ Customize Action Panel entries (built-in, Cursor agent prompt, or VS Code comman
       "type": "command",
       "command": "workbench.action.tasks.runTask",
       "args": ["test"]
+    },
+    {
+      "id": "runTests",
+      "label": "Run tests",
+      "icon": "beaker",
+      "type": "terminal",
+      "command": "npm test",
+      "terminalMode": "editor"
     }
   ]
 }

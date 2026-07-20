@@ -6,7 +6,6 @@ export type GitHelperItemKind = "info" | "action" | "changesFolder" | "changesFi
 export class GitHelperTreeItem extends TreeItem {
     public prUrl?: string;
     public checksUrl?: string;
-    public changesUrl?: string;
     public reviewUrl?: string;
     public jiraUrl?: string;
     public jiraKey?: string;
@@ -28,7 +27,8 @@ export class GitHelperTreeItem extends TreeItem {
             | "createDraftPr"
             | "openPrReview"
             | "openPrChecks"
-            | "addJiraKeyToPrTitle",
+            | "addJiraKeyToPrTitle"
+            | "showChanges",
         description?: string,
         command?: Command,
         mergeBaseRef?: string,
@@ -57,6 +57,8 @@ export class GitHelperTreeItem extends TreeItem {
             this.iconPath = new ThemeIcon("run-all");
         } else if (action === "addJiraKeyToPrTitle") {
             this.iconPath = new ThemeIcon("warning");
+        } else if (action === "showChanges") {
+            this.iconPath = new ThemeIcon("git-compare");
         }
     }
 }

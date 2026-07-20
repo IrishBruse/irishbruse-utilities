@@ -5,19 +5,15 @@ import {
     TreeDataProvider,
     TreeItemCollapsibleState,
     TreeView,
-    commands,
     window,
 } from "vscode";
 import { Commands, Views } from "../constants";
-import { getRepositoryByRoot } from "../git/getGitApi";
-import { getPrInfo, formatPrFileChangeLabel, formatPrLineChangeDescription } from "../git/githubUrl";
+import { formatPrFileChangeLabel, formatPrLineChangeDescription } from "../git/githubUrl";
 import { getActiveRepository } from "../git/resolveActiveRepository";
 import { registerCommandIB } from "../utils/vscode";
 import { buildChangesChildren, openChangesFile, type ChangesTreeCache } from "./changesTree";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
 import { loadBranchChanges, type BranchChangesSummary } from "./loadBranchChanges";
-
-const BRANCH_CHANGES_HAS_PR_CONTEXT = "ib-utilities.branchChanges.hasPr";
 
 function infoItem(id: string, label: string): GitHelperTreeItem {
     return new GitHelperTreeItem("info", undefined, label, TreeItemCollapsibleState.None, id);
@@ -84,11 +80,6 @@ export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTree
         this.updateViewDescription();
         this.changeEvent.fire(null);
 
-        const repository = getRepositoryByRoot(targetRoot) ?? (await getActiveRepository());
-        const branch = repository?.state.HEAD?.name;
-        const pr = branch ? await getPrInfo(targetRoot, branch) : undefined;
-        await commands.executeCommand("setContext", BRANCH_CHANGES_HAS_PR_CONTEXT, Boolean(pr));
-
         const { commands: vscodeCommands } = await import("vscode");
         await vscodeCommands.executeCommand("workbench.action.focusAuxiliaryBar");
         await vscodeCommands.executeCommand(`${Views.IbUtilitiesBranchChanges}.focus`);
@@ -102,10 +93,10 @@ export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTree
             this.treeView.description = undefined;
             return;
         }
-        this.treeView.description = `${formatPrLineChangeDescription(
+        this.treeView.description = `${formatPrFileChangeLabel(this.summary.changedFiles)} · ${formatPrLineChangeDescription(
             this.summary.additions,
             this.summary.deletions
-        )} · ${formatPrFileChangeLabel(this.summary.changedFiles)}`;
+        )}`;
     }
 
     private async runOpenChangesFile(
@@ -123,7 +114,7 @@ export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTree
 
     async getChildren(element?: GitHelperTreeItem): Promise<GitHelperTreeItem[]> {
         if (!this.repoRoot || !this.cache) {
-            return [infoItem("branch-changes:empty", "Press Diff to show changed files")];
+            return [infoItem("branch-changes:empty", "Press Changes to show changed files")];
         }
 
         if (element?.kind === "changesFolder" && element.id) {

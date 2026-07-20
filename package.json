@@ -298,12 +298,6 @@
                 "icon": "$(copy)"
             },
             {
-                "command": "ib-utilities.openPrChanges",
-                "title": "Open Pull Request Changes",
-                "shortTitle": "Open PR changes",
-                "icon": "$(github)"
-            },
-            {
                 "command": "ib-utilities.openPrChecks",
                 "title": "Open Pull Request Checks",
                 "shortTitle": "Open checks",
@@ -611,13 +605,8 @@
                 },
                 {
                     "command": "ib-utilities.setBaseBranch",
-                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-diffWithBase || viewItem == action-diffWithBase-hasPr)",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase",
                     "group": "inline"
-                },
-                {
-                    "command": "ib-utilities.openPrChanges",
-                    "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase-hasPr",
-                    "group": "inline@1"
                 },
                 {
                     "command": "ib-utilities.markPrReady",
@@ -662,29 +651,19 @@
                     "group": "navigation@1"
                 },
                 {
-                    "command": "ib-utilities.setBaseBranch",
-                    "when": "view == ib-utilities.gitHelpers",
-                    "group": "navigation@2"
-                },
-                {
                     "command": "ib-utilities.openPrChecks",
                     "when": "view == ib-utilities.gitHelpers && ib-utilities.gitHelpers.hasPrChecks",
-                    "group": "navigation@3"
+                    "group": "navigation@2"
                 },
                 {
                     "command": "ib-utilities.refreshGitHelpers",
                     "when": "view == ib-utilities.gitHelpers",
-                    "group": "navigation@4"
+                    "group": "navigation@3"
                 },
                 {
                     "command": "ib-utilities.openRepo",
                     "when": "view == ib-utilities.branchChanges",
                     "group": "navigation@1"
-                },
-                {
-                    "command": "ib-utilities.openPrChanges",
-                    "when": "view == ib-utilities.branchChanges && ib-utilities.branchChanges.hasPr",
-                    "group": "navigation@2"
                 },
                 {
                     "command": "ib-utilities.addActionPanelAction",

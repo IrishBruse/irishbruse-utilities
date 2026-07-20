@@ -59,13 +59,6 @@ export enum Commands {
     CopyPrUrl = `ib-utilities.copyPrUrl`,
 
     /**
-     * Open Pull Request Changes
-     * Short Title: Open PR changes
-     * Icon: $(github)
-     */
-    OpenPrChanges = `ib-utilities.openPrChanges`,
-
-    /**
      * Open Pull Request Checks
      * Short Title: Open checks
      * Icon: $(run-all)

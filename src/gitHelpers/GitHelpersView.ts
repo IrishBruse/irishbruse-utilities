@@ -29,21 +29,22 @@ import { wireGitRepositories } from "../git/wireGitRepositories";
 import { publishReviewToPR } from "../git/publishReview";
 import { markPullRequestReady } from "../git/markPrReady";
 import { openPR } from "../commands/openPR";
-import { openPrChanges } from "../commands/openPrChanges";
 import { openRepo } from "../commands/openRepo";
 import {
-    getPrChangesUrl,
+    formatPrFileChangeLabel,
+    formatPrLineChangeDescription,
     getPrInfo,
     runGh,
 } from "../git/githubUrl";
+import { openBranchDiff } from "../git/openBranchDiff";
 import { getPrCheckStatus } from "../git/prChecks";
 import { getPrReviewStatus } from "../git/prReviewStatus";
 import { getJiraBrowseUrl, getJiraWorkspace } from "../jira/jiraWorkspace";
 import { resolveJiraKey, summaryFromPrTitle } from "../jira/jiraKey";
 import { pickJiraTicketPrTitle } from "../jira/pickJiraTicketForPrTitle";
 import { registerCommandIB } from "../utils/vscode";
-import { revealBranchChanges } from "./BranchChangesView";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
+import { loadBranchChanges, type BranchChangesSummary } from "./loadBranchChanges";
 import { registerGitHelpersRefresh } from "./refresh";
 import { RepoChildrenCache } from "./repoChildrenCache";
 
@@ -253,7 +254,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         registerCommandIB(Commands.CopyPrUrl, (item) => provider.runCopyPrUrl(item), context);
         registerCommandIB(Commands.OpenPrReview, (item) => provider.runOpenPrReview(item), context);
         registerCommandIB(Commands.OpenPrChecks, (item) => provider.runOpenPrChecks(item), context);
-        registerCommandIB(Commands.OpenPrChanges, (item) => provider.runOpenPrChanges(item), context);
         registerCommandIB(Commands.OpenJiraTicket, (item) => provider.runOpenJiraTicket(item), context);
         registerCommandIB(Commands.CopyJiraKey, (item) => provider.runCopyJiraKey(item), context);
         registerCommandIB(Commands.AddJiraKeyToPrTitle, (item) => provider.runAddJiraKeyToPrTitle(item), context);
@@ -328,7 +328,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
-        await revealBranchChanges(repoRoot);
+        await openBranchDiff(repoRoot);
     }
 
     private async runCreateDraftPr(item: GitHelperTreeItem | string | undefined): Promise<void> {
@@ -545,15 +545,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
 
         await env.openExternal(Uri.parse(checksUrl));
-    }
-
-    private async runOpenPrChanges(item?: GitHelperTreeItem | string): Promise<void> {
-        const repoRoot =
-            typeof item === "string"
-                ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
-        const changesUrl = typeof item !== "string" ? item?.changesUrl : undefined;
-        await openPrChanges(repoRoot, changesUrl);
     }
 
     private async runCopyPrUrl(item: GitHelperTreeItem | string | undefined): Promise<void> {
@@ -823,7 +814,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 items.push(prItem);
 
                 if (base) {
-                    items.push(diffItem(repoRoot, base.name, pr?.url));
+                    items.push(...(await diffAndChangesItems(repoRoot, base.name)));
                 }
 
                 const checkStatus = await getPrCheckStatus(repoRoot, pr.headRefOid, pr.url);
@@ -871,7 +862,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                         )
                     );
                     if (base) {
-                        items.push(diffItem(repoRoot, base.name));
+                        items.push(...(await diffAndChangesItems(repoRoot, base.name)));
                     }
                 }
             }
@@ -890,13 +881,28 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 }
 
-function diffItem(repoRoot: string, baseName: string, prUrl?: string): GitHelperTreeItem {
-    const item = actionItem(repoRoot, "Diff", "diffWithBase", Commands.DiffWithBase, baseName);
-    if (prUrl) {
-        item.changesUrl = getPrChangesUrl(prUrl);
-        item.contextValue = "action-diffWithBase-hasPr";
+async function diffAndChangesItems(repoRoot: string, baseName: string): Promise<GitHelperTreeItem[]> {
+    const items: GitHelperTreeItem[] = [
+        actionItem(repoRoot, "Diff", "diffWithBase", Commands.DiffWithBase, baseName),
+    ];
+    const changesData = await loadBranchChanges(repoRoot);
+    if (changesData) {
+        items.push(changesItem(repoRoot, changesData.summary));
     }
-    return item;
+    return items;
+}
+
+function changesItem(repoRoot: string, summary: BranchChangesSummary): GitHelperTreeItem {
+    return new GitHelperTreeItem(
+        "action",
+        repoRoot,
+        formatPrFileChangeLabel(summary.changedFiles),
+        TreeItemCollapsibleState.None,
+        `${repoRoot}:showChanges`,
+        "showChanges",
+        formatPrLineChangeDescription(summary.additions, summary.deletions),
+        { command: Commands.ShowBranchChanges, title: "Show changes", arguments: [repoRoot] }
+    );
 }
 
 function actionItem(

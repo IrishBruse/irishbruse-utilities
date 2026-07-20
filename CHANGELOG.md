@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+-   Change: Git Helpers — checks status is a panel row with description instead of a title bar button
+-   Change: Git Helpers — draft vs open PRs use icons instead of Draft text in the description
+-   Add: Git Helpers debug mode with mock PR, checks, Jira, review, and branch changes data for panel development
 -   Change: Git Helpers — PR row first with draft icon, cached URL open, and inline Jira buttons; Checks row replaces separate Jira and failed-job rows
 -   Change: Git Helpers — Diff opens multi-file diff and reveals Branch Changes sidebar
 -   Change: Git Helpers — title bar opens repo, check status in header, and Open checks button when a PR has checks

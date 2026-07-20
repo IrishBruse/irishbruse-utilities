@@ -12,7 +12,9 @@ import { formatPrFileChangeLabel, formatPrLineChangeDescription } from "../git/g
 import { getActiveRepository } from "../git/resolveActiveRepository";
 import { registerCommandIB } from "../utils/vscode";
 import { buildChangesChildren, openChangesFile, type ChangesTreeCache } from "./changesTree";
+import { isGitHelpersDebugMode, showGitHelpersDebugAction } from "./debugMode";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
+import { getGitHelpersMockState, MOCK_REPO_ROOT } from "./mockData";
 import { loadBranchChanges, type BranchChangesSummary } from "./loadBranchChanges";
 
 function infoItem(id: string, label: string): GitHelperTreeItem {
@@ -62,6 +64,20 @@ export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTree
     }
 
     async showForRepo(repoRoot?: string): Promise<void> {
+        if (isGitHelpersDebugMode() && (!repoRoot || repoRoot === MOCK_REPO_ROOT)) {
+            const mock = getGitHelpersMockState();
+            this.repoRoot = mock.repoRoot;
+            this.cache = mock.changesCache;
+            this.summary = mock.changesSummary;
+            this.updateViewDescription();
+            this.changeEvent.fire(null);
+
+            const { commands: vscodeCommands } = await import("vscode");
+            await vscodeCommands.executeCommand("workbench.action.focusAuxiliaryBar");
+            await vscodeCommands.executeCommand(`${Views.IbUtilitiesBranchChanges}.focus`);
+            return;
+        }
+
         const targetRoot = repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
         if (!targetRoot) {
             window.showWarningMessage("No active git repository. Select one in Source Control.");
@@ -104,6 +120,11 @@ export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTree
         mergeBaseRef: string,
         relativePath: string
     ): Promise<void> {
+        if (isGitHelpersDebugMode() && repoRoot === MOCK_REPO_ROOT) {
+            showGitHelpersDebugAction(`Open file diff: ${relativePath}`);
+            return;
+        }
+
         const change = this.cache?.changesByRelativePath.get(relativePath);
         await openChangesFile(repoRoot, mergeBaseRef, relativePath, change);
     }

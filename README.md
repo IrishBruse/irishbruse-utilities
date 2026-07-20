@@ -21,12 +21,11 @@ Panel data is cached per repository so switching between local repos restores th
   Inline buttons copy the PR URL, open or copy the linked Jira ticket when synced, and mark draft PRs ready
 - **Diff** — opens a multi-file diff and reveals the Branch Changes sidebar. Base branch is shown as the row description, with an inline Set base button
 - **Changes** — file count row opens the **Branch Changes** secondary sidebar, with `+additions −deletions` as the description
-- **Checks** — unified GitHub Actions status row when a PR is open.
-  Title bar also shows check summary and an Open checks button
+- **Checks** — GitHub Actions status row when a PR is open (check name as label, status as description). Click to open checks
 - **Review notes** — add inline comments in git diffs, **Publish to PR** posts line comments via `gh`
 - **Create draft PR** — shown when there is no open PR and the branch is not the base branch (hidden on `main` / `master`)
 
-The Git Helpers title bar opens the GitHub repository, shows PR check status when available, and refreshes the panel.
+The Git Helpers title bar opens the GitHub repository and refreshes the panel.
 
 ### Branch Changes (secondary sidebar)
 

@@ -48,7 +48,7 @@ export class GitHelperTreeItem extends TreeItem {
         } else if (action === "publishReview") {
             this.iconPath = new ThemeIcon("comment-discussion");
         } else if (action === "openPr") {
-            this.iconPath = new ThemeIcon("github");
+            this.iconPath = new ThemeIcon("git-pull-request");
         } else if (action === "createDraftPr") {
             this.iconPath = new ThemeIcon("git-pull-request-create");
         } else if (action === "openPrReview") {

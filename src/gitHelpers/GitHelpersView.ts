@@ -43,22 +43,25 @@ import { getJiraBrowseUrl, getJiraWorkspace } from "../jira/jiraWorkspace";
 import { resolveJiraKey, summaryFromPrTitle } from "../jira/jiraKey";
 import { pickJiraTicketPrTitle } from "../jira/pickJiraTicketForPrTitle";
 import { registerCommandIB } from "../utils/vscode";
+import { checksTreeItem } from "./checksTreeItem";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
 import { revealBranchChanges } from "./BranchChangesView";
 import { loadBranchChanges, type BranchChangesSummary } from "./loadBranchChanges";
+import {
+    isGitHelpersDebugMode,
+    showGitHelpersDebugAction,
+    syncGitHelpersDebugModeContext,
+} from "./debugMode";
+import { buildMockGitHelpersChildren, getGitHelpersMockState, MOCK_REPO_ROOT } from "./mockData";
 import { registerGitHelpersRefresh } from "./refresh";
 import { RepoChildrenCache } from "./repoChildrenCache";
 
 export { GitHelperTreeItem } from "./GitHelperTreeItem";
 export type { GitHelperItemKind } from "./GitHelperTreeItem";
 
-const GIT_HELPERS_HAS_PR_CHECKS_CONTEXT = "ib-utilities.gitHelpers.hasPrChecks";
 const JIRA_SYNCED_CONTEXT = "ib-utilities.jira.synced";
 
-function prRowDescription(
-    pr: { title: string; isDraft: boolean },
-    jiraKeyPattern?: RegExp
-): string {
+function prRowDescription(pr: { title: string }, jiraKeyPattern?: RegExp): string {
     let title = pr.title;
     if (jiraKeyPattern) {
         const key = resolveJiraKey(pr.title, undefined, jiraKeyPattern)?.key;
@@ -66,7 +69,7 @@ function prRowDescription(
             title = summaryFromPrTitle(pr.title, key) ?? pr.title;
         }
     }
-    return pr.isDraft ? `Draft · ${title}` : title;
+    return title;
 }
 
 function prContextValue(isDraft: boolean, hasJira: boolean, jiraSynced: boolean): string {
@@ -99,6 +102,14 @@ function loadingItem(): GitHelperTreeItem {
     return item;
 }
 
+function guardGitHelpersDebugAction(message: string): boolean {
+    if (!isGitHelpersDebugMode()) {
+        return false;
+    }
+    showGitHelpersDebugAction(message);
+    return true;
+}
+
 export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeItem> {
     private changeEvent = new EventEmitter<GitHelperTreeItem | undefined | null>();
     private treeView: TreeView<GitHelperTreeItem> | undefined;
@@ -112,7 +123,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     private creatingDraftPrFor: string | undefined;
     private markingPrReadyFor: string | undefined;
     private cachedChecksUrl: string | undefined;
-    private checkStatusSummary: string | undefined;
 
     get onDidChangeTreeData(): Event<GitHelperTreeItem | undefined | null> {
         return this.changeEvent.event;
@@ -232,6 +242,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         void clearLegacyBranchReviewState(context);
         registerBaseBranchOverrideStorage(context);
+        void syncGitHelpersDebugModeContext();
         void provider.updateViewTitle();
         registerGitHelpersRefresh(() => provider.refresh());
 
@@ -269,6 +280,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 if (event.affectsConfiguration("ib-utilities.jira.keyPattern")) {
                     provider.refresh();
                 }
+                if (event.affectsConfiguration("ib-utilities.gitHelpers.debugMode")) {
+                    void syncGitHelpersDebugModeContext();
+                    provider.refresh(true);
+                }
             })
         );
         const jiraBoardPath = path.join(os.homedir(), ".config", "jira", "board.json");
@@ -282,6 +297,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private async runOpenRepo(repoPath?: string | SourceControl): Promise<void> {
+        if (guardGitHelpersDebugAction("Open repository (mock: IrishBruse/irishbruse-utilities)")) {
+            return;
+        }
+
         const repoRoot =
             typeof repoPath === "string"
                 ? repoPath
@@ -295,6 +314,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private async runOpenPr(item?: GitHelperTreeItem | string | SourceControl): Promise<void> {
+        if (guardGitHelpersDebugAction("Open PR #42 (draft)")) {
+            return;
+        }
+
         if (item && typeof item === "object" && "prUrl" in item) {
             if (item.prUrl) {
                 await env.openExternal(Uri.parse(item.prUrl));
@@ -329,10 +352,19 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
+        if (isGitHelpersDebugMode() && repoRoot === MOCK_REPO_ROOT) {
+            await revealBranchChanges(repoRoot);
+            showGitHelpersDebugAction("Diff vs main (mock)");
+            return;
+        }
         await Promise.all([revealBranchChanges(repoRoot), openBranchDiff(repoRoot)]);
     }
 
     private async runCreateDraftPr(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        if (guardGitHelpersDebugAction("Create draft PR")) {
+            return;
+        }
+
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -375,6 +407,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private async runOpenPrReview(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        if (guardGitHelpersDebugAction("Open PR review (2 unresolved threads)")) {
+            return;
+        }
+
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -411,6 +447,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private async runOpenJiraTicket(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        if (guardGitHelpersDebugAction("Open Jira ticket PROJ-123")) {
+            return;
+        }
+
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -438,6 +478,12 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private async runCopyJiraKey(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        if (isGitHelpersDebugMode()) {
+            await env.clipboard.writeText("PROJ-123");
+            window.showInformationMessage("Jira key copied to clipboard.");
+            return;
+        }
+
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -466,6 +512,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private async runAddJiraKeyToPrTitle(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        if (guardGitHelpersDebugAction("Add Jira key to PR title")) {
+            return;
+        }
+
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -510,6 +560,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private async runOpenPrChecks(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        if (guardGitHelpersDebugAction("Open PR checks (ci / build failing)")) {
+            return;
+        }
+
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -549,6 +603,12 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private async runCopyPrUrl(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        if (isGitHelpersDebugMode()) {
+            await env.clipboard.writeText(getGitHelpersMockState().pr.url);
+            window.showInformationMessage("PR URL copied to clipboard.");
+            return;
+        }
+
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -579,6 +639,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private async runMarkPrReady(item: GitHelperTreeItem | string | undefined): Promise<void> {
+        if (guardGitHelpersDebugAction("Mark PR ready for review")) {
+            return;
+        }
+
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -620,6 +684,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         item: GitHelperTreeItem | string | undefined,
         action: "publishReview"
     ): Promise<void> {
+        if (guardGitHelpersDebugAction("Publish review notes to PR")) {
+            return;
+        }
+
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -640,6 +708,13 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
     private async updateViewTitle(): Promise<void> {
         if (!this.treeView) {
+            return;
+        }
+
+        if (isGitHelpersDebugMode()) {
+            const mock = getGitHelpersMockState();
+            this.treeView.title = mock.repoName;
+            this.treeView.description = undefined;
             return;
         }
 
@@ -668,26 +743,15 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         const repoRoot = repository.rootUri.fsPath;
         this.treeView.title = path.basename(repoRoot);
-        this.treeView.description = this.checkStatusSummary;
+        this.treeView.description = undefined;
     }
 
-    private async syncViewContexts(jiraSynced: boolean, hasPrChecks: boolean): Promise<void> {
+    private async syncViewContexts(jiraSynced: boolean): Promise<void> {
         await commands.executeCommand("setContext", JIRA_SYNCED_CONTEXT, jiraSynced);
-        await commands.executeCommand("setContext", GIT_HELPERS_HAS_PR_CHECKS_CONTEXT, hasPrChecks);
     }
 
-    private applyCheckStatus(
-        checkStatus: { label: string; description: string; url: string } | undefined
-    ): void {
-        if (checkStatus) {
-            this.cachedChecksUrl = checkStatus.url;
-            this.checkStatusSummary = checkStatus.description
-                ? `${checkStatus.label} · ${checkStatus.description}`
-                : checkStatus.label;
-            return;
-        }
-        this.cachedChecksUrl = undefined;
-        this.checkStatusSummary = undefined;
+    private applyCheckStatus(checkStatus: { url: string } | undefined): void {
+        this.cachedChecksUrl = checkStatus?.url;
     }
 
     getTreeItem(element: GitHelperTreeItem): GitHelperTreeItem {
@@ -723,7 +787,12 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
         if (element.action === "openPr") {
             const item = element;
-            item.iconPath = new ThemeIcon(element.isDraftPr ? "git-pull-request-draft" : "github");
+            item.iconPath = new ThemeIcon(element.isDraftPr ? "git-pull-request-draft" : "git-pull-request");
+            return item;
+        }
+        if (element.action === "openPrChecks") {
+            const item = element;
+            item.iconPath = new ThemeIcon(element.contextValue === "action-openPrChecks-failing" ? "error" : "run-all");
             return item;
         }
         return element;
@@ -744,7 +813,21 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         return children;
     }
 
+    private async buildMockChildren(): Promise<GitHelperTreeItem[]> {
+        const mock = getGitHelpersMockState();
+        const items = buildMockGitHelpersChildren(mock);
+        this.applyCheckStatus(mock.checkStatus);
+        await this.syncViewContexts(true);
+        await this.updateViewTitle();
+        this.displayedRepoRoot = mock.repoRoot;
+        return items;
+    }
+
     private async buildChildren(): Promise<GitHelperTreeItem[]> {
+        if (isGitHelpersDebugMode()) {
+            return this.buildMockChildren();
+        }
+
         let api = getGitApi();
         if (!api) {
             api = await getGitApiAsync();
@@ -786,7 +869,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const items: GitHelperTreeItem[] = [];
         const jiraWorkspace = await getJiraWorkspace();
         const jiraSynced = Boolean(jiraWorkspace);
-        let hasPrChecks = false;
 
         if (head?.name) {
             if (pr) {
@@ -817,10 +899,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 }
 
                 const checkStatus = await getPrCheckStatus(repoRoot, pr.headRefOid, pr.url);
-                if (checkStatus) {
-                    hasPrChecks = true;
-                }
                 this.applyCheckStatus(checkStatus);
+                if (checkStatus) {
+                    items.push(checksTreeItem(repoRoot, pr.number, checkStatus));
+                }
 
                 const reviewStatus = await getPrReviewStatus(repoRoot, pr.number);
                 if (reviewStatus) {
@@ -869,7 +951,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             this.applyCheckStatus(undefined);
         }
 
-        await this.syncViewContexts(jiraSynced, hasPrChecks);
+        await this.syncViewContexts(jiraSynced);
         await this.updateViewTitle();
 
         if (noteCount > 0 && head?.name) {

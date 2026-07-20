@@ -363,6 +363,11 @@ export enum Configuration {
     JiraKeyPattern = `ib-utilities.jira.keyPattern`,
 
     /**
+     * Show Git Helpers with mock PR, checks, Jira, and branch changes data for UI development and testing.
+     */
+    GitHelpersDebugMode = `ib-utilities.gitHelpers.debugMode`,
+
+    /**
      * Actions shown in the Action Panel. Cursor agent prompts use type "agent"; VS Code commands use type "command"; shell commands use type "terminal".
      */
     ActionPanelActions = `ib-utilities.actionPanel.actions`,

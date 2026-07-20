@@ -73,6 +73,11 @@
                     "description": "Regular expression used to match Jira issue keys in PR titles and branch names. Defaults to the pattern used by the jira CLI.",
                     "default": "[A-Z][A-Z0-9_]*-\\d+"
                 },
+                "ib-utilities.gitHelpers.debugMode": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Show Git Helpers with mock PR, checks, Jira, and branch changes data for UI development and testing."
+                },
                 "ib-utilities.actionPanel.actions": {
                     "type": "array",
                     "description": "Actions shown in the Action Panel. Cursor agent prompts use type \"agent\"; VS Code commands use type \"command\"; shell commands use type \"terminal\".",
@@ -651,14 +656,9 @@
                     "group": "navigation@1"
                 },
                 {
-                    "command": "ib-utilities.openPrChecks",
-                    "when": "view == ib-utilities.gitHelpers && ib-utilities.gitHelpers.hasPrChecks",
-                    "group": "navigation@2"
-                },
-                {
                     "command": "ib-utilities.refreshGitHelpers",
                     "when": "view == ib-utilities.gitHelpers",
-                    "group": "navigation@3"
+                    "group": "navigation@2"
                 },
                 {
                     "command": "ib-utilities.openRepo",

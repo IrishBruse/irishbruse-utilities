@@ -326,12 +326,6 @@
                 "icon": "$(issue-opened)"
             },
             {
-                "command": "ib-utilities.copyJiraKey",
-                "title": "Copy Jira Key",
-                "shortTitle": "Copy Jira key",
-                "icon": "$(copy)"
-            },
-            {
                 "command": "ib-utilities.addJiraKeyToPrTitle",
                 "title": "Add Jira Key to PR Title",
                 "shortTitle": "Add Jira key",
@@ -627,11 +621,6 @@
                     "command": "ib-utilities.openJiraTicket",
                     "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr-hasJira || viewItem == action-openPr-draft-hasJira)",
                     "group": "inline@2"
-                },
-                {
-                    "command": "ib-utilities.copyJiraKey",
-                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr-hasJira || viewItem == action-openPr-draft-hasJira)",
-                    "group": "inline@3"
                 },
                 {
                     "command": "ib-utilities.copyPrUrl",

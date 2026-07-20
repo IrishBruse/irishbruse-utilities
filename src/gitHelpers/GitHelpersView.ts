@@ -267,7 +267,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         registerCommandIB(Commands.OpenPrReview, (item) => provider.runOpenPrReview(item), context);
         registerCommandIB(Commands.OpenPrChecks, (item) => provider.runOpenPrChecks(item), context);
         registerCommandIB(Commands.OpenJiraTicket, (item) => provider.runOpenJiraTicket(item), context);
-        registerCommandIB(Commands.CopyJiraKey, (item) => provider.runCopyJiraKey(item), context);
         registerCommandIB(Commands.AddJiraKeyToPrTitle, (item) => provider.runAddJiraKeyToPrTitle(item), context);
 
         wireGitRepositories(context, {
@@ -475,40 +474,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
 
         await env.openExternal(Uri.parse(jiraUrl));
-    }
-
-    private async runCopyJiraKey(item: GitHelperTreeItem | string | undefined): Promise<void> {
-        if (isGitHelpersDebugMode()) {
-            await env.clipboard.writeText("PROJ-123");
-            window.showInformationMessage("Jira key copied to clipboard.");
-            return;
-        }
-
-        const repoRoot =
-            typeof item === "string"
-                ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
-        if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
-            return;
-        }
-
-        let jiraKey = typeof item !== "string" ? item?.jiraKey : undefined;
-        if (!jiraKey) {
-            const jiraWorkspace = await getJiraWorkspace();
-            const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
-            const branch = repository?.state.HEAD?.name;
-            const pr = branch ? await getPrInfo(repoRoot, branch) : undefined;
-            jiraKey = resolveJiraKey(pr?.title, branch, jiraWorkspace?.keyPattern ?? /[A-Z][A-Z0-9_]*-\d+/)?.key;
-        }
-
-        if (!jiraKey) {
-            window.showWarningMessage("No Jira key available.");
-            return;
-        }
-
-        await env.clipboard.writeText(jiraKey);
-        window.showInformationMessage("Jira key copied to clipboard.");
     }
 
     private async runAddJiraKeyToPrTitle(item: GitHelperTreeItem | string | undefined): Promise<void> {

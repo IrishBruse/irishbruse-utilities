@@ -87,13 +87,6 @@ export enum Commands {
     OpenJiraTicket = `ib-utilities.openJiraTicket`,
 
     /**
-     * Copy Jira Key
-     * Short Title: Copy Jira key
-     * Icon: $(copy)
-     */
-    CopyJiraKey = `ib-utilities.copyJiraKey`,
-
-    /**
      * Add Jira Key to PR Title
      * Short Title: Add Jira key
      * Icon: $(edit)

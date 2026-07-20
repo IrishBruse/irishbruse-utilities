@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Change: Git Helpers — remove Copy Jira key inline button from PR row
 -   Change: Git Helpers — checks status is a panel row with description instead of a title bar button
 -   Change: Git Helpers — draft vs open PRs use icons instead of Draft text in the description
 -   Add: Git Helpers debug mode with mock PR, checks, Jira, review, and branch changes data for panel development

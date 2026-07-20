@@ -18,7 +18,7 @@ A **Git Helpers** panel in the Source Control sidebar shows git workflow actions
 Panel data is cached per repository so switching between local repos restores the last-known state immediately:
 
 - **Pull request** — first row, opens the GitHub PR for the current branch (draft PRs use a draft icon).
-  Inline buttons copy the PR URL, open or copy the linked Jira ticket when synced, and mark draft PRs ready
+  Inline buttons copy the PR URL, open the linked Jira ticket when synced, and mark draft PRs ready
 - **Diff** — opens a multi-file diff and reveals the Branch Changes sidebar. Base branch is shown as the row description, with an inline Set base button
 - **Changes** — file count row opens the **Branch Changes** secondary sidebar, with `+additions −deletions` as the description
 - **Checks** — GitHub Actions status row when a PR is open (check name as label, status as description). Click to open checks

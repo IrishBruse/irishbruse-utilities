@@ -327,12 +327,31 @@
         event.preventDefault();
     });
 
-    function isPanButton(button) {
-        return button === 1;
+    /**
+     * @param {EventTarget | null} target
+     * @returns {boolean}
+     */
+    function isOverSelectableText(target) {
+        if (!(target instanceof Element)) {
+            return false;
+        }
+        return target.closest("text, foreignObject") !== null;
+    }
+
+    /**
+     * @param {number} button
+     * @param {EventTarget | null} target
+     * @returns {boolean}
+     */
+    function shouldStartPan(button, target) {
+        if (button === 1) {
+            return true;
+        }
+        return button === 0 && !isOverSelectableText(target);
     }
 
     viewport.addEventListener("pointerdown", (event) => {
-        if (!isPanButton(event.button)) {
+        if (!shouldStartPan(event.button, event.target)) {
             return;
         }
         event.preventDefault();

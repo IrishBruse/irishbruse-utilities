@@ -31,6 +31,8 @@ body {
 
 #canvas.panning {
     cursor: grabbing !important;
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 #diagram {

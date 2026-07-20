@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Change: Mermaid preview pans with left click on non-text areas, while text labels remain selectable
 -   Add: Git Helpers per-repository cache so switching between local repos shows the last-known panel immediately
 
 

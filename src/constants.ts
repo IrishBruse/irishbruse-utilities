@@ -31,6 +31,13 @@ export enum Commands {
     OpenPR = `ib-utilities.openPR`,
 
     /**
+     * Open Repository
+     * Short Title: Open repo
+     * Icon: $(github)
+     */
+    OpenRepo = `ib-utilities.openRepo`,
+
+    /**
      * Create Draft Pull Request
      * Short Title: Create draft PR
      * Icon: $(git-pull-request-create)
@@ -52,18 +59,25 @@ export enum Commands {
     CopyPrUrl = `ib-utilities.copyPrUrl`,
 
     /**
-     * Open Failed Job Log
-     * Short Title: Open failed job log
-     * Icon: $(warning)
-     */
-    OpenFailedJobLog = `ib-utilities.openFailedJobLog`,
-
-    /**
      * Open Pull Request Changes
      * Short Title: Open PR changes
-     * Icon: $(git-compare)
+     * Icon: $(github)
      */
     OpenPrChanges = `ib-utilities.openPrChanges`,
+
+    /**
+     * Open Pull Request Checks
+     * Short Title: Open checks
+     * Icon: $(run-all)
+     */
+    OpenPrChecks = `ib-utilities.openPrChecks`,
+
+    /**
+     * Open Changed File Diff
+     * Short Title: Open file diff
+     * Icon: undefined
+     */
+    OpenChangesFile = `ib-utilities.openChangesFile`,
 
     /**
      * Open Pull Request Review
@@ -75,7 +89,7 @@ export enum Commands {
     /**
      * Open Jira Ticket
      * Short Title: Open Jira
-     * Icon: $(link-external)
+     * Icon: $(issue-opened)
      */
     OpenJiraTicket = `ib-utilities.openJiraTicket`,
 
@@ -192,8 +206,15 @@ export enum Commands {
     DeleteActionPanelAction = `ib-utilities.deleteActionPanelAction`,
 
     /**
-     * Diff vs Base Branch
-     * Short Title: Diff vs base
+     * Show Branch Changes
+     * Short Title: Show changes
+     * Icon: $(git-compare)
+     */
+    ShowBranchChanges = `ib-utilities.showBranchChanges`,
+
+    /**
+     * Diff
+     * Short Title: Diff
      * Icon: $(diff)
      */
     DiffWithBase = `ib-utilities.diffWithBase`,
@@ -322,6 +343,12 @@ export enum Views {
      * ContainerId: scm
      */
     IbUtilitiesGitHelpers = `ib-utilities.gitHelpers`,
+
+    /**
+     * Header: Changed Files
+     * ContainerId: branchChanges
+     */
+    IbUtilitiesBranchChanges = `ib-utilities.branchChanges`,
 
 }
 

@@ -1,7 +1,6 @@
 ---
 name: release
-description: "Release version bumps, changelogs, and Marketplace publish via npm run release.
-Use when the user asks to release, ship, publish, or bump the extension version."
+description: Release version bumps, changelogs, and Marketplace publish via npm run release. Use when the user asks to release, ship, publish, or bump version.
 ---
 
 # Release
@@ -85,7 +84,7 @@ The **gate** is the sole path to `npm run release`. Prep and changelog work do n
 4. **Edit first**: revise and re-run prep if needed, then re-gate.
 5. **Cancel**: stop.
 
-Version change: re-run changelog/prep as needed, then re-gate.
+Version change: re-run Changelog (section 2), Prep (section 3), then Gate (section 4) before approving the release.
 
 **Done when:** user **Approve**s the exact command shown.
 
@@ -99,7 +98,7 @@ Examples: `npm run release -- 0.10.0`, `npm run release -- minor`, `npm run rele
 
 Publishing uses `vsce publish --azure-credential` in CI when `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`, and `AZURE_TENANT_ID` are set.
 
-Otherwise `scripts/release.mjs` opens a browser OAuth sign-in and publishes with the resulting Entra access token.
+Otherwise `npm run release` opens a browser OAuth sign-in and publishes with the resulting Entra access token.
 
 **Done when:** command exits 0.
 

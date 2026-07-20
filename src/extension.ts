@@ -9,6 +9,7 @@ import { activateReviewCommentController } from "./git/reviewCommentController";
 import { exportReviewSummary, promptAndAddReviewNote } from "./git/publishReview";
 import { getActiveRepository } from "./git/resolveActiveRepository";
 import { ActionPanelViewProvider } from "./actionPanel/ActionPanelView";
+import { BranchChangesViewProvider } from "./gitHelpers/BranchChangesView";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
@@ -36,6 +37,7 @@ export function activate(context: ExtensionContext) {
     activateBranchDiffRevert(context);
     context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));
     ActionPanelViewProvider.activate(context);
+    BranchChangesViewProvider.activate(context);
     GitHelpersViewProvider.activate(context);
 
     registerCommandIB(Commands.AddReviewNote, async () => {

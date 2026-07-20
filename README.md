@@ -14,11 +14,26 @@ Tree view under the **Snippet Manager** activity bar: create, edit, and delete s
 
 ### Git Helpers (Source Control)
 
-A **Git Helpers** panel in the Source Control sidebar shows hardcoded git workflow actions for the **active repository**. Panel data is cached per repository so switching between local repos restores the last-known state immediately:
+A **Git Helpers** panel in the Source Control sidebar shows git workflow actions for the **active repository**.
+Panel data is cached per repository so switching between local repos restores the last-known state immediately:
 
-- **Diff vs base** — multi-file diff of your branch against an auto-detected base (`main` / `origin/main`, etc.), with a gear control to pick a different comparison branch or commit
-- **Review notes** — add inline comments in git diffs. **Publish to PR** posts line comments via `gh`
-- **Pull request** — clickable row opens the GitHub PR for the current branch, or **Create draft PR** creates a blank draft when none exists. Title bar button opens the PR (or repo homepage if none)
+- **Pull request** — first row, opens the GitHub PR for the current branch (draft PRs use a draft icon).
+  Inline buttons copy the PR URL, open or copy the linked Jira ticket when synced, and mark draft PRs ready
+- **Diff** — opens the **Branch Changes** secondary sidebar with a merge-base file tree.
+  Base branch is shown as the row description, with inline Set base and GitHub PR changes buttons when a PR exists
+- **Checks** — unified GitHub Actions status row when a PR is open.
+  Title bar also shows check summary and an Open checks button
+- **Review notes** — add inline comments in git diffs, **Publish to PR** posts line comments via `gh`
+- **Create draft PR** — shown when there is no open PR and the branch is not the base branch (hidden on `main` / `master`)
+
+The Git Helpers title bar opens the GitHub repository, sets the comparison base branch, and refreshes the panel.
+
+### Branch Changes (secondary sidebar)
+
+The **Changed Files** view in the secondary sidebar lists files changed against the merge base.
+Click **Diff** in Git Helpers to reveal it.
+The view header shows `+additions −deletions` and file counts.
+Title bar buttons open the GitHub repo and PR changes page when a PR exists.
 
 ### Action Panel
 

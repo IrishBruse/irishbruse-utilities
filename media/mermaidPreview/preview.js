@@ -32,6 +32,7 @@
     let panOriginX = 0;
     let panOriginY = 0;
     let currentSource = "";
+    let hasRenderedDiagram = false;
     let renderId = 0;
 
     const FIT_MARGIN = 48;
@@ -246,7 +247,9 @@
         applyTransform();
     }
 
-    async function renderDiagram(source) {
+    async function renderDiagram(source, options = {}) {
+        const preserveViewport = options.preserveViewport === true;
+        const sourceUnchanged = source === currentSource && hasRenderedDiagram;
         currentSource = source;
         const id = ++renderId;
         clearError();
@@ -258,6 +261,7 @@
             panY = 0;
             applyTransform();
             setCopyEnabled(false);
+            hasRenderedDiagram = false;
             return;
         }
 
@@ -278,13 +282,17 @@
                 stabilizeSvgSize(renderedSvg);
             }
             setCopyEnabled(true);
-            scheduleFitToView();
+            hasRenderedDiagram = true;
+            if (!(preserveViewport && sourceUnchanged)) {
+                scheduleFitToView();
+            }
         } catch (err) {
             if (id !== renderId) {
                 return;
             }
             diagram.replaceChildren();
             setCopyEnabled(false);
+            hasRenderedDiagram = false;
             showError(err instanceof Error ? err.message : String(err));
         }
     }
@@ -293,7 +301,7 @@
         const message = event.data;
         switch (message.type) {
             case "update":
-                void renderDiagram(message.source ?? "");
+                void renderDiagram(message.source ?? "", { preserveViewport: true });
                 break;
             case "theme":
                 initializeMermaid();

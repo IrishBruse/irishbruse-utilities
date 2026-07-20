@@ -180,12 +180,9 @@ export function buildPrReviewStatus(payload: ReviewStatusPayload): PrReviewStatu
         };
     }
 
-    if (payload.reviewRequestsCount > 0) {
+    if (payload.reviewRequestsCount > 1) {
         return {
-            label:
-                payload.reviewRequestsCount === 1
-                    ? "1 requested"
-                    : `${payload.reviewRequestsCount} requested`,
+            label: `${payload.reviewRequestsCount} requested`,
             description: "Awaiting reviewers",
             url: payload.prUrl,
         };

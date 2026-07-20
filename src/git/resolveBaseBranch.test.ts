@@ -7,7 +7,7 @@ vi.mock("./baseBranchOverride", () => ({
 }));
 
 import { getBaseBranchOverride } from "./baseBranchOverride";
-import { formatBranchName, isSameBranch, resolveBaseBranch } from "./resolveBaseBranch";
+import { formatBranchName, isMainlineBranch, isSameBranch, resolveBaseBranch } from "./resolveBaseBranch";
 
 function mockRepository(overrides: {
     head?: Branch;
@@ -102,5 +102,15 @@ describe("isSameBranch", () => {
     it("matches shorthand names", () => {
         expect(isSameBranch("feature/x", "origin/feature/x")).toBe(true);
         expect(isSameBranch("main", "feature/x")).toBe(false);
+    });
+});
+
+describe("isMainlineBranch", () => {
+    it("matches main and master with or without origin prefix", () => {
+        expect(isMainlineBranch("main")).toBe(true);
+        expect(isMainlineBranch("master")).toBe(true);
+        expect(isMainlineBranch("origin/main")).toBe(true);
+        expect(isMainlineBranch("origin/master")).toBe(true);
+        expect(isMainlineBranch("feature/x")).toBe(false);
     });
 });

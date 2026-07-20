@@ -25,6 +25,14 @@ export function isSameBranch(a: string | undefined, b: string | undefined): bool
     return a === b || a.endsWith(`/${b}`) || b.endsWith(`/${a}`);
 }
 
+export function isMainlineBranch(branch: string | undefined): boolean {
+    if (!branch) {
+        return false;
+    }
+    const name = branch.replace(/^origin\//, "");
+    return name === "main" || name === "master";
+}
+
 export async function resolveRefTarget(
     repository: Repository,
     repoRoot: string,

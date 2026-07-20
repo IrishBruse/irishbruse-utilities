@@ -1,7 +1,7 @@
 import path from "path";
 import os from "os";
 import {
-    Command,
+    commands,
     env,
     Event,
     EventEmitter,
@@ -9,7 +9,6 @@ import {
     SourceControl,
     ThemeIcon,
     TreeDataProvider,
-    TreeItem,
     TreeItemCollapsibleState,
     TreeView,
     Uri,
@@ -25,87 +24,60 @@ import type { Repository } from "../git/gitApi";
 import { getActiveRepository, resolveActiveRepository } from "../git/resolveActiveRepository";
 import { registerBaseBranchOverrideStorage } from "../git/baseBranchOverride";
 import { pickBaseBranchTarget } from "../git/pickBaseBranch";
-import { resolveBaseBranch } from "../git/resolveBaseBranch";
+import { isMainlineBranch, isSameBranch, resolveBaseBranch } from "../git/resolveBaseBranch";
 import { wireGitRepositories } from "../git/wireGitRepositories";
-import { openBranchDiff } from "../git/openBranchDiff";
 import { publishReviewToPR } from "../git/publishReview";
 import { markPullRequestReady } from "../git/markPrReady";
 import { openPR } from "../commands/openPR";
+import { openPrChanges } from "../commands/openPrChanges";
+import { openRepo } from "../commands/openRepo";
 import {
-    formatPrFileChangeLabel,
-    formatPrLineChangeDescription,
     getPrChangesUrl,
     getPrInfo,
     runGh,
 } from "../git/githubUrl";
-import { getFailedPrCheck } from "../git/prChecks";
+import { getPrCheckStatus } from "../git/prChecks";
 import { getPrReviewStatus } from "../git/prReviewStatus";
 import { getJiraBrowseUrl, getJiraWorkspace } from "../jira/jiraWorkspace";
-import { extractJiraKeyFromTitle, resolveJiraKey, summaryFromPrTitle } from "../jira/jiraKey";
+import { resolveJiraKey, summaryFromPrTitle } from "../jira/jiraKey";
 import { pickJiraTicketPrTitle } from "../jira/pickJiraTicketForPrTitle";
-import { resolveJiraSummary } from "../jira/jiraSummary";
 import { registerCommandIB } from "../utils/vscode";
+import { revealBranchChanges } from "./BranchChangesView";
+import { GitHelperTreeItem } from "./GitHelperTreeItem";
 import { registerGitHelpersRefresh } from "./refresh";
 import { RepoChildrenCache } from "./repoChildrenCache";
 
-export type GitHelperItemKind = "info" | "action";
+export { GitHelperTreeItem } from "./GitHelperTreeItem";
+export type { GitHelperItemKind } from "./GitHelperTreeItem";
 
-export class GitHelperTreeItem extends TreeItem {
-    public prUrl?: string;
-    public logUrl?: string;
-    public changesUrl?: string;
-    public reviewUrl?: string;
-    public jiraUrl?: string;
-    public jiraKey?: string;
+const GIT_HELPERS_HAS_PR_CHECKS_CONTEXT = "ib-utilities.gitHelpers.hasPrChecks";
+const JIRA_SYNCED_CONTEXT = "ib-utilities.jira.synced";
 
-    constructor(
-        public readonly kind: GitHelperItemKind,
-        public readonly repoRoot: string | undefined,
-        label: string,
-        collapsibleState: TreeItemCollapsibleState,
-        id: string,
-        public readonly action?:
-            | "diffWithBase"
-            | "publishReview"
-            | "openPr"
-            | "createDraftPr"
-            | "openFailedJobLog"
-            | "openPrChanges"
-            | "openPrReview"
-            | "openJira"
-            | "addJiraKeyToPrTitle",
-        description?: string,
-        command?: Command
-    ) {
-        super(label, collapsibleState);
-        this.id = id;
-        this.description = description;
-        this.command = command;
-        this.contextValue = action ? `action-${action}` : kind;
-        if (action === "diffWithBase") {
-            this.iconPath = new ThemeIcon("diff");
-        } else if (action === "publishReview") {
-            this.iconPath = new ThemeIcon("comment-discussion");
-        } else if (action === "openPr") {
-            this.iconPath = new ThemeIcon("git-pull-request");
-        } else if (action === "createDraftPr") {
-            this.iconPath = new ThemeIcon("git-pull-request-create");
-        } else if (action === "openFailedJobLog") {
-            this.iconPath = new ThemeIcon("warning");
-        } else if (action === "openPrChanges") {
-            this.iconPath = new ThemeIcon("git-compare");
-        } else if (action === "openPrReview") {
-            this.iconPath = new ThemeIcon("comment-discussion");
-        } else if (action === "openJira") {
-            this.iconPath = new ThemeIcon("issue-opened");
-        } else if (action === "addJiraKeyToPrTitle") {
-            this.iconPath = new ThemeIcon("warning");
+function prRowDescription(
+    pr: { title: string; isDraft: boolean },
+    jiraKeyPattern?: RegExp
+): string {
+    let title = pr.title;
+    if (jiraKeyPattern) {
+        const key = resolveJiraKey(pr.title, undefined, jiraKeyPattern)?.key;
+        if (key) {
+            title = summaryFromPrTitle(pr.title, key) ?? pr.title;
         }
     }
+    return pr.isDraft ? `Draft · ${title}` : title;
 }
 
-function prRowDescription(pr: { title: string; isDraft: boolean }): string {
-    return pr.isDraft ? `Draft · ${pr.title}` : pr.title;
+function prContextValue(isDraft: boolean, hasJira: boolean, jiraSynced: boolean): string {
+    if (isDraft) {
+        if (hasJira) {
+            return "action-openPr-draft-hasJira";
+        }
+        return jiraSynced ? "action-openPr-draft-noJira" : "action-openPr-draft";
+    }
+    if (hasJira) {
+        return "action-openPr-hasJira";
+    }
+    return jiraSynced ? "action-openPr-noJira" : "action-openPr";
 }
 
 function childrenSignature(items: readonly GitHelperTreeItem[]): string {
@@ -137,6 +109,8 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     private buildGeneration = 0;
     private creatingDraftPrFor: string | undefined;
     private markingPrReadyFor: string | undefined;
+    private cachedChecksUrl: string | undefined;
+    private checkStatusSummary: string | undefined;
 
     get onDidChangeTreeData(): Event<GitHelperTreeItem | undefined | null> {
         return this.changeEvent.event;
@@ -268,17 +242,18 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             },
             context
         );
-        registerCommandIB(Commands.DiffWithBase, (item) => provider.runAction(item, "diffWithBase"), context);
+        registerCommandIB(Commands.DiffWithBase, (item) => provider.runDiffWithBase(item), context);
         registerCommandIB(Commands.SetBaseBranch, (item?: GitHelperTreeItem) => pickBaseBranchTarget(item?.repoRoot), context);
         registerCommandIB(Commands.PublishReviewToPR, (item) => provider.runAction(item, "publishReview"), context);
-        registerCommandIB(Commands.OpenPR, (repoPath) => provider.runOpenPr(repoPath), context);
+        registerCommandIB(Commands.OpenPR, (item) => provider.runOpenPr(item), context);
+        registerCommandIB(Commands.OpenRepo, (repoPath) => provider.runOpenRepo(repoPath), context);
         registerCommandIB(Commands.RefreshGitHelpers, () => provider.refresh(true), context);
         registerCommandIB(Commands.CreateDraftPR, (item) => provider.runCreateDraftPr(item), context);
         registerCommandIB(Commands.MarkPrReady, (item) => provider.runMarkPrReady(item), context);
         registerCommandIB(Commands.CopyPrUrl, (item) => provider.runCopyPrUrl(item), context);
-        registerCommandIB(Commands.OpenFailedJobLog, (item) => provider.runOpenFailedJobLog(item), context);
-        registerCommandIB(Commands.OpenPrChanges, (item) => provider.runOpenPrChanges(item), context);
         registerCommandIB(Commands.OpenPrReview, (item) => provider.runOpenPrReview(item), context);
+        registerCommandIB(Commands.OpenPrChecks, (item) => provider.runOpenPrChecks(item), context);
+        registerCommandIB(Commands.OpenPrChanges, (item) => provider.runOpenPrChanges(item), context);
         registerCommandIB(Commands.OpenJiraTicket, (item) => provider.runOpenJiraTicket(item), context);
         registerCommandIB(Commands.CopyJiraKey, (item) => provider.runCopyJiraKey(item), context);
         registerCommandIB(Commands.AddJiraKeyToPrTitle, (item) => provider.runAddJiraKeyToPrTitle(item), context);
@@ -305,7 +280,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         return provider;
     }
 
-    private async runOpenPr(repoPath?: string | SourceControl): Promise<void> {
+    private async runOpenRepo(repoPath?: string | SourceControl): Promise<void> {
         const repoRoot =
             typeof repoPath === "string"
                 ? repoPath
@@ -315,7 +290,45 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             return;
         }
         const sourceControl = repoPath && typeof repoPath !== "string" ? repoPath : undefined;
+        await openRepo(sourceControl, repoRoot);
+    }
+
+    private async runOpenPr(item?: GitHelperTreeItem | string | SourceControl): Promise<void> {
+        if (item && typeof item === "object" && "prUrl" in item) {
+            if (item.prUrl) {
+                await env.openExternal(Uri.parse(item.prUrl));
+                return;
+            }
+            if (item.repoRoot) {
+                await openPR(undefined, item.repoRoot);
+                return;
+            }
+        }
+
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item && typeof item !== "string" && "rootUri" in item
+                  ? item.rootUri?.fsPath
+                  : (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+        const sourceControl = item && typeof item !== "string" && "rootUri" in item ? item : undefined;
         await openPR(sourceControl, repoRoot);
+    }
+
+    private async runDiffWithBase(item?: GitHelperTreeItem | string): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        if (!repoRoot) {
+            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            return;
+        }
+        await revealBranchChanges(repoRoot);
     }
 
     private async runCreateDraftPr(item: GitHelperTreeItem | string | undefined): Promise<void> {
@@ -394,37 +407,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
 
         await env.openExternal(Uri.parse(reviewUrl));
-    }
-
-    private async runOpenPrChanges(item: GitHelperTreeItem | string | undefined): Promise<void> {
-        const repoRoot =
-            typeof item === "string"
-                ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
-        if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
-            return;
-        }
-
-        let changesUrl = typeof item !== "string" ? item?.changesUrl : undefined;
-        if (!changesUrl) {
-            const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
-            const branch = repository?.state.HEAD?.name;
-            if (!branch) {
-                window.showWarningMessage("No named branch checked out.");
-                return;
-            }
-
-            const pr = await getPrInfo(repoRoot, branch);
-            if (!pr) {
-                window.showWarningMessage("No pull request found for the current branch.");
-                return;
-            }
-
-            changesUrl = getPrChangesUrl(pr.url);
-        }
-
-        await env.openExternal(Uri.parse(changesUrl));
     }
 
     private async runOpenJiraTicket(item: GitHelperTreeItem | string | undefined): Promise<void> {
@@ -526,7 +508,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         this.refresh();
     }
 
-    private async runOpenFailedJobLog(item: GitHelperTreeItem | string | undefined): Promise<void> {
+    private async runOpenPrChecks(item: GitHelperTreeItem | string | undefined): Promise<void> {
         const repoRoot =
             typeof item === "string"
                 ? item
@@ -536,8 +518,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             return;
         }
 
-        let logUrl = typeof item !== "string" ? item?.logUrl : undefined;
-        if (!logUrl) {
+        let checksUrl = typeof item !== "string" ? item?.checksUrl : undefined;
+        if (!checksUrl && repoRoot === this.displayedRepoRoot) {
+            checksUrl = this.cachedChecksUrl;
+        }
+        if (!checksUrl) {
             const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
             const branch = repository?.state.HEAD?.name;
             if (!branch) {
@@ -551,15 +536,24 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 return;
             }
 
-            logUrl = (await getFailedPrCheck(repoRoot, pr.headRefOid))?.logUrl;
+            checksUrl = (await getPrCheckStatus(repoRoot, pr.headRefOid, pr.url))?.url;
         }
 
-        if (!logUrl) {
-            window.showWarningMessage("No failed check log available.");
+        if (!checksUrl) {
+            window.showWarningMessage("No PR checks available.");
             return;
         }
 
-        await env.openExternal(Uri.parse(logUrl));
+        await env.openExternal(Uri.parse(checksUrl));
+    }
+
+    private async runOpenPrChanges(item?: GitHelperTreeItem | string): Promise<void> {
+        const repoRoot =
+            typeof item === "string"
+                ? item
+                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+        const changesUrl = typeof item !== "string" ? item?.changesUrl : undefined;
+        await openPrChanges(repoRoot, changesUrl);
     }
 
     private async runCopyPrUrl(item: GitHelperTreeItem | string | undefined): Promise<void> {
@@ -632,7 +626,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
     private async runAction(
         item: GitHelperTreeItem | string | undefined,
-        action: "diffWithBase" | "publishReview"
+        action: "publishReview"
     ): Promise<void> {
         const repoRoot =
             typeof item === "string"
@@ -646,16 +640,9 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repository = (await getActiveRepository()) ?? undefined;
         const branch = repository?.state.HEAD?.name;
 
-        switch (action) {
-            case "diffWithBase":
-                await openBranchDiff(repoRoot);
-                break;
-            case "publishReview":
-                if (branch) {
-                    await publishReviewToPR(repoRoot, branch);
-                    this.refresh();
-                }
-                break;
+        if (action === "publishReview" && branch) {
+            await publishReviewToPR(repoRoot, branch);
+            this.refresh();
         }
     }
 
@@ -689,7 +676,26 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         const repoRoot = repository.rootUri.fsPath;
         this.treeView.title = path.basename(repoRoot);
-        this.treeView.description = undefined;
+        this.treeView.description = this.checkStatusSummary;
+    }
+
+    private async syncViewContexts(jiraSynced: boolean, hasPrChecks: boolean): Promise<void> {
+        await commands.executeCommand("setContext", JIRA_SYNCED_CONTEXT, jiraSynced);
+        await commands.executeCommand("setContext", GIT_HELPERS_HAS_PR_CHECKS_CONTEXT, hasPrChecks);
+    }
+
+    private applyCheckStatus(
+        checkStatus: { label: string; description: string; url: string } | undefined
+    ): void {
+        if (checkStatus) {
+            this.cachedChecksUrl = checkStatus.url;
+            this.checkStatusSummary = checkStatus.description
+                ? `${checkStatus.label} · ${checkStatus.description}`
+                : checkStatus.label;
+            return;
+        }
+        this.cachedChecksUrl = undefined;
+        this.checkStatusSummary = undefined;
     }
 
     getTreeItem(element: GitHelperTreeItem): GitHelperTreeItem {
@@ -716,9 +722,18 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 element.action,
                 element.description as string | undefined
             );
-            item.contextValue = "action-openPr-markReady-loading";
+            item.contextValue = element.contextValue ?? "action-openPr-markReady-loading";
             item.iconPath = new ThemeIcon("sync~spin");
             item.prUrl = element.prUrl;
+            item.jiraUrl = element.jiraUrl;
+            item.jiraKey = element.jiraKey;
+            return item;
+        }
+        if (element.action === "openPr") {
+            const item = element;
+            item.iconPath = new ThemeIcon(
+                element.isDraftPr ? "git-pull-request-draft" : "git-pull-request"
+            );
             return item;
         }
         return element;
@@ -779,13 +794,15 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const noteCount = notes ? countUnpublishedNotes(notes) : 0;
 
         const items: GitHelperTreeItem[] = [];
-
-        if (head?.name && base) {
-            items.push(actionItem(repoRoot, "Diff vs base", "diffWithBase", Commands.DiffWithBase, base.name));
-        }
+        const jiraWorkspace = await getJiraWorkspace();
+        const jiraSynced = Boolean(jiraWorkspace);
+        let hasPrChecks = false;
 
         if (head?.name) {
             if (pr) {
+                const resolvedKey = jiraWorkspace
+                    ? resolveJiraKey(pr.title, branch, jiraWorkspace.keyPattern)
+                    : undefined;
                 const prItem = new GitHelperTreeItem(
                     "action",
                     repoRoot,
@@ -793,78 +810,27 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                     TreeItemCollapsibleState.None,
                     `${repoRoot}:openPr:${pr.number}`,
                     "openPr",
-                    prRowDescription(pr),
-                    { command: Commands.OpenPR, title: "Open PR", arguments: [repoRoot] }
+                    prRowDescription(pr, jiraWorkspace?.keyPattern)
                 );
-                prItem.contextValue = pr.isDraft ? "action-openPr-draft" : "action-openPr";
+                prItem.isDraftPr = pr.isDraft;
+                prItem.contextValue = prContextValue(pr.isDraft, Boolean(resolvedKey), jiraSynced);
                 prItem.prUrl = pr.url;
+                prItem.command = { command: Commands.OpenPR, title: "Open PR", arguments: [prItem] };
+                if (resolvedKey && jiraWorkspace) {
+                    prItem.jiraUrl = getJiraBrowseUrl(jiraWorkspace.baseUrl, resolvedKey.key);
+                    prItem.jiraKey = resolvedKey.key;
+                }
                 items.push(prItem);
 
-                const jiraWorkspace = await getJiraWorkspace();
-                if (jiraWorkspace) {
-                    const resolvedKey = resolveJiraKey(pr.title, branch, jiraWorkspace.keyPattern);
-                    if (resolvedKey) {
-                        const titleFallback = summaryFromPrTitle(pr.title, resolvedKey.key);
-                        const description = await resolveJiraSummary(
-                            repoRoot,
-                            resolvedKey.key,
-                            jiraWorkspace.board,
-                            titleFallback
-                        );
-                        const jiraItem = new GitHelperTreeItem(
-                            "action",
-                            repoRoot,
-                            resolvedKey.key,
-                            TreeItemCollapsibleState.None,
-                            `${repoRoot}:openJira:${resolvedKey.key}`,
-                            "openJira",
-                            description,
-                            {
-                                command: Commands.OpenJiraTicket,
-                                title: "Open Jira ticket",
-                                arguments: [repoRoot],
-                            }
-                        );
-                        jiraItem.contextValue = "action-openJira";
-                        jiraItem.jiraUrl = getJiraBrowseUrl(jiraWorkspace.baseUrl, resolvedKey.key);
-                        jiraItem.jiraKey = resolvedKey.key;
-                        items.push(jiraItem);
-                    } else {
-                        items.push(
-                            new GitHelperTreeItem(
-                                "action",
-                                repoRoot,
-                                "Add Jira key to PR title",
-                                TreeItemCollapsibleState.None,
-                                `${repoRoot}:addJiraKeyToPrTitle:${pr.number}`,
-                                "addJiraKeyToPrTitle",
-                                "Pick a synced ticket",
-                                {
-                                    command: Commands.AddJiraKeyToPrTitle,
-                                    title: "Add Jira key to PR title",
-                                    arguments: [repoRoot],
-                                }
-                            )
-                        );
-                    }
+                if (base) {
+                    items.push(diffItem(repoRoot, base.name, pr?.url));
                 }
 
-                const changesItem = new GitHelperTreeItem(
-                    "action",
-                    repoRoot,
-                    formatPrFileChangeLabel(pr.changedFiles),
-                    TreeItemCollapsibleState.None,
-                    `${repoRoot}:openPrChanges:${pr.number}`,
-                    "openPrChanges",
-                    formatPrLineChangeDescription(pr.additions, pr.deletions),
-                    {
-                        command: Commands.OpenPrChanges,
-                        title: "Open PR changes",
-                        arguments: [repoRoot],
-                    }
-                );
-                changesItem.changesUrl = getPrChangesUrl(pr.url);
-                items.push(changesItem);
+                const checkStatus = await getPrCheckStatus(repoRoot, pr.headRefOid, pr.url);
+                if (checkStatus) {
+                    hasPrChecks = true;
+                }
+                this.applyCheckStatus(checkStatus);
 
                 const reviewStatus = await getPrReviewStatus(repoRoot, pr.number);
                 if (reviewStatus) {
@@ -885,45 +851,36 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                     reviewItem.reviewUrl = reviewStatus.url;
                     items.push(reviewItem);
                 }
-
-                const failedCheck = await getFailedPrCheck(repoRoot, pr.headRefOid);
-                if (failedCheck) {
-                    const failedLogItem = new GitHelperTreeItem(
-                        "action",
-                        repoRoot,
-                        "Open failed job log",
-                        TreeItemCollapsibleState.None,
-                        `${repoRoot}:openFailedJobLog:${pr.number}`,
-                        "openFailedJobLog",
-                        "Checks failing",
-                        {
-                            command: Commands.OpenFailedJobLog,
-                            title: "Open failed job log",
-                            arguments: [repoRoot],
-                        }
-                    );
-                    failedLogItem.logUrl = failedCheck.logUrl;
-                    items.push(failedLogItem);
-                }
             } else {
-                items.push(
-                    new GitHelperTreeItem(
-                        "action",
-                        repoRoot,
-                        "Create draft PR",
-                        TreeItemCollapsibleState.None,
-                        `${repoRoot}:createDraftPr`,
-                        "createDraftPr",
-                        undefined,
-                        {
-                            command: Commands.CreateDraftPR,
-                            title: "Create draft PR",
-                            arguments: [repoRoot],
-                        }
-                    )
-                );
+                this.applyCheckStatus(undefined);
+                if (!isMainlineBranch(head.name) && (!base || !isSameBranch(head.name, base.name))) {
+                    items.push(
+                        new GitHelperTreeItem(
+                            "action",
+                            repoRoot,
+                            "Create draft PR",
+                            TreeItemCollapsibleState.None,
+                            `${repoRoot}:createDraftPr`,
+                            "createDraftPr",
+                            undefined,
+                            {
+                                command: Commands.CreateDraftPR,
+                                title: "Create draft PR",
+                                arguments: [repoRoot],
+                            }
+                        )
+                    );
+                    if (base) {
+                        items.push(diffItem(repoRoot, base.name));
+                    }
+                }
             }
+        } else {
+            this.applyCheckStatus(undefined);
         }
+
+        await this.syncViewContexts(jiraSynced, hasPrChecks);
+        await this.updateViewTitle();
 
         if (noteCount > 0 && head?.name) {
             items.push(actionItem(repoRoot, "Publish to PR", "publishReview", Commands.PublishReviewToPR));
@@ -931,6 +888,15 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         return items;
     }
+}
+
+function diffItem(repoRoot: string, baseName: string, prUrl?: string): GitHelperTreeItem {
+    const item = actionItem(repoRoot, "Diff", "diffWithBase", Commands.DiffWithBase, baseName);
+    if (prUrl) {
+        item.changesUrl = getPrChangesUrl(prUrl);
+        item.contextValue = "action-diffWithBase-hasPr";
+    }
+    return item;
 }
 
 function actionItem(

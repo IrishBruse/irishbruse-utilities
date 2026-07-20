@@ -19,7 +19,8 @@
     "activationEvents": [
         "onStartupFinished",
         "onView:ib-utilities.actionPanel",
-        "onView:ib-utilities.gitHelpers"
+        "onView:ib-utilities.gitHelpers",
+        "onView:ib-utilities.branchChanges"
     ],
     "scripts": {
         "vscode:prepublish": "npm run package",
@@ -205,6 +206,13 @@
                     "title": "Actions",
                     "icon": "$(run-all)"
                 }
+            ],
+            "secondarySidebar": [
+                {
+                    "id": "branchChanges",
+                    "title": "Branch Changes",
+                    "icon": "$(diff)"
+                }
             ]
         },
         "views": {
@@ -232,6 +240,15 @@
                     "contextualTitle": "Git Helpers",
                     "visibility": "visible"
                 }
+            ],
+            "branchChanges": [
+                {
+                    "id": "ib-utilities.branchChanges",
+                    "name": "Changed Files",
+                    "icon": "$(git-compare)",
+                    "contextualTitle": "Branch Changes",
+                    "visibility": "visible"
+                }
             ]
         },
         "commands": [
@@ -257,6 +274,12 @@
                 "icon": "$(github)"
             },
             {
+                "command": "ib-utilities.openRepo",
+                "title": "Open Repository",
+                "shortTitle": "Open repo",
+                "icon": "$(github)"
+            },
+            {
                 "command": "ib-utilities.createDraftPR",
                 "title": "Create Draft Pull Request",
                 "shortTitle": "Create draft PR",
@@ -275,16 +298,21 @@
                 "icon": "$(copy)"
             },
             {
-                "command": "ib-utilities.openFailedJobLog",
-                "title": "Open Failed Job Log",
-                "shortTitle": "Open failed job log",
-                "icon": "$(warning)"
-            },
-            {
                 "command": "ib-utilities.openPrChanges",
                 "title": "Open Pull Request Changes",
                 "shortTitle": "Open PR changes",
-                "icon": "$(git-compare)"
+                "icon": "$(github)"
+            },
+            {
+                "command": "ib-utilities.openPrChecks",
+                "title": "Open Pull Request Checks",
+                "shortTitle": "Open checks",
+                "icon": "$(run-all)"
+            },
+            {
+                "command": "ib-utilities.openChangesFile",
+                "title": "Open Changed File Diff",
+                "shortTitle": "Open file diff"
             },
             {
                 "command": "ib-utilities.openPrReview",
@@ -296,7 +324,7 @@
                 "command": "ib-utilities.openJiraTicket",
                 "title": "Open Jira Ticket",
                 "shortTitle": "Open Jira",
-                "icon": "$(link-external)"
+                "icon": "$(issue-opened)"
             },
             {
                 "command": "ib-utilities.copyJiraKey",
@@ -393,9 +421,15 @@
                 "icon": "$(trash)"
             },
             {
+                "command": "ib-utilities.showBranchChanges",
+                "title": "Show Branch Changes",
+                "shortTitle": "Show changes",
+                "icon": "$(git-compare)"
+            },
+            {
                 "command": "ib-utilities.diffWithBase",
-                "title": "Diff vs Base Branch",
-                "shortTitle": "Diff vs base",
+                "title": "Diff",
+                "shortTitle": "Diff",
                 "icon": "$(diff)"
             },
             {
@@ -577,23 +611,38 @@
                 },
                 {
                     "command": "ib-utilities.setBaseBranch",
-                    "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase",
+                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-diffWithBase || viewItem == action-diffWithBase-hasPr)",
                     "group": "inline"
                 },
                 {
-                    "command": "ib-utilities.markPrReady",
-                    "when": "view == ib-utilities.gitHelpers && viewItem == action-openPr-draft",
+                    "command": "ib-utilities.openPrChanges",
+                    "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase-hasPr",
                     "group": "inline@1"
                 },
                 {
-                    "command": "ib-utilities.copyPrUrl",
-                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr || viewItem == action-openPr-draft)",
+                    "command": "ib-utilities.markPrReady",
+                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr-draft || viewItem == action-openPr-draft-noJira || viewItem == action-openPr-draft-hasJira)",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "ib-utilities.addJiraKeyToPrTitle",
+                    "when": "view == ib-utilities.gitHelpers && ib-utilities.jira.synced && (viewItem == action-openPr-noJira || viewItem == action-openPr-draft-noJira)",
+                    "group": "inline@1"
+                },
+                {
+                    "command": "ib-utilities.openJiraTicket",
+                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr-hasJira || viewItem == action-openPr-draft-hasJira)",
                     "group": "inline@2"
                 },
                 {
                     "command": "ib-utilities.copyJiraKey",
-                    "when": "view == ib-utilities.gitHelpers && viewItem == action-openJira",
-                    "group": "inline"
+                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr-hasJira || viewItem == action-openPr-draft-hasJira)",
+                    "group": "inline@3"
+                },
+                {
+                    "command": "ib-utilities.copyPrUrl",
+                    "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr || viewItem == action-openPr-draft || viewItem == action-openPr-hasJira || viewItem == action-openPr-draft-hasJira || viewItem == action-openPr-noJira || viewItem == action-openPr-draft-noJira)",
+                    "group": "inline@4"
                 }
             ],
             "view/title": [
@@ -608,14 +657,34 @@
                     "group": "navigation"
                 },
                 {
-                    "command": "ib-utilities.openPR",
+                    "command": "ib-utilities.openRepo",
                     "when": "view == ib-utilities.gitHelpers",
-                    "group": "navigation"
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "ib-utilities.setBaseBranch",
+                    "when": "view == ib-utilities.gitHelpers",
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "ib-utilities.openPrChecks",
+                    "when": "view == ib-utilities.gitHelpers && ib-utilities.gitHelpers.hasPrChecks",
+                    "group": "navigation@3"
                 },
                 {
                     "command": "ib-utilities.refreshGitHelpers",
                     "when": "view == ib-utilities.gitHelpers",
-                    "group": "navigation"
+                    "group": "navigation@4"
+                },
+                {
+                    "command": "ib-utilities.openRepo",
+                    "when": "view == ib-utilities.branchChanges",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "ib-utilities.openPrChanges",
+                    "when": "view == ib-utilities.branchChanges && ib-utilities.branchChanges.hasPr",
+                    "group": "navigation@2"
                 },
                 {
                     "command": "ib-utilities.addActionPanelAction",

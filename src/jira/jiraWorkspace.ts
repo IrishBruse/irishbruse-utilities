@@ -180,8 +180,7 @@ async function readJiraSite(): Promise<string | undefined> {
 
 function resolveKeyPattern(): RegExp | undefined {
     const patternSource =
-        workspace.getConfiguration("ib-utilities").get<string>("jira.keyPattern")?.trim() ||
-        DEFAULT_KEY_PATTERN;
+        workspace.getConfiguration("ib-utilities").get<string>("jira.keyPattern")?.trim() || DEFAULT_KEY_PATTERN;
     try {
         return new RegExp(patternSource);
     } catch {

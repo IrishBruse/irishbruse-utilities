@@ -34,12 +34,14 @@ export class MermaidCustomEditorProvider implements CustomTextEditorProvider {
 
         let updateTimer: ReturnType<typeof setTimeout> | undefined;
         let isReady = false;
+        let lastSentVersion = -1;
 
         const postTheme = () => {
             webviewPanel.webview.postMessage({ type: "theme" });
         };
 
         const postUpdate = () => {
+            lastSentVersion = document.version;
             webviewPanel.webview.postMessage({
                 type: "update",
                 source: document.getText(),
@@ -80,7 +82,7 @@ export class MermaidCustomEditorProvider implements CustomTextEditorProvider {
                 postTheme();
             }),
             webviewPanel.onDidChangeViewState((event) => {
-                if (event.webviewPanel.visible && isReady) {
+                if (event.webviewPanel.visible && isReady && document.version !== lastSentVersion) {
                     postUpdate();
                 }
             }),

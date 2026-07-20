@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+-   Change: Git Helpers — PR row first with draft icon, cached URL open, and inline Jira buttons; Checks row replaces separate Jira and failed-job rows
+-   Change: Git Helpers — Diff row opens Branch Changes secondary sidebar, with inline Set base and GitHub PR changes when a PR exists
+-   Change: Git Helpers — title bar opens repo, check status in header, and Open checks button when a PR has checks
+-   Change: Branch Changes sidebar — `+/-` file counts in view header, Open repo and Open PR changes title bar buttons
+-   Change: Git Helpers — hide Create draft PR on main/master and when checked out on the base branch
+-   Fix: Mermaid preview preserves pan/zoom when switching back to an unchanged diagram tab
+-   Fix: Release skill lint issues
+
 ## 0.12.0
 
 -   Add: Action Panel terminal command actions with panel, editor space, or background run modes

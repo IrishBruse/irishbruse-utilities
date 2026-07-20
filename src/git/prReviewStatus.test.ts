@@ -108,7 +108,7 @@ describe("buildPrReviewStatus", () => {
         });
     });
 
-    it("shows awaiting reviewers when nothing else needs attention", () => {
+    it("shows awaiting reviewers when multiple reviewers are requested", () => {
         const status = buildPrReviewStatus({
             ...basePayload,
             reviewRequestsCount: 2,
@@ -119,6 +119,15 @@ describe("buildPrReviewStatus", () => {
             description: "Awaiting reviewers",
             url: "https://github.com/o/r/pull/7",
         });
+    });
+
+    it("hides a single pending reviewer request", () => {
+        expect(
+            buildPrReviewStatus({
+                ...basePayload,
+                reviewRequestsCount: 1,
+            })
+        ).toBeUndefined();
     });
 
     it("returns undefined when there is no review activity", () => {

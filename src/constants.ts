@@ -343,7 +343,7 @@ export enum Configuration {
     JiraKeyPattern = `ib-utilities.jira.keyPattern`,
 
     /**
-     * Actions shown in the Action Panel. Cursor agent prompts use type "agent"; VS Code commands use type "command".
+     * Actions shown in the Action Panel. Cursor agent prompts use type "agent"; VS Code commands use type "command"; shell commands use type "terminal".
      */
     ActionPanelActions = `ib-utilities.actionPanel.actions`,
 

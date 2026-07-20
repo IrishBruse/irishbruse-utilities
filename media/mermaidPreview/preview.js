@@ -361,6 +361,7 @@
         panOriginX = panX;
         panOriginY = panY;
         canvas.classList.add("panning");
+        viewport.classList.add("panning");
         viewport.setPointerCapture(event.pointerId);
     });
 
@@ -380,6 +381,7 @@
         }
         isPanning = false;
         canvas.classList.remove("panning");
+        viewport.classList.remove("panning");
         if (event.pointerId !== undefined) {
             viewport.releasePointerCapture(event.pointerId);
         }

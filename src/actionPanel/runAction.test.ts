@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
     executeCommand: vi.fn(),
     openAgentInEditorTerminal: vi.fn(),
+    openTerminalCommand: vi.fn(),
 }));
 
 vi.mock("vscode", () => ({
@@ -11,6 +12,10 @@ vi.mock("vscode", () => ({
 
 vi.mock("../utils/openAgentTerminal", () => ({
     openAgentInEditorTerminal: mocks.openAgentInEditorTerminal,
+}));
+
+vi.mock("../utils/openTerminalCommand", () => ({
+    openTerminalCommand: mocks.openTerminalCommand,
 }));
 
 vi.mock("./getActionPanelActions", () => ({
@@ -34,6 +39,7 @@ describe("runActionPanelItem", () => {
     beforeEach(() => {
         mockGetActionPanelAction.mockReset();
         mocks.openAgentInEditorTerminal.mockReset();
+        mocks.openTerminalCommand.mockReset();
         mocks.executeCommand.mockReset();
     });
 
@@ -62,5 +68,24 @@ describe("runActionPanelItem", () => {
         await runActionPanelItem("customCommand", context);
 
         expect(mocks.executeCommand).toHaveBeenCalledWith("workbench.action.terminal.new", "editor");
+    });
+
+    it("runs terminal commands with substituted shell text", async () => {
+        mockGetActionPanelAction.mockReturnValue({
+            id: "runTests",
+            label: "Run tests",
+            type: "terminal",
+            command: "npm test --branch=${branch}",
+            terminalMode: "editor",
+        });
+
+        await runActionPanelItem("runTests", context);
+
+        expect(mocks.openTerminalCommand).toHaveBeenCalledWith({
+            command: "npm test --branch=feature/x",
+            cwd: "/repo",
+            name: "Run tests",
+            terminalMode: "editor",
+        });
     });
 });

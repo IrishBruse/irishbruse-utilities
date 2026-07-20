@@ -21,7 +21,6 @@ import {
     migrateActionPanelSettingsFromWorkspace,
 } from "./addActionPanelAction";
 import { ActionPanelActionEditor } from "./ActionPanelActionEditor";
-import { getCodiconUri } from "./getCodiconUri";
 import { getConfiguredActionPanelActions } from "./getActionPanelActions";
 import { registerActionPanelRefresh } from "./refresh";
 import { resolveActionPanelContext } from "./resolveActionPanelContext";
@@ -38,8 +37,7 @@ export class ActionPanelTreeItem extends TreeItem {
         public readonly actionId?: string,
         description?: string,
         command?: Command,
-        icon?: string,
-        extensionContext?: ExtensionContext
+        icon?: string
     ) {
         super(label, collapsibleState);
         this.description = description;
@@ -48,8 +46,8 @@ export class ActionPanelTreeItem extends TreeItem {
         if (actionId) {
             this.id = actionId;
         }
-        if (icon && extensionContext) {
-            this.iconPath = getCodiconUri(extensionContext, icon) ?? new ThemeIcon(icon);
+        if (icon) {
+            this.iconPath = new ThemeIcon(icon);
         }
     }
 }
@@ -153,11 +151,11 @@ export class ActionPanelViewProvider implements TreeDataProvider<ActionPanelTree
             ];
         }
 
-        return actions.map((action) => actionItem(action, this.context));
+        return actions.map((action) => actionItem(action));
     }
 }
 
-function actionItem(action: ActionPanelAction, context: ExtensionContext): ActionPanelTreeItem {
+function actionItem(action: ActionPanelAction): ActionPanelTreeItem {
     return new ActionPanelTreeItem(
         "action",
         action.label,
@@ -169,7 +167,6 @@ function actionItem(action: ActionPanelAction, context: ExtensionContext): Actio
             title: action.label,
             arguments: [action.id],
         },
-        action.icon,
-        context
+        action.icon
     );
 }

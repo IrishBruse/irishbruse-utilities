@@ -4,6 +4,4 @@ node_modules
 .vscode-test/
 *.vsix
 media/mermaidPreview/mermaid.min.js
-media/codicons/
-media/actionPanelEditor/codicon-codepoints.json
 docs/mermaid/

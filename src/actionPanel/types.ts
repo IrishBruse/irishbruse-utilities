@@ -1,4 +1,6 @@
-export type ActionPanelActionType = "agent" | "command";
+export type ActionPanelActionType = "agent" | "command" | "terminal";
+
+export type ActionPanelTerminalMode = "panel" | "editor" | "background";
 
 export type ActionPanelAction = {
     id: string;
@@ -8,6 +10,7 @@ export type ActionPanelAction = {
     prompt?: string;
     command?: string;
     args?: unknown[];
+    terminalMode?: ActionPanelTerminalMode;
 };
 
 export type ActionPanelContext = {

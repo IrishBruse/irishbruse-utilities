@@ -2,6 +2,7 @@ import { readFile } from "fs/promises";
 import path from "path";
 import {
     Disposable,
+    ThemeIcon,
     Uri,
     ViewColumn,
     WebviewPanel,
@@ -44,7 +45,7 @@ export class ActionPanelActionEditor implements Disposable {
         this.editingActionId = request.action?.id;
 
         if (this.panel && this.pending) {
-            this.panel.title = request.action ? "Edit Action" : "Add Action";
+            this.applyPanelChrome(this.panel, request);
             this.panel.reveal(ViewColumn.Active, true);
             void this.postInit(request);
             return new Promise((resolve) => {
@@ -69,6 +70,7 @@ export class ActionPanelActionEditor implements Disposable {
                 }
             );
             this.panel = panel;
+            this.applyPanelChrome(panel, request);
 
             panel.onDidDispose(() => {
                 this.finish(undefined);
@@ -90,6 +92,12 @@ export class ActionPanelActionEditor implements Disposable {
 
             void this.render(panel);
         });
+    }
+
+    private applyPanelChrome(panel: WebviewPanel, request: ActionPanelEditorRequest): void {
+        const isEdit = Boolean(request.action);
+        panel.title = isEdit ? "Edit Action" : "Add Action";
+        panel.iconPath = new ThemeIcon(isEdit ? "edit" : "add");
     }
 
     private async render(panel: WebviewPanel): Promise<void> {
@@ -132,6 +140,7 @@ export class ActionPanelActionEditor implements Disposable {
                 icon: request.action.icon ?? "",
                 prompt: request.action.prompt ?? "",
                 command: request.action.command ?? "",
+                terminalMode: request.action.terminalMode ?? "panel",
             };
         }
 
@@ -147,6 +156,7 @@ export class ActionPanelActionEditor implements Disposable {
             icon: draft.icon ?? "",
             prompt: draft.prompt ?? "",
             command: draft.command ?? "",
+            terminalMode: draft.terminalMode ?? "panel",
         };
     }
 

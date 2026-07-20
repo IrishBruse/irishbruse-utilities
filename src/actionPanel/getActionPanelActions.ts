@@ -1,7 +1,8 @@
 import { workspace } from "vscode";
-import type { ActionPanelAction, ActionPanelActionType } from "./types";
+import type { ActionPanelAction, ActionPanelActionType, ActionPanelTerminalMode } from "./types";
 
-const ACTION_TYPES = new Set<ActionPanelActionType>(["agent", "command"]);
+const ACTION_TYPES = new Set<ActionPanelActionType>(["agent", "command", "terminal"]);
+const TERMINAL_MODES = new Set<ActionPanelTerminalMode>(["panel", "editor", "background"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -9,6 +10,22 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function asString(value: unknown): string | undefined {
     return typeof value === "string" && value.trim() ? value.trim() : undefined;
+}
+
+function normalizeTerminalMode(raw: Record<string, unknown>): ActionPanelTerminalMode | undefined {
+    const mode = asString(raw.terminalMode) as ActionPanelTerminalMode | undefined;
+    if (mode && TERMINAL_MODES.has(mode) && mode !== "panel") {
+        return mode;
+    }
+
+    if (raw.runInBackground === true) {
+        return "background";
+    }
+    if (raw.runInEditor === true) {
+        return "editor";
+    }
+
+    return undefined;
 }
 
 function normalizeAction(raw: unknown): ActionPanelAction | undefined {
@@ -35,11 +52,15 @@ function normalizeAction(raw: unknown): ActionPanelAction | undefined {
     if (Array.isArray(raw.args)) {
         action.args = raw.args;
     }
+    const terminalMode = normalizeTerminalMode(raw);
+    if (terminalMode) {
+        action.terminalMode = terminalMode;
+    }
 
     if (type === "agent" && !action.prompt) {
         return undefined;
     }
-    if (type === "command" && !action.command) {
+    if ((type === "command" || type === "terminal") && !action.command) {
         return undefined;
     }
 

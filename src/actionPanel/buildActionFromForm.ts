@@ -1,5 +1,7 @@
 import { uniqueActionId } from "./actionPanelIds";
-import type { ActionPanelAction, ActionPanelActionType } from "./types";
+import type { ActionPanelAction, ActionPanelActionType, ActionPanelTerminalMode } from "./types";
+
+const TERMINAL_MODES = new Set<ActionPanelTerminalMode>(["panel", "editor", "background"]);
 
 export type ActionPanelFormValues = {
     label: string;
@@ -7,6 +9,7 @@ export type ActionPanelFormValues = {
     icon?: string;
     prompt?: string;
     command?: string;
+    terminalMode?: ActionPanelTerminalMode;
 };
 
 export type BuildActionFromFormResult =
@@ -42,6 +45,26 @@ export function buildActionFromForm(
                 prompt,
             },
         };
+    }
+
+    if (values.type === "terminal") {
+        const command = values.command?.trim();
+        if (!command) {
+            return { ok: false, error: "Command is required for terminal actions.", field: "command" };
+        }
+
+        const action: ActionPanelAction = {
+            id,
+            label,
+            type: "terminal",
+            icon,
+            command,
+        };
+        const terminalMode = values.terminalMode ?? "panel";
+        if (TERMINAL_MODES.has(terminalMode) && terminalMode !== "panel") {
+            action.terminalMode = terminalMode;
+        }
+        return { ok: true, action };
     }
 
     const command = values.command?.trim();

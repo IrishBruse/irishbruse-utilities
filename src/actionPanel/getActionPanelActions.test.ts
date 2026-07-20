@@ -48,6 +48,58 @@ describe("getConfiguredActionPanelActions", () => {
         ]);
     });
 
+    it("returns valid terminal actions from user settings", () => {
+        mockGetConfiguration.mockReturnValue({
+            inspect: vi.fn().mockReturnValue({
+                globalValue: [
+                    {
+                        id: "runTests",
+                        label: "Run tests",
+                        type: "terminal",
+                        command: "npm test",
+                        terminalMode: "background",
+                    },
+                ],
+            }),
+        } as never);
+
+        expect(getConfiguredActionPanelActions()).toEqual([
+            {
+                id: "runTests",
+                label: "Run tests",
+                type: "terminal",
+                command: "npm test",
+                terminalMode: "background",
+            },
+        ]);
+    });
+
+    it("migrates legacy terminal run flags to terminalMode", () => {
+        mockGetConfiguration.mockReturnValue({
+            inspect: vi.fn().mockReturnValue({
+                globalValue: [
+                    {
+                        id: "runTests",
+                        label: "Run tests",
+                        type: "terminal",
+                        command: "npm test",
+                        runInEditor: true,
+                    },
+                ],
+            }),
+        } as never);
+
+        expect(getConfiguredActionPanelActions()).toEqual([
+            {
+                id: "runTests",
+                label: "Run tests",
+                type: "terminal",
+                command: "npm test",
+                terminalMode: "editor",
+            },
+        ]);
+    });
+
     it("prefers user settings over workspace overrides", () => {
         mockGetConfiguration.mockReturnValue({
             inspect: vi.fn().mockReturnValue({

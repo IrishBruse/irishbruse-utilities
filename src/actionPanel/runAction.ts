@@ -1,5 +1,6 @@
 import { commands } from "vscode";
 import { openAgentInEditorTerminal } from "../utils/openAgentTerminal";
+import { openTerminalCommand } from "../utils/openTerminalCommand";
 import { getActionPanelAction } from "./getActionPanelActions";
 import { substituteVariables } from "./substituteVariables";
 import type { ActionPanelContext } from "./types";
@@ -26,6 +27,17 @@ export async function runActionPanelItem(actionId: string, context: ActionPanelC
                 return;
             }
             await commands.executeCommand(action.command, ...(action.args ?? []));
+            return;
+        case "terminal":
+            if (!action.command) {
+                return;
+            }
+            openTerminalCommand({
+                command: substituteVariables(action.command, context),
+                cwd: context.repoRoot,
+                name: action.label,
+                terminalMode: action.terminalMode,
+            });
             return;
     }
 }

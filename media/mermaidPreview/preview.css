@@ -18,19 +18,22 @@ body {
     inset: 0;
     overflow: hidden;
     touch-action: none;
+    cursor: grab;
     background-image: radial-gradient(var(--vscode-editorIndentGuide-background) 1px, transparent 1px);
     background-size: 24px 24px;
+}
+
+#viewport.panning,
+#viewport.panning * {
+    cursor: grabbing !important;
 }
 
 #canvas {
     display: inline-block;
     transform-origin: 0 0;
-    cursor: default;
-    transition: cursor 0.1s ease;
 }
 
 #canvas.panning {
-    cursor: grabbing !important;
     user-select: none;
     -webkit-user-select: none;
 }
@@ -46,6 +49,10 @@ body {
     display: block;
     max-width: none;
     font-family: var(--ib-font-family, var(--vscode-font-family, var(--vscode-editor-font-family, sans-serif))) !important;
+}
+
+#diagram svg * {
+    cursor: inherit;
 }
 
 /* Make all text easily selectable */

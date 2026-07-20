@@ -11,12 +11,14 @@ const iconListEl = document.getElementById("icon-list");
 const iconPickerEl = document.getElementById("icon-picker");
 const promptEl = document.getElementById("prompt");
 const commandEl = document.getElementById("command");
+const terminalCommandEl = document.getElementById("terminal-command");
+const terminalModeEl = document.getElementById("terminal-mode");
 const agentFieldsEl = document.getElementById("agent-fields");
 const commandFieldsEl = document.getElementById("command-fields");
+const terminalFieldsEl = document.getElementById("terminal-fields");
 const errorEl = document.getElementById("error");
 const saveBtn = document.getElementById("save");
 const cancelBtn = document.getElementById("cancel");
-const titleEl = document.getElementById("title");
 const templateFieldEl = document.getElementById("template-field");
 
 /** @type {Array<{ id: string; label: string; description?: string; draft: Record<string, string> }>} */
@@ -44,20 +46,37 @@ function showError(message, field) {
 }
 
 function updateTypeSections() {
-    const isAgent = typeEl.value === "agent";
-    agentFieldsEl.hidden = !isAgent;
-    commandFieldsEl.hidden = isAgent;
+    const type = typeEl.value;
+    agentFieldsEl.hidden = type !== "agent";
+    commandFieldsEl.hidden = type !== "command";
+    terminalFieldsEl.hidden = type !== "terminal";
+}
+
+function insertVariable(targetId, variable) {
+    const target = document.getElementById(targetId);
+    if (!(target instanceof HTMLTextAreaElement)) {
+        return;
+    }
+
+    const token = `\${${variable}}`;
+    const start = target.selectionStart ?? target.value.length;
+    const end = target.selectionEnd ?? start;
+    target.value = `${target.value.slice(0, start)}${token}${target.value.slice(end)}`;
+    target.selectionStart = target.selectionEnd = start + token.length;
+    target.focus();
 }
 
 function updateIconPreview(icon) {
     if (icon) {
-        iconPreviewEl.classList.remove("icon-preview-empty");
+        iconPreviewEl.classList.add("visible");
         iconPreviewGlyphEl.className = `codicon codicon-${icon}`;
         iconPreviewGlyphEl.hidden = false;
+        iconClearEl.classList.add("visible");
     } else {
-        iconPreviewEl.classList.add("icon-preview-empty");
+        iconPreviewEl.classList.remove("visible");
         iconPreviewGlyphEl.className = "";
         iconPreviewGlyphEl.hidden = true;
+        iconClearEl.classList.remove("visible");
     }
 }
 
@@ -195,16 +214,20 @@ function applyDraft(draft) {
     setIcon(draft.icon ?? "");
     promptEl.value = draft.prompt ?? "";
     commandEl.value = draft.command ?? "";
+    terminalCommandEl.value = draft.command ?? "";
+    terminalModeEl.value = draft.terminalMode ?? "panel";
     updateTypeSections();
 }
 
 function readValues() {
+    const type = typeEl.value;
     return {
         label: labelEl.value,
-        type: typeEl.value,
+        type,
         icon: selectedIcon,
         prompt: promptEl.value,
-        command: commandEl.value,
+        command: type === "terminal" ? terminalCommandEl.value : commandEl.value,
+        terminalMode: terminalModeEl.value,
     };
 }
 
@@ -217,6 +240,9 @@ function validateClient(values) {
     }
     if (values.type === "command" && !values.command.trim()) {
         return { message: "Command is required for VS Code command actions.", field: "command" };
+    }
+    if (values.type === "terminal" && !values.command.trim()) {
+        return { message: "Command is required for terminal actions.", field: "terminal-command" };
     }
     return undefined;
 }
@@ -237,7 +263,6 @@ function populateTemplates(items) {
 
 function applyState(state) {
     const isEdit = state.mode === "edit";
-    titleEl.textContent = isEdit ? "Edit Action" : "Add Action";
     saveBtn.textContent = isEdit ? "Save" : "Add";
     templateFieldEl.hidden = isEdit || (state.templates ?? []).every((template) => template.id === "custom");
 
@@ -272,6 +297,21 @@ templateEl.addEventListener("change", () => {
 typeEl.addEventListener("change", () => {
     updateTypeSections();
     clearError();
+});
+
+document.querySelectorAll(".variable-chips").forEach((container) => {
+    const targetId = container.dataset.target;
+    if (!targetId) {
+        return;
+    }
+
+    container.addEventListener("click", (event) => {
+        const chip = event.target.closest(".variable-chip");
+        if (!chip?.dataset.variable) {
+            return;
+        }
+        insertVariable(targetId, chip.dataset.variable);
+    });
 });
 
 iconSearchEl.addEventListener("focus", () => {

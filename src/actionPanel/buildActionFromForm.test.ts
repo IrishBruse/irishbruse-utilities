@@ -47,6 +47,29 @@ describe("buildActionFromForm", () => {
         });
     });
 
+    it("builds a terminal action with run options", () => {
+        const result = buildActionFromForm(
+            {
+                label: "Run tests",
+                type: "terminal",
+                command: "npm test",
+                terminalMode: "editor",
+            },
+            new Set()
+        );
+
+        expect(result).toEqual({
+            ok: true,
+            action: {
+                id: "runTests",
+                label: "Run tests",
+                type: "terminal",
+                command: "npm test",
+                terminalMode: "editor",
+            },
+        });
+    });
+
     it("returns validation errors", () => {
         expect(buildActionFromForm({ label: "", type: "agent", prompt: "/x" }, new Set())).toEqual({
             ok: false,
@@ -61,6 +84,11 @@ describe("buildActionFromForm", () => {
         expect(buildActionFromForm({ label: "Run", type: "command" }, new Set())).toEqual({
             ok: false,
             error: "Command is required for VS Code command actions.",
+            field: "command",
+        });
+        expect(buildActionFromForm({ label: "Run", type: "terminal" }, new Set())).toEqual({
+            ok: false,
+            error: "Command is required for terminal actions.",
             field: "command",
         });
     });

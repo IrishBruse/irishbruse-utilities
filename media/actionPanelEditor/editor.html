@@ -14,33 +14,88 @@
             box-sizing: border-box;
         }
 
+        html,
+        body {
+            height: 100%;
+        }
+
         body {
             margin: 0;
-            padding: 16px 18px 18px;
+            display: flex;
+            flex-direction: column;
             color: var(--vscode-foreground);
             background: var(--vscode-editor-background);
             font-family: var(--vscode-font-family);
             font-size: var(--vscode-font-size);
+            line-height: 1.4;
         }
 
-        h1 {
-            margin: 0 0 16px;
-            font-size: 18px;
+        .form-root {
+            flex: 1;
+            overflow: auto;
+            width: 100%;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 0 40px 12px;
+        }
+
+        .settings-group-title {
+            margin: 0;
+            padding: 14px 0 4px;
+            font-size: 20px;
             font-weight: 600;
+            line-height: 26px;
+            color: var(--vscode-settings-headerForeground, var(--vscode-foreground));
         }
 
-        .field {
-            margin-bottom: 14px;
+        .settings-group:not(:first-child) .settings-group-title {
+            padding-top: 22px;
         }
 
-        label {
-            display: block;
-            margin-bottom: 6px;
-            font-size: 11px;
-            font-weight: 600;
-            letter-spacing: 0.04em;
-            text-transform: uppercase;
+        .setting-item {
+            padding: 8px 0 12px;
+        }
+
+        .setting-item-label {
+            margin: 0 0 4px;
+            font-size: 13px;
+            color: var(--vscode-foreground);
+        }
+
+        .setting-item-description {
+            margin: 0 0 8px;
+            font-size: 12px;
+            line-height: 1.4;
             color: var(--vscode-descriptionForeground);
+        }
+
+        .variable-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 8px;
+        }
+
+        .variable-chip {
+            height: 26px;
+            padding: 0 10px;
+            border: 1px solid var(--vscode-button-border, var(--vscode-widget-border, transparent));
+            border-radius: 2px;
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+            font-family: var(--vscode-editor-font-family, var(--vscode-font-family));
+            font-size: 12px;
+            line-height: 24px;
+            cursor: pointer;
+        }
+
+        .variable-chip:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
+        }
+
+        .variable-chip:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: 2px;
         }
 
         input,
@@ -48,22 +103,38 @@
         textarea {
             display: block;
             width: 100%;
+            max-width: 420px;
             margin: 0;
-            padding: 8px 10px;
-            border: 1px solid var(--vscode-input-border, transparent);
-            border-radius: 4px;
-            background: var(--vscode-input-background);
-            color: var(--vscode-input-foreground);
+            padding: 4px 6px;
+            border: 1px solid var(--vscode-settings-dropdownBorder, var(--vscode-input-border, transparent));
+            border-radius: 2px;
+            background: var(--vscode-settings-dropdownBackground, var(--vscode-input-background));
+            color: var(--vscode-settings-dropdownForeground, var(--vscode-input-foreground));
             font: inherit;
             font-size: 13px;
-            line-height: 1.4;
+            line-height: 18px;
+        }
+
+        select {
+            height: 26px;
+        }
+
+        input:not([type="checkbox"]) {
+            height: 26px;
         }
 
         textarea {
-            min-height: 88px;
+            max-width: none;
+            min-height: 72px;
+            padding: 6px 8px;
             resize: vertical;
+            line-height: 1.45;
             font-family: var(--vscode-editor-font-family, var(--vscode-font-family));
-            line-height: 1.55;
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            color: var(--vscode-input-placeholderForeground, var(--vscode-descriptionForeground));
         }
 
         input:focus,
@@ -73,84 +144,35 @@
             outline-offset: -1px;
         }
 
-        .hint {
-            margin-top: 6px;
-            font-size: 11px;
-            color: var(--vscode-descriptionForeground);
-        }
-
-        .error {
+        .error-message {
             display: none;
-            margin: 0 0 14px;
-            padding: 10px 12px;
-            border-radius: 4px;
-            background: var(--vscode-inputValidation-errorBackground);
+            margin: 12px 0 0;
+            padding: 6px 8px;
             border: 1px solid var(--vscode-inputValidation-errorBorder);
+            border-radius: 2px;
+            background: var(--vscode-inputValidation-errorBackground);
             color: var(--vscode-inputValidation-errorForeground);
             font-size: 12px;
         }
 
-        .error.visible {
+        .error-message.visible {
             display: block;
-        }
-
-        .section {
-            margin-top: 4px;
-            padding-top: 4px;
-        }
-
-        .actions {
-            display: flex;
-            gap: 8px;
-            justify-content: flex-end;
-            margin-top: 18px;
-        }
-
-        button {
-            min-width: 72px;
-            padding: 6px 14px;
-            border: none;
-            border-radius: 2px;
-            font: inherit;
-            font-size: 13px;
-            cursor: pointer;
-        }
-
-        button:focus {
-            outline: 1px solid var(--vscode-focusBorder);
-            outline-offset: 2px;
-        }
-
-        .primary {
-            background: var(--vscode-button-background);
-            color: var(--vscode-button-foreground);
-        }
-
-        .primary:hover {
-            background: var(--vscode-button-hoverBackground);
-        }
-
-        .secondary {
-            background: var(--vscode-button-secondaryBackground);
-            color: var(--vscode-button-secondaryForeground);
-        }
-
-        .secondary:hover {
-            background: var(--vscode-button-secondaryHoverBackground);
         }
 
         .icon-picker {
             position: relative;
+            max-width: 420px;
         }
 
         .icon-picker-control {
             display: flex;
             align-items: center;
-            gap: 8px;
-            padding: 0 8px;
-            border: 1px solid var(--vscode-input-border, transparent);
-            border-radius: 4px;
-            background: var(--vscode-input-background);
+            gap: 4px;
+            height: 26px;
+            padding: 0 4px 0 6px;
+            border: 1px solid var(--vscode-settings-dropdownBorder, var(--vscode-input-border, transparent));
+            border-radius: 2px;
+            background: var(--vscode-settings-dropdownBackground, var(--vscode-input-background));
         }
 
         .icon-picker-control:focus-within {
@@ -159,70 +181,80 @@
         }
 
         .icon-preview {
-            display: flex;
-            flex: 0 0 18px;
+            display: none;
+            flex: 0 0 16px;
             align-items: center;
             justify-content: center;
-            width: 18px;
-            height: 18px;
+            width: 16px;
+            height: 16px;
+        }
+
+        .icon-preview.visible {
+            display: flex;
         }
 
         .icon-preview .codicon {
-            flex: 0 0 16px;
             font-size: 16px;
-            color: var(--vscode-foreground);
-        }
-
-        .icon-preview-empty::before {
-            content: "—";
-            font-family: var(--vscode-font-family);
-            font-size: 12px;
-            color: var(--vscode-descriptionForeground);
+            color: var(--vscode-icon-foreground, var(--vscode-foreground));
         }
 
         #icon-search {
             flex: 1;
+            min-width: 0;
+            max-width: none;
+            height: 24px;
             border: none;
             background: transparent;
-            padding: 8px 0;
+            padding: 0;
             outline: none;
         }
 
         .icon-clear {
-            flex: 0 0 auto;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            flex: 0 0 22px;
+            width: 22px;
+            height: 22px;
             min-width: 0;
-            padding: 0 4px;
+            padding: 0;
             border: none;
+            border-radius: 2px;
             background: transparent;
-            color: var(--vscode-descriptionForeground);
-            font-size: 16px;
+            color: var(--vscode-icon-foreground, var(--vscode-foreground));
+            font-size: 14px;
             line-height: 1;
+            cursor: pointer;
+        }
+
+        .icon-clear.visible {
+            display: flex;
         }
 
         .icon-clear:hover {
-            color: var(--vscode-foreground);
+            background: var(--vscode-toolbar-hoverBackground);
         }
 
         .icon-list {
             position: absolute;
             z-index: 10;
-            top: calc(100% + 4px);
+            top: calc(100% + 2px);
             left: 0;
             right: 0;
-            max-height: 220px;
+            max-height: 180px;
             overflow: auto;
             border: 1px solid var(--vscode-widget-border, var(--vscode-input-border, transparent));
-            border-radius: 4px;
+            border-radius: 2px;
             background: var(--vscode-dropdown-background, var(--vscode-input-background));
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
+            box-shadow: 0 2px 8px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.24));
         }
 
         .icon-option {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
             width: 100%;
-            padding: 6px 10px;
+            padding: 3px 8px;
             border: none;
             background: transparent;
             color: var(--vscode-foreground);
@@ -235,12 +267,13 @@
         .icon-option .codicon {
             flex: 0 0 16px;
             font-size: 16px;
-            color: var(--vscode-foreground);
+            color: var(--vscode-icon-foreground, var(--vscode-foreground));
         }
 
         .icon-option:hover,
         .icon-option.active {
             background: var(--vscode-list-hoverBackground);
+            color: var(--vscode-list-hoverForeground, var(--vscode-foreground));
         }
 
         .icon-option.active {
@@ -249,66 +282,163 @@
         }
 
         .icon-empty {
-            padding: 10px 12px;
+            padding: 8px 10px;
             font-size: 12px;
             color: var(--vscode-descriptionForeground);
+        }
+
+        .form-footer {
+            display: flex;
+            flex-shrink: 0;
+            gap: 6px;
+            justify-content: flex-end;
+            width: 100%;
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 12px 40px;
+            background: var(--vscode-editor-background);
+        }
+
+        .form-footer button {
+            min-width: 64px;
+            height: 26px;
+            padding: 0 12px;
+            border: 1px solid transparent;
+            border-radius: 2px;
+            font: inherit;
+            font-size: 13px;
+            line-height: 24px;
+            cursor: pointer;
+        }
+
+        .form-footer button:focus {
+            outline: 1px solid var(--vscode-focusBorder);
+            outline-offset: 2px;
+        }
+
+        .form-footer .primary {
+            background: var(--vscode-button-background);
+            color: var(--vscode-button-foreground);
+        }
+
+        .form-footer .primary:hover {
+            background: var(--vscode-button-hoverBackground);
+        }
+
+        .form-footer .secondary {
+            border-color: var(--vscode-button-border, transparent);
+            background: var(--vscode-button-secondaryBackground);
+            color: var(--vscode-button-secondaryForeground);
+        }
+
+        .form-footer .secondary:hover {
+            background: var(--vscode-button-secondaryHoverBackground);
         }
     </style>
 </head>
 <body>
-    <h1 id="title">Add Action</h1>
-    <p class="error" id="error"></p>
+    <div class="form-root">
+        <p class="error-message" id="error" role="alert"></p>
 
-    <div class="field" id="template-field">
-        <label for="template">Template</label>
-        <select id="template"></select>
-    </div>
-
-    <div class="field">
-        <label for="label">Label</label>
-        <input id="label" type="text" placeholder="Create PR" />
-    </div>
-
-    <div class="field">
-        <label for="icon-search">Icon</label>
-        <div class="icon-picker" id="icon-picker">
-            <div class="icon-picker-control">
-                <span class="icon-preview icon-preview-empty" id="icon-preview" aria-hidden="true"><span id="icon-preview-glyph" hidden></span></span>
-                <input id="icon-search" type="text" placeholder="Search icons..." autocomplete="off" />
-                <button class="icon-clear" id="icon-clear" type="button" aria-label="Clear icon" title="Clear icon">×</button>
+        <div class="settings-group" id="template-field">
+            <h2 class="settings-group-title">Template</h2>
+            <div class="setting-item">
+                <div class="setting-item-label" id="template-label">Starting point</div>
+                <p class="setting-item-description">Choose a template for the new action.</p>
+                <select id="template" aria-labelledby="template-label"></select>
             </div>
-            <div class="icon-list" id="icon-list" hidden></div>
         </div>
-        <p class="hint">Optional. Search codicons or clear to use no icon.</p>
-    </div>
 
-    <div class="field">
-        <label for="type">Type</label>
-        <select id="type">
-            <option value="agent">Agent prompt</option>
-            <option value="command">VS Code command</option>
-        </select>
-    </div>
+        <div class="settings-group">
+            <h2 class="settings-group-title">Action</h2>
 
-    <div class="section" id="agent-fields">
-        <div class="field">
-            <label for="prompt">Prompt</label>
-            <textarea id="prompt" placeholder="/pr create"></textarea>
-            <p class="hint">Supports ${branch}, ${repoRoot}, ${baseBranch}, ${file}, and ${selection}.</p>
+            <div class="setting-item">
+                <label class="setting-item-label" for="label">Label</label>
+                <p class="setting-item-description">Shown in the Actions panel.</p>
+                <input id="label" type="text" placeholder="Create PR" />
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-item-label" for="icon-search">Icon</label>
+                <p class="setting-item-description">Optional codicon name without <code>$()</code>.</p>
+                <div class="icon-picker" id="icon-picker">
+                    <div class="icon-picker-control">
+                        <span class="icon-preview" id="icon-preview" aria-hidden="true"><span id="icon-preview-glyph" hidden></span></span>
+                        <input id="icon-search" type="text" placeholder="Search codicons..." autocomplete="off" />
+                        <button class="icon-clear" id="icon-clear" type="button" aria-label="Clear icon" title="Clear icon">×</button>
+                    </div>
+                    <div class="icon-list" id="icon-list" hidden></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="settings-group" id="type-config-group">
+            <h2 class="settings-group-title">Behavior</h2>
+
+            <div class="setting-item">
+                <label class="setting-item-label" for="type">Type</label>
+                <p class="setting-item-description">How this action runs when selected.</p>
+                <select id="type">
+                    <option value="terminal">Terminal command</option>
+                    <option value="agent">Agent prompt</option>
+                    <option value="command">VS Code command</option>
+                </select>
+            </div>
+
+            <div id="agent-fields">
+                <div class="setting-item">
+                    <label class="setting-item-label" for="prompt">Prompt</label>
+                    <p class="setting-item-description">Sent to the Cursor agent. Click a variable to insert it.</p>
+                    <textarea id="prompt" placeholder="/pr create"></textarea>
+                    <div class="variable-chips" data-target="prompt">
+                        <button type="button" class="variable-chip" data-variable="branch">${branch}</button>
+                        <button type="button" class="variable-chip" data-variable="repoRoot">${repoRoot}</button>
+                        <button type="button" class="variable-chip" data-variable="baseBranch">${baseBranch}</button>
+                        <button type="button" class="variable-chip" data-variable="file">${file}</button>
+                        <button type="button" class="variable-chip" data-variable="selection">${selection}</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="command-fields" hidden>
+                <div class="setting-item">
+                    <label class="setting-item-label" for="command">Command id</label>
+                    <p class="setting-item-description">VS Code command identifier to execute.</p>
+                    <input id="command" type="text" placeholder="workbench.action.terminal.new" />
+                </div>
+            </div>
+
+            <div id="terminal-fields" hidden>
+                <div class="setting-item">
+                    <label class="setting-item-label" for="terminal-command">Command</label>
+                    <p class="setting-item-description">Shell command to run. Click a variable to insert it.</p>
+                    <textarea id="terminal-command" placeholder="npm test"></textarea>
+                    <div class="variable-chips" data-target="terminal-command">
+                        <button type="button" class="variable-chip" data-variable="branch">${branch}</button>
+                        <button type="button" class="variable-chip" data-variable="repoRoot">${repoRoot}</button>
+                        <button type="button" class="variable-chip" data-variable="baseBranch">${baseBranch}</button>
+                        <button type="button" class="variable-chip" data-variable="file">${file}</button>
+                        <button type="button" class="variable-chip" data-variable="selection">${selection}</button>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label class="setting-item-label" for="terminal-mode">Run in</label>
+                    <p class="setting-item-description">Where the terminal opens when the action runs.</p>
+                    <select id="terminal-mode">
+                        <option value="panel">Terminal panel</option>
+                        <option value="editor">Editor space</option>
+                        <option value="background">Background</option>
+                    </select>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div class="section" id="command-fields" hidden>
-        <div class="field">
-            <label for="command">Command id</label>
-            <input id="command" type="text" placeholder="workbench.action.terminal.new" />
-        </div>
-    </div>
-
-    <div class="actions">
+    <footer class="form-footer">
         <button class="secondary" id="cancel" type="button">Cancel</button>
         <button class="primary" id="save" type="button">Add</button>
-    </div>
+    </footer>
     <script nonce="__NONCE__" src="__SCRIPT_URI__"></script>
 </body>
 </html>

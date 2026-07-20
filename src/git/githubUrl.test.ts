@@ -80,11 +80,11 @@ describe("getOriginUrl", () => {
 
 describe("formatPrFileChangeLabel", () => {
     it("uses singular copy for one file", () => {
-        expect(formatPrFileChangeLabel(1)).toBe("1 file changed");
+        expect(formatPrFileChangeLabel(1)).toBe("1 file");
     });
 
     it("uses plural copy for multiple files", () => {
-        expect(formatPrFileChangeLabel(12)).toBe("12 files changed");
+        expect(formatPrFileChangeLabel(12)).toBe("12 files");
     });
 });
 

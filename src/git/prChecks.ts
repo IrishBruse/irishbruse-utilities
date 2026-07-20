@@ -74,7 +74,7 @@ export function buildPrCheckStatus(
     checkRuns: readonly CheckRun[],
     commitStatus: CommitStatus | undefined,
     prUrl: string
-): PrCheckStatus {
+): PrCheckStatus | undefined {
     const checksUrl = checksPageUrl(prUrl);
 
     if (checkRuns.length > 0) {
@@ -112,7 +112,7 @@ export function buildPrCheckStatus(
         };
     }
 
-    if (commitStatus) {
+    if (commitStatus && commitStatus.statuses.length > 0) {
         const failed = pickFailedCommitStatus(commitStatus);
         if (failed) {
             return {
@@ -142,12 +142,7 @@ export function buildPrCheckStatus(
         }
     }
 
-    return {
-        label: "Checks",
-        description: "Pending",
-        url: checksUrl,
-        isFailing: false,
-    };
+    return undefined;
 }
 
 async function fetchCheckRuns(

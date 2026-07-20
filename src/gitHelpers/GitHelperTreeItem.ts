@@ -44,11 +44,11 @@ export class GitHelperTreeItem extends TreeItem {
         this.diffChange = diffChange;
         this.contextValue = action ? `action-${action}` : kind;
         if (action === "diffWithBase") {
-            this.iconPath = new ThemeIcon("diff");
+            this.iconPath = new ThemeIcon("git-pull-request");
         } else if (action === "publishReview") {
             this.iconPath = new ThemeIcon("comment-discussion");
         } else if (action === "openPr") {
-            this.iconPath = new ThemeIcon("git-pull-request");
+            this.iconPath = new ThemeIcon("github");
         } else if (action === "createDraftPr") {
             this.iconPath = new ThemeIcon("git-pull-request-create");
         } else if (action === "openPrReview") {

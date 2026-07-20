@@ -88,7 +88,7 @@ export type GhPrInfo = {
 };
 
 export function formatPrFileChangeLabel(changedFiles: number): string {
-    return changedFiles === 1 ? "1 file changed" : `${changedFiles} files changed`;
+    return changedFiles === 1 ? "1 file" : `${changedFiles} files`;
 }
 
 export function formatPrLineChangeDescription(additions: number, deletions: number): string {

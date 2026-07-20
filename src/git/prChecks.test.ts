@@ -172,6 +172,13 @@ describe("buildPrCheckStatus", () => {
             isFailing: false,
         });
     });
+
+    it("returns undefined when there are no check runs or commit statuses", () => {
+        expect(
+            buildPrCheckStatus([], { state: "pending", statuses: [] }, "https://github.com/owner/repo/pull/7")
+        ).toBeUndefined();
+        expect(buildPrCheckStatus([], undefined, "https://github.com/owner/repo/pull/7")).toBeUndefined();
+    });
 });
 
 describe("getPrCheckStatus", () => {
@@ -213,5 +220,21 @@ describe("getPrCheckStatus", () => {
             url: "https://github.com/owner/repo/pull/7/checks",
             isFailing: false,
         });
+    });
+
+    it("returns undefined when the PR has no checks configured", async () => {
+        mockRunGh.mockImplementation(async (_repoRoot, args) => {
+            if (args?.[1]?.includes("check-runs")) {
+                return { stdout: JSON.stringify({ check_runs: [] }), stderr: "", status: 0 };
+            }
+            if (args?.[1]?.includes("/status")) {
+                return { stdout: JSON.stringify({ state: "pending", statuses: [] }), stderr: "", status: 0 };
+            }
+            throw new Error(`unexpected args: ${args?.join(" ")}`);
+        });
+
+        await expect(
+            getPrCheckStatus("/repo", "abc123", "https://github.com/owner/repo/pull/7")
+        ).resolves.toBeUndefined();
     });
 });

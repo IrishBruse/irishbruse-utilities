@@ -44,6 +44,7 @@ import { resolveJiraKey, summaryFromPrTitle } from "../jira/jiraKey";
 import { pickJiraTicketPrTitle } from "../jira/pickJiraTicketForPrTitle";
 import { registerCommandIB } from "../utils/vscode";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
+import { revealBranchChanges } from "./BranchChangesView";
 import { loadBranchChanges, type BranchChangesSummary } from "./loadBranchChanges";
 import { registerGitHelpersRefresh } from "./refresh";
 import { RepoChildrenCache } from "./repoChildrenCache";
@@ -328,7 +329,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
-        await openBranchDiff(repoRoot);
+        await Promise.all([revealBranchChanges(repoRoot), openBranchDiff(repoRoot)]);
     }
 
     private async runCreateDraftPr(item: GitHelperTreeItem | string | undefined): Promise<void> {
@@ -722,9 +723,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
         if (element.action === "openPr") {
             const item = element;
-            item.iconPath = new ThemeIcon(
-                element.isDraftPr ? "git-pull-request-draft" : "git-pull-request"
-            );
+            item.iconPath = new ThemeIcon(element.isDraftPr ? "git-pull-request-draft" : "github");
             return item;
         }
         return element;

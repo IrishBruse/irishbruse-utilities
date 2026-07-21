@@ -2,23 +2,14 @@
 
 ## Unreleased
 
--   Fix: Changed Files sidebar — expand/collapse title bar button now toggles folder state correctly
--   Change: Git Helpers — strip Jira key prefix from PR and ticket picker display text
--   Change: Changed Files sidebar — collapse/expand title bar button toggles all folders
--   Change: Changed Files sidebar — remove Open repo title bar button and shorten view title
--   Change: Git Helpers — Publish to PR only shows when there is no open PR
--   Change: Git Helpers — remove Copy Jira key inline button from PR row
--   Change: Git Helpers — checks status is a panel row with description instead of a title bar button
--   Change: Git Helpers — draft vs open PRs use icons instead of Draft text in the description
--   Add: Git Helpers debug mode with mock PR, checks, Jira, review, and branch changes data for panel development
--   Change: Git Helpers — PR row first with draft icon, cached URL open, and inline Jira buttons; Checks row replaces separate Jira and failed-job rows
--   Change: Git Helpers — Diff opens multi-file diff and reveals Branch Changes sidebar
--   Change: Git Helpers — title bar opens repo, check status in header, and Open checks button when a PR has checks
--   Change: Branch Changes sidebar — `+/-` file counts in view header and Open repo title bar button
--   Change: Git Helpers — Set base moved to inline button on Diff row only (removed from title bar)
--   Change: Git Helpers — hide Create draft PR on main/master and when checked out on the base branch
--   Fix: Git Helpers — hide checks status when a PR has no GitHub Actions or commit statuses
--   Fix: Release skill lint issues
+## 0.13.0
+
+-   Add: Branch Changes sidebar with `+/-` file counts, Open repo action, and reveal from Git Helpers Diff
+-   Change: Git Helpers panel reorganized — PR and Checks rows consolidated, draft/open PR icons, inline Jira buttons, checks status as panel row, and hide checks when none exist
+-   Change: Git Helpers workflow — Diff opens multi-file diff; Publish to PR only without an open PR; Create draft PR hidden on main/master and base branch; strip Jira key prefix from picker display text
+-   Change: Changed Files sidebar — collapse/expand toggles all folders; remove Open repo button; shorten view title
+-   Add: Git Helpers debug mode with mock panel data for development
+-   Remove: Copy Jira key inline button from Git Helpers PR row
 
 ## 0.12.0
 

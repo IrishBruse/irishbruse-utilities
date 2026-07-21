@@ -51,6 +51,10 @@ describe("summaryFromPrTitle", () => {
         expect(summaryFromPrTitle("PROJ-123 — Short summary", "PROJ-123")).toBe("Short summary");
     });
 
+    it("returns the title unchanged when the key is not prefixed", () => {
+        expect(summaryFromPrTitle("Add Jira row", "PROJ-123")).toBe("Add Jira row");
+    });
+
     it("truncates long summaries", () => {
         const longSummary = "x".repeat(90);
         expect(summaryFromPrTitle(`PROJ-123 ${longSummary}`, "PROJ-123")?.length).toBe(80);

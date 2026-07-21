@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+-   Fix: Changed Files sidebar — expand/collapse title bar button now toggles folder state correctly
+-   Change: Git Helpers — strip Jira key prefix from PR and ticket picker display text
+-   Change: Changed Files sidebar — collapse/expand title bar button toggles all folders
+-   Change: Changed Files sidebar — remove Open repo title bar button and shorten view title
+-   Change: Git Helpers — Publish to PR only shows when there is no open PR
 -   Change: Git Helpers — remove Copy Jira key inline button from PR row
 -   Change: Git Helpers — checks status is a panel row with description instead of a title bar button
 -   Change: Git Helpers — draft vs open PRs use icons instead of Draft text in the description

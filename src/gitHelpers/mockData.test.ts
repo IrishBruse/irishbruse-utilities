@@ -15,7 +15,6 @@ describe("getGitHelpersMockState", () => {
         expect(state.checkStatus.description).toBe("Checks failing");
         expect(state.checkStatus.isFailing).toBe(true);
         expect(state.reviewStatus.label).toBe("2 unresolved");
-        expect(state.publishReviewCount).toBeGreaterThan(0);
         expect(state.changesCache.paths).toHaveLength(state.changesSummary.changedFiles);
     });
 });

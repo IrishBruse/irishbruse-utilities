@@ -27,12 +27,11 @@ Panel data is cached per repository so switching between local repos restores th
 
 The Git Helpers title bar opens the GitHub repository and refreshes the panel.
 
-### Branch Changes (secondary sidebar)
+### Changed Files (secondary sidebar)
 
 The **Changed Files** view in the secondary sidebar lists files changed against the merge base.
 Click **Changes** in Git Helpers to reveal it.
 The view header shows `+additions −deletions` and file counts.
-Title bar button opens the GitHub repo.
 
 ### Action Panel
 

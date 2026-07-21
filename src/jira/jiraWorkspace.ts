@@ -207,6 +207,10 @@ export function getJiraBrowseUrl(baseUrl: string, key: string): string {
     return `https://${host}/browse/${key}`;
 }
 
+export function getJiraKeyPattern(): RegExp | undefined {
+    return resolveKeyPattern();
+}
+
 export async function getJiraWorkspace(): Promise<JiraWorkspace | undefined> {
     const board = await readSyncedJiraBoard();
     if (!board) {

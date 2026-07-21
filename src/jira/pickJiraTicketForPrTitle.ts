@@ -1,5 +1,5 @@
 import { QuickPickItem, QuickPickItemKind, window } from "vscode";
-import { extractJiraKeyFromTitle } from "./jiraKey";
+import { extractJiraKeyFromTitle, summaryFromPrTitle } from "./jiraKey";
 import { formatPrTitleFromTicket, listBoardTicketsForPick } from "./jiraPrTitle";
 import type { SyncedJiraBoard } from "./jiraWorkspace";
 
@@ -31,8 +31,9 @@ export async function pickJiraTicketPrTitle(
         }
 
         const prTitle = formatPrTitleFromTicket(entry.key, entry.summary);
+        const displayLabel = summaryFromPrTitle(entry.summary, entry.key) ?? entry.summary.trim();
         const pickItem: JiraTicketPickItem = {
-            label: prTitle,
+            label: displayLabel,
             description: entry.key,
             detail: entry.assignee ? `${entry.statusLabel} · ${entry.assignee}` : entry.statusLabel,
             prTitle,

@@ -215,7 +215,7 @@
             "secondarySidebar": [
                 {
                     "id": "branchChanges",
-                    "title": "Branch Changes",
+                    "title": "Changed Files",
                     "icon": "$(diff)"
                 }
             ]
@@ -251,7 +251,7 @@
                     "id": "ib-utilities.branchChanges",
                     "name": "Changed Files",
                     "icon": "$(git-compare)",
-                    "contextualTitle": "Branch Changes",
+                    "contextualTitle": "Changed Files",
                     "visibility": "visible"
                 }
             ]
@@ -418,6 +418,18 @@
                 "title": "Show Branch Changes",
                 "shortTitle": "Show changes",
                 "icon": "$(git-compare)"
+            },
+            {
+                "command": "ib-utilities.collapseBranchChangesFolders",
+                "title": "Collapse All",
+                "shortTitle": "Collapse all",
+                "icon": "$(collapse-all)"
+            },
+            {
+                "command": "ib-utilities.expandBranchChangesFolders",
+                "title": "Expand All",
+                "shortTitle": "Expand all",
+                "icon": "$(expand-all)"
             },
             {
                 "command": "ib-utilities.diffWithBase",
@@ -650,8 +662,13 @@
                     "group": "navigation@2"
                 },
                 {
-                    "command": "ib-utilities.openRepo",
-                    "when": "view == ib-utilities.branchChanges",
+                    "command": "ib-utilities.collapseBranchChangesFolders",
+                    "when": "view == ib-utilities.branchChanges && ib-utilities.branchChanges.allFoldersExpanded",
+                    "group": "navigation@1"
+                },
+                {
+                    "command": "ib-utilities.expandBranchChangesFolders",
+                    "when": "view == ib-utilities.branchChanges && !ib-utilities.branchChanges.allFoldersExpanded",
                     "group": "navigation@1"
                 },
                 {

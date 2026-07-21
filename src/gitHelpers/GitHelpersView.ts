@@ -39,8 +39,8 @@ import {
 import { openBranchDiff } from "../git/openBranchDiff";
 import { getPrCheckStatus } from "../git/prChecks";
 import { getPrReviewStatus } from "../git/prReviewStatus";
-import { getJiraBrowseUrl, getJiraWorkspace } from "../jira/jiraWorkspace";
-import { resolveJiraKey, summaryFromPrTitle } from "../jira/jiraKey";
+import { getJiraBrowseUrl, getJiraKeyPattern, getJiraWorkspace } from "../jira/jiraWorkspace";
+import { extractJiraKeyFromTitle, resolveJiraKey, summaryFromPrTitle } from "../jira/jiraKey";
 import { pickJiraTicketPrTitle } from "../jira/pickJiraTicketForPrTitle";
 import { registerCommandIB } from "../utils/vscode";
 import { checksTreeItem } from "./checksTreeItem";
@@ -61,15 +61,17 @@ export type { GitHelperItemKind } from "./GitHelperTreeItem";
 
 const JIRA_SYNCED_CONTEXT = "ib-utilities.jira.synced";
 
-function prRowDescription(pr: { title: string }, jiraKeyPattern?: RegExp): string {
-    let title = pr.title;
-    if (jiraKeyPattern) {
-        const key = resolveJiraKey(pr.title, undefined, jiraKeyPattern)?.key;
-        if (key) {
-            title = summaryFromPrTitle(pr.title, key) ?? pr.title;
-        }
+function prRowDescription(
+    pr: { title: string },
+    jiraKeyPattern?: RegExp,
+    resolvedKey?: string
+): string {
+    const keyFromTitle = jiraKeyPattern ? extractJiraKeyFromTitle(pr.title, jiraKeyPattern) : undefined;
+    const key = keyFromTitle ?? resolvedKey;
+    if (key) {
+        return summaryFromPrTitle(pr.title, key) ?? pr.title;
     }
-    return title;
+    return pr.title;
 }
 
 function prContextValue(isDraft: boolean, hasJira: boolean, jiraSynced: boolean): string {
@@ -833,12 +835,13 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
 
         const items: GitHelperTreeItem[] = [];
         const jiraWorkspace = await getJiraWorkspace();
+        const jiraKeyPattern = getJiraKeyPattern();
         const jiraSynced = Boolean(jiraWorkspace);
 
         if (head?.name) {
             if (pr) {
-                const resolvedKey = jiraWorkspace
-                    ? resolveJiraKey(pr.title, branch, jiraWorkspace.keyPattern)
+                const resolvedKey = jiraKeyPattern
+                    ? resolveJiraKey(pr.title, branch, jiraKeyPattern)
                     : undefined;
                 const prItem = new GitHelperTreeItem(
                     "action",
@@ -847,7 +850,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                     TreeItemCollapsibleState.None,
                     `${repoRoot}:openPr:${pr.number}`,
                     "openPr",
-                    prRowDescription(pr, jiraWorkspace?.keyPattern)
+                    prRowDescription(pr, jiraKeyPattern, resolvedKey?.key)
                 );
                 prItem.isDraftPr = pr.isDraft;
                 prItem.contextValue = prContextValue(pr.isDraft, Boolean(resolvedKey), jiraSynced);
@@ -919,7 +922,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         await this.syncViewContexts(jiraSynced);
         await this.updateViewTitle();
 
-        if (noteCount > 0 && head?.name) {
+        if (noteCount > 0 && head?.name && !pr) {
             items.push(actionItem(repoRoot, "Publish to PR", "publishReview", Commands.PublishReviewToPR));
         }
 

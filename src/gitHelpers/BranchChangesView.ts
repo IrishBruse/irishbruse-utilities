@@ -1,7 +1,9 @@
 import {
+    commands,
     Event,
     EventEmitter,
     ExtensionContext,
+    ProviderResult,
     TreeDataProvider,
     TreeItemCollapsibleState,
     TreeView,
@@ -21,6 +23,8 @@ function infoItem(id: string, label: string): GitHelperTreeItem {
     return new GitHelperTreeItem("info", undefined, label, TreeItemCollapsibleState.None, id);
 }
 
+const BRANCH_CHANGES_ALL_FOLDERS_EXPANDED_CONTEXT = "ib-utilities.branchChanges.allFoldersExpanded";
+
 export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTreeItem> {
     private static instance: BranchChangesViewProvider | undefined;
 
@@ -29,6 +33,7 @@ export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTree
     private repoRoot: string | undefined;
     private cache: ChangesTreeCache | undefined;
     private summary: BranchChangesSummary | undefined;
+    private allFoldersExpanded = false;
 
     get onDidChangeTreeData(): Event<GitHelperTreeItem | undefined | null> {
         return this.changeEvent.event;
@@ -38,15 +43,30 @@ export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTree
         const provider = new BranchChangesViewProvider();
         BranchChangesViewProvider.instance = provider;
 
+        void commands.executeCommand(
+            "setContext",
+            BRANCH_CHANGES_ALL_FOLDERS_EXPANDED_CONTEXT,
+            false
+        );
+
         provider.treeView = window.createTreeView(Views.IbUtilitiesBranchChanges, {
             treeDataProvider: provider,
-            showCollapseAll: true,
         });
         context.subscriptions.push(provider.treeView);
 
         registerCommandIB(
             Commands.ShowBranchChanges,
             (repoRoot?: string) => provider.showForRepo(repoRoot),
+            context
+        );
+        registerCommandIB(
+            Commands.CollapseBranchChangesFolders,
+            () => provider.applyFolderExpansion(false),
+            context
+        );
+        registerCommandIB(
+            Commands.ExpandBranchChangesFolders,
+            () => provider.applyFolderExpansion(true),
             context
         );
         registerCommandIB(
@@ -69,6 +89,7 @@ export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTree
             this.repoRoot = mock.repoRoot;
             this.cache = mock.changesCache;
             this.summary = mock.changesSummary;
+            await this.resetFolderExpansionState();
             this.updateViewDescription();
             this.changeEvent.fire(null);
 
@@ -93,12 +114,88 @@ export class BranchChangesViewProvider implements TreeDataProvider<GitHelperTree
         this.repoRoot = targetRoot;
         this.cache = data.cache;
         this.summary = data.summary;
+        await this.resetFolderExpansionState();
         this.updateViewDescription();
         this.changeEvent.fire(null);
 
         const { commands: vscodeCommands } = await import("vscode");
         await vscodeCommands.executeCommand("workbench.action.focusAuxiliaryBar");
         await vscodeCommands.executeCommand(`${Views.IbUtilitiesBranchChanges}.focus`);
+    }
+
+    getParent(element: GitHelperTreeItem): ProviderResult<GitHelperTreeItem> {
+        if (!this.repoRoot || !this.cache || !element.id || element.kind === "info") {
+            return undefined;
+        }
+
+        const changesPrefix = `${this.repoRoot}:changes/`;
+        if (!element.id.startsWith(changesPrefix)) {
+            return undefined;
+        }
+
+        const relativePath = element.id.slice(changesPrefix.length);
+        const slashIndex = relativePath.lastIndexOf("/");
+        if (slashIndex === -1) {
+            return undefined;
+        }
+
+        const parentRelativePath = relativePath.slice(0, slashIndex);
+        const parentName = parentRelativePath.split("/").pop() ?? parentRelativePath;
+        const parentId = `${this.repoRoot}:changes/${parentRelativePath}`;
+        const parentItem = new GitHelperTreeItem(
+            "changesFolder",
+            this.repoRoot,
+            parentName,
+            TreeItemCollapsibleState.Collapsed,
+            parentId,
+            undefined,
+            undefined,
+            undefined,
+            this.cache.mergeBaseRef
+        );
+        parentItem.contextValue = "changes-folder";
+        return parentItem;
+    }
+
+    private async resetFolderExpansionState(): Promise<void> {
+        this.allFoldersExpanded = false;
+        await commands.executeCommand(
+            "setContext",
+            BRANCH_CHANGES_ALL_FOLDERS_EXPANDED_CONTEXT,
+            false
+        );
+    }
+
+    private async applyFolderExpansion(expand: boolean): Promise<void> {
+        if (!this.repoRoot || !this.cache) {
+            return;
+        }
+
+        await commands.executeCommand(`${Views.IbUtilitiesBranchChanges}.focus`);
+
+        if (expand) {
+            if (this.treeView) {
+                const children = buildChangesChildren(this.repoRoot, this.cache, `${this.repoRoot}:changes`);
+                for (const child of children) {
+                    if (child.kind === "changesFolder") {
+                        await this.treeView.reveal(child, { select: false, focus: false, expand: 3 });
+                    }
+                }
+            } else {
+                await commands.executeCommand("list.expandAll");
+            }
+        } else {
+            await commands.executeCommand(
+                `workbench.actions.treeView.${Views.IbUtilitiesBranchChanges}.collapseAll`
+            );
+        }
+
+        this.allFoldersExpanded = expand;
+        await commands.executeCommand(
+            "setContext",
+            BRANCH_CHANGES_ALL_FOLDERS_EXPANDED_CONTEXT,
+            expand
+        );
     }
 
     private updateViewDescription(): void {

@@ -9,6 +9,7 @@ import {
 } from "../git/githubUrl";
 import type { PrCheckStatus } from "../git/prChecks";
 import type { PrReviewStatus } from "../git/prReviewStatus";
+import { summaryFromPrTitle } from "../jira/jiraKey";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
 import { checksTreeItem } from "./checksTreeItem";
 import { createChangesTreeCache, type ChangesTreeCache } from "./changesTree";
@@ -28,7 +29,6 @@ export type GitHelpersMockState = {
     reviewStatus: PrReviewStatus;
     changesSummary: BranchChangesSummary;
     changesCache: ChangesTreeCache;
-    publishReviewCount: number;
 };
 
 const MOCK_MERGE_BASE = "abc123def456";
@@ -90,17 +90,15 @@ export function getGitHelpersMockState(): GitHelpersMockState {
         },
         changesSummary,
         changesCache: createChangesTreeCache(MOCK_REPO_ROOT, MOCK_MERGE_BASE, changes),
-        publishReviewCount: 2,
     };
 }
 
 function prRowDescription(pr: { title: string }, jiraKey: string): string {
-    const summary = pr.title.replace(new RegExp(`^${jiraKey}\\s*`), "").trim();
-    return summary || pr.title;
+    return summaryFromPrTitle(pr.title, jiraKey) ?? pr.title;
 }
 
 export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelperTreeItem[] {
-    const { repoRoot, pr, jiraKey, baseBranch, reviewStatus, changesSummary, publishReviewCount } = state;
+    const { repoRoot, pr, jiraKey, baseBranch, reviewStatus, changesSummary } = state;
     const jiraUrl = `${state.jiraBaseUrl}/browse/${jiraKey}`;
     const items: GitHelperTreeItem[] = [];
 
@@ -165,21 +163,6 @@ export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelp
     );
     reviewItem.reviewUrl = reviewStatus.url;
     items.push(reviewItem);
-
-    if (publishReviewCount > 0) {
-        items.push(
-            new GitHelperTreeItem(
-                "action",
-                repoRoot,
-                "Publish to PR",
-                TreeItemCollapsibleState.None,
-                `${repoRoot}:publishReview`,
-                "publishReview",
-                undefined,
-                { command: Commands.PublishReviewToPR, title: "Publish to PR", arguments: [repoRoot] }
-            )
-        );
-    }
 
     return items;
 }

@@ -199,6 +199,20 @@ export enum Commands {
     ShowBranchChanges = `ib-utilities.showBranchChanges`,
 
     /**
+     * Collapse All
+     * Short Title: Collapse all
+     * Icon: $(collapse-all)
+     */
+    CollapseBranchChangesFolders = `ib-utilities.collapseBranchChangesFolders`,
+
+    /**
+     * Expand All
+     * Short Title: Expand all
+     * Icon: $(expand-all)
+     */
+    ExpandBranchChangesFolders = `ib-utilities.expandBranchChangesFolders`,
+
+    /**
      * Diff
      * Short Title: Diff
      * Icon: $(diff)

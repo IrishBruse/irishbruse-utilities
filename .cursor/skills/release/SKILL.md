@@ -11,7 +11,9 @@ Scope: **version** and **changelog** only. `npm run release` bumps `package.json
 
 1. Read `package.json` version, skim `git log` since the last version commit or tag.
 2. Use an explicit semver or bump (`patch`, `minor`, `major`) when the user gave one.
-3. Otherwise **AskQuestion** once before file edits:
+3. Otherwise **AskQuestion** once before file edits.
+
+**Before the tool call:** print the full AskQuestion contents in chat (title if any, prompt, and every option label), then invoke AskQuestion with the same values.
 
 **Context:** one sentence naming the project and current version.
 
@@ -67,7 +69,9 @@ Leave `package.json` and `package-lock.json` to the release script.
 The **gate** is the sole path to `npm run release`. Prep and changelog work do not approve release.
 
 1. Resolve the full command: `npm run release -- {version}`.
-2. **AskQuestion** immediately before running - proposal only in `prompt`, plain markdown (`**Label:**` fields, blank lines between), never in chat:
+2. **AskQuestion** immediately before running.
+
+**Before the tool call:** print the full AskQuestion contents in chat (title, prompt, and every option label), then invoke AskQuestion with the same values. Put the release proposal only in `prompt`, plain markdown (`**Label:**` fields, blank lines between) — do not duplicate the proposal elsewhere in chat.
 
 - `title`: `Release {version} - Approve`
 - `prompt`: `I will run:` then:

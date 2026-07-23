@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.13.1
+
 -   Add: Optional `ib-utilities.github.ghPath` setting for an absolute path to the GitHub CLI when `gh` is not on PATH (for example in VS Code on macOS)
 
 ## 0.13.0

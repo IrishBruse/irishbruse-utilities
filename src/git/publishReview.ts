@@ -1,6 +1,7 @@
 import { env, Uri, window } from "vscode";
 import { asyncSpawn } from "../utils/asyncSpawn";
 import { pushBranchToOrigin } from "./createDraftPR";
+import { spawnGh } from "./ghCli";
 import { getRepositoryByRoot } from "./getGitApi";
 import { getOriginUrl, getPrInfo, parseGithubOwnerRepo } from "./githubUrl";
 import { resolveBaseBranch } from "./resolveBaseBranch";
@@ -51,21 +52,17 @@ async function createDraftPullRequest(
         return undefined;
     }
 
-    const result = await asyncSpawn(
-        "gh",
-        [
-            "pr",
-            "create",
-            "--draft",
-            "--base",
-            baseBranch,
-            "--title",
-            title.trim(),
-            "--body",
-            body,
-        ],
-        { cwd: repoRoot }
-    );
+    const result = await spawnGh(repoRoot, [
+        "pr",
+        "create",
+        "--draft",
+        "--base",
+        baseBranch,
+        "--title",
+        title.trim(),
+        "--body",
+        body,
+    ]);
 
     if (result.status !== 0) {
         window.showErrorMessage(`Failed to create draft PR: ${result.stderr || result.stdout}`);
@@ -131,11 +128,10 @@ export async function publishReviewToPR(repoRoot: string, branch: string): Promi
     const failures: string[] = [];
 
     for (const note of pending) {
-        const result = await asyncSpawn(
-            "gh",
+        const result = await spawnGh(
+            repoRoot,
             ["api", `repos/${github.owner}/${github.repo}/pulls/${pr.number}/comments`, "--input", "-"],
             {
-                cwd: repoRoot,
                 input: JSON.stringify({
                     body: note.body,
                     commit_id: pr.headRefOid,

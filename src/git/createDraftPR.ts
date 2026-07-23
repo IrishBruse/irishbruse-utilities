@@ -1,5 +1,6 @@
 import { window } from "vscode";
 import { asyncSpawn } from "../utils/asyncSpawn";
+import { spawnGh } from "./ghCli";
 import { getPrInfo, type GhPrInfo } from "./githubUrl";
 
 export async function pushBranchToOrigin(repoRoot: string, branch: string): Promise<boolean> {
@@ -23,21 +24,17 @@ export async function createBlankDraftPullRequest(
         return undefined;
     }
 
-    const result = await asyncSpawn(
-        "gh",
-        [
-            "pr",
-            "create",
-            "--draft",
-            "--base",
-            baseBranch,
-            "--title",
-            branch,
-            "--body",
-            "",
-        ],
-        { cwd: repoRoot }
-    );
+    const result = await spawnGh(repoRoot, [
+        "pr",
+        "create",
+        "--draft",
+        "--base",
+        baseBranch,
+        "--title",
+        branch,
+        "--body",
+        "",
+    ]);
 
     if (result.status !== 0) {
         window.showErrorMessage(`Failed to create draft PR: ${result.stderr || result.stdout}`);

@@ -9,6 +9,11 @@ vi.mock("vscode", () => ({
     env: { openExternal },
     Uri: { parse: (value: string) => ({ toString: () => value }) },
     window: { showWarningMessage },
+    workspace: {
+        getConfiguration: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(""),
+        }),
+    },
 }));
 
 vi.mock("../utils/asyncSpawn", () => ({

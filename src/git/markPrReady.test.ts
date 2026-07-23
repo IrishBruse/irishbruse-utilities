@@ -5,6 +5,11 @@ vi.mock("../utils/asyncSpawn", () => ({
 }));
 
 vi.mock("vscode", () => ({
+    workspace: {
+        getConfiguration: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(""),
+        }),
+    },
     window: {
         showErrorMessage: vi.fn(),
     },
@@ -55,7 +60,11 @@ describe("markPullRequestReady", () => {
             deletions: 0,
             changedFiles: 0,
         });
-        expect(mockAsyncSpawn).toHaveBeenCalledWith("gh", ["pr", "ready", "feature"], { cwd: "/repo" });
+        expect(mockAsyncSpawn).toHaveBeenCalledWith(
+            "gh",
+            ["pr", "ready", "feature"],
+            expect.objectContaining({ cwd: "/repo" })
+        );
     });
 
     it("shows an error and returns undefined when gh fails", async () => {

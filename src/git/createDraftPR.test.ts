@@ -5,6 +5,11 @@ const { showErrorMessage } = vi.hoisted(() => ({
 }));
 
 vi.mock("vscode", () => ({
+    workspace: {
+        getConfiguration: vi.fn().mockReturnValue({
+            get: vi.fn().mockReturnValue(""),
+        }),
+    },
     window: { showErrorMessage },
 }));
 
@@ -65,7 +70,7 @@ describe("createBlankDraftPullRequest", () => {
                 "--body",
                 "",
             ],
-            { cwd: "/repo" }
+            expect.objectContaining({ cwd: "/repo" })
         );
         expect(mockGetPrInfo).toHaveBeenCalledWith("/repo", "feature/x");
         expect(pr).toEqual({

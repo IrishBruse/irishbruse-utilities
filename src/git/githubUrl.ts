@@ -1,26 +1,9 @@
-import type { Process } from "../utils/asyncSpawn";
 import { asyncSpawn } from "../utils/asyncSpawn";
+import { runGh } from "./ghCli";
+
+export { runGh };
 
 const PR_JSON_FIELDS = "number,title,headRefOid,url,state,isDraft,additions,deletions,changedFiles";
-
-function spawnEnv(): NodeJS.ProcessEnv {
-    const env = { ...process.env };
-    if (process.platform !== "win32") {
-        const pathValue = env.PATH ?? "";
-        if (!pathValue.split(":").includes("/usr/bin")) {
-            env.PATH = `/usr/local/bin:/usr/bin:${pathValue}`;
-        }
-    }
-    return env;
-}
-
-export async function runGh(repoRoot: string, args: readonly string[]): Promise<Process | undefined> {
-    try {
-        return await asyncSpawn("gh", args, { cwd: repoRoot, env: spawnEnv() });
-    } catch {
-        return undefined;
-    }
-}
 
 function parsePrInfo(stdout: string): GhPrInfo | undefined {
     try {

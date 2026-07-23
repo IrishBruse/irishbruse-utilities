@@ -91,9 +91,11 @@ function restorePackagingArtifacts() {
     }
 }
 
-function parseVersionArg(argv) {
+function parseArgs(argv) {
     const args = argv.slice(2);
-    return args.length === 1 ? args[0] : null;
+    const publishOnly = args.includes("--publish");
+    const versionArg = args.find((arg) => !arg.startsWith("--")) ?? null;
+    return { versionArg, publishOnly };
 }
 
 function assertChangelog(version) {
@@ -210,10 +212,10 @@ function commitRelease(version) {
     run(`git commit -m "${version}"`);
 }
 
-const versionArg = parseVersionArg(process.argv);
+const { versionArg, publishOnly } = parseArgs(process.argv);
 
 if (!versionArg) {
-    console.error("Usage: npm run release -- <version|patch|minor|major>");
+    console.error("Usage: npm run release -- <version|patch|minor|major> [--publish]");
     process.exit(1);
 }
 
@@ -231,17 +233,36 @@ if (!isRetry && compareSemver(version, currentVersion) <= 0) {
     process.exit(1);
 }
 
-console.log(isRetry ? `Retrying release for ${version}` : `Releasing ${version}`);
+console.log(
+    isRetry
+        ? publishOnly
+            ? `Publishing ${version}`
+            : `Version ${version} already stamped. Run with --publish to deploy.`
+        : `Stamping ${version}`,
+);
 
-const packageSnapshot = isRetry ? null : readText("package.json");
-const lockSnapshot = isRetry ? null : readText("package-lock.json");
+const packageSnapshot = !publishOnly && !isRetry ? readText("package.json") : null;
+const lockSnapshot = !publishOnly && !isRetry ? readText("package-lock.json") : null;
 let published = false;
 
 try {
     assertChangelog(version);
 
-    if (!isRetry) {
+    if (!publishOnly) {
+        if (isRetry) {
+            process.exit(0);
+        }
+
         bumpVersions(version);
+        commitRelease(version);
+        console.log(`\nStamped ${version}. Approve publish, then: npm run release -- ${version} --publish`);
+        process.exit(0);
+    }
+
+    if (!isRetry) {
+        throw new Error(
+            `package.json is ${currentVersion}, expected ${version}. Stamp first: npm run release -- ${version}`,
+        );
     }
 
     run("npm run verify");
@@ -249,13 +270,12 @@ try {
     restorePackagingArtifacts();
     await publishExtension();
     published = true;
-    commitRelease(version);
     run("git push");
     console.log(`\nReleased ${version} to the Marketplace`);
 } catch (error) {
-    if (!published && !isRetry) {
+    if (!published && packageSnapshot !== null) {
         restoreWorkingTreeFiles(packageSnapshot, lockSnapshot);
-        console.error("\nRestored package.json and package-lock.json to their pre-release versions.");
+        console.error("\nRestored package.json and package-lock.json to their pre-stamp versions.");
     }
 
     console.error(`\nRelease failed: ${error.message}`);

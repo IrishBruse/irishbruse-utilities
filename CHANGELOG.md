@@ -2,8 +2,9 @@
 
 ## Unreleased
 
+## 0.14.0
+
 -   Remove: Branch diff review notes, gutter comments, and publish-to-PR comment workflow
--   Change: `media/mermaidPreview/vsCodeTheme.js` is build output (gitignored, like `mermaid.min.js`)
 
 ## 0.13.1
 

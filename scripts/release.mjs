@@ -77,18 +77,6 @@ function restoreWorkingTreeFiles(packageSnapshot, lockSnapshot) {
     if (lockSnapshot !== null) {
         writeFileSync(join(root, "package-lock.json"), lockSnapshot);
     }
-
-    const artifact = "media/mermaidPreview/vsCodeTheme.js";
-    if (fileChanged(artifact)) {
-        execSync(`git checkout -- "${artifact}"`, { cwd: root, stdio: "ignore" });
-    }
-}
-
-function restorePackagingArtifacts() {
-    const artifact = "media/mermaidPreview/vsCodeTheme.js";
-    if (fileChanged(artifact)) {
-        run(`git checkout -- "${artifact}"`);
-    }
 }
 
 function parseArgs(argv) {
@@ -267,7 +255,6 @@ try {
 
     run("npm run verify");
     run("npm run package:vsix");
-    restorePackagingArtifacts();
     await publishExtension();
     published = true;
     run("git push");

@@ -30,26 +30,6 @@ vi.mock("vscode", () => ({
         executeCommand: vi.fn().mockResolvedValue(undefined),
         registerCommand: vi.fn().mockReturnValue({ dispose: vi.fn() }),
     },
-    comments: {
-        createCommentController: vi.fn().mockReturnValue({
-            options: undefined,
-            createCommentThread: vi.fn().mockReturnValue({
-                dispose: vi.fn(),
-                comments: [],
-                collapsibleState: 0,
-                contextValue: undefined,
-            }),
-        }),
-    },
-    CommentMode: {
-        Editing: 0,
-        Preview: 1,
-    },
-    CommentThreadCollapsibleState: {
-        Collapsed: 1,
-        Expanded: 2,
-    },
-    MarkdownString: vi.fn().mockImplementation((value: string) => ({ value })),
     extensions: {
         all: [],
         getExtension: vi.fn().mockReturnValue(undefined),

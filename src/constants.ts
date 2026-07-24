@@ -227,62 +227,6 @@ export enum Commands {
     SetBaseBranch = `ib-utilities.setBaseBranch`,
 
     /**
-     * Add Review Note
-     * Short Title: Add note
-     * Icon: $(note)
-     */
-    AddReviewNote = `ib-utilities.addReviewNote`,
-
-    /**
-     * Publish Review to PR
-     * Short Title: Publish to PR
-     * Icon: $(comment-discussion)
-     */
-    PublishReviewToPR = `ib-utilities.publishReviewToPR`,
-
-    /**
-     * Export Review Summary
-     * Short Title: Export summary
-     * Icon: $(export)
-     */
-    ExportReviewSummary = `ib-utilities.exportReviewSummary`,
-
-    /**
-     * Save
-     * Short Title: undefined
-     * Icon: undefined
-     */
-    ReviewCommentCreate = `ib-utilities.reviewComment.create`,
-
-    /**
-     * Save
-     * Short Title: undefined
-     * Icon: undefined
-     */
-    ReviewCommentSave = `ib-utilities.reviewComment.save`,
-
-    /**
-     * Cancel
-     * Short Title: undefined
-     * Icon: undefined
-     */
-    ReviewCommentCancel = `ib-utilities.reviewComment.cancel`,
-
-    /**
-     * Delete
-     * Short Title: undefined
-     * Icon: $(trash)
-     */
-    ReviewCommentDelete = `ib-utilities.reviewComment.delete`,
-
-    /**
-     * Edit note
-     * Short Title: undefined
-     * Icon: $(edit)
-     */
-    ReviewCommentEdit = `ib-utilities.reviewComment.edit`,
-
-    /**
      * Revert Hunk to Base
      * Short Title: Revert hunk
      * Icon: $(discard)
@@ -368,6 +312,11 @@ export enum Configuration {
      * Regular expression used to match Jira issue keys in PR titles and branch names. Defaults to the pattern used by the jira CLI.
      */
     JiraKeyPattern = `ib-utilities.jira.keyPattern`,
+
+    /**
+     * Absolute path to the GitHub CLI (gh) executable. Leave empty to use gh from PATH.
+     */
+    GithubGhPath = `ib-utilities.github.ghPath`,
 
     /**
      * Show Git Helpers with mock PR, checks, Jira, and branch changes data for UI development and testing.

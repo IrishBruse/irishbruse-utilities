@@ -22,7 +22,6 @@ export class GitHelperTreeItem extends TreeItem {
         id: string,
         public readonly action?:
             | "diffWithBase"
-            | "publishReview"
             | "openPr"
             | "createDraftPr"
             | "openPrReview"
@@ -45,8 +44,6 @@ export class GitHelperTreeItem extends TreeItem {
         this.contextValue = action ? `action-${action}` : kind;
         if (action === "diffWithBase") {
             this.iconPath = new ThemeIcon("git-pull-request");
-        } else if (action === "publishReview") {
-            this.iconPath = new ThemeIcon("comment-discussion");
         } else if (action === "openPr") {
             this.iconPath = new ThemeIcon("git-pull-request");
         } else if (action === "createDraftPr") {

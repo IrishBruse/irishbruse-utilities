@@ -4,4 +4,6 @@ node_modules
 .vscode-test/
 *.vsix
 media/mermaidPreview/mermaid.min.js
+media/mermaidPreview/vsCodeTheme.js
+media/mermaidPreview/vsCodeTheme.js.map
 docs/mermaid/

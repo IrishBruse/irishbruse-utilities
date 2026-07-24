@@ -19,14 +19,12 @@ import { Commands, Views } from "../constants";
 import { getGitApi, getGitApiAsync, getRepositoryByRoot } from "../git/getGitApi";
 import { clearLegacyBranchReviewState } from "../git/clearLegacyReviewState";
 import { createBlankDraftPullRequest } from "../git/createDraftPR";
-import { countUnpublishedNotes, loadReviewNotes } from "../git/reviewNotes";
 import type { Repository } from "../git/gitApi";
 import { getActiveRepository, resolveActiveRepository } from "../git/resolveActiveRepository";
 import { registerBaseBranchOverrideStorage } from "../git/baseBranchOverride";
 import { pickBaseBranchTarget } from "../git/pickBaseBranch";
 import { isMainlineBranch, isSameBranch, resolveBaseBranch } from "../git/resolveBaseBranch";
 import { wireGitRepositories } from "../git/wireGitRepositories";
-import { publishReviewToPR } from "../git/publishReview";
 import { markPullRequestReady } from "../git/markPrReady";
 import { openPR } from "../commands/openPR";
 import { openRepo } from "../commands/openRepo";
@@ -259,7 +257,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         );
         registerCommandIB(Commands.DiffWithBase, (item) => provider.runDiffWithBase(item), context);
         registerCommandIB(Commands.SetBaseBranch, (item?: GitHelperTreeItem) => pickBaseBranchTarget(item?.repoRoot), context);
-        registerCommandIB(Commands.PublishReviewToPR, (item) => provider.runAction(item, "publishReview"), context);
         registerCommandIB(Commands.OpenPR, (item) => provider.runOpenPr(item), context);
         registerCommandIB(Commands.OpenRepo, (repoPath) => provider.runOpenRepo(repoPath), context);
         registerCommandIB(Commands.RefreshGitHelpers, () => provider.refresh(true), context);
@@ -647,32 +644,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
     }
 
-    private async runAction(
-        item: GitHelperTreeItem | string | undefined,
-        action: "publishReview"
-    ): Promise<void> {
-        if (guardGitHelpersDebugAction("Publish review notes to PR")) {
-            return;
-        }
-
-        const repoRoot =
-            typeof item === "string"
-                ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
-        if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
-            return;
-        }
-
-        const repository = (await getActiveRepository()) ?? undefined;
-        const branch = repository?.state.HEAD?.name;
-
-        if (action === "publishReview" && branch) {
-            await publishReviewToPR(repoRoot, branch);
-            this.refresh();
-        }
-    }
-
     private async updateViewTitle(): Promise<void> {
         if (!this.treeView) {
             return;
@@ -830,8 +801,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const branch = head?.name;
         const base = await resolveBaseBranch(repository);
         const pr = branch ? await getPrInfo(repoRoot, branch) : undefined;
-        const notes = head?.name ? await loadReviewNotes(repoRoot, head.name) : undefined;
-        const noteCount = notes ? countUnpublishedNotes(notes) : 0;
 
         const items: GitHelperTreeItem[] = [];
         const jiraWorkspace = await getJiraWorkspace();
@@ -922,10 +891,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         await this.syncViewContexts(jiraSynced);
         await this.updateViewTitle();
 
-        if (noteCount > 0 && head?.name && !pr) {
-            items.push(actionItem(repoRoot, "Publish to PR", "publishReview", Commands.PublishReviewToPR));
-        }
-
         return items;
     }
 }
@@ -957,7 +922,7 @@ function changesItem(repoRoot: string, summary: BranchChangesSummary): GitHelper
 function actionItem(
     repoRoot: string,
     label: string,
-    action: "diffWithBase" | "publishReview",
+    action: "diffWithBase",
     commandId: Commands,
     description?: string
 ): GitHelperTreeItem {

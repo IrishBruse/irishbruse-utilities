@@ -2,7 +2,6 @@ import { commands, Uri, window } from "vscode";
 import { setBranchDiffSession } from "./branchDiffFiles";
 import { getRepositoryByRoot } from "./getGitApi";
 import { toMultiFileDiffEditorUris } from "./gitUri";
-import { getReviewCommentController } from "./reviewCommentController";
 import { resolveBaseBranch, resolveMergeBaseSha } from "./resolveBaseBranch";
 
 export async function openBranchDiff(repoRoot: string): Promise<void> {
@@ -56,8 +55,6 @@ export async function openBranchDiff(repoRoot: string): Promise<void> {
             title: `${base.name} ↔ ${head.name}`,
             resources,
         });
-
-        getReviewCommentController()?.refreshForRepo(repoRoot);
     } catch (error) {
         window.showErrorMessage(`Failed to open branch diff: ${(error as Error).message}`);
     }

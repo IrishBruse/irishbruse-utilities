@@ -449,47 +449,6 @@
                 "icon": "$(gear)"
             },
             {
-                "command": "ib-utilities.addReviewNote",
-                "title": "Add Review Note",
-                "shortTitle": "Add note",
-                "icon": "$(note)"
-            },
-            {
-                "command": "ib-utilities.publishReviewToPR",
-                "title": "Publish Review to PR",
-                "shortTitle": "Publish to PR",
-                "icon": "$(comment-discussion)"
-            },
-            {
-                "command": "ib-utilities.exportReviewSummary",
-                "title": "Export Review Summary",
-                "shortTitle": "Export summary",
-                "icon": "$(export)"
-            },
-            {
-                "command": "ib-utilities.reviewComment.create",
-                "title": "Save",
-                "enablement": "!commentIsEmpty"
-            },
-            {
-                "command": "ib-utilities.reviewComment.save",
-                "title": "Save"
-            },
-            {
-                "command": "ib-utilities.reviewComment.cancel",
-                "title": "Cancel"
-            },
-            {
-                "command": "ib-utilities.reviewComment.delete",
-                "title": "Delete",
-                "icon": "$(trash)"
-            },
-            {
-                "command": "ib-utilities.reviewComment.edit",
-                "title": "Edit note",
-                "icon": "$(edit)"
-            },
-            {
                 "command": "ib-utilities.revertBranchDiffHunk",
                 "title": "Revert Hunk to Base",
                 "shortTitle": "Revert hunk",
@@ -513,16 +472,6 @@
                     "command": "ib-utilities.openMermaidSource",
                     "when": "activeCustomEditorId == 'ib-utilities.mermaidPreview'",
                     "group": "navigation"
-                },
-                {
-                    "command": "ib-utilities.addReviewNote",
-                    "when": "resourceScheme == git || ib-utilities.inBranchDiffFile",
-                    "group": "navigation@1"
-                },
-                {
-                    "command": "ib-utilities.publishReviewToPR",
-                    "when": "resourceScheme == git",
-                    "group": "navigation@2"
                 }
             ],
             "editor/context": [
@@ -535,62 +484,6 @@
                     "command": "ib-utilities.revertBranchDiffHunk",
                     "when": "ib-utilities.inBranchDiffFile && !editorHasSelection && inDiffEditor",
                     "group": "ib-utilities@0"
-                },
-                {
-                    "command": "ib-utilities.addReviewNote",
-                    "when": "resourceScheme == git || ib-utilities.inBranchDiffFile",
-                    "group": "ib-utilities@1"
-                }
-            ],
-            "commandPalette": [
-                {
-                    "command": "ib-utilities.reviewComment.create",
-                    "when": "false"
-                },
-                {
-                    "command": "ib-utilities.reviewComment.save",
-                    "when": "false"
-                },
-                {
-                    "command": "ib-utilities.reviewComment.cancel",
-                    "when": "false"
-                },
-                {
-                    "command": "ib-utilities.reviewComment.delete",
-                    "when": "false"
-                }
-            ],
-            "comments/commentThread/title": [
-                {
-                    "command": "ib-utilities.reviewComment.delete",
-                    "group": "navigation@2",
-                    "when": "commentController == ib-utilities.review && !commentThreadIsEmpty"
-                }
-            ],
-            "comments/commentThread/context": [
-                {
-                    "command": "ib-utilities.reviewComment.create",
-                    "group": "inline",
-                    "when": "commentController == ib-utilities.review && commentThreadIsEmpty"
-                }
-            ],
-            "comments/comment/context": [
-                {
-                    "command": "ib-utilities.reviewComment.save",
-                    "group": "inline@1",
-                    "when": "commentController == ib-utilities.review && comment == editing"
-                },
-                {
-                    "command": "ib-utilities.reviewComment.cancel",
-                    "group": "inline@2",
-                    "when": "commentController == ib-utilities.review && comment == editing"
-                }
-            ],
-            "comments/comment/title": [
-                {
-                    "command": "ib-utilities.reviewComment.edit",
-                    "group": "group@1",
-                    "when": "commentController == ib-utilities.review && comment == note && commentThread != published"
                 }
             ],
             "view/item/context": [

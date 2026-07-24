@@ -5,9 +5,6 @@ import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
 import { terminalPaste } from "./commands/terminalPaste";
-import { activateReviewCommentController } from "./git/reviewCommentController";
-import { exportReviewSummary, promptAndAddReviewNote } from "./git/publishReview";
-import { getActiveRepository } from "./git/resolveActiveRepository";
 import { ActionPanelViewProvider } from "./actionPanel/ActionPanelView";
 import { BranchChangesViewProvider } from "./gitHelpers/BranchChangesView";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
@@ -33,26 +30,11 @@ export function activate(context: ExtensionContext) {
 
     registerMermaidCustomEditor(context);
     SnippetViewProvider.activate(context);
-    activateReviewCommentController(context);
     activateBranchDiffRevert(context);
     context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));
     ActionPanelViewProvider.activate(context);
     BranchChangesViewProvider.activate(context);
     GitHelpersViewProvider.activate(context);
-
-    registerCommandIB(Commands.AddReviewNote, async () => {
-        const repo = await getActiveRepository();
-        if (repo) {
-            await promptAndAddReviewNote(repo.rootUri.fsPath);
-        }
-    }, context);
-    registerCommandIB(Commands.ExportReviewSummary, async () => {
-        const repo = await getActiveRepository();
-        const branch = repo?.state.HEAD?.name;
-        if (repo && branch) {
-            await exportReviewSummary(repo.rootUri.fsPath, branch);
-        }
-    }, context);
 }
 
 export function deactivate() {

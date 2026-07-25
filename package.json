@@ -459,6 +459,16 @@
                 "title": "Revert Selection to Base",
                 "shortTitle": "Revert selection",
                 "icon": "$(discard)"
+            },
+            {
+                "command": "ib-utilities.copyScmResourcePath",
+                "title": "Copy Path",
+                "shortTitle": "Copy path"
+            },
+            {
+                "command": "ib-utilities.copyScmResourceRelativePath",
+                "title": "Copy Relative Path",
+                "shortTitle": "Copy relative path"
             }
         ],
         "menus": {
@@ -484,6 +494,16 @@
                     "command": "ib-utilities.revertBranchDiffHunk",
                     "when": "ib-utilities.inBranchDiffFile && !editorHasSelection && inDiffEditor",
                     "group": "ib-utilities@0"
+                }
+            ],
+            "scm/resourceState/context": [
+                {
+                    "command": "ib-utilities.copyScmResourcePath",
+                    "group": "2_copy"
+                },
+                {
+                    "command": "ib-utilities.copyScmResourceRelativePath",
+                    "group": "2_copy"
                 }
             ],
             "view/item/context": [

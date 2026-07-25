@@ -10,6 +10,7 @@ import { BranchChangesViewProvider } from "./gitHelpers/BranchChangesView";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
+import { copyScmResourcePath, copyScmResourceRelativePath } from "./scm/copyResourcePath";
 import { registerCommandIB } from "./utils/vscode";
 import { Commands } from "./constants";
 
@@ -27,6 +28,8 @@ export function activate(context: ExtensionContext) {
     registerCommandIB(Commands.TerminalPaste, terminalPaste, context);
     registerCommandIB(Commands.OpenMermaidPreview, openMermaidPreview, context);
     registerCommandIB(Commands.OpenMermaidSource, openMermaidSource, context);
+    registerCommandIB(Commands.CopyScmResourcePath, copyScmResourcePath, context);
+    registerCommandIB(Commands.CopyScmResourceRelativePath, copyScmResourceRelativePath, context);
 
     registerMermaidCustomEditor(context);
     SnippetViewProvider.activate(context);

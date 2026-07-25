@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.15.0
+
+-   Add: Copy Path and Copy Relative Path on Source Control changed-file context menu
+
 ## 0.14.0
 
 -   Remove: Branch diff review notes, gutter comments, and publish-to-PR comment workflow

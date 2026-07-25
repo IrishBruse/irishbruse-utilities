@@ -241,6 +241,20 @@ export enum Commands {
     RevertBranchDiffSelection = `ib-utilities.revertBranchDiffSelection`,
 
     /**
+     * Copy Path
+     * Short Title: Copy path
+     * Icon: undefined
+     */
+    CopyScmResourcePath = `ib-utilities.copyScmResourcePath`,
+
+    /**
+     * Copy Relative Path
+     * Short Title: Copy relative path
+     * Icon: undefined
+     */
+    CopyScmResourceRelativePath = `ib-utilities.copyScmResourceRelativePath`,
+
+    /**
      * Snippet Manager
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,

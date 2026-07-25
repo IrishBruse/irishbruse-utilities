@@ -26,6 +26,8 @@ Panel data is cached per repository so switching between local repos restores th
 
 The Git Helpers title bar opens the GitHub repository and refreshes the panel.
 
+Right-click any file under **Source Control → Changes** for **Copy Path** and **Copy Relative Path** (same as the file explorer).
+
 ### Changed Files (secondary sidebar)
 
 The **Changed Files** view in the secondary sidebar lists files changed against the merge base.

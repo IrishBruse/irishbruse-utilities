@@ -2,20 +2,13 @@
 
 ## Unreleased
 
--   Add: Mermaid preview opens GBL call-graph `click … href` links at the source location
--   Add: Mermaid preview supports `bindFunctions`, Gantt clicks, external URLs, modifier-click to open beside, and basename path fallback for co-located call graphs
--   Change: Mermaid preview is optional (`Open Preview`); `.mmd` diffs and normal opens use raw source text
--   Fix: Mermaid diagram node clicks resolve targets from source `click` lines when SVG uses placeholder links
+## 0.16.0
+
+-   Add: Mermaid preview with themed rendering, toolbar (zoom, pan, fit, copy PNG), and GBL call-graph navigation (`click … href` opens workspace files at `path:line:column`, plus VS Code `#Lline,column` and GitHub `#Lline` href forms)
+-   Change: `.mmd` and `.mermaid` open as source by default, including diffs; use **Open Preview** for the live diagram
+-   Change: Custom link hover labels in Mermaid preview instead of native SVG `title` tooltips
 -   Fix: Mermaid diagram titles and cluster labels use editor foreground instead of default gold styling
--   Change: Mermaid preview shows custom link hover labels instead of native browser `title` tooltips
--   Add: Mermaid link targets accept `path:line:column` hrefs and VS Code `#Lline,column` fragments (in addition to GitHub `#Lline`)
--   Change: GBL `path:line:column` is canonical for click href/tooltip; maps and openLink normalize legacy `#L` hrefs
--   Fix: Mermaid preview links work for co-located files like `test.txt:1:1` (hit-testing, case-insensitive node ids, linked-node styling)
--   Fix: GBL `path:line` / `path:line:column` in Mermaid `href` no longer breaks clicks (path-only link + strip colon hrefs from SVG anchors)
--   Fix: Mermaid preview link clicks use global hit-testing so pan/zoom does not swallow `test.txt:3:2` node presses
--   Fix: GBL paths normalize `./test.txt` vs `test.txt`; linked nodes get direct click handlers after render
--   Fix: Mermaid 11 flowchart node DOM ids (`my-svg-flowchart-Other-3`) map to click targets so `test.txt:line:col` nodes open
--   Fix: Do not hoist flowchart nodes out of Mermaid's positioning `<a transform>` wrappers (broke layout)
+-   Fix: Linked-node clicks in preview (co-located paths like `test.txt`, Mermaid 11 node ids, pan/zoom, and invalid colon `href` values)
 
 ## 0.15.0
 

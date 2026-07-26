@@ -10,6 +10,7 @@ import {
     workspace,
 } from "vscode";
 import { getNonce, getPreviewHtml } from "./getPreviewHtml";
+import { handleMermaidOpenLink } from "./mermaidClickTarget";
 
 const UPDATE_DEBOUNCE_MS = 150;
 
@@ -62,11 +63,19 @@ export class MermaidCustomEditorProvider implements CustomTextEditorProvider {
         };
 
         const disposables = [
-            webviewPanel.webview.onDidReceiveMessage((message) => {
+            webviewPanel.webview.onDidReceiveMessage(async (message) => {
                 if (message.type === "ready") {
                     isReady = true;
                     postTheme();
                     postUpdate();
+                    return;
+                }
+                if (message.type === "openLink") {
+                    await handleMermaidOpenLink(document.uri, {
+                        href: typeof message.href === "string" ? message.href : undefined,
+                        tooltip: typeof message.tooltip === "string" ? message.tooltip : undefined,
+                        openBeside: message.openBeside === true,
+                    });
                 }
             }),
             workspace.onDidChangeTextDocument((event) => {

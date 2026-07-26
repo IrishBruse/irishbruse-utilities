@@ -51,17 +51,103 @@ body {
     font-family: var(--ib-font-family, var(--vscode-font-family, var(--vscode-editor-font-family, sans-serif))) !important;
 }
 
+#diagram svg text {
+    fill: var(--ib-fg);
+}
+
+#diagram svg .flowchartTitleText,
+#diagram svg .titleText,
+#diagram svg .pieTitleText,
+#diagram svg .gitTitleText,
+#diagram svg .classDiagramTitleText,
+#diagram svg .requirementDiagramTitleText,
+#diagram svg .erDiagramTitleText,
+#diagram svg .blockDiagramTitleText,
+#diagram svg .statediagramTitleText,
+#diagram svg .cluster-label text,
+#diagram svg .cluster-label span,
+#diagram svg .cluster text,
+#diagram svg .venn-title {
+    fill: var(--ib-fg) !important;
+    color: var(--ib-fg) !important;
+}
+
 #diagram svg * {
     cursor: inherit;
 }
 
-/* Make all text easily selectable */
+/* Make diagram text selectable except on linked / clickable nodes */
 #diagram svg text,
 #diagram foreignObject,
 #diagram foreignObject * {
     user-select: text;
     -webkit-user-select: text;
     cursor: text;
+}
+
+#diagram a text,
+#diagram a tspan,
+#diagram a foreignObject,
+#diagram a foreignObject * {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+}
+
+#diagram .clickable text,
+#diagram .clickable tspan,
+#diagram .clickable foreignObject,
+#diagram .clickable foreignObject * {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+}
+
+#diagram .ib-diagram-link,
+#diagram .ib-diagram-link text,
+#diagram .ib-diagram-link tspan,
+#diagram .ib-diagram-link foreignObject,
+#diagram .ib-diagram-link foreignObject * {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+}
+
+#diagram g.ib-diagram-link > * {
+    pointer-events: auto;
+}
+
+#diagram a[href],
+#diagram a[xlink\:href],
+#diagram svg a,
+#diagram .clickable,
+#diagram .ib-diagram-link {
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   Link hover tooltip (replaces native SVG title tooltips)
+   ========================================================================== */
+#link-tooltip.link-tooltip {
+    position: fixed;
+    z-index: 25;
+    max-width: min(360px, calc(100vw - 24px));
+    padding: 6px 10px;
+    border: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    border-radius: 6px;
+    background: var(--vscode-editorHoverWidget-background, var(--vscode-editorWidget-background));
+    color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+    font-family: var(--vscode-editor-font-family);
+    font-size: 12px;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    word-break: break-word;
+    pointer-events: none;
+    box-shadow: 0 4px 12px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.25));
+}
+
+#link-tooltip.link-tooltip[hidden] {
+    display: none;
 }
 
 /* ==========================================================================
@@ -198,6 +284,10 @@ body {
 /* ==========================================================================
    Mermaid structural exceptions (colors via --ib-* tokens from vsCodeTheme)
    ========================================================================== */
+
+#diagram .clickable {
+    cursor: pointer;
+}
 
 /* Node depth — not expressible via themeVariables */
 #diagram .node:not(:has(.divider)) rect,

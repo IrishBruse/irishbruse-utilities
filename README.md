@@ -48,7 +48,15 @@ An **Actions** activity bar panel for customizable shortcuts: built-in actions, 
 
 ### Mermaid Preview
 
-Open `.mmd` or `.mermaid` files in the **Mermaid Preview** custom editor for live diagram rendering that follows your VS Code color theme. Use the toolbar to zoom, pan, fit to view, or copy the diagram as PNG. Switch back to source with **Open Source** from the editor title bar.
+Open `.mmd` or `.mermaid` files as **source text** by default (including branch diffs and `vscode.diff`). Use **Open Preview** from the editor title bar or the `ib-utilities.openMermaidPreview` command for live diagram rendering that follows your VS Code color theme. In preview, use the toolbar to zoom, pan, fit to view, or copy the diagram as PNG. Switch back to source with **Open Source**.
+
+Clickable nodes (flowchart `click … href`, Gantt task links, and similar) open in the editor. Location formats (tooltip is preferred when present):
+
+- **GBL / compiler style (preferred):** `path:line:column` in the second `click` string (e.g. `../test.gbl:12:1`). The first string may use the same location or a plain path; the preview normalizes to `path` + `path:line:column` because Mermaid breaks SVG links when `href` contains `:line:column`.
+- **VS Code URI fragment:** `path#Lline,column` (e.g. `../test.gbl#L12,5`) — matches VS Code’s documented `L3,5` fragment form.
+- **GitHub / web:** `path#Lline` (e.g. `../test.gbl#L12`) — line only; column defaults to 1.
+
+`http(s)` and `mailto:` links open in your browser. Hover a linked node for a short custom label. Hold **Ctrl** or **Cmd** while clicking to open beside the active tab.
 
 ## Configuration
 
@@ -137,6 +145,7 @@ npm run verify
 - **Build:** `npm run build`
 - **Tests:** `npm run test`
 - **Lint:** `npm run lint`
+- **Install locally:** `npm run install:local` (packages a VSIX and installs it via `cursor` or `code`; override with `VSCODE_CLI`)
 
 See [`AGENTS.md`](./AGENTS.md) for contributor notes (including `fnm` for Node versions).
 

@@ -445,12 +445,15 @@ export function getThemeCSS(tokens: MermaidTokens): string {
 text { fill: ${fg}; }
 foreignObject, foreignObject * { color: ${fg}; font-family: ${fontFamily}; }
 .messageText, .loopText, .actor > text, .nodeLabel, .cluster-label, .titleText,
+.flowchartTitleText, .classDiagramTitleText, .requirementDiagramTitleText,
+.erDiagramTitleText, .gitTitleText, .pieTitleText, .blockDiagramTitleText,
 .stateLabel text, g.stateGroup text, g.stateGroup .state-title, .statediagramTitleText,
 .noteText, .edgeLabel, .edgeLabel p, .edgeLabel span,
 .gitTitleText, .branch-label, [class*="branch-label"], .commit-label, .commit-id,
-.commit-msg, .tag-label, .pieTitleText, .legend text {
-  fill: ${fg};
-  color: ${fg};
+.commit-msg, .tag-label, .pieTitleText, .legend text,
+.cluster-label text, .cluster-label span, .cluster text, .venn-title {
+  fill: ${fg} !important;
+  color: ${fg} !important;
   font-family: ${fontFamily};
 }
 

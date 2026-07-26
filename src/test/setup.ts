@@ -7,10 +7,16 @@ vi.mock("vscode", () => ({
         }),
         asRelativePath: vi.fn((uri: { fsPath: string }) => uri.fsPath),
         getWorkspaceFolder: vi.fn(),
+        openTextDocument: vi.fn(),
         fs: {
             writeFile: vi.fn().mockResolvedValue(undefined),
             readFile: vi.fn().mockResolvedValue(Buffer.from("")),
+            stat: vi.fn().mockResolvedValue({ type: 1 }),
         },
+    },
+    env: {
+        openExternal: vi.fn().mockResolvedValue(true),
+        clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
     },
     window: {
         showErrorMessage: vi.fn().mockResolvedValue(undefined),
@@ -114,6 +120,10 @@ vi.mock("vscode", () => ({
     },
     TabInputText: class {},
     TabInputCustom: class {},
+    ViewColumn: {
+        Beside: 2,
+        Active: 1,
+    },
     ColorThemeKind: {
         Light: 1,
         Dark: 2,

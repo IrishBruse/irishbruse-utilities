@@ -143,6 +143,13 @@ export enum Commands {
     OpenMermaidSource = `ib-utilities.openMermaidSource`,
 
     /**
+     * Open Mermaid Preview
+     * Short Title: Open Preview
+     * Icon: undefined
+     */
+    OpenMermaidMarkdownPreview = `ib-utilities.openMermaidMarkdownPreview`,
+
+    /**
      * Show Git Helpers
      * Short Title: Git Helpers
      * Icon: $(git-branch)
@@ -346,5 +353,6 @@ export enum Configuration {
 
 /** Primary file extension per language id from this extension contributes.languages */
 export const contributedLanguageIdToExtension: Record<string, string> = {
+    "mermaid": ".mmd",
     "gherkin": ".feature",
 };

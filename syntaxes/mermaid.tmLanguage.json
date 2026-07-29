@@ -1,0 +1,28 @@
+{
+    "name": "Mermaid",
+    "scopeName": "source.mermaid",
+    "patterns": [
+        { "include": "#comments" },
+        { "include": "#strings" },
+        { "include": "#keywords" },
+        { "include": "#operators" }
+    ],
+    "repository": {
+        "comments": {
+            "match": "%%.*$",
+            "name": "comment.line.percent.mermaid"
+        },
+        "strings": {
+            "match": "\"[^\"]*\"",
+            "name": "string.quoted.double.mermaid"
+        },
+        "keywords": {
+            "match": "(?i)\\b(graph|flowchart|subgraph|end|sequenceDiagram|participant|actor|classDiagram|stateDiagram-v2|stateDiagram|erDiagram|gantt|dateFormat|title|section|pie|gitGraph|commit|branch|checkout|merge|journey|timeline|mindmap|classDef|class|style|linkStyle|click|direction|LR|RL|TB|BT|TD|note|loop|alt|opt|par|and|rect|block-beta|kanban|architecture-beta|xychart-beta|C4Context|C4Container|C4Component|C4Dynamic|C4Deployment)\\b",
+            "name": "keyword.control.mermaid"
+        },
+        "operators": {
+            "match": "(-->|---|-\\.->|==>|==>|===)",
+            "name": "keyword.operator.mermaid"
+        }
+    }
+}

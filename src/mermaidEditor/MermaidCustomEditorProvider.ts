@@ -10,6 +10,7 @@ import {
     workspace,
 } from "vscode";
 import { getNonce, getPreviewHtml } from "./getPreviewHtml";
+import { resolveMermaidLinkBaseUri } from "./markdownMermaidPreview";
 import { handleMermaidOpenLink } from "./mermaidClickTarget";
 
 const UPDATE_DEBOUNCE_MS = 150;
@@ -71,7 +72,7 @@ export class MermaidCustomEditorProvider implements CustomTextEditorProvider {
                     return;
                 }
                 if (message.type === "openLink") {
-                    await handleMermaidOpenLink(document.uri, {
+                    await handleMermaidOpenLink(resolveMermaidLinkBaseUri(document.uri), {
                         href: typeof message.href === "string" ? message.href : undefined,
                         tooltip: typeof message.tooltip === "string" ? message.tooltip : undefined,
                         openBeside: message.openBeside === true,

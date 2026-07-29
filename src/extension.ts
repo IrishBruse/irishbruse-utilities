@@ -9,6 +9,7 @@ import { ActionPanelViewProvider } from "./actionPanel/ActionPanelView";
 import { BranchChangesViewProvider } from "./gitHelpers/BranchChangesView";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
+import { registerMarkdownMermaidFeatures } from "./mermaidEditor/registerMarkdownMermaid";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
 import { copyScmResourcePath, copyScmResourceRelativePath } from "./scm/copyResourcePath";
 import { registerCommandIB } from "./utils/vscode";
@@ -32,6 +33,7 @@ export function activate(context: ExtensionContext) {
     registerCommandIB(Commands.CopyScmResourceRelativePath, copyScmResourceRelativePath, context);
 
     registerMermaidCustomEditor(context);
+    registerMarkdownMermaidFeatures(context);
     SnippetViewProvider.activate(context);
     activateBranchDiffRevert(context);
     context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));

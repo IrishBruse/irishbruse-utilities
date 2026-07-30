@@ -11,7 +11,7 @@ Scope: **changelog**, **stamp** (version commit), and **publish** (Marketplace d
 
 1. Read `package.json` version and skim `git log` since the last version commit or tag.
 2. Use an explicit semver or bump (`patch`, `minor`, `major`) when the user gave one.
-3. Otherwise **AskQuestion** once — prompt only: `Current version is {current}. Which release bump?` — options: `Patch ({nextPatch})`, `Minor ({nextMinor})`. Custom semver from the user skips the question.
+3. Otherwise **AskQuestion** once — prompt only: `Current version is {current}. Which release bump?` — options: `Minor ({nextMinor})`, `Patch ({nextPatch})`. Custom semver from the user skips the question.
 
 **Done when:** target version is decided.
 
@@ -27,16 +27,17 @@ Only when `CHANGELOG.md` lacks `## {version}`:
    - Patch: ~1–3 bullets; minor: ~3–8.
 3. Move reviewed bullets under `## {version}`; leave `## Unreleased` empty.
 4. Update `README.md` only for user-facing feature or command changes.
+5. Do **not** commit `CHANGELOG.md` or `README.md` yet. Leave them for the version commit in **stamp**.
 
-**Done when:** `## {version}` exists with reviewed bullets and `## Unreleased` is empty.
+**Done when:** `## {version}` exists with reviewed bullets, `## Unreleased` is empty, and changelog/README edits are unstaged or staged but uncommitted.
 
 ## 3. Prep
 
-1. Commit every pending change (features, changelog, README, skill edits). Do not bump version files yet.
+1. Commit every other pending change (features, skill edits). Do not bump version files yet.
 2. Run `npm run verify` — must exit 0.
-3. Confirm `git status` is clean.
+3. Confirm only release docs and version files remain uncommitted (`CHANGELOG.md`, `README.md` when changed, and `package.json` / `package-lock.json` until stamp).
 
-**Done when:** working tree is clean and `npm run verify` passed.
+**Done when:** feature work is committed, `npm run verify` passed, and changelog/README are ready for stamp.
 
 ## 4. Stamp
 
@@ -46,9 +47,9 @@ Run once:
 npm run release -- {version}
 ```
 
-This bumps `package.json` / `package-lock.json` and commits `{version}`. It does not publish.
+This bumps `package.json` / `package-lock.json` and commits `{version}` together with `CHANGELOG.md` and `README.md` when changed. It does not publish.
 
-**Done when:** `package.json` version is `{version}` and that commit exists locally.
+**Done when:** `package.json` version is `{version}` and that single version commit exists locally.
 
 ## 5. Gate
 

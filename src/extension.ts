@@ -12,6 +12,7 @@ import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditor
 import { registerMarkdownMermaidFeatures } from "./mermaidEditor/registerMarkdownMermaid";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
 import { copyScmResourcePath, copyScmResourceRelativePath } from "./scm/copyResourcePath";
+import { copyGithubHeadFileUrl } from "./scm/copyGithubHeadFileUrl";
 import { registerCommandIB } from "./utils/vscode";
 import { Commands } from "./constants";
 
@@ -31,6 +32,7 @@ export function activate(context: ExtensionContext) {
     registerCommandIB(Commands.OpenMermaidSource, openMermaidSource, context);
     registerCommandIB(Commands.CopyScmResourcePath, copyScmResourcePath, context);
     registerCommandIB(Commands.CopyScmResourceRelativePath, copyScmResourceRelativePath, context);
+    registerCommandIB(Commands.CopyGithubHeadFileUrl, copyGithubHeadFileUrl, context);
 
     registerMermaidCustomEditor(context);
     registerMarkdownMermaidFeatures(context);

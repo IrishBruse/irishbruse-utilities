@@ -2,7 +2,10 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
     formatPrFileChangeLabel,
     formatPrLineChangeDescription,
+    getGithubHeadFileUrls,
+    getHeadRef,
     getPrChangesUrl,
+    githubHeadFileWebUrl,
     githubRepoWebUrl,
     getOriginUrl,
     getPrInfo,
@@ -48,6 +51,82 @@ describe("githubRepoWebUrl", () => {
 
     it("returns undefined for non-GitHub remotes", () => {
         expect(githubRepoWebUrl("https://gitlab.com/o/r.git")).toBeUndefined();
+    });
+});
+
+describe("githubHeadFileWebUrl", () => {
+    it("builds a blob URL for a branch and file path", () => {
+        expect(
+            githubHeadFileWebUrl("https://github.com/o/r.git", "feature", "src/foo.ts")
+        ).toBe("https://github.com/o/r/blob/feature/src/foo.ts");
+    });
+
+    it("encodes branch slashes and file path segments", () => {
+        expect(
+            githubHeadFileWebUrl("git@github.com:o/r.git", "feature/foo", "src/my file.ts")
+        ).toBe("https://github.com/o/r/blob/feature%2Ffoo/src/my%20file.ts");
+    });
+
+    it("returns undefined for non-GitHub remotes", () => {
+        expect(githubHeadFileWebUrl("https://gitlab.com/o/r.git", "main", "a.ts")).toBeUndefined();
+    });
+});
+
+describe("getHeadRef", () => {
+    beforeEach(() => {
+        mockAsyncSpawn.mockReset();
+    });
+
+    it("returns the current branch name when not detached", async () => {
+        mockAsyncSpawn.mockResolvedValue({
+            stdout: "feature-branch\n",
+            stderr: "",
+            status: 0,
+        });
+
+        await expect(getHeadRef("/repo")).resolves.toBe("feature-branch");
+        expect(mockAsyncSpawn).toHaveBeenCalledWith(
+            "git",
+            ["rev-parse", "--abbrev-ref", "HEAD"],
+            { cwd: "/repo" }
+        );
+    });
+
+    it("falls back to the commit SHA when HEAD is detached", async () => {
+        mockAsyncSpawn.mockImplementation(async (_command, args) => {
+            if (args?.[1] === "--abbrev-ref") {
+                return { stdout: "HEAD\n", stderr: "", status: 0 };
+            }
+            if (args?.[1] === "HEAD" && args?.[0] === "rev-parse") {
+                return { stdout: "abc123def456\n", stderr: "", status: 0 };
+            }
+            throw new Error(`unexpected args: ${args?.join(" ")}`);
+        });
+
+        await expect(getHeadRef("/repo")).resolves.toBe("abc123def456");
+    });
+});
+
+describe("getGithubHeadFileUrls", () => {
+    beforeEach(() => {
+        mockAsyncSpawn.mockReset();
+    });
+
+    it("builds blob URLs from origin and HEAD", async () => {
+        mockAsyncSpawn.mockImplementation(async (_command, args) => {
+            if (args?.[0] === "remote") {
+                return { stdout: "git@github.com:o/r.git\n", stderr: "", status: 0 };
+            }
+            if (args?.[1] === "--abbrev-ref") {
+                return { stdout: "main\n", stderr: "", status: 0 };
+            }
+            throw new Error(`unexpected args: ${args?.join(" ")}`);
+        });
+
+        await expect(getGithubHeadFileUrls("/repo", ["src/a.ts", "src/b.ts"])).resolves.toEqual([
+            "https://github.com/o/r/blob/main/src/a.ts",
+            "https://github.com/o/r/blob/main/src/b.ts",
+        ]);
     });
 });
 

@@ -92,6 +92,20 @@ export function normalizeScmResources(
     return items.map(scmResourceContextFromArg).filter((item): item is ScmResourceContext => item !== undefined);
 }
 
+export function resolveCommandFileResources(
+    arg?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[],
+    selectedResources?: Uri | Uri[]
+): ScmResourceContext[] {
+    if (selectedResources) {
+        const resources = Array.isArray(selectedResources) ? selectedResources : [selectedResources];
+        if (resources.length) {
+            return normalizeScmResources(resources);
+        }
+    }
+
+    return normalizeScmResources(arg);
+}
+
 export function pathsFromScmResources(resources: ScmResourceContext[]): string[] {
     return resources.map((item) => item.uri.fsPath);
 }

@@ -6,6 +6,7 @@ import {
     pathsFromScmResources,
     relativePathForScmResource,
     relativePathsForScmResources,
+    resolveCommandFileResources,
     resolveFileUri,
 } from "./copyResourcePath";
 
@@ -40,6 +41,25 @@ describe("normalizeScmResources", () => {
         expect(resources).toHaveLength(1);
         expect(resources[0]?.uri.fsPath).toBe("/repo/src/a.ts");
         expect(resources[0]?.repoRoot).toBeUndefined();
+    });
+});
+
+describe("resolveCommandFileResources", () => {
+    it("prefers explorer multi-select resources over the clicked resource", () => {
+        const resources = resolveCommandFileResources(Uri.file("/repo/src/a.ts"), [
+            Uri.file("/repo/src/a.ts"),
+            Uri.file("/repo/src/b.ts"),
+        ]);
+        expect(resources.map((resource) => resource.uri.fsPath)).toEqual([
+            "/repo/src/a.ts",
+            "/repo/src/b.ts",
+        ]);
+    });
+
+    it("falls back to the clicked explorer resource", () => {
+        const resources = resolveCommandFileResources(Uri.file("/repo/src/a.ts"));
+        expect(resources).toHaveLength(1);
+        expect(resources[0]?.uri.fsPath).toBe("/repo/src/a.ts");
     });
 });
 

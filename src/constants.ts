@@ -262,6 +262,13 @@ export enum Commands {
     CopyScmResourceRelativePath = `ib-utilities.copyScmResourceRelativePath`,
 
     /**
+     * Copy GitHub Head URL
+     * Short Title: Copy head URL
+     * Icon: $(copy)
+     */
+    CopyGithubHeadFileUrl = `ib-utilities.copyGithubHeadFileUrl`,
+
+    /**
      * Snippet Manager
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,

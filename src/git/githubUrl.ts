@@ -51,6 +51,71 @@ export function githubRepoWebUrl(remoteUrl: string): string | undefined {
     return `https://github.com/${parsed.owner}/${parsed.repo}`;
 }
 
+export function githubHeadFileWebUrl(
+    remoteUrl: string,
+    headRef: string,
+    relativePath: string
+): string | undefined {
+    const repoUrl = githubRepoWebUrl(remoteUrl);
+    if (!repoUrl || !headRef.trim()) {
+        return undefined;
+    }
+
+    const normalizedPath = relativePath.replace(/\\/g, "/").replace(/^\/+/, "");
+    if (!normalizedPath) {
+        return undefined;
+    }
+
+    const encodedRef = encodeURIComponent(headRef);
+    const encodedPath = normalizedPath
+        .split("/")
+        .map((segment) => encodeURIComponent(segment))
+        .join("/");
+    return `${repoUrl}/blob/${encodedRef}/${encodedPath}`;
+}
+
+export async function getHeadRef(repoRoot: string): Promise<string | undefined> {
+    const abbrev = await asyncSpawn("git", ["rev-parse", "--abbrev-ref", "HEAD"], { cwd: repoRoot });
+    if (abbrev.status === 0) {
+        const branch = abbrev.stdout.trim();
+        if (branch && branch !== "HEAD") {
+            return branch;
+        }
+    }
+
+    const sha = await asyncSpawn("git", ["rev-parse", "HEAD"], { cwd: repoRoot });
+    if (sha.status === 0) {
+        const commit = sha.stdout.trim();
+        return commit || undefined;
+    }
+
+    return undefined;
+}
+
+export async function getGithubHeadFileUrls(
+    repoRoot: string,
+    relativePaths: readonly string[]
+): Promise<string[] | undefined> {
+    if (!relativePaths.length) {
+        return undefined;
+    }
+
+    const origin = await getOriginUrl(repoRoot);
+    if (!origin) {
+        return undefined;
+    }
+
+    const headRef = await getHeadRef(repoRoot);
+    if (!headRef) {
+        return undefined;
+    }
+
+    const urls = relativePaths
+        .map((relativePath) => githubHeadFileWebUrl(origin, headRef, relativePath))
+        .filter((url): url is string => url !== undefined);
+    return urls.length ? urls : undefined;
+}
+
 export async function getOriginUrl(repoRoot: string): Promise<string | undefined> {
     const result = await asyncSpawn("git", ["remote", "get-url", "origin"], { cwd: repoRoot });
     if (result.status !== 0) {

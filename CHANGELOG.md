@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+-   Add: Copy GitHub Head URL on Source Control changed files, Changed Files sidebar, and file explorer context menu
+-   Fix: Markdown syntax highlighting regressions from the mermaid fenced-code injection re-matching entire code blocks instead of embedding inside VS Code's built-in markdown fences
+
 ## 0.17.0
 
 -   Add: Markdown `mermaid` fenced code blocks with syntax highlighting, **Open Preview** CodeLens, and a link on the `mermaid` tag to open the themed preview (diagram links resolve relative to the markdown file)

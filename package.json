@@ -500,6 +500,12 @@
                 "command": "ib-utilities.copyScmResourceRelativePath",
                 "title": "Copy Relative Path",
                 "shortTitle": "Copy relative path"
+            },
+            {
+                "command": "ib-utilities.copyGithubHeadFileUrl",
+                "title": "Copy GitHub Head URL",
+                "shortTitle": "Copy head URL",
+                "icon": "$(copy)"
             }
         ],
         "menus": {
@@ -535,6 +541,17 @@
                 {
                     "command": "ib-utilities.copyScmResourceRelativePath",
                     "group": "2_copy"
+                },
+                {
+                    "command": "ib-utilities.copyGithubHeadFileUrl",
+                    "group": "2_copy"
+                }
+            ],
+            "explorer/context": [
+                {
+                    "command": "ib-utilities.copyGithubHeadFileUrl",
+                    "when": "resourceScheme == file && !explorerResourceIsFolder",
+                    "group": "6_copypath"
                 }
             ],
             "view/item/context": [
@@ -587,6 +604,11 @@
                     "command": "ib-utilities.copyPrUrl",
                     "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr || viewItem == action-openPr-draft || viewItem == action-openPr-hasJira || viewItem == action-openPr-draft-hasJira || viewItem == action-openPr-noJira || viewItem == action-openPr-draft-noJira)",
                     "group": "inline@4"
+                },
+                {
+                    "command": "ib-utilities.copyGithubHeadFileUrl",
+                    "when": "view == ib-utilities.branchChanges && viewItem == changes-file",
+                    "group": "2_copy"
                 }
             ],
             "view/title": [

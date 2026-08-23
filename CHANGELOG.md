@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.18.1
+
+-   Fix: Copy GitHub Head URL in file explorer on remote workspaces (SSH, WSL, and similar) and from editor tab context menu
+
 ## 0.18.0
 
 -   Add: Copy GitHub Head URL on Source Control changed files, Changed Files sidebar, and file explorer context menu

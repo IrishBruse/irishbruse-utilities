@@ -26,7 +26,7 @@ Panel data is cached per repository so switching between local repos restores th
 
 The Git Helpers title bar opens the GitHub repository and refreshes the panel.
 
-Right-click any file in the file explorer or under **Source Control → Changes** for **Copy Path**, **Copy Relative Path**, and **Copy GitHub Head URL** (blob link at the current branch `HEAD`).
+Right-click any file in the file explorer for **Copy GitHub Head URL** (blob link at the current branch `HEAD`). Under **Source Control → Changes**, right-click for **Copy Path**, **Copy Relative Path**, and **Copy GitHub Head URL**.
 
 ### Changed Files (secondary sidebar)
 

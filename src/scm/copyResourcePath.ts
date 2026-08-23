@@ -141,9 +141,10 @@ export async function relativePathsForScmResources(resources: ScmResourceContext
 }
 
 export async function copyScmResourcePath(
-    state?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[]
+    arg?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[],
+    selectedResources?: Uri | Uri[]
 ): Promise<void> {
-    const paths = pathsFromScmResources(normalizeScmResources(state));
+    const paths = pathsFromScmResources(resolveCommandFileResources(arg, selectedResources));
     if (!paths.length) {
         return;
     }
@@ -151,9 +152,10 @@ export async function copyScmResourcePath(
 }
 
 export async function copyScmResourceRelativePath(
-    state?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[]
+    arg?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[],
+    selectedResources?: Uri | Uri[]
 ): Promise<void> {
-    const resources = normalizeScmResources(state);
+    const resources = resolveCommandFileResources(arg, selectedResources);
     const paths = await relativePathsForScmResources(resources);
     if (!paths.length) {
         return;

@@ -550,7 +550,14 @@
             "explorer/context": [
                 {
                     "command": "ib-utilities.copyGithubHeadFileUrl",
-                    "when": "resourceScheme == file && !explorerResourceIsFolder",
+                    "when": "!explorerResourceIsFolder && resourceScheme != untitled",
+                    "group": "6_copypath"
+                }
+            ],
+            "editor/title/context": [
+                {
+                    "command": "ib-utilities.copyGithubHeadFileUrl",
+                    "when": "resourceScheme != untitled",
                     "group": "6_copypath"
                 }
             ],

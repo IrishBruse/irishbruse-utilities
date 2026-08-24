@@ -3,6 +3,8 @@ dist
 node_modules
 .vscode-test/
 *.vsix
+markdown-editor-out/
+media/markdownEditor/
 media/mermaidPreview/mermaid.min.js
 media/mermaidPreview/vsCodeTheme.js
 media/mermaidPreview/vsCodeTheme.js.map

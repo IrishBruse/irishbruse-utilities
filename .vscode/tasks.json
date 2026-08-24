@@ -11,6 +11,24 @@
         },
         {
             "type": "npm",
+            "script": "build-markdown-editor",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "type": "npm",
+            "script": "sync-markdown-editor",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "label": "build: extension + markdown editor",
+            "dependsOn": ["npm: build", "npm: build-markdown-editor"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        },
+        {
+            "type": "npm",
             "script": "watch",
             "problemMatcher": [],
             "isBackground": true,

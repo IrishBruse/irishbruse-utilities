@@ -11,7 +11,7 @@
             "request": "launch",
             "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
             "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-            "preLaunchTask": "npm: build",
+            "preLaunchTask": "build: extension + markdown editor",
             "settings": {
                 "ib-utilities.gitHelpers.debugMode": true
             }

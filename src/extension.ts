@@ -8,6 +8,7 @@ import { terminalPaste } from "./commands/terminalPaste";
 import { ActionPanelViewProvider } from "./actionPanel/ActionPanelView";
 import { BranchChangesViewProvider } from "./gitHelpers/BranchChangesView";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
+import { registerMarkdownEditor } from "./markdownEditor/MarkdownEditorProvider";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { registerMarkdownMermaidFeatures } from "./mermaidEditor/registerMarkdownMermaid";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
@@ -35,6 +36,7 @@ export function activate(context: ExtensionContext) {
     registerCommandIB(Commands.CopyGithubHeadFileUrl, copyGithubHeadFileUrl, context);
 
     registerMermaidCustomEditor(context);
+    registerMarkdownEditor(context);
     registerMarkdownMermaidFeatures(context);
     SnippetViewProvider.activate(context);
     activateBranchDiffRevert(context);

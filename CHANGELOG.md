@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+-   Add: Custom **Markdown Editor (ib-utilities)** editor for `*.md` using vendored `markdown-editor-src` webview bundle
+-   Add: Vendored `markdown-editor-src` from VS Code (WYSIWYG Markdown Editor webview glue) with esbuild bundle and optional sync to `~/git/vscode`
+
 ## 0.18.2
 
 -   Fix: Copy GitHub Head URL for folders (GitHub tree links) and context menu order after Copy Path and Copy Relative Path

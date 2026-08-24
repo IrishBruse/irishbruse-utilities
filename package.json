@@ -20,13 +20,18 @@
         "onStartupFinished",
         "onView:ib-utilities.actionPanel",
         "onView:ib-utilities.gitHelpers",
-        "onView:ib-utilities.branchChanges"
+        "onView:ib-utilities.branchChanges",
+        "onCustomEditor:ib-utilities.markdownEditor"
     ],
     "scripts": {
         "vscode:prepublish": "npm run package",
-        "build": "node esbuild.mjs",
+        "build": "node esbuild.mjs && npm run build-markdown-editor",
         "watch": "node esbuild.mjs --watch",
-        "package": "node esbuild.mjs --production",
+        "build-markdown-editor": "node esbuild.markdownEditor.mjs",
+        "watch-markdown-editor": "node esbuild.markdownEditor.mjs --watch",
+        "sync-markdown-editor": "node esbuild.markdownEditor.mjs --sync-vscode",
+        "watch-markdown-editor:vscode": "node esbuild.markdownEditor.mjs --watch --sync-vscode",
+        "package": "node esbuild.mjs --production && npm run build-markdown-editor",
         "lint": "eslint src && tsc --noEmit",
         "test": "vitest run",
         "verify": "npm run build && npm run test && npm run lint",
@@ -153,6 +158,16 @@
             }
         },
         "customEditors": [
+            {
+                "viewType": "ib-utilities.markdownEditor",
+                "displayName": "Markdown Editor (ib-utilities)",
+                "selector": [
+                    {
+                        "filenamePattern": "*.md"
+                    }
+                ],
+                "priority": "option"
+            },
             {
                 "viewType": "ib-utilities.mermaidPreview",
                 "displayName": "Mermaid Preview",
@@ -662,12 +677,16 @@
         "@types/mocha": "^10.0.10",
         "@types/node": "^24.13.3",
         "@types/vscode": "^1.125.0",
+        "@types/vscode-webview": "^1.57.0",
         "@typescript-eslint/eslint-plugin": "^8.64.0",
         "@typescript-eslint/parser": "^8.64.0",
         "@vitest/coverage-v8": "^4.1.10",
         "@vscode/vsce": "^3.9.2",
+        "@vscode/markdown-editor": "0.0.2-74",
+        "@vscode/observables": "^0.1.1-0",
         "esbuild": "0.28.1",
         "eslint": "^9.39.5",
+        "katex": "^0.16.33",
         "ts-loader": "^9.6.2",
         "typescript": "^6.0.3",
         "vitest": "^4.1.10",

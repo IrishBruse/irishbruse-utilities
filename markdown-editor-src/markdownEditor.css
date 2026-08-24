@@ -25,7 +25,7 @@ body {
 /*
  * Headings / inline code: --ib-md-* come from markdownInlineEditor.colors
  * (injected on :root). Hardcoded fallbacks match those settings.
- * Links and chrome follow --vscode-* theme tokens.
+ * Links use workbench `textLink.foreground` (green `#35A854` fallback).
  */
 
 .md-theme-vscode-default h1.md-heading {
@@ -54,12 +54,14 @@ body {
 	color: var(--ib-md-heading-6, #C678DD);
 }
 
-.md-theme-vscode-default a {
-	color: var(--vscode-textLink-foreground, #61AFEF);
+.md-theme-vscode-default a,
+.md-theme-vscode-default a code {
+	color: var(--vscode-textLink-foreground, #35A854);
 }
 
-.md-theme-vscode-default a:hover {
-	color: var(--vscode-textLink-activeForeground, #d7dae0);
+.md-theme-vscode-default a:hover,
+.md-theme-vscode-default a:hover code {
+	color: var(--vscode-textLink-activeForeground, #98C379);
 }
 
 .md-theme-vscode-default :not(pre) > code {
@@ -77,6 +79,151 @@ body {
 
 .md-theme-vscode-default strong,
 .md-theme-vscode-default .md-strong {
-	color: var(--ib-md-heading-1, #D19A66);
+	color: color-mix(in srgb, var(--vscode-editor-foreground, #abb2bf) 55%, #fff);
+	font-weight: 700;
+}
+
+/* Confluence-style table grid editor
+ * Preview table stays visible; only the focused cell is overlaid for editing.
+ */
+
+.md-table-wrapper.ib-table-grid-active {
+	position: relative;
+	overflow: visible !important;
+}
+
+.ib-table-grid-chrome {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	pointer-events: none;
+	overflow: visible;
+}
+
+.ib-table-grid-chrome .ib-table-grid-add-row,
+.ib-table-grid-chrome .ib-table-grid-add-col,
+.ib-table-grid-chrome .ib-table-grid-cell-editor {
+	pointer-events: auto;
+}
+
+/* Hide only the native cell under the editor so preview chrome stays intact */
+.md-table td.ib-table-grid-native-cell-editing {
+	color: transparent !important;
+}
+
+.md-table td.ib-table-grid-native-cell-editing * {
+	visibility: hidden;
+}
+
+.ib-table-grid-cell-editor {
+	position: absolute;
+	box-sizing: border-box;
+	z-index: 4;
+	margin: 0;
+	padding: 7px 10px 6px;
+	border: 1px solid var(--vscode-focusBorder, #528bff);
+	border-radius: 0;
+	resize: none;
+	overflow: hidden;
+	scrollbar-width: none;
+	background: color-mix(in srgb, var(--vscode-editor-background, #282c34) 70%, #000);
+	color: var(--vscode-editor-foreground);
+	caret-color: var(--vscode-editorCursor-foreground, var(--md-cursor-background, currentColor));
+	font: inherit;
+	font-size: inherit;
+	line-height: 1.5;
+	outline: none;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+	overflow-wrap: break-word;
+	vertical-align: top;
+}
+
+.ib-table-grid-cell-editor::-webkit-scrollbar {
+	display: none;
+}
+
+.ib-table-grid-cell-editor-header {
 	font-weight: 600;
+	padding-top: 10px;
+	padding-bottom: 10px;
+}
+
+.ib-table-grid-cell-editor-wrap {
+	white-space: pre-wrap;
+}
+
+.ib-table-grid-add-row,
+.ib-table-grid-add-col {
+	position: absolute;
+	width: 22px;
+	height: 22px;
+	padding: 0;
+	border: 1px solid var(--vscode-button-border, transparent);
+	border-radius: 50%;
+	background: var(--vscode-button-background, #528bff);
+	color: var(--vscode-button-foreground, #fff);
+	font-size: 16px;
+	line-height: 1;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	transition: opacity 0.15s ease;
+	z-index: 3;
+}
+
+.ib-table-grid-active .ib-table-grid-add-row,
+.ib-table-grid-active .ib-table-grid-add-col {
+	opacity: 1;
+}
+
+.ib-table-grid-add-row {
+	left: -11px;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.ib-table-grid-add-col {
+	top: -11px;
+	left: 50%;
+	transform: translateX(-50%);
+}
+
+.ib-table-grid-add-row:hover,
+.ib-table-grid-add-col:hover {
+	background: var(--vscode-button-hoverBackground, #6b9bff);
+}
+
+.ib-table-grid-mode .md-table-wrapper:not(.ib-table-grid-active) .md-table {
+	cursor: pointer;
+}
+
+/* Hide the document caret while a table cell textarea is focused */
+.md-editor.ib-table-grid-mode .md-cursor {
+	visibility: hidden;
+	animation: none;
+}
+
+/* Force preview look even if native block briefly becomes active */
+.ib-table-grid-mode .md-table.md-block-active td {
+	border-color: var(--vscode-editorWidget-border, #d1d9e0) !important;
+}
+
+.ib-table-grid-mode .md-table.md-block-active tr:nth-child(even):not(.md-table-delimiter-row) td {
+	background-color: var(--vscode-textCodeBlock-background, #f6f8fa) !important;
+}
+
+.ib-table-grid-mode .md-table.md-block-active .md-glue-tableCellGlue,
+.ib-table-grid-mode .md-table.md-block-active .md-marker-tableDelimiter,
+.ib-table-grid-mode .md-table.md-block-active .md-marker-tableDelimiterClose,
+.ib-table-grid-mode .md-table.md-block-active .md-ws-space::before,
+.ib-table-grid-mode .md-table.md-block-active .md-table-delimiter-row {
+	display: none !important;
+}
+
+.ib-table-grid-mode .md-table-wrapper:not(.ib-table-grid-active):hover .md-table {
+	outline: 1px solid var(--vscode-focusBorder, #528bff);
+	outline-offset: 2px;
 }

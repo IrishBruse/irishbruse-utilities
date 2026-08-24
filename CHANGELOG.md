@@ -6,6 +6,7 @@
 -   Add: Vendored `markdown-editor-src` from VS Code (WYSIWYG Markdown Editor webview glue) with esbuild bundle and optional sync to `~/git/vscode`
 -   Add: Theme-aware Markdown Editor colors from `markdownInlineEditor.colors` (with One Dark hard-coded fallbacks)
 -   Fix: Backspace and other keys in Markdown Editor (ib-utilities) by handling keyboard locally instead of routing to unregistered host commands
+-   Add: Confluence-style table grid in Markdown Editor (ib-utilities) with per-cell editing and add row/column controls
 
 ## 0.18.2
 

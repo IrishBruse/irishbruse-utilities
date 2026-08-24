@@ -47,6 +47,15 @@ class AuthenticatedWebview {
     }
 }
 
+function getMarkdownInlineEditorTables(): { maxColumnWidth: number; style: 'wrapped' | 'compact' } {
+    const config = workspace.getConfiguration("markdownInlineEditor");
+    const style = config.get<string>("tables.style", "wrapped");
+    return {
+        maxColumnWidth: config.get<number>("tables.maxColumnWidth", 160),
+        style: style === "compact" ? "compact" : "wrapped",
+    };
+}
+
 function getEditorHtml(
     documentUri: Uri,
     webview: Webview,
@@ -67,6 +76,7 @@ function getEditorHtml(
         readonly: globalReadonly,
         richLinksEnabled: false,
         linkPresentationRules: [],
+        tables: getMarkdownInlineEditorTables(),
     });
     const colorVars = markdownInlineEditorColorsCssVars(getMarkdownInlineEditorColors());
 
@@ -234,7 +244,10 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                 }
             }),
             workspace.onDidChangeConfiguration((event) => {
-                if (event.affectsConfiguration("markdownInlineEditor.colors")) {
+                if (
+                    event.affectsConfiguration("markdownInlineEditor.colors")
+                    || event.affectsConfiguration("markdownInlineEditor.tables")
+                ) {
                     renderHtml();
                 }
             }),

@@ -14,6 +14,7 @@ import '@vscode/markdown-editor/vscodeCommentWidgetV2.css';
 import './markdownEditor.css';
 import { WebviewSyntaxHighlighter } from './syntaxHighlighter';
 import { WebviewLinkPresentationProvider } from './linkPresentationProvider';
+import { TableGridController } from './tableGridEditor';
 
 interface VsCodeApi {
 	postMessage(message: unknown): void;
@@ -45,6 +46,10 @@ interface InitialState {
 	readonly readonly: boolean;
 	readonly richLinksEnabled: boolean;
 	readonly linkPresentationRules: readonly { id: string; source: string; flags: string; initialKind: LinkPresentationKind }[];
+	readonly tables: {
+		readonly maxColumnWidth: number;
+		readonly style: 'wrapped' | 'compact';
+	};
 }
 
 class Editor extends Disposable {
@@ -160,7 +165,7 @@ class Editor extends Disposable {
 			}
 		});
 
-		this.#createView(host, initialState.content);
+		this.#createView(host, initialState);
 		this.#vscode.postMessage({ type: 'ready', documentVersion: initialState.documentVersion });
 		this._register({
 			dispose: () => {
@@ -172,8 +177,9 @@ class Editor extends Disposable {
 		});
 	}
 
-	#createView(host: HTMLElement, content: string): void {
+	#createView(host: HTMLElement, initialState: InitialState): void {
 		const model = this.model;
+		const content = initialState.content;
 		const scriptNonce = document.querySelector<HTMLMetaElement>('meta[name="vscode-markdown-editor-script-nonce"]')?.content;
 		const embeddedCodeEditorFactory = this._register(new VirtualizedIframeEmbeddedEditorFactory({
 			providers: this.#createIframeProviders(this.#codeBlockEditorProviders),
@@ -241,6 +247,8 @@ class Editor extends Disposable {
 			},
 		}));
 		this.#view = view;
+
+		this._register(new TableGridController(model, view, host, initialState.tables));
 
 		// Handle all keyboard actions in the webview. The built-in Markdown editor
 		// splits local vs host routing and registers `markdown.editor.*` commands;
@@ -475,7 +483,17 @@ function isInitialState(value: unknown): value is InitialState {
 		&& typeof candidate.documentVersion === 'number'
 		&& typeof candidate.readonly === 'boolean'
 		&& typeof candidate.richLinksEnabled === 'boolean'
-		&& Array.isArray(candidate.linkPresentationRules);
+		&& Array.isArray(candidate.linkPresentationRules)
+		&& isTableSettings(candidate.tables);
+}
+
+function isTableSettings(value: unknown): value is InitialState['tables'] {
+	if (!value || typeof value !== 'object') {
+		return false;
+	}
+	const candidate = value as Record<string, unknown>;
+	return typeof candidate.maxColumnWidth === 'number'
+		&& (candidate.style === 'wrapped' || candidate.style === 'compact');
 }
 
 function readCodeBlockEditorProviderDefinitions(value: unknown): readonly CodeBlockEditorProviderDefinition[] {

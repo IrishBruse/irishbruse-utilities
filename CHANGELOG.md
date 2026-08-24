@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.18.2
+
+-   Fix: Copy GitHub Head URL for folders (GitHub tree links) and context menu order after Copy Path and Copy Relative Path
+
 ## 0.18.1
 
 -   Fix: Copy GitHub Head URL in file explorer on remote workspaces (SSH, WSL, and similar) and from editor tab context menu

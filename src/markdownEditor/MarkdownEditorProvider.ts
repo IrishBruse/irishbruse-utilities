@@ -14,6 +14,10 @@ import {
     window,
     workspace,
 } from "vscode";
+import {
+    getMarkdownInlineEditorColors,
+    markdownInlineEditorColorsCssVars,
+} from "./markdownInlineEditorColors";
 import { encodeWebviewInitialState } from "./webviewInitialState";
 
 export const MARKDOWN_EDITOR_VIEW_TYPE = "ib-utilities.markdownEditor";
@@ -64,6 +68,7 @@ function getEditorHtml(
         richLinksEnabled: false,
         linkPresentationRules: [],
     });
+    const colorVars = markdownInlineEditorColorsCssVars(getMarkdownInlineEditorColors());
 
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -77,6 +82,11 @@ function getEditorHtml(
     <meta id="vscode-markdown-editor-initial-state" content="${initialState}" />
     <base href="${baseUri}" />
     <link rel="stylesheet" href="${styleUri}" />
+    <style>
+        :root {
+            ${colorVars}
+        }
+    </style>
     <title>Markdown Editor (ib-utilities)</title>
 </head>
 <body>
@@ -139,19 +149,24 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
             ],
         };
 
-        webviewPanel.webview.html = getEditorHtml(
-            document.uri,
-            webviewPanel.webview,
-            this.context.extensionUri,
-            editorWebview.messageSecret,
-            this.context.globalState.get(READONLY_STATE_KEY, true),
-            document.getText(),
-            document.version,
-        );
-
         let isUpdatingFromWebview = false;
         let editQueue = Promise.resolve();
         let webviewReady = false;
+
+        const renderHtml = () => {
+            webviewReady = false;
+            webviewPanel.webview.html = getEditorHtml(
+                document.uri,
+                webviewPanel.webview,
+                this.context.extensionUri,
+                editorWebview.messageSecret,
+                this.context.globalState.get(READONLY_STATE_KEY, false),
+                document.getText(),
+                document.version,
+            );
+        };
+
+        renderHtml();
 
         const disposables = [
             editorWebview.webview.onDidReceiveMessage(async (message) => {
@@ -216,6 +231,11 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                 }
                 if (webviewReady) {
                     void editorWebview.postMessage({ type: "update", content: document.getText() });
+                }
+            }),
+            workspace.onDidChangeConfiguration((event) => {
+                if (event.affectsConfiguration("markdownInlineEditor.colors")) {
+                    renderHtml();
                 }
             }),
             webviewPanel.onDidDispose(() => {

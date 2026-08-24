@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AsyncClipboardStrategy, CommentModeController, CommentsModel, EditorController, EditorModel, EditorView, GutterMarker, OffsetRange, Selection, StringEdit, StringReplacement, StringValue, VsCodeV2CommentsView, commands, findNodeOffsetById, vscodeHostKeyboardProfile, vscodeLocalKeyboardProfile, type CodeBlockAstNode, type LinkPresentationKind } from '@vscode/markdown-editor';
+import { AsyncClipboardStrategy, CommentModeController, CommentsModel, EditorController, EditorModel, EditorView, GutterMarker, OffsetRange, Selection, StringEdit, StringReplacement, StringValue, VsCodeV2CommentsView, commands, findNodeOffsetById, vscodeKeyboardProfile, type CodeBlockAstNode, type LinkPresentationKind } from '@vscode/markdown-editor';
 import { VirtualizedIframeEmbeddedEditorFactory, type IframeEmbeddedEditorProvider, type IframeEmbeddedEditorProviderSelector, type ResolvedIframeEmbeddedEditor } from '@vscode/markdown-editor/web-editors';
 import { Disposable, autorun, observableValue } from '@vscode/observables';
 import 'katex/dist/katex.min.css';
@@ -242,14 +242,13 @@ class Editor extends Disposable {
 		}));
 		this.#view = view;
 
-		// Wire history chords (undo/redo) to the extension so they run against the
-		// backing TextDocument's own undo stack. `record` is deliberately omitted:
-		// the TextDocument owns the history, and a second local stack would drift
-		// from the Edit menu, dirty state and hot exit.
+		// Handle all keyboard actions in the webview. The built-in Markdown editor
+		// splits local vs host routing and registers `markdown.editor.*` commands;
+		// this extension does not, so host-routed keys (Backspace, arrows, Enter, …)
+		// would be swallowed unless handled locally.
 		this.#controller = this._register(new EditorController(model, view, {
 			clipboardStrategy: new AsyncClipboardStrategy(),
-			keyboardProfile: vscodeLocalKeyboardProfile,
-			forwardedKeyboardProfile: vscodeHostKeyboardProfile,
+			keyboardProfile: vscodeKeyboardProfile,
 			historyStrategy: {
 				undo: () => this.#vscode.postMessage({ type: 'history', command: 'undo' }),
 				redo: () => this.#vscode.postMessage({ type: 'history', command: 'redo' }),

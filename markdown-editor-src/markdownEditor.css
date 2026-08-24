@@ -13,10 +13,70 @@ html, body {
 
 body {
 	overflow: hidden;
+	color: var(--vscode-editor-foreground);
 }
 
 #editor {
 	height: 100%;
 	width: 100%;
 	overflow: scroll;
+}
+
+/*
+ * Headings / inline code: --ib-md-* come from markdownInlineEditor.colors
+ * (injected on :root). Hardcoded fallbacks match those settings.
+ * Links and chrome follow --vscode-* theme tokens.
+ */
+
+.md-theme-vscode-default h1.md-heading {
+	color: var(--ib-md-heading-1, #D19A66);
+	border-bottom-color: var(--md-separator-color);
+}
+
+.md-theme-vscode-default h2.md-heading {
+	color: var(--ib-md-heading-2, #E06C75);
+	border-bottom-color: var(--md-separator-color);
+}
+
+.md-theme-vscode-default h3.md-heading {
+	color: var(--ib-md-heading-3, #61AFEF);
+}
+
+.md-theme-vscode-default h4.md-heading {
+	color: var(--ib-md-heading-4, #C678DD);
+}
+
+.md-theme-vscode-default h5.md-heading {
+	color: var(--ib-md-heading-5, #C678DD);
+}
+
+.md-theme-vscode-default h6.md-heading {
+	color: var(--ib-md-heading-6, #C678DD);
+}
+
+.md-theme-vscode-default a {
+	color: var(--vscode-textLink-foreground, #61AFEF);
+}
+
+.md-theme-vscode-default a:hover {
+	color: var(--vscode-textLink-activeForeground, #d7dae0);
+}
+
+.md-theme-vscode-default :not(pre) > code {
+	color: var(--ib-md-inline-code, #C678DD);
+	background-color: var(--ib-md-inline-code-background, #21252bA0);
+}
+
+.md-theme-vscode-default .md-blockquote {
+	color: var(--vscode-descriptionForeground, #5C6370);
+}
+
+.md-theme-vscode-default .md-list-gutter > .md-marker-listItemMarker {
+	color: var(--ib-md-heading-2, #E06C75);
+}
+
+.md-theme-vscode-default strong,
+.md-theme-vscode-default .md-strong {
+	color: var(--ib-md-heading-1, #D19A66);
+	font-weight: 600;
 }

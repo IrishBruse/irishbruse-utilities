@@ -99,6 +99,7 @@ export function buildChangesChildren(
             cache.mergeBaseRef
         );
         folderItem.resourceUri = Uri.file(path.join(repoRoot, folderRelativePath));
+        folderItem.relativePath = folderRelativePath;
         folderItem.contextValue = "changes-folder";
         items.push(folderItem);
     }

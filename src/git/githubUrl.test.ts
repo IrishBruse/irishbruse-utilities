@@ -6,6 +6,7 @@ import {
     getHeadRef,
     getPrChangesUrl,
     githubHeadFileWebUrl,
+    githubHeadTreeWebUrl,
     githubRepoWebUrl,
     getOriginUrl,
     getPrInfo,
@@ -72,6 +73,14 @@ describe("githubHeadFileWebUrl", () => {
     });
 });
 
+describe("githubHeadTreeWebUrl", () => {
+    it("builds a tree URL for a branch and folder path", () => {
+        expect(
+            githubHeadTreeWebUrl("https://github.com/o/r.git", "feature", "src/components")
+        ).toBe("https://github.com/o/r/tree/feature/src/components");
+    });
+});
+
 describe("getHeadRef", () => {
     beforeEach(() => {
         mockAsyncSpawn.mockReset();
@@ -127,6 +136,22 @@ describe("getGithubHeadFileUrls", () => {
             "https://github.com/o/r/blob/main/src/a.ts",
             "https://github.com/o/r/blob/main/src/b.ts",
         ]);
+    });
+
+    it("builds tree URLs for directory paths", async () => {
+        mockAsyncSpawn.mockImplementation(async (_command, args) => {
+            if (args?.[0] === "remote") {
+                return { stdout: "git@github.com:o/r.git\n", stderr: "", status: 0 };
+            }
+            if (args?.[1] === "--abbrev-ref") {
+                return { stdout: "main\n", stderr: "", status: 0 };
+            }
+            throw new Error(`unexpected args: ${args?.join(" ")}`);
+        });
+
+        await expect(
+            getGithubHeadFileUrls("/repo", [{ relativePath: "src/components", isDirectory: true }])
+        ).resolves.toEqual(["https://github.com/o/r/tree/main/src/components"]);
     });
 });
 

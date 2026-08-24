@@ -51,27 +51,61 @@ export function githubRepoWebUrl(remoteUrl: string): string | undefined {
     return `https://github.com/${parsed.owner}/${parsed.repo}`;
 }
 
-export function githubHeadFileWebUrl(
+export type GithubHeadPath = string | { relativePath: string; isDirectory?: boolean };
+
+function normalizeGithubHeadPath(path: GithubHeadPath): { relativePath: string; isDirectory: boolean } {
+    if (typeof path === "string") {
+        return { relativePath: path, isDirectory: false };
+    }
+    return { relativePath: path.relativePath, isDirectory: path.isDirectory ?? false };
+}
+
+function encodeGithubRefPath(relativePath: string): string | undefined {
+    const normalizedPath = relativePath.replace(/\\/g, "/").replace(/^\/+/, "");
+    if (!normalizedPath) {
+        return undefined;
+    }
+
+    return normalizedPath
+        .split("/")
+        .map((segment) => encodeURIComponent(segment))
+        .join("/");
+}
+
+export function githubHeadResourceWebUrl(
     remoteUrl: string,
     headRef: string,
-    relativePath: string
+    relativePath: string,
+    kind: "blob" | "tree"
 ): string | undefined {
     const repoUrl = githubRepoWebUrl(remoteUrl);
     if (!repoUrl || !headRef.trim()) {
         return undefined;
     }
 
-    const normalizedPath = relativePath.replace(/\\/g, "/").replace(/^\/+/, "");
-    if (!normalizedPath) {
+    const encodedPath = encodeGithubRefPath(relativePath);
+    if (!encodedPath) {
         return undefined;
     }
 
     const encodedRef = encodeURIComponent(headRef);
-    const encodedPath = normalizedPath
-        .split("/")
-        .map((segment) => encodeURIComponent(segment))
-        .join("/");
-    return `${repoUrl}/blob/${encodedRef}/${encodedPath}`;
+    return `${repoUrl}/${kind}/${encodedRef}/${encodedPath}`;
+}
+
+export function githubHeadFileWebUrl(
+    remoteUrl: string,
+    headRef: string,
+    relativePath: string
+): string | undefined {
+    return githubHeadResourceWebUrl(remoteUrl, headRef, relativePath, "blob");
+}
+
+export function githubHeadTreeWebUrl(
+    remoteUrl: string,
+    headRef: string,
+    relativePath: string
+): string | undefined {
+    return githubHeadResourceWebUrl(remoteUrl, headRef, relativePath, "tree");
 }
 
 export async function getHeadRef(repoRoot: string): Promise<string | undefined> {
@@ -94,7 +128,7 @@ export async function getHeadRef(repoRoot: string): Promise<string | undefined> 
 
 export async function getGithubHeadFileUrls(
     repoRoot: string,
-    relativePaths: readonly string[]
+    relativePaths: readonly GithubHeadPath[]
 ): Promise<string[] | undefined> {
     if (!relativePaths.length) {
         return undefined;
@@ -111,7 +145,10 @@ export async function getGithubHeadFileUrls(
     }
 
     const urls = relativePaths
-        .map((relativePath) => githubHeadFileWebUrl(origin, headRef, relativePath))
+        .map(normalizeGithubHeadPath)
+        .map(({ relativePath, isDirectory }) =>
+            githubHeadResourceWebUrl(origin, headRef, relativePath, isDirectory ? "tree" : "blob")
+        )
         .filter((url): url is string => url !== undefined);
     return urls.length ? urls : undefined;
 }

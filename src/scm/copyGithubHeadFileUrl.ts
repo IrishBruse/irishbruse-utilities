@@ -1,5 +1,6 @@
+import { stat } from "fs/promises";
 import { env, Uri, window } from "vscode";
-import { getGithubHeadFileUrls } from "../git/githubUrl";
+import { getGithubHeadFileUrls, type GithubHeadPath } from "../git/githubUrl";
 import { gitRepositoryRootForUri, gitRepositoryRootForUriSync } from "../git/gitRepositoryRoot";
 import { GitHelperTreeItem } from "../gitHelpers/GitHelperTreeItem";
 import { isGitHelpersDebugMode, showGitHelpersDebugAction } from "../gitHelpers/debugMode";
@@ -18,7 +19,15 @@ async function repoRootForResource(resource: ScmResourceContext): Promise<string
     );
 }
 
-async function copyGithubHeadFileUrls(repoRoot: string, relativePaths: string[]): Promise<void> {
+async function isDirectoryResource(resource: ScmResourceContext): Promise<boolean> {
+    try {
+        return (await stat(resource.uri.fsPath)).isDirectory();
+    } catch {
+        return false;
+    }
+}
+
+async function copyGithubHeadFileUrls(repoRoot: string, relativePaths: GithubHeadPath[]): Promise<void> {
     const urls = await getGithubHeadFileUrls(repoRoot, relativePaths);
     if (!urls?.length) {
         window.showWarningMessage("Could not build GitHub head URL for the selected file(s).");
@@ -39,7 +48,7 @@ async function copyResourcesGithubHeadFileUrl(resources: ScmResourceContext[]): 
     }
 
     const paths = await relativePathsForScmResources(resources);
-    const grouped = new Map<string, string[]>();
+    const grouped = new Map<string, GithubHeadPath[]>();
 
     for (let index = 0; index < resources.length; index++) {
         const resource = resources[index];
@@ -53,11 +62,12 @@ async function copyResourcesGithubHeadFileUrl(resources: ScmResourceContext[]): 
             continue;
         }
 
+        const entry = { relativePath, isDirectory: await isDirectoryResource(resource) };
         const existing = grouped.get(repoRoot);
         if (existing) {
-            existing.push(relativePath);
+            existing.push(entry);
         } else {
-            grouped.set(repoRoot, [relativePath]);
+            grouped.set(repoRoot, [entry]);
         }
     }
 
@@ -87,28 +97,36 @@ async function copyResourcesGithubHeadFileUrl(resources: ScmResourceContext[]): 
     window.showInformationMessage(message);
 }
 
-async function copyChangesFileGithubHeadFileUrl(item: GitHelperTreeItem | undefined): Promise<void> {
+async function copyChangesGithubHeadFileUrl(item: GitHelperTreeItem | undefined): Promise<void> {
     if (!item?.repoRoot || !item.relativePath) {
         return;
     }
 
+    const isDirectory = item.kind === "changesFolder";
+
     if (isGitHelpersDebugMode() && item.repoRoot === MOCK_REPO_ROOT) {
         const mock = getGitHelpersMockState();
-        const url = `https://github.com/irishbruse/irishbruse-utilities/blob/${mock.branch}/${item.relativePath}`;
+        const kind = isDirectory ? "tree" : "blob";
+        const url = `https://github.com/irishbruse/irishbruse-utilities/${kind}/${mock.branch}/${item.relativePath}`;
         await env.clipboard.writeText(url);
         showGitHelpersDebugAction(`Copy GitHub head URL: ${item.relativePath}`);
         return;
     }
 
-    await copyGithubHeadFileUrls(item.repoRoot, [item.relativePath]);
+    await copyGithubHeadFileUrls(item.repoRoot, [{ relativePath: item.relativePath, isDirectory }]);
 }
 
 export async function copyGithubHeadFileUrl(
     arg?: GitHelperTreeItem | Uri | Parameters<typeof resolveCommandFileResources>[0],
     selectedResources?: Uri | Uri[]
 ): Promise<void> {
-    if (arg && typeof arg === "object" && "kind" in arg && arg.kind === "changesFile") {
-        await copyChangesFileGithubHeadFileUrl(arg);
+    if (
+        arg &&
+        typeof arg === "object" &&
+        "kind" in arg &&
+        (arg.kind === "changesFile" || arg.kind === "changesFolder")
+    ) {
+        await copyChangesGithubHeadFileUrl(arg);
         return;
     }
 

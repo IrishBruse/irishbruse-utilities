@@ -536,29 +536,29 @@
             "scm/resourceState/context": [
                 {
                     "command": "ib-utilities.copyScmResourcePath",
-                    "group": "2_copy"
+                    "group": "2_copy@1"
                 },
                 {
                     "command": "ib-utilities.copyScmResourceRelativePath",
-                    "group": "2_copy"
+                    "group": "2_copy@2"
                 },
                 {
                     "command": "ib-utilities.copyGithubHeadFileUrl",
-                    "group": "2_copy"
+                    "group": "2_copy@3"
                 }
             ],
             "explorer/context": [
                 {
                     "command": "ib-utilities.copyGithubHeadFileUrl",
-                    "when": "!explorerResourceIsFolder && resourceScheme != untitled",
-                    "group": "6_copypath"
+                    "when": "resourceScheme != untitled",
+                    "group": "6_copypath@30"
                 }
             ],
             "editor/title/context": [
                 {
                     "command": "ib-utilities.copyGithubHeadFileUrl",
-                    "when": "resourceScheme != untitled",
-                    "group": "6_copypath"
+                    "when": "resourceScheme == file",
+                    "group": "1_cutcopypaste@3"
                 }
             ],
             "view/item/context": [
@@ -614,8 +614,8 @@
                 },
                 {
                     "command": "ib-utilities.copyGithubHeadFileUrl",
-                    "when": "view == ib-utilities.branchChanges && viewItem == changes-file",
-                    "group": "2_copy"
+                    "when": "view == ib-utilities.branchChanges && (viewItem == changes-file || viewItem == changes-folder)",
+                    "group": "2_copy@3"
                 }
             ],
             "view/title": [

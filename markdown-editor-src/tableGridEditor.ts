@@ -198,7 +198,6 @@ export class TableGridController extends Disposable {
 		}
 
 		if (this.#activeTableOffset !== undefined) {
-			this.#commitIfDirty();
 			this.#exitGrid();
 		}
 	};
@@ -374,22 +373,53 @@ export class TableGridController extends Disposable {
 	}
 
 	#getActiveTable(): TableAstNode | undefined {
+		return this.#resolveActiveTable();
+	}
+
+	#resolveActiveTable(): TableAstNode | undefined {
 		if (this.#activeTableOffset === undefined) {
 			return undefined;
 		}
-		const block = findBlockAtOffset(this.#model.document.get(), this.#activeTableOffset);
-		return block?.kind === 'table' ? block : undefined;
-	}
-
-	#getTableWrapper(offset: number): { wrapper: HTMLElement; nativeTable: HTMLTableElement } | undefined {
 		const doc = this.#model.document.get();
+		const atOffset = findBlockAtOffset(doc, this.#activeTableOffset);
+		if (atOffset?.kind === 'table') {
+			return atOffset;
+		}
+		// After insert/replace the caret offset can briefly sit past the table
+		// start; fall back to the measured table that still matches our offset.
 		const measurements = this.#view.measuredLayout.measurements.get();
 		for (const measurement of measurements) {
 			if (measurement.block.kind !== 'table') {
 				continue;
 			}
 			const tableOffset = findNodeOffsetById(doc, measurement.block);
-			if (tableOffset !== offset) {
+			if (tableOffset === this.#activeTableOffset || measurement.absoluteStart === this.#activeTableOffset) {
+				return measurement.block;
+			}
+		}
+		return undefined;
+	}
+
+	#refreshActiveOffset(table: TableAstNode): void {
+		const offset = findNodeOffsetById(this.#model.document.get(), table);
+		if (offset !== undefined) {
+			this.#activeTableOffset = offset;
+		}
+	}
+
+	#getTableWrapper(offset: number): { wrapper: HTMLElement; nativeTable: HTMLTableElement } | undefined {
+		const doc = this.#model.document.get();
+		const active = this.#resolveActiveTable();
+		const measurements = this.#view.measuredLayout.measurements.get();
+		for (const measurement of measurements) {
+			if (measurement.block.kind !== 'table') {
+				continue;
+			}
+			const tableOffset = findNodeOffsetById(doc, measurement.block);
+			const matches = tableOffset === offset
+				|| measurement.absoluteStart === offset
+				|| (active !== undefined && measurement.block === active);
+			if (!matches) {
 				continue;
 			}
 			const wrapper = this.#getWrapperElement(measurement);
@@ -416,11 +446,24 @@ export class TableGridController extends Disposable {
 
 		const alreadyOpen = this.#activeTableOffset === offset && this.#chromeHost?.isConnected;
 		if (this.#activeTableOffset !== undefined && this.#activeTableOffset !== offset) {
-			this.#commitIfDirty();
+			this.#flushTableEdits();
 			this.#tearDownGridDom();
 		}
 
 		this.#activeTableOffset = offset;
+
+		// Already editing this table: keep in-memory rows (including edits to a
+		// newly inserted empty cell) and only move the cell editor.
+		if (alreadyOpen) {
+			this.#focusCell(focusCell?.row ?? 0, focusCell?.col ?? 0);
+			if (point) {
+				this.#updateInsertFromPoint(point.x, point.y);
+			} else {
+				this.#updateInsertFromFocus();
+			}
+			return;
+		}
+
 		this.#loadFromTable(table);
 
 		const open = (): void => {
@@ -439,7 +482,7 @@ export class TableGridController extends Disposable {
 			}
 		};
 
-		if (alreadyOpen && this.#nativeTable?.isConnected) {
+		if (this.#nativeTable?.isConnected) {
 			open();
 			return;
 		}
@@ -449,18 +492,40 @@ export class TableGridController extends Disposable {
 	}
 
 	async #commitAndExit(): Promise<void> {
-		this.#commitIfDirty();
 		this.#exitGrid();
 	}
 
 	#exitGrid(): void {
+		// Must flush before tear-down. removeCellEditor alone only updates #rows;
+		// clearing #dirty afterwards would drop edits (common after insert row/col).
+		this.#flushTableEdits();
 		this.#tearDownGridDom();
 		this.#activeTableOffset = undefined;
 		this.#focusedCell = undefined;
 		this.#dirty = false;
 		this.#selectedAxis = undefined;
+		this.#isRemounting = false;
 		this.#model.activeBlocksOverride.set(undefined, undefined);
 		this.#view.element.classList.remove('ib-table-grid-mode');
+	}
+
+	/** Write the open cell (if any) and dirty #rows back into the document. */
+	#flushTableEdits(): void {
+		this.#isRemounting = false;
+		this.#commitFocusedCell();
+		if (!this.#dirty || this.#activeTableOffset === undefined) {
+			return;
+		}
+		const table = this.#resolveActiveTable();
+		if (!table) {
+			return;
+		}
+		applyTableData(this.#model, table, this.#rows, this.#alignments);
+		this.#dirty = false;
+		const updated = this.#resolveActiveTable();
+		if (updated) {
+			this.#refreshActiveOffset(updated);
+		}
 	}
 
 	#loadFromTable(table: TableAstNode): void {
@@ -537,6 +602,7 @@ export class TableGridController extends Disposable {
 		this.#colDotHost = colDotHost;
 		this.#rowHandleHost = rowHandleHost;
 		this.#colHandleHost = colHandleHost;
+		this.#syncColumnWidths();
 		this.#positionInsertAffordance();
 
 		this.#resizeObserver?.disconnect();
@@ -546,6 +612,96 @@ export class TableGridController extends Disposable {
 		});
 		this.#resizeObserver.observe(wrapper);
 		this.#resizeObserver.observe(nativeTable);
+	}
+
+	/**
+	 * Empty columns collapse to a hairline (delimiter row is hidden in preview).
+	 * Give them a real width from sibling columns so insert-column expands the table.
+	 */
+	#syncColumnWidths(): void {
+		const table = this.#nativeTable;
+		if (!table) {
+			return;
+		}
+		const colCount = this.#rows[0]?.length ?? 0;
+		if (colCount === 0) {
+			return;
+		}
+
+		const dataRows = [...table.rows].filter(row => !row.classList.contains('md-table-delimiter-row'));
+		for (const row of dataRows) {
+			for (const cell of row.cells) {
+				cell.style.minWidth = '';
+				cell.style.maxWidth = '';
+			}
+		}
+
+		const naturalWidths: number[] = [];
+		for (let col = 0; col < colCount; col++) {
+			let width = 0;
+			for (const row of dataRows) {
+				const cell = row.cells[col];
+				if (cell) {
+					width = Math.max(width, cell.getBoundingClientRect().width);
+				}
+			}
+			naturalWidths.push(width);
+		}
+
+		const filledWidths = naturalWidths.filter((_, col) => this.#rows.some(row => (row[col] ?? '').trim().length > 0));
+		const emptyMinPx = Math.round(
+			Math.max(
+				64,
+				Math.min(
+					filledWidths.length > 0
+						? filledWidths.reduce((sum, width) => sum + width, 0) / filledWidths.length
+						: 96,
+					this.#measureCh(Math.min(16, Math.max(8, this.#options.maxColumnWidth))),
+				),
+			),
+		);
+		const maxPx = this.#options.style === 'wrapped'
+			? this.#measureCh(this.#options.maxColumnWidth)
+			: undefined;
+
+		for (let col = 0; col < colCount; col++) {
+			const empty = this.#rows.every(row => !(row[col] ?? '').trim());
+			for (const row of dataRows) {
+				const cell = row.cells[col];
+				if (!cell) {
+					continue;
+				}
+				if (empty) {
+					cell.style.minWidth = `${emptyMinPx}px`;
+				}
+				if (maxPx !== undefined) {
+					cell.style.maxWidth = `${Math.round(maxPx)}px`;
+				}
+			}
+		}
+	}
+
+	#measureCh(ch: number): number {
+		const host = this.#nativeTable ?? this.#view.element;
+		const probe = host.ownerDocument.createElement('span');
+		probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;white-space:pre;font:inherit';
+		probe.textContent = '0'.repeat(Math.max(1, Math.round(ch)));
+		host.appendChild(probe);
+		const width = probe.getBoundingClientRect().width;
+		probe.remove();
+		return Math.max(ch * 6, width);
+	}
+
+	#clearColumnWidths(table: HTMLTableElement | undefined): void {
+		if (!table) {
+			return;
+		}
+		for (const row of table.rows) {
+			for (const cell of row.cells) {
+				cell.style.minWidth = '';
+				cell.style.maxWidth = '';
+			}
+		}
 	}
 
 	#createChromeButton(className: string, label: string, onPress: () => void): HTMLButtonElement {
@@ -564,7 +720,6 @@ export class TableGridController extends Disposable {
 	#focusCell(row: number, col: number): void {
 		this.#clearAxisSelection();
 		this.#commitFocusedCell();
-		this.#removeCellEditor();
 
 		const maxRow = this.#rows.length - 1;
 		const maxCol = (this.#rows[0]?.length ?? 1) - 1;
@@ -573,6 +728,17 @@ export class TableGridController extends Disposable {
 		}
 		row = Math.max(0, Math.min(row, maxRow));
 		col = Math.max(0, Math.min(col, maxCol));
+
+		// Write the previous cell into the document before hiding the overlay.
+		// Otherwise the native preview still shows the old cell text.
+		if (this.#dirty && !this.#isRemounting) {
+			this.#removeCellEditor();
+			this.#focusedCell = { row, col };
+			this.#applyTableChange(true);
+			return;
+		}
+
+		this.#removeCellEditor();
 		this.#focusedCell = { row, col };
 
 		const nativeCell = this.#getNativeCellElement(row, col);
@@ -648,16 +814,19 @@ export class TableGridController extends Disposable {
 		const cellRect = nativeCell.getBoundingClientRect();
 		const wrapperRect = wrapper.getBoundingClientRect();
 		const cellStyle = getComputedStyle(nativeCell);
-		this.#cellEditor.style.left = `${cellRect.left - wrapperRect.left + wrapper.scrollLeft}px`;
-		this.#cellEditor.style.top = `${cellRect.top - wrapperRect.top + wrapper.scrollTop}px`;
-		this.#cellEditor.style.width = `${cellRect.width}px`;
-		this.#cellEditor.style.height = `${cellRect.height}px`;
-		this.#cellEditor.style.minHeight = `${cellRect.height}px`;
-		this.#cellEditor.style.paddingTop = cellBoxPadding(cellStyle, 'Top');
-		this.#cellEditor.style.paddingRight = cellBoxPadding(cellStyle, 'Right');
-		this.#cellEditor.style.paddingBottom = cellBoxPadding(cellStyle, 'Bottom');
-		this.#cellEditor.style.paddingLeft = cellBoxPadding(cellStyle, 'Left');
-		this.#cellWidth.set(Math.max(40, cellRect.width), undefined);
+		// Use the padding box (client*): with border-collapse, borderTopWidth is
+		// often 1px while clientTop is 0, and adding the border to padding shifted
+		// the edit text down by a pixel.
+		this.#cellEditor.style.left = `${cellRect.left - wrapperRect.left + wrapper.scrollLeft + nativeCell.clientLeft}px`;
+		this.#cellEditor.style.top = `${cellRect.top - wrapperRect.top + wrapper.scrollTop + nativeCell.clientTop}px`;
+		this.#cellEditor.style.width = `${nativeCell.clientWidth}px`;
+		this.#cellEditor.style.height = `${nativeCell.clientHeight}px`;
+		this.#cellEditor.style.minHeight = `${nativeCell.clientHeight}px`;
+		this.#cellEditor.style.paddingTop = cellStyle.paddingTop;
+		this.#cellEditor.style.paddingRight = cellStyle.paddingRight;
+		this.#cellEditor.style.paddingBottom = cellStyle.paddingBottom;
+		this.#cellEditor.style.paddingLeft = cellStyle.paddingLeft;
+		this.#cellWidth.set(Math.max(40, nativeCell.clientWidth), undefined);
 	}
 
 	#commitFocusedCell(): void {
@@ -665,9 +834,13 @@ export class TableGridController extends Disposable {
 			return;
 		}
 		const { row, col } = this.#focusedCell;
-		const rowCells = this.#rows[row];
-		if (!rowCells || rowCells[col] === undefined) {
-			return;
+		while (this.#rows.length <= row) {
+			const colCount = Math.max(1, this.#rows[0]?.length ?? col + 1);
+			this.#rows.push(Array.from({ length: colCount }, () => ''));
+		}
+		const rowCells = this.#rows[row]!;
+		while (rowCells.length <= col) {
+			rowCells.push('');
 		}
 		const text = this.#cellModel.sourceText.get().value;
 		if (rowCells[col] !== text) {
@@ -709,6 +882,7 @@ export class TableGridController extends Disposable {
 	}
 
 	#commitIfDirty(remount = false): void {
+		this.#commitFocusedCell();
 		if (!this.#dirty) {
 			return;
 		}
@@ -755,6 +929,10 @@ export class TableGridController extends Disposable {
 		this.#removeCellEditor();
 		this.#focusedCell = undefined;
 		this.#selectedAxis = { kind, index };
+		if (this.#dirty) {
+			this.#applyTableChange(true);
+			return;
+		}
 		this.#view.element.focus();
 		this.#positionInsertAffordance();
 	}
@@ -827,11 +1005,10 @@ export class TableGridController extends Disposable {
 			return;
 		}
 		this.#commitFocusedCell();
-		const table = this.#getActiveTable();
+		const table = this.#resolveActiveTable();
 		if (!table) {
 			return;
 		}
-		const offset = this.#activeTableOffset;
 		const focus = this.#focusedCell;
 		const axis = this.#selectedAxis;
 		if (remount) {
@@ -839,16 +1016,21 @@ export class TableGridController extends Disposable {
 		}
 		applyTableData(this.#model, table, this.#rows, this.#alignments);
 		this.#dirty = false;
-		const updated = this.#getActiveTable();
+		const updated = this.#resolveActiveTable();
 		if (updated) {
-			this.#loadFromTable(updated);
+			this.#refreshActiveOffset(updated);
+			// Keep live cell-editor text when not remounting; reloading here could
+			// blank a newly inserted cell before exit flushes the editor.
+			if (!this.#cellModel) {
+				this.#loadFromTable(updated);
+			}
 		}
 		if (!remount) {
 			return;
 		}
 		requestAnimationFrame(() => requestAnimationFrame(() => {
 			this.#isRemounting = false;
-			if (this.#activeTableOffset !== offset) {
+			if (this.#activeTableOffset === undefined) {
 				return;
 			}
 			this.#tearDownGridDom();
@@ -1145,6 +1327,7 @@ export class TableGridController extends Disposable {
 		this.#resizeObserver?.disconnect();
 		this.#resizeObserver = undefined;
 		this.#removeCellEditor();
+		this.#clearColumnWidths(this.#nativeTable);
 		this.#nativeTable = undefined;
 		this.#addRowButton = undefined;
 		this.#addColButton = undefined;
@@ -1164,10 +1347,4 @@ export class TableGridController extends Disposable {
 			wrapper.style.position = '';
 		}
 	}
-}
-
-function cellBoxPadding(style: CSSStyleDeclaration, side: 'Top' | 'Right' | 'Bottom' | 'Left'): string {
-	const padding = Number.parseFloat(style[`padding${side}`]);
-	const border = Number.parseFloat(style[`border${side}Width`]);
-	return `${(Number.isFinite(padding) ? padding : 0) + (Number.isFinite(border) ? border : 0)}px`;
 }

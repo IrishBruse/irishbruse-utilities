@@ -227,7 +227,13 @@ export function applyTableData(
 	if (!range) {
 		return;
 	}
-	const newText = serializeTable(rows, alignments);
+	// The AST range often keeps the blank line(s) after the table. serializeTable
+	// has no trailing newline, so dropping that suffix would glue the next block
+	// onto the last row (e.g. `| cell |## Heading`).
+	const source = model.sourceText.get().value;
+	const original = source.slice(range.start, range.endExclusive);
+	const trailingNewlines = original.match(/\r?\n*$/)?.[0] ?? '';
+	const newText = serializeTable(rows, alignments) + (trailingNewlines || '\n');
 	model.applyEdit(new StringEdit([StringReplacement.replace(range, newText)]));
 }
 

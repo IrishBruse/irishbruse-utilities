@@ -21,6 +21,13 @@
 -   Fix: New table rows keep the same height as a one-line cell, and the edit overlay uses the native cell padding box
 -   Change: Markdown table cell text aligns to the top of the cell
 -   Add: Show the fenced code language in the top-right of inactive code blocks in Markdown Editor (ib-utilities)
+-   Fix: Inserting a table column no longer glues the following heading onto the last row
+-   Fix: Table cell edit overlay uses a flat darker fill with no green focus outline
+-   Fix: Table cell text no longer shifts down one pixel when editing starts
+-   Fix: New empty table columns keep a usable width so the table grows instead of collapsing
+-   Fix: Table cell edits save when the table returns to preview
+-   Fix: Edits in a newly inserted table row or column save when leaving the cell
+-   Fix: Table cell preview shows the new text after the cell editor closes
 
 ## 0.18.2
 

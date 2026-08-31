@@ -74,7 +74,8 @@ body {
 }
 
 .md-theme-vscode-default .md-table td {
-	vertical-align: top;
+	vertical-align: top !important;
+	overflow-wrap: anywhere;
 }
 
 /* Fence language badge in the top-right while the block is not being edited. */
@@ -202,6 +203,7 @@ body {
 	border: none;
 	border-radius: 0;
 	overflow: hidden;
+	overflow-wrap: anywhere;
 	background: color-mix(in srgb, var(--vscode-editor-background, #282c34) 70%, #000);
 	color: var(--vscode-editor-foreground);
 	box-shadow: none;
@@ -210,7 +212,8 @@ body {
 
 .ib-table-grid-cell-md-editor {
 	width: 100%;
-	min-height: 0;
+	height: auto !important;
+	min-height: 0 !important;
 	caret-color: transparent;
 	background: transparent !important;
 }
@@ -223,8 +226,10 @@ body {
 }
 
 .ib-table-grid-cell-md-editor .md-editor-content {
-	padding: 0;
-	margin: 0;
+	padding: 0 !important;
+	padding-block: 0 !important;
+	margin: 0 !important;
+	height: auto !important;
 	max-width: none !important;
 	--md-editor-content-inline-start-padding: 0px;
 	--md-editor-content-inline-end-padding: 0px;
@@ -382,9 +387,16 @@ body {
 /* Glue is hidden, so empty cells need a line box. Header keeps preview padding
  * because the delimiter row that used the extra space is also hidden. */
 .ib-table-grid-mode .md-table td {
-	height: 1.572em;
-	height: 1lh;
 	vertical-align: top !important;
+	overflow-wrap: anywhere;
+}
+
+.ib-table-grid-mode .md-table td::before {
+	content: '';
+	display: inline-block;
+	width: 0;
+	height: 1em;
+	vertical-align: top;
 }
 
 /* Let the table grow with new/empty columns instead of collapsing them. */

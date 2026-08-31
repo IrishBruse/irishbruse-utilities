@@ -72,6 +72,12 @@ export class TableGridController extends Disposable {
 	#isRemounting = false;
 	#editContextSuspend: { dispose(): void } | undefined;
 	#resizeObserver: ResizeObserver | undefined;
+	#cellLayoutSub: { dispose(): void } | undefined;
+	#cellFitWidth = 0;
+	#cellFitHeight = 0;
+	#cellPreviewHeight = 0;
+	#fittingCellHeight = false;
+	#cellFitRetry = false;
 
 	constructor(model: EditorModel, view: EditorView, host: HTMLElement, options: TableGridOptions) {
 		super();
@@ -265,7 +271,7 @@ export class TableGridController extends Disposable {
 	};
 
 	#onScroll = (): void => {
-		this.#syncCellEditorLayout();
+		this.#syncCellEditorLayout(false);
 		this.#positionInsertAffordance();
 	};
 
@@ -607,7 +613,7 @@ export class TableGridController extends Disposable {
 
 		this.#resizeObserver?.disconnect();
 		this.#resizeObserver = new ResizeObserver(() => {
-			this.#syncCellEditorLayout();
+			this.#syncCellEditorLayout(false);
 			this.#positionInsertAffordance();
 		});
 		this.#resizeObserver.observe(wrapper);
@@ -700,6 +706,7 @@ export class TableGridController extends Disposable {
 			for (const cell of row.cells) {
 				cell.style.minWidth = '';
 				cell.style.maxWidth = '';
+				cell.style.height = '';
 			}
 		}
 	}
@@ -798,12 +805,17 @@ export class TableGridController extends Disposable {
 		this.#cellView = cellView;
 		this.#cellController = cellController;
 		this.#editContextSuspend = this.#view.suspendEditContextWhileFocused(cellView.element);
-		this.#syncCellEditorLayout();
+		this.#cellLayoutSub?.dispose();
+		this.#cellLayoutSub = autorun((reader) => {
+			reader.readObservable(cellModel.sourceText);
+			this.#syncCellEditorLayout(true);
+		});
+		this.#syncCellEditorLayout(true);
 		cellView.focus();
 	}
 
-	#syncCellEditorLayout(): void {
-		if (!this.#cellEditor || !this.#focusedCell || !this.#chromeHost) {
+	#syncCellEditorLayout(remeasure: boolean): void {
+		if (this.#fittingCellHeight || !this.#cellEditor || !this.#focusedCell || !this.#chromeHost) {
 			return;
 		}
 		const nativeCell = this.#getNativeCellElement(this.#focusedCell.row, this.#focusedCell.col);
@@ -814,19 +826,98 @@ export class TableGridController extends Disposable {
 		const cellRect = nativeCell.getBoundingClientRect();
 		const wrapperRect = wrapper.getBoundingClientRect();
 		const cellStyle = getComputedStyle(nativeCell);
+		const width = nativeCell.clientWidth;
 		// Use the padding box (client*): with border-collapse, borderTopWidth is
 		// often 1px while clientTop is 0, and adding the border to padding shifted
 		// the edit text down by a pixel.
 		this.#cellEditor.style.left = `${cellRect.left - wrapperRect.left + wrapper.scrollLeft + nativeCell.clientLeft}px`;
 		this.#cellEditor.style.top = `${cellRect.top - wrapperRect.top + wrapper.scrollTop + nativeCell.clientTop}px`;
-		this.#cellEditor.style.width = `${nativeCell.clientWidth}px`;
-		this.#cellEditor.style.height = `${nativeCell.clientHeight}px`;
-		this.#cellEditor.style.minHeight = `${nativeCell.clientHeight}px`;
+		this.#cellEditor.style.width = `${width}px`;
 		this.#cellEditor.style.paddingTop = cellStyle.paddingTop;
 		this.#cellEditor.style.paddingRight = cellStyle.paddingRight;
 		this.#cellEditor.style.paddingBottom = cellStyle.paddingBottom;
 		this.#cellEditor.style.paddingLeft = cellStyle.paddingLeft;
-		this.#cellWidth.set(Math.max(40, nativeCell.clientWidth), undefined);
+		this.#cellWidth.set(Math.max(40, width), undefined);
+
+		const widthChanged = Math.round(width) !== this.#cellFitWidth;
+		if (remeasure || widthChanged || this.#cellFitHeight === 0) {
+			this.#fitCellEditorHeight(nativeCell);
+			return;
+		}
+		this.#applyCellEditorHeight(this.#cellFitHeight);
+	}
+
+	/**
+	 * Keep one-line cells at preview height. Grow only when the paragraph wraps.
+	 */
+	#fitCellEditorHeight(nativeCell: HTMLTableCellElement): void {
+		const editor = this.#cellEditor;
+		if (!editor) {
+			return;
+		}
+		this.#fittingCellHeight = true;
+		try {
+			if (this.#cellPreviewHeight === 0) {
+				this.#cellPreviewHeight = nativeCell.clientHeight;
+			}
+			editor.style.height = 'auto';
+			editor.style.minHeight = '0';
+			editor.style.maxHeight = 'none';
+			const paragraph = editor.querySelector('.md-paragraph');
+			const padTop = Number.parseFloat(editor.style.paddingTop) || 0;
+			const padBottom = Number.parseFloat(editor.style.paddingBottom) || 0;
+			let needed = this.#cellPreviewHeight;
+			if (paragraph instanceof HTMLElement) {
+				const style = getComputedStyle(paragraph);
+				const fontSize = Number.parseFloat(style.fontSize) || 16;
+				const parsedLine = Number.parseFloat(style.lineHeight);
+				const lineHeight = Number.isFinite(parsedLine) ? parsedLine : fontSize * 1.2;
+				const textHeight = paragraph.getBoundingClientRect().height;
+				if (textHeight > lineHeight * 1.35) {
+					needed = Math.max(this.#cellPreviewHeight, Math.ceil(textHeight + padTop + padBottom));
+				}
+			}
+			this.#cellFitWidth = Math.round(nativeCell.clientWidth);
+			this.#cellFitHeight = needed;
+			this.#applyCellEditorHeight(needed);
+			if (needed <= 1 && !this.#cellFitRetry) {
+				this.#cellFitRetry = true;
+				requestAnimationFrame(() => this.#syncCellEditorLayout(true));
+			}
+		} finally {
+			this.#fittingCellHeight = false;
+		}
+	}
+
+	#applyCellEditorHeight(height: number): void {
+		const editor = this.#cellEditor;
+		const nativeRow = this.#hiddenNativeCell?.parentElement;
+		if (!editor) {
+			return;
+		}
+		const value = `${height}px`;
+		editor.style.height = value;
+		editor.style.minHeight = value;
+		editor.style.maxHeight = value;
+		const growRow = this.#cellPreviewHeight > 0 && height > this.#cellPreviewHeight + 1;
+		if (nativeRow instanceof HTMLTableRowElement) {
+			for (const cell of nativeRow.cells) {
+				cell.style.height = growRow ? value : '';
+			}
+		}
+	}
+
+	#clearForcedRowHeights(): void {
+		const nativeRow = this.#hiddenNativeCell?.parentElement;
+		if (nativeRow instanceof HTMLTableRowElement) {
+			for (const cell of nativeRow.cells) {
+				cell.style.height = '';
+			}
+		}
+		this.#cellFitWidth = 0;
+		this.#cellFitHeight = 0;
+		this.#cellPreviewHeight = 0;
+		this.#cellFitRetry = false;
 	}
 
 	#commitFocusedCell(): void {
@@ -851,8 +942,11 @@ export class TableGridController extends Disposable {
 
 	#removeCellEditor(): void {
 		this.#commitFocusedCell();
+		this.#cellLayoutSub?.dispose();
+		this.#cellLayoutSub = undefined;
 		this.#editContextSuspend?.dispose();
 		this.#editContextSuspend = undefined;
+		this.#clearForcedRowHeights();
 		if (this.#hiddenNativeCell) {
 			this.#hiddenNativeCell.classList.remove('ib-table-grid-native-cell-editing');
 			this.#hiddenNativeCell = undefined;

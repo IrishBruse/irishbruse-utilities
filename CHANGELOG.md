@@ -28,6 +28,7 @@
 -   Fix: Table cell edits save when the table returns to preview
 -   Fix: Edits in a newly inserted table row or column save when leaving the cell
 -   Fix: Table cell preview shows the new text after the cell editor closes
+-   Fix: One-line table rows keep preview height while editing; wrapped cells still grow
 
 ## 0.18.2
 

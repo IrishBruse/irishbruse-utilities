@@ -47,6 +47,14 @@ An **Actions** activity bar panel for customizable shortcuts: built-in actions, 
 
 **Empty Dark Theme** is contributed as an optional dark UI theme (see **Preferences: Color Theme**).
 
+### Markdown Editor (ib-utilities)
+
+Open `*.md` files with **Markdown Editor (ib-utilities)** from **Reopen Editor With...**. The custom editor is optional, so it is not the default Markdown editor.
+
+The editor shows WYSIWYG Markdown with colors from the active theme, fenced-code highlighting, a language label on inactive code blocks, and HTML preview for inactive HTML blocks.
+
+Tables open as a grid. Edit a cell, add a row or column from the gap controls, and select a row or column from the cell border. Then press Backspace or Delete to remove that row or column.
+
 ### Mermaid Preview
 
 Open `.mmd` or `.mermaid` files as **source text** by default (including branch diffs and `vscode.diff`). Use **Open Preview** from the editor title bar or the `ib-utilities.openMermaidPreview` command for live diagram rendering that follows your VS Code color theme. In preview, use the toolbar to zoom, pan, fit to view, or copy the diagram as PNG. Switch back to source with **Open Source**.

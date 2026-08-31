@@ -2,33 +2,12 @@
 
 ## Unreleased
 
--   Add: Custom **Markdown Editor (ib-utilities)** editor for `*.md` using vendored `markdown-editor-src` webview bundle
--   Add: Vendored `markdown-editor-src` from VS Code (WYSIWYG Markdown Editor webview glue) with esbuild bundle and optional sync to `~/git/vscode`
--   Add: Theme-aware Markdown Editor colors from `markdownInlineEditor.colors` (with One Dark hard-coded fallbacks)
--   Fix: Backspace and other keys in Markdown Editor (ib-utilities) by handling keyboard locally instead of routing to unregistered host commands
--   Add: Confluence-style table grid in Markdown Editor (ib-utilities) with per-cell editing and add row/column controls
--   Change: Table cells reuse the Markdown text editor for in-cell editing (links, code, and caret)
--   Fix: Table add-row and add-column sit outside the table with a connector to the hovered gap
--   Change: Hide table add-row and add-column until a gap dot is hovered
--   Change: Select a table row or column from the cell border, then Backspace or Delete to remove it
--   Add: Render block HTML in the Markdown Editor (ib-utilities) while the block is not active
--   Add: Syntax highlighting for fenced code in Markdown Editor (ib-utilities) from the active VS Code color theme
--   Fix: Markdown Editor extension activation after syntax highlighting (jsonc-parser was not in the bundle)
--   Fix: Markdown Editor fenced-code highlighting (webview highlight requests did not include the host message secret)
--   Fix: Markdown Editor fenced-code colors on dark themes (TextMate default black and themes with no token colors)
--   Fix: Markdown Editor fenced-code highlighting uses the active color theme (Cursor themes and token color customizations)
--   Fix: Table cell text stays in place when editing starts (overlay padding and focus ring matched the preview cell)
--   Fix: New table rows keep the same height as a one-line cell, and the edit overlay uses the native cell padding box
--   Change: Markdown table cell text aligns to the top of the cell
--   Add: Show the fenced code language in the top-right of inactive code blocks in Markdown Editor (ib-utilities)
--   Fix: Inserting a table column no longer glues the following heading onto the last row
--   Fix: Table cell edit overlay uses a flat darker fill with no green focus outline
--   Fix: Table cell text no longer shifts down one pixel when editing starts
--   Fix: New empty table columns keep a usable width so the table grows instead of collapsing
--   Fix: Table cell edits save when the table returns to preview
--   Fix: Edits in a newly inserted table row or column save when leaving the cell
--   Fix: Table cell preview shows the new text after the cell editor closes
--   Fix: One-line table rows keep preview height while editing; wrapped cells still grow
+## 0.19.0
+
+-   Add: Custom **Markdown Editor (ib-utilities)** for `*.md` with theme-aware colors, fenced-code highlighting from the active color theme, a language badge on code blocks, and HTML block preview
+-   Add: Confluence-style table grid with per-cell Markdown editing, add row/column, and row/column delete
+-   Fix: Keyboard input in the Markdown Editor (Backspace and other keys)
+-   Fix: Table cell overlay matches preview height and position; cell edits save when you leave the cell or the table
 
 ## 0.18.2
 

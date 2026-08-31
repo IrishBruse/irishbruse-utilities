@@ -18,6 +18,12 @@ import {
     getMarkdownInlineEditorColors,
     markdownInlineEditorColorsCssVars,
 } from "./markdownInlineEditorColors";
+import {
+    configureMarkdownSyntaxHighlighting,
+    highlightMarkdownCode,
+    invalidateMarkdownSyntaxTheme,
+    unstyledHighlight,
+} from "./syntaxHighlighting";
 import { encodeWebviewInitialState } from "./webviewInitialState";
 
 export const MARKDOWN_EDITOR_VIEW_TYPE = "ib-utilities.markdownEditor";
@@ -230,7 +236,28 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                         await editQueue;
                         break;
                     }
-                    case "highlight":
+                    case "highlight": {
+                        if (
+                            typeof message.requestId !== "number"
+                            || typeof message.source !== "string"
+                            || typeof message.languageId !== "string"
+                        ) {
+                            break;
+                        }
+                        let result;
+                        try {
+                            result = await highlightMarkdownCode(message.source, message.languageId);
+                        } catch {
+                            result = unstyledHighlight(message.source);
+                        }
+                        await editorWebview.postMessage({
+                            type: "highlightResult",
+                            requestId: message.requestId,
+                            tokens: result.tokens,
+                            colorMap: result.colorMap,
+                        });
+                        break;
+                    }
                     case "codeBlockEditorDiagnostic":
                         break;
                 }
@@ -251,6 +278,12 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                     renderHtml();
                 }
             }),
+            window.onDidChangeActiveColorTheme(() => {
+                invalidateMarkdownSyntaxTheme();
+                if (webviewReady) {
+                    void editorWebview.postMessage({ type: "highlightThemeChanged" });
+                }
+            }),
             webviewPanel.onDidDispose(() => {
                 for (const disposable of disposables) {
                     disposable.dispose();
@@ -261,6 +294,7 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
 }
 
 export function registerMarkdownEditor(context: ExtensionContext): void {
+    configureMarkdownSyntaxHighlighting(context.extensionPath);
     context.subscriptions.push(
         window.registerCustomEditorProvider(MARKDOWN_EDITOR_VIEW_TYPE, new MarkdownEditorProvider(context), {
             webviewOptions: { retainContextWhenHidden: true },

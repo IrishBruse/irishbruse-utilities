@@ -13,6 +13,14 @@ function copyMermaidAssets() {
     copyFileSync(mermaidSource, mermaidDest);
 }
 
+const onigWasmSource = join(__dirname, "node_modules", "vscode-oniguruma", "release", "onig.wasm");
+const onigWasmDest = join(__dirname, "dist", "onig.wasm");
+
+function copyOnigWasm() {
+    mkdirSync(join(__dirname, "dist"), { recursive: true });
+    copyFileSync(onigWasmSource, onigWasmDest);
+}
+
 const args = process.argv.splice(2);
 
 const validArgs = ["--production", "--watch", "--help"];
@@ -68,11 +76,13 @@ const mermaidThemeConfig = {
 
 async function buildAll() {
     copyMermaidAssets();
+    copyOnigWasm();
     await Promise.all([esbuild.build(extensionConfig), esbuild.build(mermaidThemeConfig)]);
 }
 
 if (isWatch) {
     copyMermaidAssets();
+    copyOnigWasm();
     const [extensionCtx, themeCtx] = await Promise.all([
         esbuild.context(extensionConfig),
         esbuild.context(mermaidThemeConfig),

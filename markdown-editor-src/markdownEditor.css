@@ -69,6 +69,10 @@ body {
 	background-color: var(--ib-md-inline-code-background, #21252bA0);
 }
 
+.md-theme-vscode-default .md-code-block {
+	color: var(--vscode-editor-foreground);
+}
+
 .md-theme-vscode-default .md-blockquote {
 	color: var(--vscode-descriptionForeground, #5C6370);
 }
@@ -100,10 +104,25 @@ body {
 	overflow: visible;
 }
 
-.ib-table-grid-chrome .ib-table-grid-add-row,
-.ib-table-grid-chrome .ib-table-grid-add-col,
+.ib-table-grid-chrome .ib-table-grid-delete-row,
+.ib-table-grid-chrome .ib-table-grid-delete-col,
+.ib-table-grid-chrome .ib-table-grid-gap-dot,
 .ib-table-grid-chrome .ib-table-grid-cell-editor,
 .ib-table-grid-chrome .ib-table-grid-cell-md-editor {
+	pointer-events: auto;
+}
+
+.ib-table-grid-chrome .ib-table-grid-add-row,
+.ib-table-grid-chrome .ib-table-grid-add-col {
+	pointer-events: none;
+}
+
+.ib-table-grid-chrome.ib-table-grid-preview-row .ib-table-grid-add-row,
+.ib-table-grid-chrome.ib-table-grid-preview-col .ib-table-grid-add-col,
+.ib-table-grid-chrome .ib-table-grid-add-row:hover,
+.ib-table-grid-chrome .ib-table-grid-add-col:hover,
+.ib-table-grid-chrome .ib-table-grid-add-row:focus-visible,
+.ib-table-grid-chrome .ib-table-grid-add-col:focus-visible {
 	pointer-events: auto;
 }
 
@@ -197,7 +216,9 @@ body {
 }
 
 .ib-table-grid-add-row,
-.ib-table-grid-add-col {
+.ib-table-grid-add-col,
+.ib-table-grid-delete-row,
+.ib-table-grid-delete-col {
 	position: absolute;
 	box-sizing: border-box;
 	width: 22px;
@@ -218,6 +239,38 @@ body {
 	z-index: 5;
 }
 
+.ib-table-grid-gap-dot {
+	position: absolute;
+	box-sizing: border-box;
+	width: 6px;
+	height: 6px;
+	padding: 0;
+	border: 0;
+	border-radius: 50%;
+	background: var(--vscode-descriptionForeground, #5c6370);
+	opacity: 0.55;
+	cursor: pointer;
+	z-index: 5;
+	transform: translate(-50%, -50%);
+	transition: opacity 0.12s ease, transform 0.12s ease;
+}
+
+.ib-table-grid-gap-dot::before {
+	content: '';
+	position: absolute;
+	inset: -8px;
+}
+
+.ib-table-grid-gap-dot:hover {
+	opacity: 0.9;
+	transform: translate(-50%, -50%) scale(1.15);
+}
+
+.ib-table-grid-gap-dot.is-active {
+	opacity: 0;
+	pointer-events: none;
+}
+
 .ib-table-grid-chrome.ib-table-grid-preview-row .ib-table-grid-add-row,
 .ib-table-grid-add-row:hover,
 .ib-table-grid-add-row:focus-visible {
@@ -230,15 +283,37 @@ body {
 	opacity: 1;
 }
 
+.ib-table-grid-chrome.ib-table-grid-preview-delete-row .ib-table-grid-delete-row,
+.ib-table-grid-delete-row:hover,
+.ib-table-grid-delete-row:focus-visible {
+	opacity: 1;
+}
+
+.ib-table-grid-chrome.ib-table-grid-preview-delete-col .ib-table-grid-delete-col,
+.ib-table-grid-delete-col:hover,
+.ib-table-grid-delete-col:focus-visible {
+	opacity: 1;
+}
+
+.ib-table-grid-chrome.ib-table-grid-preview-delete-col .ib-table-grid-gap-dots-col,
+.ib-table-grid-chrome.ib-table-grid-preview-delete-row .ib-table-grid-gap-dots-row {
+	opacity: 0;
+	pointer-events: none;
+}
+
 .ib-table-grid-add-row::before,
-.ib-table-grid-add-col::before {
+.ib-table-grid-add-col::before,
+.ib-table-grid-delete-row::before,
+.ib-table-grid-delete-col::before {
 	content: '';
 	position: absolute;
 	inset: -8px;
 }
 
 .ib-table-grid-add-row::after,
-.ib-table-grid-add-col::after {
+.ib-table-grid-add-col::after,
+.ib-table-grid-delete-row::after,
+.ib-table-grid-delete-col::after {
 	content: '';
 	position: absolute;
 	background: var(--vscode-focusBorder, var(--vscode-button-background, #528bff));
@@ -261,11 +336,63 @@ body {
 	transform: translateX(-1px);
 }
 
+.ib-table-grid-delete-row::after {
+	left: 100%;
+	top: 50%;
+	width: 38px;
+	height: 2px;
+	transform: translateY(-1px);
+}
+
+.ib-table-grid-delete-col::after {
+	left: 50%;
+	top: 100%;
+	width: 2px;
+	height: 38px;
+	transform: translateX(-1px);
+}
+
 .ib-table-grid-add-row:hover,
 .ib-table-grid-add-col:hover,
 .ib-table-grid-add-row:focus-visible,
 .ib-table-grid-add-col:focus-visible {
 	background: var(--vscode-button-hoverBackground, #6b9bff);
+}
+
+.ib-table-grid-chrome.ib-table-grid-preview-delete-row .ib-table-grid-delete-row::after,
+.ib-table-grid-chrome.ib-table-grid-preview-delete-col .ib-table-grid-delete-col::after,
+.ib-table-grid-delete-row:hover::after,
+.ib-table-grid-delete-col:hover::after,
+.ib-table-grid-delete-row:focus-visible::after,
+.ib-table-grid-delete-col:focus-visible::after {
+	background: var(--vscode-errorForeground, #f14c4c);
+}
+
+.ib-table-grid-chrome.ib-table-grid-preview-delete-row .ib-table-grid-delete-row,
+.ib-table-grid-chrome.ib-table-grid-preview-delete-col .ib-table-grid-delete-col,
+.ib-table-grid-delete-row:hover,
+.ib-table-grid-delete-col:hover,
+.ib-table-grid-delete-row:focus-visible,
+.ib-table-grid-delete-col:focus-visible {
+	background: var(--vscode-errorForeground, #f14c4c);
+	color: var(--vscode-editor-background, #fff);
+}
+
+.ib-table-grid-delete-row-band,
+.ib-table-grid-delete-col-band {
+	position: absolute;
+	pointer-events: none;
+	opacity: 0;
+	z-index: 4;
+	background: color-mix(in srgb, var(--vscode-errorForeground, #f14c4c) 16%, transparent);
+	transition: opacity 0.12s ease;
+}
+
+.ib-table-grid-delete-row:hover ~ .ib-table-grid-delete-row-band,
+.ib-table-grid-delete-col:hover ~ .ib-table-grid-delete-col-band,
+.ib-table-grid-delete-row:focus-visible ~ .ib-table-grid-delete-row-band,
+.ib-table-grid-delete-col:focus-visible ~ .ib-table-grid-delete-col-band {
+	opacity: 1;
 }
 
 .ib-table-grid-mode .md-table-wrapper:not(.ib-table-grid-active) .md-table {

@@ -17,8 +17,10 @@ vi.mock("vscode", () => ({
     env: {
         openExternal: vi.fn().mockResolvedValue(true),
         clipboard: { writeText: vi.fn().mockResolvedValue(undefined) },
+        appRoot: "",
     },
     window: {
+        activeColorTheme: { kind: 2 },
         showErrorMessage: vi.fn().mockResolvedValue(undefined),
         showWarningMessage: vi.fn().mockResolvedValue(undefined),
         showInformationMessage: vi.fn().mockResolvedValue(undefined),
@@ -31,6 +33,7 @@ vi.mock("vscode", () => ({
         createTextEditorDecorationType: vi.fn().mockReturnValue({}),
         activeTextEditor: undefined,
         tabGroups: { all: [] },
+        onDidChangeActiveColorTheme: vi.fn().mockReturnValue({ dispose: vi.fn() }),
     },
     commands: {
         executeCommand: vi.fn().mockResolvedValue(undefined),

@@ -157,6 +157,40 @@ export function insertColumn(
 	};
 }
 
+export function deleteRow(rows: readonly (readonly string[])[], index: number): string[][] {
+	if (rows.length <= 1) {
+		return rows.map(row => [...row]);
+	}
+	const at = Math.max(0, Math.min(index, rows.length - 1));
+	return rows.filter((_, i) => i !== at).map(row => [...row]);
+}
+
+export function deleteColumn(
+	rows: readonly (readonly string[])[],
+	alignments: readonly TableAlignment[],
+	index: number,
+): { rows: string[][]; alignments: TableAlignment[] } {
+	const colCount = Math.max(alignments.length, ...rows.map(row => row.length), 0);
+	if (colCount <= 1) {
+		return {
+			rows: rows.map(row => [...row]),
+			alignments: [...alignments],
+		};
+	}
+	const at = Math.max(0, Math.min(index, colCount - 1));
+	return {
+		rows: rows.map(row => {
+			const copy = [...row];
+			while (copy.length < colCount) {
+				copy.push('');
+			}
+			copy.splice(at, 1);
+			return copy;
+		}),
+		alignments: alignments.filter((_, i) => i !== at),
+	};
+}
+
 export function serializeTable(rows: readonly (readonly string[])[], alignments: readonly TableAlignment[]): string {
 	if (rows.length === 0) {
 		return '|  | |\n| --- | |\n|  | |';

@@ -72,7 +72,7 @@ class Editor extends Disposable {
 	// the message secret allows to distinguish vscode sending us a message vs a nested iframe
 	readonly #messageSecret: string;
 	readonly #vscode = acquireVsCodeApi();
-	readonly #syntaxHighlighter = new WebviewSyntaxHighlighter((message) => this.#vscode.postMessage(message));
+	readonly #syntaxHighlighter = new WebviewSyntaxHighlighter((message) => this.#postToHost(message));
 	readonly #linkPresentationProvider: WebviewLinkPresentationProvider | undefined;
 
 	constructor(host: HTMLElement, initialState: InitialState) {
@@ -86,7 +86,7 @@ class Editor extends Disposable {
 		this.#linkPresentationProvider = initialState.richLinksEnabled
 			? this._register(new WebviewLinkPresentationProvider(
 				initialState.linkPresentationRules,
-				message => this.#vscode.postMessage(message),
+				message => this.#postToHost(message),
 			))
 			: undefined;
 
@@ -167,7 +167,7 @@ class Editor extends Disposable {
 		});
 
 		this.#createView(host, initialState);
-		this.#vscode.postMessage({ type: 'ready', documentVersion: initialState.documentVersion });
+		this.#postToHost({ type: 'ready', documentVersion: initialState.documentVersion });
 		this._register({
 			dispose: () => {
 				for (const resolve of this.#codeBlockEditorRequests.values()) {
@@ -178,6 +178,13 @@ class Editor extends Disposable {
 		});
 	}
 
+	#postToHost(message: unknown): void {
+		if (!message || typeof message !== 'object') {
+			return;
+		}
+		this.#vscode.postMessage({ ...message, messageSecret: this.#messageSecret });
+	}
+
 	#createView(host: HTMLElement, initialState: InitialState): void {
 		const model = this.model;
 		const content = initialState.content;
@@ -186,7 +193,7 @@ class Editor extends Disposable {
 			providers: this.#createIframeProviders(this.#codeBlockEditorProviders),
 			scriptNonce,
 			themeCss: () => `:root { ${document.documentElement.getAttribute('style') ?? ''} }`,
-			onAmbiguous: (language, providers) => this.#vscode.postMessage({
+			onAmbiguous: (language, providers) => this.#postToHost({
 				type: 'codeBlockEditorDiagnostic',
 				message: `Ambiguous providers for ${language}: ${providers.map(provider => provider.id).join(', ')}`,
 			}),
@@ -216,7 +223,7 @@ class Editor extends Disposable {
 				));
 			},
 			onOpenLink: url => {
-				this.#vscode.postMessage({ type: 'openLink', href: url });
+				this.#postToHost({ type: 'openLink', href: url });
 			},
 			onToggleCheckbox: (item, newChecked) => {
 				model.setTaskCheckboxChecked(item, newChecked);
@@ -239,7 +246,7 @@ class Editor extends Disposable {
 					.catch(error => {
 						div.textContent = content;
 						div.setAttribute('aria-busy', 'false');
-						this.#vscode.postMessage({
+						this.#postToHost({
 							type: 'codeBlockEditorDiagnostic',
 							message: `Failed to render Mermaid diagram: ${error instanceof Error ? error.message : String(error)}`,
 						});
@@ -251,7 +258,7 @@ class Editor extends Disposable {
 
 		this._register(new TableGridController(model, view, host, initialState.tables));
 		this._register(new HtmlPreviewController(model, view, url => {
-			this.#vscode.postMessage({ type: 'openLink', href: url });
+			this.#postToHost({ type: 'openLink', href: url });
 		}));
 
 		// Handle all keyboard actions in the webview. The built-in Markdown editor
@@ -262,8 +269,8 @@ class Editor extends Disposable {
 			clipboardStrategy: new AsyncClipboardStrategy(),
 			keyboardProfile: vscodeKeyboardProfile,
 			historyStrategy: {
-				undo: () => this.#vscode.postMessage({ type: 'history', command: 'undo' }),
-				redo: () => this.#vscode.postMessage({ type: 'history', command: 'redo' }),
+				undo: () => this.#postToHost({ type: 'history', command: 'undo' }),
+				redo: () => this.#postToHost({ type: 'history', command: 'redo' }),
 			},
 		}));
 		let lastEditorFocus: boolean | undefined;
@@ -273,7 +280,7 @@ class Editor extends Disposable {
 				return;
 			}
 			lastEditorFocus = focused;
-			this.#vscode.postMessage({ type: 'editorFocusChanged', focused });
+			this.#postToHost({ type: 'editorFocusChanged', focused });
 		};
 		const onFocusOut = (): void => queueMicrotask(postEditorFocus);
 		document.addEventListener('focusin', postEditorFocus);
@@ -310,7 +317,7 @@ class Editor extends Disposable {
 			if (accepts && !commentController) {
 				commentController = new CommentModeController(model, view, {
 					onSubmit: ({ text, range }) => {
-						this.#vscode.postMessage({ type: 'addComment', start: range.start, endExclusive: range.endExclusive, text });
+						this.#postToHost({ type: 'addComment', start: range.start, endExclusive: range.endExclusive, text });
 					},
 				});
 			} else if (!accepts && commentController) {
@@ -331,7 +338,7 @@ class Editor extends Disposable {
 			if (!this.#isUpdatingComments) {
 				for (const id of knownCommentIds) {
 					if (!currentIds.has(id)) {
-						this.#vscode.postMessage({ type: 'deleteComment', id });
+						this.#postToHost({ type: 'deleteComment', id });
 					}
 				}
 			}
@@ -384,7 +391,7 @@ class Editor extends Disposable {
 		this._register(autorun((reader) => {
 			const isReadonly = reader.readObservable(this.model.readonlyMode);
 			if (!firstReadonly) {
-				this.#vscode.postMessage({ type: 'setReadonly', readonly: isReadonly });
+				this.#postToHost({ type: 'setReadonly', readonly: isReadonly });
 			}
 			firstReadonly = false;
 		}));
@@ -396,7 +403,7 @@ class Editor extends Disposable {
 		this._register(autorun((reader) => {
 			const text = reader.readObservable(this.model.sourceText).value;
 			if (!this.isUpdatingFromExtension && text !== previousText) {
-				this.#vscode.postMessage({ type: 'edit', ...computeTextEdit(previousText, text) });
+				this.#postToHost({ type: 'edit', ...computeTextEdit(previousText, text) });
 			}
 			previousText = text;
 		}));
@@ -421,7 +428,7 @@ class Editor extends Disposable {
 		const requestId = this.#nextCodeBlockEditorRequestId++;
 		return new Promise(resolve => {
 			this.#codeBlockEditorRequests.set(requestId, resolve);
-			this.#vscode.postMessage({
+			this.#postToHost({
 				type: 'resolveCodeBlockEditor',
 				requestId,
 				providerId,

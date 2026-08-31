@@ -9,6 +9,10 @@ export interface MarkdownEditorInitialState {
         flags: string;
         initialKind: string;
     }[];
+    readonly tables: {
+        readonly maxColumnWidth: number;
+        readonly style: "wrapped" | "compact";
+    };
 }
 
 export function encodeWebviewInitialState(state: MarkdownEditorInitialState): string {

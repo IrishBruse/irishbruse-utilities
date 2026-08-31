@@ -681,9 +681,9 @@
         "@typescript-eslint/eslint-plugin": "^8.64.0",
         "@typescript-eslint/parser": "^8.64.0",
         "@vitest/coverage-v8": "^4.1.10",
-        "@vscode/vsce": "^3.9.2",
         "@vscode/markdown-editor": "0.0.2-74",
         "@vscode/observables": "^0.1.1-0",
+        "@vscode/vsce": "^3.9.2",
         "esbuild": "0.28.1",
         "eslint": "^9.39.5",
         "katex": "^0.16.33",
@@ -694,6 +694,8 @@
         "webpack-cli": "^7.2.1"
     },
     "dependencies": {
-        "mermaid": "^11.16.0"
+        "mermaid": "^11.16.0",
+        "vscode-oniguruma": "^2.0.1",
+        "vscode-textmate": "^9.3.2"
     }
 }

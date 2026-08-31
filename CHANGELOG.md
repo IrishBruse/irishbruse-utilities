@@ -9,8 +9,15 @@
 -   Add: Confluence-style table grid in Markdown Editor (ib-utilities) with per-cell editing and add row/column controls
 -   Change: Table cells reuse the Markdown text editor for in-cell editing (links, code, and caret)
 -   Fix: Table add-row and add-column sit outside the table with a connector to the hovered gap
--   Change: Hide table add-row and add-column until the insert edge is hovered
+-   Change: Hide table add-row and add-column until a gap dot is hovered
+-   Add: Delete table rows and columns from hover controls on the insert edges
+-   Change: Hovering a table header cell shows only the delete-column button; the column band waits for the button hover
 -   Add: Render block HTML in the Markdown Editor (ib-utilities) while the block is not active
+-   Add: Syntax highlighting for fenced code in Markdown Editor (ib-utilities) from the active VS Code color theme
+-   Fix: Markdown Editor extension activation after syntax highlighting (jsonc-parser was not in the bundle)
+-   Fix: Markdown Editor fenced-code highlighting (webview highlight requests did not include the host message secret)
+-   Fix: Markdown Editor fenced-code colors on dark themes (TextMate default black and themes with no token colors)
+-   Fix: Markdown Editor fenced-code highlighting uses the active color theme (Cursor themes and token color customizations)
 
 ## 0.18.2
 

@@ -56,7 +56,10 @@ function fontStyleRules(): string {
 }
 
 function colorRules(colorMap: readonly string[]): string {
-	return colorMap.map((color, index) => `.tok-mdhl-fg-${index} { color: ${color}; }`).join('\n');
+	return colorMap
+		.map((color, index) => color ? `.tok-mdhl-fg-${index} { color: ${color}; }` : '')
+		.filter((rule) => rule.length > 0)
+		.join('\n');
 }
 
 function classNameFor(foreground: number, fontStyle: number): string | undefined {

@@ -73,6 +73,29 @@ body {
 	color: var(--vscode-editor-foreground);
 }
 
+.md-theme-vscode-default .md-table td {
+	vertical-align: top;
+}
+
+/* Fence language badge in the top-right while the block is not being edited. */
+.md-code-block[data-ib-language]:not(.md-block-active) {
+	position: relative;
+}
+
+.md-code-block[data-ib-language]:not(.md-block-active)::before {
+	content: attr(data-ib-language);
+	position: absolute;
+	top: 4px;
+	right: 8px;
+	z-index: 1;
+	font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+	font-size: 11px;
+	line-height: 1;
+	color: var(--vscode-descriptionForeground, #5C6370);
+	pointer-events: none;
+	user-select: none;
+}
+
 .md-theme-vscode-default .md-blockquote {
 	color: var(--vscode-descriptionForeground, #5C6370);
 }
@@ -104,9 +127,9 @@ body {
 	overflow: visible;
 }
 
-.ib-table-grid-chrome .ib-table-grid-delete-row,
-.ib-table-grid-chrome .ib-table-grid-delete-col,
 .ib-table-grid-chrome .ib-table-grid-gap-dot,
+.ib-table-grid-chrome .ib-table-grid-row-handle,
+.ib-table-grid-chrome .ib-table-grid-col-handle,
 .ib-table-grid-chrome .ib-table-grid-cell-editor,
 .ib-table-grid-chrome .ib-table-grid-cell-md-editor {
 	pointer-events: auto;
@@ -172,17 +195,18 @@ body {
 	box-sizing: border-box;
 	z-index: 4;
 	margin: 0;
-	padding: 4px 8px;
-	border: 1px solid var(--vscode-focusBorder, #528bff);
-	border-radius: 4px;
+	padding: 5px 10px;
+	border: none;
+	border-radius: 0;
 	overflow: hidden;
 	background: color-mix(in srgb, var(--vscode-editor-background, #282c34) 70%, #000);
 	color: var(--vscode-editor-foreground);
+	box-shadow: inset 0 0 0 1px var(--vscode-focusBorder, #528bff);
 }
 
 .ib-table-grid-cell-md-editor {
 	width: 100%;
-	min-height: 1.5em;
+	min-height: 0;
 	caret-color: transparent;
 }
 
@@ -200,8 +224,6 @@ body {
 
 .ib-table-grid-cell-editor-header {
 	font-weight: 600;
-	padding-top: 8px;
-	padding-bottom: 8px;
 }
 
 /* Hide the document caret while a table cell is focused; keep the nested editor caret */
@@ -216,9 +238,7 @@ body {
 }
 
 .ib-table-grid-add-row,
-.ib-table-grid-add-col,
-.ib-table-grid-delete-row,
-.ib-table-grid-delete-col {
+.ib-table-grid-add-col {
 	position: absolute;
 	box-sizing: border-box;
 	width: 22px;
@@ -236,7 +256,7 @@ body {
 	justify-content: center;
 	opacity: 0;
 	transition: opacity 0.15s ease;
-	z-index: 5;
+	z-index: 6;
 }
 
 .ib-table-grid-gap-dot {
@@ -283,73 +303,39 @@ body {
 	opacity: 1;
 }
 
-.ib-table-grid-chrome.ib-table-grid-preview-delete-row .ib-table-grid-delete-row,
-.ib-table-grid-delete-row:hover,
-.ib-table-grid-delete-row:focus-visible {
-	opacity: 1;
+.ib-table-grid-row-handle,
+.ib-table-grid-col-handle {
+	position: absolute;
+	padding: 0;
+	border: 0;
+	margin: 0;
+	background: transparent;
+	cursor: pointer;
+	z-index: 5;
 }
 
-.ib-table-grid-chrome.ib-table-grid-preview-delete-col .ib-table-grid-delete-col,
-.ib-table-grid-delete-col:hover,
-.ib-table-grid-delete-col:focus-visible {
-	opacity: 1;
+.ib-table-grid-row-handle:hover,
+.ib-table-grid-col-handle:hover {
+	background: color-mix(in srgb, var(--vscode-focusBorder, #528bff) 55%, transparent);
 }
 
-.ib-table-grid-chrome.ib-table-grid-preview-delete-col .ib-table-grid-gap-dots-col,
-.ib-table-grid-chrome.ib-table-grid-preview-delete-row .ib-table-grid-gap-dots-row {
-	opacity: 0;
+.ib-table-grid-selection-band {
+	position: absolute;
 	pointer-events: none;
+	opacity: 0;
+	z-index: 3;
+	box-sizing: border-box;
+	background: color-mix(in srgb, var(--vscode-focusBorder, #528bff) 18%, transparent);
+	outline: 2px solid var(--vscode-focusBorder, #528bff);
+	outline-offset: -2px;
+	transition: opacity 0.12s ease;
 }
 
 .ib-table-grid-add-row::before,
-.ib-table-grid-add-col::before,
-.ib-table-grid-delete-row::before,
-.ib-table-grid-delete-col::before {
+.ib-table-grid-add-col::before {
 	content: '';
 	position: absolute;
 	inset: -8px;
-}
-
-.ib-table-grid-add-row::after,
-.ib-table-grid-add-col::after,
-.ib-table-grid-delete-row::after,
-.ib-table-grid-delete-col::after {
-	content: '';
-	position: absolute;
-	background: var(--vscode-focusBorder, var(--vscode-button-background, #528bff));
-	pointer-events: none;
-}
-
-.ib-table-grid-add-row::after {
-	left: 100%;
-	top: 50%;
-	width: 8px;
-	height: 2px;
-	transform: translateY(-1px);
-}
-
-.ib-table-grid-add-col::after {
-	left: 50%;
-	top: 100%;
-	width: 2px;
-	height: 8px;
-	transform: translateX(-1px);
-}
-
-.ib-table-grid-delete-row::after {
-	left: 100%;
-	top: 50%;
-	width: 38px;
-	height: 2px;
-	transform: translateY(-1px);
-}
-
-.ib-table-grid-delete-col::after {
-	left: 50%;
-	top: 100%;
-	width: 2px;
-	height: 38px;
-	transform: translateX(-1px);
 }
 
 .ib-table-grid-add-row:hover,
@@ -357,42 +343,6 @@ body {
 .ib-table-grid-add-row:focus-visible,
 .ib-table-grid-add-col:focus-visible {
 	background: var(--vscode-button-hoverBackground, #6b9bff);
-}
-
-.ib-table-grid-chrome.ib-table-grid-preview-delete-row .ib-table-grid-delete-row::after,
-.ib-table-grid-chrome.ib-table-grid-preview-delete-col .ib-table-grid-delete-col::after,
-.ib-table-grid-delete-row:hover::after,
-.ib-table-grid-delete-col:hover::after,
-.ib-table-grid-delete-row:focus-visible::after,
-.ib-table-grid-delete-col:focus-visible::after {
-	background: var(--vscode-errorForeground, #f14c4c);
-}
-
-.ib-table-grid-chrome.ib-table-grid-preview-delete-row .ib-table-grid-delete-row,
-.ib-table-grid-chrome.ib-table-grid-preview-delete-col .ib-table-grid-delete-col,
-.ib-table-grid-delete-row:hover,
-.ib-table-grid-delete-col:hover,
-.ib-table-grid-delete-row:focus-visible,
-.ib-table-grid-delete-col:focus-visible {
-	background: var(--vscode-errorForeground, #f14c4c);
-	color: var(--vscode-editor-background, #fff);
-}
-
-.ib-table-grid-delete-row-band,
-.ib-table-grid-delete-col-band {
-	position: absolute;
-	pointer-events: none;
-	opacity: 0;
-	z-index: 4;
-	background: color-mix(in srgb, var(--vscode-errorForeground, #f14c4c) 16%, transparent);
-	transition: opacity 0.12s ease;
-}
-
-.ib-table-grid-delete-row:hover ~ .ib-table-grid-delete-row-band,
-.ib-table-grid-delete-col:hover ~ .ib-table-grid-delete-col-band,
-.ib-table-grid-delete-row:focus-visible ~ .ib-table-grid-delete-row-band,
-.ib-table-grid-delete-col:focus-visible ~ .ib-table-grid-delete-col-band {
-	opacity: 1;
 }
 
 .ib-table-grid-mode .md-table-wrapper:not(.ib-table-grid-active) .md-table {
@@ -414,6 +364,19 @@ body {
 .ib-table-grid-mode .md-table.md-block-active .md-ws-space::before,
 .ib-table-grid-mode .md-table.md-block-active .md-table-delimiter-row {
 	display: none !important;
+}
+
+/* Glue is hidden, so empty cells need a line box. Header keeps preview padding
+ * because the delimiter row that used the extra space is also hidden. */
+.ib-table-grid-mode .md-table td {
+	height: 1.572em;
+	height: 1lh;
+	vertical-align: top !important;
+}
+
+.ib-table-grid-mode .md-table.md-block-active tr:first-child td {
+	padding-top: 10px !important;
+	padding-bottom: 10px !important;
 }
 
 .ib-table-grid-mode .md-table-wrapper:not(.ib-table-grid-active):hover .md-table {

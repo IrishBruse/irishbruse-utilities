@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AsyncClipboardStrategy, CommentModeController, CommentsModel, EditorController, EditorModel, EditorView, GutterMarker, OffsetRange, Selection, StringEdit, StringReplacement, StringValue, VsCodeV2CommentsView, commands, findNodeOffsetById, vscodeKeyboardProfile, type CodeBlockAstNode, type LinkPresentationKind } from '@vscode/markdown-editor';
+import { AsyncClipboardStrategy, CommentModeController, CommentsModel, CodeBlockAstNode, EditorController, EditorModel, EditorView, GutterMarker, OffsetRange, Selection, StringEdit, StringReplacement, StringValue, VsCodeV2CommentsView, commands, findNodeOffsetById, vscodeKeyboardProfile, type LinkPresentationKind } from '@vscode/markdown-editor';
 import { VirtualizedIframeEmbeddedEditorFactory, type IframeEmbeddedEditorProvider, type IframeEmbeddedEditorProviderSelector, type ResolvedIframeEmbeddedEditor } from '@vscode/markdown-editor/web-editors';
 import { Disposable, autorun, observableValue } from '@vscode/observables';
 import 'katex/dist/katex.min.css';
@@ -259,6 +259,26 @@ class Editor extends Disposable {
 		this._register(new TableGridController(model, view, host, initialState.tables));
 		this._register(new HtmlPreviewController(model, view, url => {
 			this.#postToHost({ type: 'openLink', href: url });
+		}));
+		this._register(autorun((reader) => {
+			reader.readObservable(model.document);
+			const measurements = reader.readObservable(view.measuredLayout.measurements);
+			for (const measurement of measurements) {
+				const block = measurement.block;
+				if (!(block instanceof CodeBlockAstNode)) {
+					continue;
+				}
+				const el = measurement.viewNode?.dom;
+				if (!(el instanceof HTMLElement)) {
+					continue;
+				}
+				const language = block.language.trim();
+				if (language) {
+					el.dataset.ibLanguage = language;
+				} else {
+					delete el.dataset.ibLanguage;
+				}
+			}
 		}));
 
 		// Handle all keyboard actions in the webview. The built-in Markdown editor

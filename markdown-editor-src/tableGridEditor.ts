@@ -55,21 +55,19 @@ export class TableGridController extends Disposable {
 	#hiddenNativeCell: HTMLElement | undefined;
 	#addRowButton: HTMLButtonElement | undefined;
 	#addColButton: HTMLButtonElement | undefined;
-	#deleteRowButton: HTMLButtonElement | undefined;
-	#deleteColButton: HTMLButtonElement | undefined;
 	#insertRowLine: HTMLElement | undefined;
 	#insertColLine: HTMLElement | undefined;
-	#deleteRowBand: HTMLElement | undefined;
-	#deleteColBand: HTMLElement | undefined;
 	#rowDotHost: HTMLElement | undefined;
 	#colDotHost: HTMLElement | undefined;
+	#rowHandleHost: HTMLElement | undefined;
+	#colHandleHost: HTMLElement | undefined;
+	#selectionBand: HTMLElement | undefined;
 	#rows: string[][] = [];
 	#alignments: TableAlignment[] = [];
 	#focusedCell: { row: number; col: number } | undefined;
 	#insertRowIndex = 0;
 	#insertColIndex = 0;
-	#hoveredRowIndex = 0;
-	#hoveredColIndex = 0;
+	#selectedAxis: { kind: 'row' | 'col'; index: number } | undefined;
 	#dirty = false;
 	#isRemounting = false;
 	#editContextSuspend: { dispose(): void } | undefined;
@@ -86,6 +84,8 @@ export class TableGridController extends Disposable {
 		this._register({ dispose: () => this.#view.element.removeEventListener('pointerdown', this.#onPointerDown, true) });
 		this.#view.element.addEventListener('pointermove', this.#onPointerMove);
 		this._register({ dispose: () => this.#view.element.removeEventListener('pointermove', this.#onPointerMove) });
+		this.#view.element.addEventListener('keydown', this.#onKeyDown, true);
+		this._register({ dispose: () => this.#view.element.removeEventListener('keydown', this.#onKeyDown, true) });
 
 		this.#host.addEventListener('scroll', this.#onScroll, { passive: true });
 		this._register({ dispose: () => this.#host.removeEventListener('scroll', this.#onScroll) });
@@ -160,16 +160,18 @@ export class TableGridController extends Disposable {
 			this.#addColumn();
 			return;
 		}
-		if (target.closest('.ib-table-grid-delete-row')) {
+		const rowHandle = target.closest('.ib-table-grid-row-handle');
+		if (rowHandle instanceof HTMLElement && rowHandle.dataset.index !== undefined) {
 			event.preventDefault();
 			event.stopImmediatePropagation();
-			this.#deleteRow();
+			this.#selectAxis('row', Number(rowHandle.dataset.index));
 			return;
 		}
-		if (target.closest('.ib-table-grid-delete-col')) {
+		const colHandle = target.closest('.ib-table-grid-col-handle');
+		if (colHandle instanceof HTMLElement && colHandle.dataset.index !== undefined) {
 			event.preventDefault();
 			event.stopImmediatePropagation();
-			this.#deleteColumn();
+			this.#selectAxis('col', Number(colHandle.dataset.index));
 			return;
 		}
 		if (target.closest('.ib-table-grid-cell-editor, .ib-table-grid-cell-md-editor')) {
@@ -213,38 +215,24 @@ export class TableGridController extends Disposable {
 			this.#chromeHost?.classList.remove(
 				'ib-table-grid-preview-row',
 				'ib-table-grid-preview-col',
-				'ib-table-grid-preview-delete-row',
-				'ib-table-grid-preview-delete-col',
 			);
 			return;
 		}
 		if (target.closest('.ib-table-grid-add-row')) {
 			this.#chromeHost?.classList.add('ib-table-grid-preview-row');
-			this.#chromeHost?.classList.remove(
-				'ib-table-grid-preview-col',
-				'ib-table-grid-preview-delete-row',
-				'ib-table-grid-preview-delete-col',
-			);
+			this.#chromeHost?.classList.remove('ib-table-grid-preview-col');
 			return;
 		}
 		if (target.closest('.ib-table-grid-add-col')) {
 			this.#chromeHost?.classList.add('ib-table-grid-preview-col');
-			this.#chromeHost?.classList.remove(
-				'ib-table-grid-preview-row',
-				'ib-table-grid-preview-delete-row',
-				'ib-table-grid-preview-delete-col',
-			);
+			this.#chromeHost?.classList.remove('ib-table-grid-preview-row');
 			return;
 		}
 		const rowDot = target.closest('.ib-table-grid-gap-dot-row');
 		if (rowDot instanceof HTMLElement && rowDot.dataset.index !== undefined) {
 			this.#insertRowIndex = Number(rowDot.dataset.index);
 			this.#chromeHost?.classList.add('ib-table-grid-preview-row');
-			this.#chromeHost?.classList.remove(
-				'ib-table-grid-preview-col',
-				'ib-table-grid-preview-delete-row',
-				'ib-table-grid-preview-delete-col',
-			);
+			this.#chromeHost?.classList.remove('ib-table-grid-preview-col');
 			this.#positionInsertAffordance();
 			return;
 		}
@@ -252,33 +240,29 @@ export class TableGridController extends Disposable {
 		if (colDot instanceof HTMLElement && colDot.dataset.index !== undefined) {
 			this.#insertColIndex = Number(colDot.dataset.index);
 			this.#chromeHost?.classList.add('ib-table-grid-preview-col');
-			this.#chromeHost?.classList.remove(
-				'ib-table-grid-preview-row',
-				'ib-table-grid-preview-delete-row',
-				'ib-table-grid-preview-delete-col',
-			);
+			this.#chromeHost?.classList.remove('ib-table-grid-preview-row');
 			this.#positionInsertAffordance();
 			return;
 		}
-		if (target.closest('.ib-table-grid-delete-row')) {
-			this.#chromeHost?.classList.add('ib-table-grid-preview-delete-row');
-			this.#chromeHost?.classList.remove(
-				'ib-table-grid-preview-row',
-				'ib-table-grid-preview-col',
-				'ib-table-grid-preview-delete-col',
-			);
-			return;
-		}
-		if (target.closest('.ib-table-grid-delete-col')) {
-			this.#chromeHost?.classList.add('ib-table-grid-preview-delete-col');
-			this.#chromeHost?.classList.remove(
-				'ib-table-grid-preview-row',
-				'ib-table-grid-preview-col',
-				'ib-table-grid-preview-delete-row',
-			);
-			return;
-		}
 		this.#updateInsertFromPoint(event.clientX, event.clientY);
+	};
+
+	#onKeyDown = (event: KeyboardEvent): void => {
+		if (this.#activeTableOffset === undefined || this.#cellEditor || !this.#selectedAxis) {
+			return;
+		}
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			event.stopImmediatePropagation();
+			this.#clearAxisSelection();
+			return;
+		}
+		if (event.key !== 'Backspace' && event.key !== 'Delete') {
+			return;
+		}
+		event.preventDefault();
+		event.stopImmediatePropagation();
+		this.#deleteSelection();
 	};
 
 	#onScroll = (): void => {
@@ -474,6 +458,7 @@ export class TableGridController extends Disposable {
 		this.#activeTableOffset = undefined;
 		this.#focusedCell = undefined;
 		this.#dirty = false;
+		this.#selectedAxis = undefined;
 		this.#model.activeBlocksOverride.set(undefined, undefined);
 		this.#view.element.classList.remove('ib-table-grid-mode');
 	}
@@ -506,8 +491,6 @@ export class TableGridController extends Disposable {
 
 		const addRowButton = this.#createChromeButton('ib-table-grid-add-row', '+', () => this.#addRow());
 		const addColButton = this.#createChromeButton('ib-table-grid-add-col', '+', () => this.#addColumn());
-		const deleteRowButton = this.#createChromeButton('ib-table-grid-delete-row', '−', () => this.#deleteRow());
-		const deleteColButton = this.#createChromeButton('ib-table-grid-delete-col', '−', () => this.#deleteColumn());
 
 		const insertRowLine = document.createElement('div');
 		insertRowLine.className = 'ib-table-grid-insert-row-line';
@@ -517,13 +500,9 @@ export class TableGridController extends Disposable {
 		insertColLine.className = 'ib-table-grid-insert-col-line';
 		insertColLine.setAttribute('aria-hidden', 'true');
 
-		const deleteRowBand = document.createElement('div');
-		deleteRowBand.className = 'ib-table-grid-delete-row-band';
-		deleteRowBand.setAttribute('aria-hidden', 'true');
-
-		const deleteColBand = document.createElement('div');
-		deleteColBand.className = 'ib-table-grid-delete-col-band';
-		deleteColBand.setAttribute('aria-hidden', 'true');
+		const selectionBand = document.createElement('div');
+		selectionBand.className = 'ib-table-grid-selection-band';
+		selectionBand.setAttribute('aria-hidden', 'true');
 
 		const rowDotHost = document.createElement('div');
 		rowDotHost.className = 'ib-table-grid-gap-dots ib-table-grid-gap-dots-row';
@@ -531,16 +510,19 @@ export class TableGridController extends Disposable {
 		const colDotHost = document.createElement('div');
 		colDotHost.className = 'ib-table-grid-gap-dots ib-table-grid-gap-dots-col';
 		colDotHost.setAttribute('aria-hidden', 'true');
+		const rowHandleHost = document.createElement('div');
+		rowHandleHost.className = 'ib-table-grid-handles ib-table-grid-handles-row';
+		const colHandleHost = document.createElement('div');
+		colHandleHost.className = 'ib-table-grid-handles ib-table-grid-handles-col';
 
 		chrome.append(
 			addRowButton,
 			addColButton,
-			deleteRowButton,
-			deleteColButton,
 			insertRowLine,
 			insertColLine,
-			deleteRowBand,
-			deleteColBand,
+			selectionBand,
+			rowHandleHost,
+			colHandleHost,
 			rowDotHost,
 			colDotHost,
 		);
@@ -548,14 +530,13 @@ export class TableGridController extends Disposable {
 		this.#chromeHost = chrome;
 		this.#addRowButton = addRowButton;
 		this.#addColButton = addColButton;
-		this.#deleteRowButton = deleteRowButton;
-		this.#deleteColButton = deleteColButton;
 		this.#insertRowLine = insertRowLine;
 		this.#insertColLine = insertColLine;
-		this.#deleteRowBand = deleteRowBand;
-		this.#deleteColBand = deleteColBand;
+		this.#selectionBand = selectionBand;
 		this.#rowDotHost = rowDotHost;
 		this.#colDotHost = colDotHost;
+		this.#rowHandleHost = rowHandleHost;
+		this.#colHandleHost = colHandleHost;
 		this.#positionInsertAffordance();
 
 		this.#resizeObserver?.disconnect();
@@ -581,6 +562,7 @@ export class TableGridController extends Disposable {
 	}
 
 	#focusCell(row: number, col: number): void {
+		this.#clearAxisSelection();
 		this.#commitFocusedCell();
 		this.#removeCellEditor();
 
@@ -665,13 +647,17 @@ export class TableGridController extends Disposable {
 		}
 		const cellRect = nativeCell.getBoundingClientRect();
 		const wrapperRect = wrapper.getBoundingClientRect();
+		const cellStyle = getComputedStyle(nativeCell);
 		this.#cellEditor.style.left = `${cellRect.left - wrapperRect.left + wrapper.scrollLeft}px`;
 		this.#cellEditor.style.top = `${cellRect.top - wrapperRect.top + wrapper.scrollTop}px`;
 		this.#cellEditor.style.width = `${cellRect.width}px`;
+		this.#cellEditor.style.height = `${cellRect.height}px`;
 		this.#cellEditor.style.minHeight = `${cellRect.height}px`;
+		this.#cellEditor.style.paddingTop = cellBoxPadding(cellStyle, 'Top');
+		this.#cellEditor.style.paddingRight = cellBoxPadding(cellStyle, 'Right');
+		this.#cellEditor.style.paddingBottom = cellBoxPadding(cellStyle, 'Bottom');
+		this.#cellEditor.style.paddingLeft = cellBoxPadding(cellStyle, 'Left');
 		this.#cellWidth.set(Math.max(40, cellRect.width), undefined);
-		const needed = this.#cellEditor.scrollHeight;
-		this.#cellEditor.style.height = `${Math.max(cellRect.height, needed)}px`;
 	}
 
 	#commitFocusedCell(): void {
@@ -734,6 +720,7 @@ export class TableGridController extends Disposable {
 			return;
 		}
 		this.#removeCellEditor();
+		this.#clearAxisSelection();
 		const index = this.#insertRowIndex;
 		this.#rows = insertRow(this.#rows, index);
 		this.#dirty = true;
@@ -747,6 +734,7 @@ export class TableGridController extends Disposable {
 			return;
 		}
 		this.#removeCellEditor();
+		this.#clearAxisSelection();
 		const index = this.#insertColIndex;
 		const inserted = insertColumn(this.#rows, this.#alignments, index);
 		this.#rows = inserted.rows;
@@ -757,36 +745,80 @@ export class TableGridController extends Disposable {
 		this.#applyTableChange(true);
 	}
 
-	#deleteRow(): void {
-		if (this.#activeTableOffset === undefined || this.#isRemounting || this.#rows.length <= 1) {
+	#selectAxis(kind: 'row' | 'col', index: number): void {
+		if (kind === 'row' && (index <= 0 || this.#rows.length <= 1)) {
+			return;
+		}
+		if (kind === 'col' && (this.#rows[0]?.length ?? 0) <= 1) {
 			return;
 		}
 		this.#removeCellEditor();
-		const index = this.#hoveredRowIndex;
+		this.#focusedCell = undefined;
+		this.#selectedAxis = { kind, index };
+		this.#view.element.focus();
+		this.#positionInsertAffordance();
+	}
+
+	#clearAxisSelection(): void {
+		if (!this.#selectedAxis) {
+			return;
+		}
+		this.#selectedAxis = undefined;
+		this.#chromeHost?.classList.remove('ib-table-grid-axis-row', 'ib-table-grid-axis-col');
+		if (this.#selectionBand) {
+			this.#selectionBand.style.opacity = '0';
+		}
+	}
+
+	#deleteSelection(): void {
+		const selected = this.#selectedAxis;
+		if (!selected) {
+			return;
+		}
+		if (selected.kind === 'row') {
+			this.#deleteRow(selected.index);
+			return;
+		}
+		this.#deleteColumn(selected.index);
+	}
+
+	#deleteRow(index: number): void {
+		if (this.#activeTableOffset === undefined || this.#isRemounting || index <= 0 || this.#rows.length <= 1) {
+			return;
+		}
+		this.#removeCellEditor();
 		this.#rows = deleteRow(this.#rows, index);
 		this.#dirty = true;
-		const row = Math.min(index, this.#rows.length - 1);
-		const col = Math.min(this.#focusedCell?.col ?? 0, (this.#rows[0]?.length ?? 1) - 1);
-		this.#focusedCell = { row, col };
-		this.#hoveredRowIndex = row;
+		const nextIndex = Math.min(index, this.#rows.length - 1);
+		if (this.#rows.length > 1 && nextIndex > 0) {
+			this.#selectedAxis = { kind: 'row', index: nextIndex };
+			this.#focusedCell = undefined;
+		} else {
+			this.#selectedAxis = undefined;
+			this.#focusedCell = { row: Math.max(0, nextIndex), col: 0 };
+		}
 		this.#applyTableChange(true);
 	}
 
-	#deleteColumn(): void {
+	#deleteColumn(index: number): void {
 		const colCount = this.#rows[0]?.length ?? 0;
 		if (this.#activeTableOffset === undefined || this.#isRemounting || colCount <= 1) {
 			return;
 		}
 		this.#removeCellEditor();
-		const index = this.#hoveredColIndex;
 		const deleted = deleteColumn(this.#rows, this.#alignments, index);
 		this.#rows = deleted.rows;
 		this.#alignments = deleted.alignments;
 		this.#dirty = true;
-		const row = Math.min(this.#focusedCell?.row ?? 0, this.#rows.length - 1);
-		const col = Math.min(index, (this.#rows[0]?.length ?? 1) - 1);
-		this.#focusedCell = { row, col };
-		this.#hoveredColIndex = col;
+		const nextCount = this.#rows[0]?.length ?? 0;
+		const nextIndex = Math.min(index, Math.max(0, nextCount - 1));
+		if (nextCount > 1) {
+			this.#selectedAxis = { kind: 'col', index: nextIndex };
+			this.#focusedCell = undefined;
+		} else {
+			this.#selectedAxis = undefined;
+			this.#focusedCell = { row: Math.min(this.#focusedCell?.row ?? 0, this.#rows.length - 1), col: nextIndex };
+		}
 		this.#applyTableChange(true);
 	}
 
@@ -801,6 +833,7 @@ export class TableGridController extends Disposable {
 		}
 		const offset = this.#activeTableOffset;
 		const focus = this.#focusedCell;
+		const axis = this.#selectedAxis;
 		if (remount) {
 			this.#isRemounting = true;
 		}
@@ -820,6 +853,12 @@ export class TableGridController extends Disposable {
 			}
 			this.#tearDownGridDom();
 			this.#mountChrome();
+			if (axis) {
+				this.#selectedAxis = axis;
+				this.#positionInsertAffordance();
+				this.#view.element.focus();
+				return;
+			}
 			if (focus) {
 				this.#focusCell(focus.row, focus.col);
 			}
@@ -884,21 +923,6 @@ export class TableGridController extends Disposable {
 		return best;
 	}
 
-	#indexInBands(stops: readonly number[], value: number): number {
-		if (stops.length < 2) {
-			return 0;
-		}
-		if (value < stops[0]!) {
-			return 0;
-		}
-		for (let i = 0; i < stops.length - 1; i++) {
-			if (value < stops[i + 1]!) {
-				return i;
-			}
-		}
-		return stops.length - 2;
-	}
-
 	#updateInsertFromPoint(clientX: number, clientY: number): void {
 		const geo = this.#getGridGeometry();
 		if (!geo) {
@@ -906,36 +930,7 @@ export class TableGridController extends Disposable {
 		}
 		this.#insertRowIndex = this.#nearestStop(geo.rowStops, clientY);
 		this.#insertColIndex = this.#nearestStop(geo.colStops, clientX);
-		this.#hoveredRowIndex = this.#indexInBands(geo.rowStops, clientY);
-		this.#hoveredColIndex = this.#indexInBands(geo.colStops, clientX);
-		const hit = this.#hitTestCell(clientX, clientY);
-		if (hit) {
-			this.#hoveredRowIndex = hit.row;
-			this.#hoveredColIndex = hit.col;
-		}
-		const overHeader = hit?.row === 0;
-		const edge = 40;
-		const { tableRect } = geo;
-		const nearLeft = clientX >= tableRect.left - edge && clientX <= tableRect.left + edge;
-		const nearTop = clientY >= tableRect.top - edge && clientY <= tableRect.top + edge;
-		const inRows = clientY >= tableRect.top && clientY <= tableRect.bottom;
-		const inCols = clientX >= tableRect.left && clientX <= tableRect.right;
-		const canDeleteRow = this.#rows.length > 1;
-		const canDeleteCol = (this.#rows[0]?.length ?? 0) > 1;
 		this.#chromeHost?.classList.remove('ib-table-grid-preview-row', 'ib-table-grid-preview-col');
-		if (overHeader && canDeleteCol) {
-			this.#chromeHost?.classList.add('ib-table-grid-preview-delete-col');
-			this.#chromeHost?.classList.remove('ib-table-grid-preview-delete-row');
-		} else {
-			this.#chromeHost?.classList.toggle(
-				'ib-table-grid-preview-delete-row',
-				nearLeft && inRows && canDeleteRow,
-			);
-			this.#chromeHost?.classList.toggle(
-				'ib-table-grid-preview-delete-col',
-				nearTop && inCols && canDeleteCol,
-			);
-		}
 		this.#positionInsertAffordance(geo);
 	}
 
@@ -943,55 +938,26 @@ export class TableGridController extends Disposable {
 		const colCount = this.#rows[0]?.length ?? 0;
 		this.#insertRowIndex = this.#focusedCell ? this.#focusedCell.row + 1 : this.#rows.length;
 		this.#insertColIndex = this.#focusedCell ? this.#focusedCell.col + 1 : colCount;
-		this.#hoveredRowIndex = this.#focusedCell?.row ?? 0;
-		this.#hoveredColIndex = this.#focusedCell?.col ?? 0;
 		this.#positionInsertAffordance();
 	}
 
 	#positionInsertAffordance(geo = this.#getGridGeometry()): void {
-		if (
-			!geo
-			|| !this.#addRowButton
-			|| !this.#addColButton
-			|| !this.#deleteRowButton
-			|| !this.#deleteColButton
-			|| !this.#insertRowLine
-			|| !this.#insertColLine
-			|| !this.#deleteRowBand
-			|| !this.#deleteColBand
-		) {
+		if (!geo || !this.#addRowButton || !this.#addColButton || !this.#insertRowLine || !this.#insertColLine) {
 			return;
 		}
 		this.#insertRowIndex = Math.max(0, Math.min(this.#insertRowIndex, geo.rowStops.length - 1));
 		this.#insertColIndex = Math.max(0, Math.min(this.#insertColIndex, geo.colStops.length - 1));
-		const rowCount = Math.max(0, geo.rowStops.length - 1);
-		const colCount = Math.max(0, geo.colStops.length - 1);
-		this.#hoveredRowIndex = Math.max(0, Math.min(this.#hoveredRowIndex, Math.max(0, rowCount - 1)));
-		this.#hoveredColIndex = Math.max(0, Math.min(this.#hoveredColIndex, Math.max(0, colCount - 1)));
 		const rowY = geo.rowStops[this.#insertRowIndex]!;
 		const colX = geo.colStops[this.#insertColIndex]!;
-		const hoveredRowTop = geo.rowStops[this.#hoveredRowIndex]!;
-		const hoveredRowBottom = geo.rowStops[this.#hoveredRowIndex + 1] ?? hoveredRowTop;
-		const hoveredColLeft = geo.colStops[this.#hoveredColIndex]!;
-		const hoveredColRight = geo.colStops[this.#hoveredColIndex + 1] ?? hoveredColLeft;
 		const { wrapper, wrapperRect, tableRect } = geo;
 		const x = (client: number): number => client - wrapperRect.left + wrapper.scrollLeft;
 		const y = (client: number): number => client - wrapperRect.top + wrapper.scrollTop;
 
 		const addSize = 22;
-		const addGap = 8;
-		const deleteGap = addGap + addSize + addGap;
-		const addRowLeft = x(tableRect.left) - addSize - addGap;
-		const addColTop = y(tableRect.top) - addSize - addGap;
 		this.#addRowButton.style.top = `${y(rowY) - addSize / 2}px`;
-		this.#addRowButton.style.left = `${addRowLeft}px`;
+		this.#addRowButton.style.left = `${x(tableRect.left) - addSize / 2}px`;
 		this.#addColButton.style.left = `${x(colX) - addSize / 2}px`;
-		this.#addColButton.style.top = `${addColTop}px`;
-
-		this.#deleteRowButton.style.top = `${y((hoveredRowTop + hoveredRowBottom) / 2) - addSize / 2}px`;
-		this.#deleteRowButton.style.left = `${x(tableRect.left) - addSize - deleteGap}px`;
-		this.#deleteColButton.style.left = `${x((hoveredColLeft + hoveredColRight) / 2) - addSize / 2}px`;
-		this.#deleteColButton.style.top = `${y(tableRect.top) - addSize - deleteGap}px`;
+		this.#addColButton.style.top = `${y(tableRect.top) - addSize / 2}px`;
 
 		this.#insertRowLine.style.left = `${x(tableRect.left)}px`;
 		this.#insertRowLine.style.top = `${y(rowY)}px`;
@@ -1000,30 +966,17 @@ export class TableGridController extends Disposable {
 		this.#insertColLine.style.left = `${x(colX)}px`;
 		this.#insertColLine.style.height = `${tableRect.height}px`;
 
-		this.#deleteRowBand.style.left = `${x(tableRect.left)}px`;
-		this.#deleteRowBand.style.top = `${y(hoveredRowTop)}px`;
-		this.#deleteRowBand.style.width = `${tableRect.width}px`;
-		this.#deleteRowBand.style.height = `${hoveredRowBottom - hoveredRowTop}px`;
-		this.#deleteColBand.style.left = `${x(hoveredColLeft)}px`;
-		this.#deleteColBand.style.top = `${y(tableRect.top)}px`;
-		this.#deleteColBand.style.width = `${hoveredColRight - hoveredColLeft}px`;
-		this.#deleteColBand.style.height = `${tableRect.height}px`;
-
 		this.#addRowButton.title = this.#insertGapLabel('row', this.#insertRowIndex, geo.rowStops.length - 1);
 		this.#addRowButton.setAttribute('aria-label', this.#addRowButton.title);
 		this.#addColButton.title = this.#insertGapLabel('column', this.#insertColIndex, geo.colStops.length - 1);
 		this.#addColButton.setAttribute('aria-label', this.#addColButton.title);
-		this.#deleteRowButton.title = `Delete row ${this.#hoveredRowIndex + 1}`;
-		this.#deleteRowButton.setAttribute('aria-label', this.#deleteRowButton.title);
-		this.#deleteColButton.title = `Delete column ${this.#hoveredColIndex + 1}`;
-		this.#deleteColButton.setAttribute('aria-label', this.#deleteColButton.title);
 
 		this.#syncGapDots(
 			this.#rowDotHost,
 			'ib-table-grid-gap-dot-row',
 			geo.rowStops,
 			index => ({
-				left: addRowLeft + addSize / 2,
+				left: x(tableRect.left),
 				top: y(geo.rowStops[index]!),
 			}),
 			this.#chromeHost?.classList.contains('ib-table-grid-preview-row') ? this.#insertRowIndex : -1,
@@ -1034,10 +987,12 @@ export class TableGridController extends Disposable {
 			geo.colStops,
 			index => ({
 				left: x(geo.colStops[index]!),
-				top: addColTop + addSize / 2,
+				top: y(tableRect.top),
 			}),
 			this.#chromeHost?.classList.contains('ib-table-grid-preview-col') ? this.#insertColIndex : -1,
 		);
+		this.#syncAxisHandles(geo.rowStops, geo.colStops, x, y, tableRect);
+		this.#syncSelectionBand(geo.rowStops, geo.colStops, x, y, tableRect);
 	}
 
 	#syncGapDots(
@@ -1075,6 +1030,107 @@ export class TableGridController extends Disposable {
 		}
 	}
 
+	#syncAxisHandles(
+		rowStops: readonly number[],
+		colStops: readonly number[],
+		x: (client: number) => number,
+		y: (client: number) => number,
+		tableRect: DOMRect,
+	): void {
+		const handle = 10;
+		const inset = 8;
+		const rowCount = Math.max(0, rowStops.length - 1);
+		const colCount = Math.max(0, colStops.length - 1);
+		this.#syncHandleCount(this.#rowHandleHost, 'ib-table-grid-row-handle', this.#rows.length > 1 ? Math.max(0, rowCount - 1) : 0);
+		this.#syncHandleCount(this.#colHandleHost, 'ib-table-grid-col-handle', colCount > 1 ? colCount : 0);
+		if (this.#rowHandleHost) {
+			for (let i = 0; i < this.#rowHandleHost.childElementCount; i++) {
+				const el = this.#rowHandleHost.children[i];
+				if (!(el instanceof HTMLElement)) {
+					continue;
+				}
+				const row = i + 1;
+				const top = y(rowStops[row]!) + inset;
+				const bottom = y(rowStops[row + 1]!) - inset;
+				el.dataset.index = String(row);
+				el.style.left = `${x(tableRect.left) - handle / 2}px`;
+				el.style.top = `${top}px`;
+				el.style.width = `${handle}px`;
+				el.style.height = `${Math.max(4, bottom - top)}px`;
+				el.title = `Select row ${row + 1}`;
+				el.setAttribute('aria-label', el.title);
+			}
+		}
+		if (this.#colHandleHost) {
+			for (let i = 0; i < this.#colHandleHost.childElementCount; i++) {
+				const el = this.#colHandleHost.children[i];
+				if (!(el instanceof HTMLElement)) {
+					continue;
+				}
+				const left = x(colStops[i]!) + inset;
+				const right = x(colStops[i + 1]!) - inset;
+				el.dataset.index = String(i);
+				el.style.left = `${left}px`;
+				el.style.top = `${y(tableRect.top) - handle / 2}px`;
+				el.style.width = `${Math.max(4, right - left)}px`;
+				el.style.height = `${handle}px`;
+				el.title = `Select column ${i + 1}`;
+				el.setAttribute('aria-label', el.title);
+			}
+		}
+	}
+
+	#syncHandleCount(host: HTMLElement | undefined, className: string, count: number): void {
+		if (!host) {
+			return;
+		}
+		while (host.childElementCount > count) {
+			host.lastElementChild?.remove();
+		}
+		while (host.childElementCount < count) {
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = className;
+			button.tabIndex = -1;
+			host.appendChild(button);
+		}
+	}
+
+	#syncSelectionBand(
+		rowStops: readonly number[],
+		colStops: readonly number[],
+		x: (client: number) => number,
+		y: (client: number) => number,
+		tableRect: DOMRect,
+	): void {
+		const band = this.#selectionBand;
+		const selected = this.#selectedAxis;
+		this.#chromeHost?.classList.toggle('ib-table-grid-axis-row', selected?.kind === 'row');
+		this.#chromeHost?.classList.toggle('ib-table-grid-axis-col', selected?.kind === 'col');
+		if (!band || !selected) {
+			if (band) {
+				band.style.opacity = '0';
+			}
+			return;
+		}
+		if (selected.kind === 'row') {
+			const top = y(rowStops[selected.index]!);
+			const bottom = y(rowStops[selected.index + 1] ?? rowStops[selected.index]!);
+			band.style.left = `${x(tableRect.left)}px`;
+			band.style.top = `${top}px`;
+			band.style.width = `${tableRect.width}px`;
+			band.style.height = `${Math.max(0, bottom - top)}px`;
+		} else {
+			const left = x(colStops[selected.index]!);
+			const right = x(colStops[selected.index + 1] ?? colStops[selected.index]!);
+			band.style.left = `${left}px`;
+			band.style.top = `${y(tableRect.top)}px`;
+			band.style.width = `${Math.max(0, right - left)}px`;
+			band.style.height = `${tableRect.height}px`;
+		}
+		band.style.opacity = '1';
+	}
+
 	#insertGapLabel(kind: 'row' | 'column', index: number, lastIndex: number): string {
 		if (index <= 0) {
 			return `Add ${kind} before the first ${kind}`;
@@ -1092,14 +1148,13 @@ export class TableGridController extends Disposable {
 		this.#nativeTable = undefined;
 		this.#addRowButton = undefined;
 		this.#addColButton = undefined;
-		this.#deleteRowButton = undefined;
-		this.#deleteColButton = undefined;
 		this.#insertRowLine = undefined;
 		this.#insertColLine = undefined;
-		this.#deleteRowBand = undefined;
-		this.#deleteColBand = undefined;
 		this.#rowDotHost = undefined;
 		this.#colDotHost = undefined;
+		this.#rowHandleHost = undefined;
+		this.#colHandleHost = undefined;
+		this.#selectionBand = undefined;
 
 		const wrapper = this.#chromeHost?.parentElement;
 		this.#chromeHost?.remove();
@@ -1109,4 +1164,10 @@ export class TableGridController extends Disposable {
 			wrapper.style.position = '';
 		}
 	}
+}
+
+function cellBoxPadding(style: CSSStyleDeclaration, side: 'Top' | 'Right' | 'Bottom' | 'Left'): string {
+	const padding = Number.parseFloat(style[`padding${side}`]);
+	const border = Number.parseFloat(style[`border${side}Width`]);
+	return `${(Number.isFinite(padding) ? padding : 0) + (Number.isFinite(border) ? border : 0)}px`;
 }

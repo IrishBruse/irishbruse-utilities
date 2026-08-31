@@ -10,14 +10,17 @@
 -   Change: Table cells reuse the Markdown text editor for in-cell editing (links, code, and caret)
 -   Fix: Table add-row and add-column sit outside the table with a connector to the hovered gap
 -   Change: Hide table add-row and add-column until a gap dot is hovered
--   Add: Delete table rows and columns from hover controls on the insert edges
--   Change: Hovering a table header cell shows only the delete-column button; the column band waits for the button hover
+-   Change: Select a table row or column from the cell border, then Backspace or Delete to remove it
 -   Add: Render block HTML in the Markdown Editor (ib-utilities) while the block is not active
 -   Add: Syntax highlighting for fenced code in Markdown Editor (ib-utilities) from the active VS Code color theme
 -   Fix: Markdown Editor extension activation after syntax highlighting (jsonc-parser was not in the bundle)
 -   Fix: Markdown Editor fenced-code highlighting (webview highlight requests did not include the host message secret)
 -   Fix: Markdown Editor fenced-code colors on dark themes (TextMate default black and themes with no token colors)
 -   Fix: Markdown Editor fenced-code highlighting uses the active color theme (Cursor themes and token color customizations)
+-   Fix: Table cell text stays in place when editing starts (overlay padding and focus ring matched the preview cell)
+-   Fix: New table rows keep the same height as a one-line cell, and the edit overlay uses the native cell padding box
+-   Change: Markdown table cell text aligns to the top of the cell
+-   Add: Show the fenced code language in the top-right of inactive code blocks in Markdown Editor (ib-utilities)
 
 ## 0.18.2
 

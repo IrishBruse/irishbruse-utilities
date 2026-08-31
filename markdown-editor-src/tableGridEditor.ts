@@ -4,18 +4,26 @@
  *--------------------------------------------------------------------------------------------*/
 
 import {
+	AsyncClipboardStrategy,
 	BlockViewNode,
+	EditorController,
 	EditorModel,
 	EditorView,
+	LocalHistoryStrategy,
+	Selection,
+	StringValue,
 	blocksIntersecting,
 	findBlockAtOffset,
 	findNodeOffsetById,
+	vscodeKeyboardProfile,
 	type BlockMeasurement,
 	type TableAstNode,
 } from '@vscode/markdown-editor';
-import { Disposable, autorun } from '@vscode/observables';
+import { Disposable, autorun, observableValue } from '@vscode/observables';
 import {
 	applyTableData,
+	insertColumn,
+	insertRow,
 	parseTable,
 	type TableAlignment,
 } from './tableGridModel';
@@ -27,7 +35,7 @@ export interface TableGridOptions {
 
 /**
  * Confluence-style table editing: keep the native preview table looking like
- * idle/preview mode, and overlay a single textarea on the focused cell only.
+ * idle/preview mode, and overlay a nested markdown editor on the focused cell.
  */
 export class TableGridController extends Disposable {
 	readonly #model: EditorModel;
@@ -36,12 +44,22 @@ export class TableGridController extends Disposable {
 	readonly #options: TableGridOptions;
 	#activeTableOffset: number | undefined;
 	#chromeHost: HTMLElement | undefined;
-	#cellEditor: HTMLTextAreaElement | undefined;
+	#cellEditor: HTMLElement | undefined;
+	#cellModel: EditorModel | undefined;
+	#cellView: EditorView | undefined;
+	#cellController: EditorController | undefined;
+	readonly #cellWidth = observableValue<number | undefined>('ibTableCellWidth', undefined);
 	#nativeTable: HTMLTableElement | undefined;
 	#hiddenNativeCell: HTMLElement | undefined;
+	#addRowButton: HTMLButtonElement | undefined;
+	#addColButton: HTMLButtonElement | undefined;
+	#insertRowLine: HTMLElement | undefined;
+	#insertColLine: HTMLElement | undefined;
 	#rows: string[][] = [];
 	#alignments: TableAlignment[] = [];
 	#focusedCell: { row: number; col: number } | undefined;
+	#insertRowIndex = 0;
+	#insertColIndex = 0;
 	#dirty = false;
 	#isRemounting = false;
 	#editContextSuspend: { dispose(): void } | undefined;
@@ -56,6 +74,8 @@ export class TableGridController extends Disposable {
 
 		this.#view.element.addEventListener('pointerdown', this.#onPointerDown, true);
 		this._register({ dispose: () => this.#view.element.removeEventListener('pointerdown', this.#onPointerDown, true) });
+		this.#view.element.addEventListener('pointermove', this.#onPointerMove);
+		this._register({ dispose: () => this.#view.element.removeEventListener('pointermove', this.#onPointerMove) });
 
 		this.#host.addEventListener('scroll', this.#onScroll, { passive: true });
 		this._register({ dispose: () => this.#host.removeEventListener('scroll', this.#onScroll) });
@@ -104,18 +124,17 @@ export class TableGridController extends Disposable {
 		}
 		if (target.closest('.ib-table-grid-add-row')) {
 			event.preventDefault();
-			event.stopPropagation();
+			event.stopImmediatePropagation();
 			this.#addRow();
 			return;
 		}
 		if (target.closest('.ib-table-grid-add-col')) {
 			event.preventDefault();
-			event.stopPropagation();
+			event.stopImmediatePropagation();
 			this.#addColumn();
 			return;
 		}
-		if (target.closest('.ib-table-grid-cell-editor')) {
-			event.stopPropagation();
+		if (target.closest('.ib-table-grid-cell-editor, .ib-table-grid-cell-md-editor')) {
 			return;
 		}
 
@@ -134,7 +153,7 @@ export class TableGridController extends Disposable {
 			const cell = this.#hitTestCell(event.clientX, event.clientY)
 				?? this.#findNativeClickedCell(target, wrapper)
 				?? { row: 0, col: 0 };
-			this.#enterGrid(offset, cell);
+			this.#enterGrid(offset, cell, { x: event.clientX, y: event.clientY });
 			return;
 		}
 
@@ -144,8 +163,34 @@ export class TableGridController extends Disposable {
 		}
 	};
 
+	#onPointerMove = (event: PointerEvent): void => {
+		if (this.#activeTableOffset === undefined || this.#isRemounting) {
+			return;
+		}
+		const target = event.target;
+		if (!(target instanceof Element)) {
+			return;
+		}
+		if (!target.closest('.ib-table-grid-active')) {
+			this.#chromeHost?.classList.remove('ib-table-grid-preview-row', 'ib-table-grid-preview-col');
+			return;
+		}
+		if (target.closest('.ib-table-grid-add-row')) {
+			this.#chromeHost?.classList.add('ib-table-grid-preview-row');
+			this.#chromeHost?.classList.remove('ib-table-grid-preview-col');
+			return;
+		}
+		if (target.closest('.ib-table-grid-add-col')) {
+			this.#chromeHost?.classList.add('ib-table-grid-preview-col');
+			this.#chromeHost?.classList.remove('ib-table-grid-preview-row');
+			return;
+		}
+		this.#updateInsertFromPoint(event.clientX, event.clientY);
+	};
+
 	#onScroll = (): void => {
 		this.#syncCellEditorLayout();
+		this.#positionInsertAffordance();
 	};
 
 	#findTableForWrapper(wrapper: HTMLElement): TableAstNode | undefined {
@@ -283,7 +328,7 @@ export class TableGridController extends Disposable {
 		return undefined;
 	}
 
-	#enterGrid(offset: number, focusCell?: { row: number; col: number }): void {
+	#enterGrid(offset: number, focusCell?: { row: number; col: number }, point?: { x: number; y: number }): void {
 		const table = findBlockAtOffset(this.#model.document.get(), offset);
 		if (table?.kind !== 'table') {
 			return;
@@ -310,6 +355,11 @@ export class TableGridController extends Disposable {
 				this.#mountChrome();
 			}
 			this.#focusCell(focusCell?.row ?? 0, focusCell?.col ?? 0);
+			if (point) {
+				this.#updateInsertFromPoint(point.x, point.y);
+			} else {
+				this.#updateInsertFromFocus();
+			}
 		};
 
 		if (alreadyOpen && this.#nativeTable?.isConnected) {
@@ -364,33 +414,45 @@ export class TableGridController extends Disposable {
 		const addRowButton = document.createElement('button');
 		addRowButton.type = 'button';
 		addRowButton.className = 'ib-table-grid-add-row';
-		addRowButton.title = 'Add row';
-		addRowButton.setAttribute('aria-label', 'Add row');
 		addRowButton.textContent = '+';
 		addRowButton.addEventListener('pointerdown', event => {
 			event.preventDefault();
-			event.stopPropagation();
+			event.stopImmediatePropagation();
 			this.#addRow();
 		});
 
 		const addColButton = document.createElement('button');
 		addColButton.type = 'button';
 		addColButton.className = 'ib-table-grid-add-col';
-		addColButton.title = 'Add column';
-		addColButton.setAttribute('aria-label', 'Add column');
 		addColButton.textContent = '+';
 		addColButton.addEventListener('pointerdown', event => {
 			event.preventDefault();
-			event.stopPropagation();
+			event.stopImmediatePropagation();
 			this.#addColumn();
 		});
 
-		chrome.append(addRowButton, addColButton);
+		const insertRowLine = document.createElement('div');
+		insertRowLine.className = 'ib-table-grid-insert-row-line';
+		insertRowLine.setAttribute('aria-hidden', 'true');
+
+		const insertColLine = document.createElement('div');
+		insertColLine.className = 'ib-table-grid-insert-col-line';
+		insertColLine.setAttribute('aria-hidden', 'true');
+
+		chrome.append(addRowButton, addColButton, insertRowLine, insertColLine);
 		wrapper.appendChild(chrome);
 		this.#chromeHost = chrome;
+		this.#addRowButton = addRowButton;
+		this.#addColButton = addColButton;
+		this.#insertRowLine = insertRowLine;
+		this.#insertColLine = insertColLine;
+		this.#positionInsertAffordance();
 
 		this.#resizeObserver?.disconnect();
-		this.#resizeObserver = new ResizeObserver(() => this.#syncCellEditorLayout());
+		this.#resizeObserver = new ResizeObserver(() => {
+			this.#syncCellEditorLayout();
+			this.#positionInsertAffordance();
+		});
 		this.#resizeObserver.observe(wrapper);
 		this.#resizeObserver.observe(nativeTable);
 	}
@@ -416,47 +478,57 @@ export class TableGridController extends Disposable {
 		this.#hiddenNativeCell = nativeCell;
 		nativeCell.classList.add('ib-table-grid-native-cell-editing');
 
-		const editor = document.createElement('textarea');
-		editor.className = 'ib-table-grid-cell-editor';
+		const host = document.createElement('div');
+		host.className = 'ib-table-grid-cell-editor';
 		if (row === 0) {
-			editor.classList.add('ib-table-grid-cell-editor-header');
+			host.classList.add('ib-table-grid-cell-editor-header');
 		}
-		if (this.#options.style === 'wrapped') {
-			editor.classList.add('ib-table-grid-cell-editor-wrap');
-		}
-		editor.setAttribute('aria-label', 'Table cell');
-		editor.spellcheck = false;
-		editor.rows = 1;
-		editor.value = this.#rows[row]?.[col] ?? '';
-		editor.addEventListener('input', () => {
-			this.#rows[row]![col] = editor.value;
-			this.#dirty = true;
-			this.#syncCellEditorLayout();
+		host.setAttribute('aria-label', 'Table cell');
+
+		const text = this.#rows[row]?.[col] ?? '';
+		const cellModel = new EditorModel();
+		cellModel.sourceText.set(new StringValue(text), undefined);
+		cellModel.readonlyMode.set(false, undefined);
+		cellModel.selection.set(Selection.collapsed(text.length), undefined);
+
+		const cellView = new EditorView(cellModel, {
+			classNames: ['md-theme-vscode-default', 'ib-table-grid-cell-md-editor'],
+			showReadonlyToggle: false,
+			limitedWidth: this.#cellWidth,
 		});
-		editor.addEventListener('pointerdown', event => event.stopPropagation());
-		editor.addEventListener('keydown', event => {
-			event.stopPropagation();
+		const cellController = new EditorController(cellModel, cellView, {
+			clipboardStrategy: new AsyncClipboardStrategy(),
+			keyboardProfile: vscodeKeyboardProfile,
+			historyStrategy: new LocalHistoryStrategy(cellModel),
+			find: false,
+		});
+
+		cellView.element.addEventListener('keydown', event => {
 			if (event.key === 'Tab') {
 				event.preventDefault();
+				event.stopPropagation();
 				this.#commitFocusedCell();
 				this.#focusAdjacentCell(event.shiftKey ? -1 : 1);
 				return;
 			}
 			if (event.key === 'Escape') {
 				event.preventDefault();
+				event.stopPropagation();
 				void this.#commitAndExit();
 			}
-		});
-		editor.addEventListener('blur', () => {
-			this.#rows[row]![col] = editor.value;
-		});
+		}, true);
+		cellView.element.addEventListener('keydown', event => event.stopPropagation());
+		cellView.element.addEventListener('pointerdown', event => event.stopPropagation());
 
-		this.#chromeHost.appendChild(editor);
-		this.#cellEditor = editor;
-		this.#editContextSuspend = this.#view.suspendEditContextWhileFocused(editor);
+		host.appendChild(cellView.element);
+		this.#chromeHost.appendChild(host);
+		this.#cellEditor = host;
+		this.#cellModel = cellModel;
+		this.#cellView = cellView;
+		this.#cellController = cellController;
+		this.#editContextSuspend = this.#view.suspendEditContextWhileFocused(cellView.element);
 		this.#syncCellEditorLayout();
-		editor.focus();
-		editor.setSelectionRange(editor.value.length, editor.value.length);
+		cellView.focus();
 	}
 
 	#syncCellEditorLayout(): void {
@@ -473,11 +545,43 @@ export class TableGridController extends Disposable {
 		this.#cellEditor.style.left = `${cellRect.left - wrapperRect.left + wrapper.scrollLeft}px`;
 		this.#cellEditor.style.top = `${cellRect.top - wrapperRect.top + wrapper.scrollTop}px`;
 		this.#cellEditor.style.width = `${cellRect.width}px`;
-		this.#cellEditor.style.height = `${cellRect.height}px`;
+		this.#cellEditor.style.minHeight = `${cellRect.height}px`;
+		this.#cellWidth.set(Math.max(40, cellRect.width), undefined);
 		const needed = this.#cellEditor.scrollHeight;
-		if (needed > cellRect.height) {
-			this.#cellEditor.style.height = `${needed}px`;
+		this.#cellEditor.style.height = `${Math.max(cellRect.height, needed)}px`;
+	}
+
+	#commitFocusedCell(): void {
+		if (!this.#focusedCell || !this.#cellModel) {
+			return;
 		}
+		const { row, col } = this.#focusedCell;
+		const rowCells = this.#rows[row];
+		if (!rowCells || rowCells[col] === undefined) {
+			return;
+		}
+		const text = this.#cellModel.sourceText.get().value;
+		if (rowCells[col] !== text) {
+			rowCells[col] = text;
+			this.#dirty = true;
+		}
+	}
+
+	#removeCellEditor(): void {
+		this.#commitFocusedCell();
+		this.#editContextSuspend?.dispose();
+		this.#editContextSuspend = undefined;
+		if (this.#hiddenNativeCell) {
+			this.#hiddenNativeCell.classList.remove('ib-table-grid-native-cell-editing');
+			this.#hiddenNativeCell = undefined;
+		}
+		this.#cellController?.dispose();
+		this.#cellController = undefined;
+		this.#cellView?.dispose();
+		this.#cellView = undefined;
+		this.#cellModel = undefined;
+		this.#cellEditor?.remove();
+		this.#cellEditor = undefined;
 	}
 
 	#focusAdjacentCell(direction: 1 | -1): void {
@@ -495,14 +599,6 @@ export class TableGridController extends Disposable {
 		this.#focusCell(Math.floor(index / colCount), index % colCount);
 	}
 
-	#commitFocusedCell(): void {
-		if (!this.#focusedCell || !this.#cellEditor) {
-			return;
-		}
-		const { row, col } = this.#focusedCell;
-		this.#rows[row]![col] = this.#cellEditor.value;
-	}
-
 	#commitIfDirty(remount = false): void {
 		if (!this.#dirty) {
 			return;
@@ -511,22 +607,30 @@ export class TableGridController extends Disposable {
 	}
 
 	#addRow(): void {
-		this.#commitFocusedCell();
-		const colCount = this.#rows[0]?.length ?? 1;
-		this.#rows.push(Array.from({ length: colCount }, () => ''));
+		if (this.#activeTableOffset === undefined || this.#isRemounting) {
+			return;
+		}
+		this.#removeCellEditor();
+		const index = this.#insertRowIndex;
+		this.#rows = insertRow(this.#rows, index);
 		this.#dirty = true;
-		this.#focusedCell = { row: this.#rows.length - 1, col: 0 };
+		this.#focusedCell = { row: index, col: Math.min(this.#focusedCell?.col ?? 0, (this.#rows[0]?.length ?? 1) - 1) };
+		this.#insertRowIndex = index + 1;
 		this.#applyTableChange(true);
 	}
 
 	#addColumn(): void {
-		this.#commitFocusedCell();
-		for (const row of this.#rows) {
-			row.push('');
+		if (this.#activeTableOffset === undefined || this.#isRemounting) {
+			return;
 		}
-		this.#alignments.push('left');
+		this.#removeCellEditor();
+		const index = this.#insertColIndex;
+		const inserted = insertColumn(this.#rows, this.#alignments, index);
+		this.#rows = inserted.rows;
+		this.#alignments = inserted.alignments;
 		this.#dirty = true;
-		this.#focusedCell = { row: 0, col: this.#rows[0]!.length - 1 };
+		this.#focusedCell = { row: Math.min(this.#focusedCell?.row ?? 0, this.#rows.length - 1), col: index };
+		this.#insertColIndex = index + 1;
 		this.#applyTableChange(true);
 	}
 
@@ -541,6 +645,9 @@ export class TableGridController extends Disposable {
 		}
 		const offset = this.#activeTableOffset;
 		const focus = this.#focusedCell;
+		if (remount) {
+			this.#isRemounting = true;
+		}
 		applyTableData(this.#model, table, this.#rows, this.#alignments);
 		this.#dirty = false;
 		const updated = this.#getActiveTable();
@@ -550,8 +657,7 @@ export class TableGridController extends Disposable {
 		if (!remount) {
 			return;
 		}
-		this.#isRemounting = true;
-		requestAnimationFrame(() => {
+		requestAnimationFrame(() => requestAnimationFrame(() => {
 			this.#isRemounting = false;
 			if (this.#activeTableOffset !== offset) {
 				return;
@@ -561,18 +667,133 @@ export class TableGridController extends Disposable {
 			if (focus) {
 				this.#focusCell(focus.row, focus.col);
 			}
-		});
+			this.#positionInsertAffordance();
+		}));
 	}
 
-	#removeCellEditor(): void {
-		this.#editContextSuspend?.dispose();
-		this.#editContextSuspend = undefined;
-		if (this.#hiddenNativeCell) {
-			this.#hiddenNativeCell.classList.remove('ib-table-grid-native-cell-editing');
-			this.#hiddenNativeCell = undefined;
+	#getGridGeometry(): { wrapper: HTMLElement; rowStops: number[]; colStops: number[]; tableRect: DOMRect; wrapperRect: DOMRect } | undefined {
+		const wrapper = this.#chromeHost?.parentElement;
+		if (!this.#nativeTable || !(wrapper instanceof HTMLElement)) {
+			return undefined;
 		}
-		this.#cellEditor?.remove();
-		this.#cellEditor = undefined;
+		const dataRows: HTMLTableRowElement[] = [];
+		for (let i = 0; i < this.#nativeTable.rows.length; i++) {
+			const row = this.#nativeTable.rows[i];
+			if (row && !row.classList.contains('md-table-delimiter-row')) {
+				dataRows.push(row);
+			}
+		}
+		if (dataRows.length === 0) {
+			return undefined;
+		}
+		const firstRow = dataRows[0]!;
+		const rowStops: number[] = [];
+		for (const row of dataRows) {
+			const rect = row.getBoundingClientRect();
+			if (rowStops.length === 0) {
+				rowStops.push(rect.top);
+			}
+			rowStops.push(rect.bottom);
+		}
+		const colStops: number[] = [];
+		for (let col = 0; col < firstRow.cells.length; col++) {
+			const rect = firstRow.cells[col]!.getBoundingClientRect();
+			if (colStops.length === 0) {
+				colStops.push(rect.left);
+			}
+			colStops.push(rect.right);
+		}
+		if (rowStops.length === 0 || colStops.length === 0) {
+			return undefined;
+		}
+		return {
+			wrapper,
+			rowStops,
+			colStops,
+			tableRect: this.#nativeTable.getBoundingClientRect(),
+			wrapperRect: wrapper.getBoundingClientRect(),
+		};
+	}
+
+	#nearestStop(stops: readonly number[], value: number): number {
+		let best = 0;
+		let bestDist = Infinity;
+		for (let i = 0; i < stops.length; i++) {
+			const dist = Math.abs(stops[i]! - value);
+			if (dist < bestDist) {
+				bestDist = dist;
+				best = i;
+			}
+		}
+		return best;
+	}
+
+	#updateInsertFromPoint(clientX: number, clientY: number): void {
+		const geo = this.#getGridGeometry();
+		if (!geo) {
+			return;
+		}
+		this.#insertRowIndex = this.#nearestStop(geo.rowStops, clientY);
+		this.#insertColIndex = this.#nearestStop(geo.colStops, clientX);
+		const edge = 40;
+		this.#chromeHost?.classList.toggle(
+			'ib-table-grid-preview-row',
+			clientX >= geo.tableRect.left - edge && clientX <= geo.tableRect.left + edge,
+		);
+		this.#chromeHost?.classList.toggle(
+			'ib-table-grid-preview-col',
+			clientY >= geo.tableRect.top - edge && clientY <= geo.tableRect.top + edge,
+		);
+		this.#positionInsertAffordance(geo);
+	}
+
+	#updateInsertFromFocus(): void {
+		const colCount = this.#rows[0]?.length ?? 0;
+		this.#insertRowIndex = this.#focusedCell ? this.#focusedCell.row + 1 : this.#rows.length;
+		this.#insertColIndex = this.#focusedCell ? this.#focusedCell.col + 1 : colCount;
+		this.#positionInsertAffordance();
+	}
+
+	#positionInsertAffordance(geo = this.#getGridGeometry()): void {
+		if (!geo || !this.#addRowButton || !this.#addColButton || !this.#insertRowLine || !this.#insertColLine) {
+			return;
+		}
+		this.#insertRowIndex = Math.max(0, Math.min(this.#insertRowIndex, geo.rowStops.length - 1));
+		this.#insertColIndex = Math.max(0, Math.min(this.#insertColIndex, geo.colStops.length - 1));
+		const rowY = geo.rowStops[this.#insertRowIndex]!;
+		const colX = geo.colStops[this.#insertColIndex]!;
+		const { wrapper, wrapperRect, tableRect } = geo;
+		const x = (client: number): number => client - wrapperRect.left + wrapper.scrollLeft;
+		const y = (client: number): number => client - wrapperRect.top + wrapper.scrollTop;
+
+		const addSize = 22;
+		const addGap = 8;
+		this.#addRowButton.style.top = `${y(rowY) - addSize / 2}px`;
+		this.#addRowButton.style.left = `${x(tableRect.left) - addSize - addGap}px`;
+		this.#addColButton.style.left = `${x(colX) - addSize / 2}px`;
+		this.#addColButton.style.top = `${y(tableRect.top) - addSize - addGap}px`;
+
+		this.#insertRowLine.style.left = `${x(tableRect.left)}px`;
+		this.#insertRowLine.style.top = `${y(rowY)}px`;
+		this.#insertRowLine.style.width = `${tableRect.width}px`;
+		this.#insertColLine.style.top = `${y(tableRect.top)}px`;
+		this.#insertColLine.style.left = `${x(colX)}px`;
+		this.#insertColLine.style.height = `${tableRect.height}px`;
+
+		this.#addRowButton.title = this.#insertGapLabel('row', this.#insertRowIndex, geo.rowStops.length - 1);
+		this.#addRowButton.setAttribute('aria-label', this.#addRowButton.title);
+		this.#addColButton.title = this.#insertGapLabel('column', this.#insertColIndex, geo.colStops.length - 1);
+		this.#addColButton.setAttribute('aria-label', this.#addColButton.title);
+	}
+
+	#insertGapLabel(kind: 'row' | 'column', index: number, lastIndex: number): string {
+		if (index <= 0) {
+			return `Add ${kind} before the first ${kind}`;
+		}
+		if (index >= lastIndex) {
+			return `Add ${kind} after the last ${kind}`;
+		}
+		return `Add ${kind} between ${kind} ${index} and ${kind} ${index + 1}`;
 	}
 
 	#tearDownGridDom(): void {
@@ -580,6 +801,10 @@ export class TableGridController extends Disposable {
 		this.#resizeObserver = undefined;
 		this.#removeCellEditor();
 		this.#nativeTable = undefined;
+		this.#addRowButton = undefined;
+		this.#addColButton = undefined;
+		this.#insertRowLine = undefined;
+		this.#insertColLine = undefined;
 
 		const wrapper = this.#chromeHost?.parentElement;
 		this.#chromeHost?.remove();

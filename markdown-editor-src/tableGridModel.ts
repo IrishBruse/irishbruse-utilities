@@ -129,6 +129,34 @@ function formatRow(cells: readonly string[], colCount: number): string {
 	return `| ${padded.map(escapeCell).join(' | ')} |`;
 }
 
+export function insertRow(rows: readonly (readonly string[])[], index: number): string[][] {
+	const colCount = Math.max(1, rows[0]?.length ?? 1);
+	const next = rows.map(row => [...row]);
+	const at = Math.max(0, Math.min(index, next.length));
+	next.splice(at, 0, Array.from({ length: colCount }, () => ''));
+	return next;
+}
+
+export function insertColumn(
+	rows: readonly (readonly string[])[],
+	alignments: readonly TableAlignment[],
+	index: number,
+): { rows: string[][]; alignments: TableAlignment[] } {
+	const colCount = Math.max(alignments.length, ...rows.map(row => row.length), 0);
+	const at = Math.max(0, Math.min(index, colCount));
+	return {
+		rows: rows.map(row => {
+			const copy = [...row];
+			while (copy.length < colCount) {
+				copy.push('');
+			}
+			copy.splice(at, 0, '');
+			return copy;
+		}),
+		alignments: [...alignments.slice(0, at), 'left', ...alignments.slice(at)],
+	};
+}
+
 export function serializeTable(rows: readonly (readonly string[])[], alignments: readonly TableAlignment[]): string {
 	if (rows.length === 0) {
 		return '|  | |\n| --- | |\n|  | |';

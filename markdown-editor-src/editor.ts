@@ -15,6 +15,7 @@ import './markdownEditor.css';
 import { WebviewSyntaxHighlighter } from './syntaxHighlighter';
 import { WebviewLinkPresentationProvider } from './linkPresentationProvider';
 import { TableGridController } from './tableGridEditor';
+import { HtmlPreviewController } from './htmlPreview';
 
 interface VsCodeApi {
 	postMessage(message: unknown): void;
@@ -249,6 +250,9 @@ class Editor extends Disposable {
 		this.#view = view;
 
 		this._register(new TableGridController(model, view, host, initialState.tables));
+		this._register(new HtmlPreviewController(model, view, url => {
+			this.#vscode.postMessage({ type: 'openLink', href: url });
+		}));
 
 		// Handle all keyboard actions in the webview. The built-in Markdown editor
 		// splits local vs host routing and registers `markdown.editor.*` commands;

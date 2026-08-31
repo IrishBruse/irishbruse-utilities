@@ -7,6 +7,10 @@
 -   Add: Theme-aware Markdown Editor colors from `markdownInlineEditor.colors` (with One Dark hard-coded fallbacks)
 -   Fix: Backspace and other keys in Markdown Editor (ib-utilities) by handling keyboard locally instead of routing to unregistered host commands
 -   Add: Confluence-style table grid in Markdown Editor (ib-utilities) with per-cell editing and add row/column controls
+-   Change: Table cells reuse the Markdown text editor for in-cell editing (links, code, and caret)
+-   Fix: Table add-row and add-column sit outside the table with a connector to the hovered gap
+-   Change: Hide table add-row and add-column until the insert edge is hovered
+-   Add: Render block HTML in the Markdown Editor (ib-utilities) while the block is not active
 
 ## 0.18.2
 

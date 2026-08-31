@@ -102,8 +102,41 @@ body {
 
 .ib-table-grid-chrome .ib-table-grid-add-row,
 .ib-table-grid-chrome .ib-table-grid-add-col,
-.ib-table-grid-chrome .ib-table-grid-cell-editor {
+.ib-table-grid-chrome .ib-table-grid-cell-editor,
+.ib-table-grid-chrome .ib-table-grid-cell-md-editor {
 	pointer-events: auto;
+}
+
+.ib-table-grid-insert-row-line,
+.ib-table-grid-insert-col-line {
+	position: absolute;
+	background: var(--vscode-focusBorder, #528bff);
+	pointer-events: none;
+	opacity: 0;
+	z-index: 5;
+	transition: opacity 0.12s ease;
+}
+
+.ib-table-grid-insert-row-line {
+	height: 2px;
+	transform: translateY(-1px);
+}
+
+.ib-table-grid-insert-col-line {
+	width: 2px;
+	transform: translateX(-1px);
+}
+
+.ib-table-grid-add-row:hover ~ .ib-table-grid-insert-row-line,
+.ib-table-grid-add-row:focus-visible ~ .ib-table-grid-insert-row-line,
+.ib-table-grid-chrome.ib-table-grid-preview-row .ib-table-grid-insert-row-line {
+	opacity: 1;
+}
+
+.ib-table-grid-add-col:hover ~ .ib-table-grid-insert-col-line,
+.ib-table-grid-add-col:focus-visible ~ .ib-table-grid-insert-col-line,
+.ib-table-grid-chrome.ib-table-grid-preview-col .ib-table-grid-insert-col-line {
+	opacity: 1;
 }
 
 /* Hide only the native cell under the editor so preview chrome stays intact */
@@ -120,42 +153,53 @@ body {
 	box-sizing: border-box;
 	z-index: 4;
 	margin: 0;
-	padding: 7px 10px 6px;
+	padding: 4px 8px;
 	border: 1px solid var(--vscode-focusBorder, #528bff);
-	border-radius: 0;
-	resize: none;
+	border-radius: 4px;
 	overflow: hidden;
-	scrollbar-width: none;
 	background: color-mix(in srgb, var(--vscode-editor-background, #282c34) 70%, #000);
 	color: var(--vscode-editor-foreground);
-	caret-color: var(--vscode-editorCursor-foreground, var(--md-cursor-background, currentColor));
-	font: inherit;
-	font-size: inherit;
-	line-height: 1.5;
-	outline: none;
-	white-space: pre-wrap;
-	word-wrap: break-word;
-	overflow-wrap: break-word;
-	vertical-align: top;
 }
 
-.ib-table-grid-cell-editor::-webkit-scrollbar {
-	display: none;
+.ib-table-grid-cell-md-editor {
+	width: 100%;
+	min-height: 1.5em;
+	caret-color: transparent;
+}
+
+.ib-table-grid-cell-md-editor .md-editor-content {
+	padding: 0;
+	margin: 0;
+	max-width: none !important;
+	--md-editor-content-inline-start-padding: 0px;
+	--md-editor-content-inline-end-padding: 0px;
+}
+
+.ib-table-grid-cell-md-editor .md-paragraph {
+	margin: 0;
 }
 
 .ib-table-grid-cell-editor-header {
 	font-weight: 600;
-	padding-top: 10px;
-	padding-bottom: 10px;
+	padding-top: 8px;
+	padding-bottom: 8px;
 }
 
-.ib-table-grid-cell-editor-wrap {
-	white-space: pre-wrap;
+/* Hide the document caret while a table cell is focused; keep the nested editor caret */
+.md-editor.ib-table-grid-mode .md-cursor {
+	visibility: hidden;
+	animation: none;
+}
+
+.md-editor.ib-table-grid-mode .ib-table-grid-cell-md-editor.md-focused .md-cursor {
+	visibility: visible;
+	animation: md-cursor-blink 1s step-end infinite;
 }
 
 .ib-table-grid-add-row,
 .ib-table-grid-add-col {
 	position: absolute;
+	box-sizing: border-box;
 	width: 22px;
 	height: 22px;
 	padding: 0;
@@ -171,39 +215,61 @@ body {
 	justify-content: center;
 	opacity: 0;
 	transition: opacity 0.15s ease;
-	z-index: 3;
+	z-index: 5;
 }
 
-.ib-table-grid-active .ib-table-grid-add-row,
-.ib-table-grid-active .ib-table-grid-add-col {
+.ib-table-grid-chrome.ib-table-grid-preview-row .ib-table-grid-add-row,
+.ib-table-grid-add-row:hover,
+.ib-table-grid-add-row:focus-visible {
 	opacity: 1;
 }
 
-.ib-table-grid-add-row {
-	left: -11px;
-	top: 50%;
-	transform: translateY(-50%);
+.ib-table-grid-chrome.ib-table-grid-preview-col .ib-table-grid-add-col,
+.ib-table-grid-add-col:hover,
+.ib-table-grid-add-col:focus-visible {
+	opacity: 1;
 }
 
-.ib-table-grid-add-col {
-	top: -11px;
+.ib-table-grid-add-row::before,
+.ib-table-grid-add-col::before {
+	content: '';
+	position: absolute;
+	inset: -8px;
+}
+
+.ib-table-grid-add-row::after,
+.ib-table-grid-add-col::after {
+	content: '';
+	position: absolute;
+	background: var(--vscode-focusBorder, var(--vscode-button-background, #528bff));
+	pointer-events: none;
+}
+
+.ib-table-grid-add-row::after {
+	left: 100%;
+	top: 50%;
+	width: 8px;
+	height: 2px;
+	transform: translateY(-1px);
+}
+
+.ib-table-grid-add-col::after {
 	left: 50%;
-	transform: translateX(-50%);
+	top: 100%;
+	width: 2px;
+	height: 8px;
+	transform: translateX(-1px);
 }
 
 .ib-table-grid-add-row:hover,
-.ib-table-grid-add-col:hover {
+.ib-table-grid-add-col:hover,
+.ib-table-grid-add-row:focus-visible,
+.ib-table-grid-add-col:focus-visible {
 	background: var(--vscode-button-hoverBackground, #6b9bff);
 }
 
 .ib-table-grid-mode .md-table-wrapper:not(.ib-table-grid-active) .md-table {
 	cursor: pointer;
-}
-
-/* Hide the document caret while a table cell textarea is focused */
-.md-editor.ib-table-grid-mode .md-cursor {
-	visibility: hidden;
-	animation: none;
 }
 
 /* Force preview look even if native block briefly becomes active */
@@ -226,4 +292,56 @@ body {
 .ib-table-grid-mode .md-table-wrapper:not(.ib-table-grid-active):hover .md-table {
 	outline: 1px solid var(--vscode-focusBorder, #528bff);
 	outline-offset: 2px;
+}
+
+/* Inactive htmlFlow blocks: paint sanitized HTML; keep source <pre> for mapping. */
+.md-unhandled-block.ib-html-rendered {
+	position: relative;
+	border: none;
+	overflow: visible;
+}
+
+.md-unhandled-block.ib-html-rendered .md-unhandled-scroll {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	pointer-events: none;
+	overflow: hidden;
+}
+
+.ib-html-preview {
+	position: relative;
+	z-index: 1;
+}
+
+.ib-html-preview ul,
+.ib-html-preview ol {
+	margin: 0;
+	padding-inline-start: 2em;
+}
+
+.ib-html-preview li {
+	margin: 0;
+}
+
+.ib-html-preview p {
+	margin: 0 0 16px;
+}
+
+.ib-html-preview p:last-child {
+	margin-bottom: 0;
+}
+
+.ib-html-preview img {
+	max-width: 100%;
+}
+
+.ib-html-preview table {
+	border-collapse: collapse;
+}
+
+.ib-html-preview th,
+.ib-html-preview td {
+	border: 1px solid var(--vscode-editorWidget-border, #d1d9e0);
+	padding: 4px 8px;
 }

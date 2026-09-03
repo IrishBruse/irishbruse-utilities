@@ -235,13 +235,24 @@ export function hasScopedTokenColors(settings: readonly ThemeSetting[]): boolean
     });
 }
 
-/** Map TextMate's default black onto the editor foreground in dark themes. */
-export function toWebviewColorMap(colorMap: readonly string[], kind: ThemeKind): string[] {
+/**
+ * Map TextMate default blacks (dark themes) and the theme's editor.foreground hex
+ * onto the live webview editor foreground CSS variable.
+ */
+export function toWebviewColorMap(
+    colorMap: readonly string[],
+    kind: ThemeKind,
+    editorForeground?: string,
+): string[] {
+    const editorFg = normalizeCssHex(editorForeground);
     return colorMap.map((color, index) => {
         if (index === 0 || !color) {
             return "";
         }
         if (kind === "dark" && isCssBlack(color)) {
+            return "var(--vscode-editor-foreground)";
+        }
+        if (editorFg && normalizeCssHex(color) === editorFg) {
             return "var(--vscode-editor-foreground)";
         }
         return color;
@@ -251,6 +262,23 @@ export function toWebviewColorMap(colorMap: readonly string[], kind: ThemeKind):
 function isCssBlack(color: string): boolean {
     const value = color.trim().toLowerCase();
     return value === "#000" || value === "#000000" || value === "#000000ff";
+}
+
+function normalizeCssHex(color: string | undefined): string | undefined {
+    if (!color) {
+        return undefined;
+    }
+    const value = color.trim().toLowerCase();
+    if (/^#[0-9a-f]{3}$/.test(value)) {
+        return `#${value[1]}${value[1]}${value[2]}${value[2]}${value[3]}${value[3]}`;
+    }
+    if (/^#[0-9a-f]{6}$/.test(value)) {
+        return value;
+    }
+    if (/^#[0-9a-f]{8}$/.test(value)) {
+        return value.slice(0, 7);
+    }
+    return undefined;
 }
 
 export async function loadRawTheme(
@@ -278,6 +306,7 @@ export class TextMateHighlighter {
     #onigLib: Promise<IOnigLib> | undefined;
     #registryReady: Promise<Registry> | undefined;
     #themeDirty = true;
+    #editorForeground: string | undefined;
     #grammarPathByScope = new Map<string, string>();
     #scopeByLanguage = new Map<string, string>();
     #injections = new Map<string, string[]>();
@@ -313,7 +342,11 @@ export class TextMateHighlighter {
         const result = tokenizeSource(grammar, registry.getColorMap(), source);
         return {
             tokens: result.tokens,
-            colorMap: toWebviewColorMap(result.colorMap, this.#host.getThemeKind()),
+            colorMap: toWebviewColorMap(
+                result.colorMap,
+                this.#host.getThemeKind(),
+                this.#editorForeground,
+            ),
         };
     }
 
@@ -411,12 +444,14 @@ export class TextMateHighlighter {
             }
         }
         settings = [...settings, ...this.#host.getTokenColorCustomizations(themeName)];
+        const foreground = cssColor(colors["editor.foreground"]) ?? fallback.foreground;
+        this.#editorForeground = foreground;
         return {
             name,
             settings: [
                 {
                     settings: {
-                        foreground: cssColor(colors["editor.foreground"]) ?? fallback.foreground,
+                        foreground,
                         background: cssColor(colors["editor.background"]) ?? fallback.background,
                     },
                 },

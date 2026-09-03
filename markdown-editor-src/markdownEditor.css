@@ -69,7 +69,8 @@ body {
 	background-color: var(--ib-md-inline-code-background, #21252bA0);
 }
 
-.md-theme-vscode-default .md-code-block {
+.md-theme-vscode-default .md-code-block,
+.md-theme-vscode-default .md-code-block code {
 	color: var(--vscode-editor-foreground);
 }
 

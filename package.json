@@ -681,7 +681,7 @@
         "@typescript-eslint/eslint-plugin": "^8.64.0",
         "@typescript-eslint/parser": "^8.64.0",
         "@vitest/coverage-v8": "^4.1.10",
-        "@vscode/markdown-editor": "0.0.2-74",
+        "@vscode/markdown-editor": "0.0.2-87",
         "@vscode/observables": "^0.1.1-0",
         "@vscode/vsce": "^3.9.2",
         "esbuild": "0.28.1",

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor fenced code blocks use plain editor text color instead of yellow default
+-   Change: Sync Markdown Editor webview source with VS Code main and bump `@vscode/markdown-editor` to `0.0.2-87`
+
 ## 0.19.0
 
 -   Add: Custom **Markdown Editor (ib-utilities)** for `*.md` with theme-aware colors, fenced-code highlighting from the active color theme, a language badge on code blocks, and HTML block preview

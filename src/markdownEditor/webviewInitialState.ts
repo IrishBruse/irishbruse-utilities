@@ -7,7 +7,7 @@ export interface MarkdownEditorInitialState {
         id: string;
         source: string;
         flags: string;
-        initialKind: string;
+        kind: string;
     }[];
     readonly tables: {
         readonly maxColumnWidth: number;

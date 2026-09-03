@@ -233,6 +233,14 @@ describe("syntaxHighlighting", () => {
         it("keeps black on light themes", () => {
             expect(toWebviewColorMap(["", "#000000"], "light")).toEqual(["", "#000000"]);
         });
+
+        it("maps the theme editor.foreground hex to the editor foreground variable", () => {
+            expect(toWebviewColorMap(["", "#aabbcc", "#FF0000"], "dark", "#AABBCC")).toEqual([
+                "",
+                "var(--vscode-editor-foreground)",
+                "#FF0000",
+            ]);
+        });
     });
 
     describe("hasScopedTokenColors", () => {

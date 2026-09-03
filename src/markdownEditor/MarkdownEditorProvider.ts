@@ -14,6 +14,7 @@ import {
     window,
     workspace,
 } from "vscode";
+import { Commands } from "../constants";
 import {
     getMarkdownInlineEditorColors,
     markdownInlineEditorColorsCssVars,
@@ -212,6 +213,18 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                         if (typeof message.href === "string") {
                             await openMarkdownLink(message.href, document.uri);
                         }
+                        break;
+                    }
+                    case "openMermaidPreview": {
+                        if (typeof message.offset !== "number" || !Number.isFinite(message.offset)) {
+                            break;
+                        }
+                        const openLine = document.positionAt(Math.max(0, message.offset)).line;
+                        await commands.executeCommand(
+                            Commands.OpenMermaidMarkdownPreview,
+                            document.uri.toString(),
+                            openLine,
+                        );
                         break;
                     }
                     case "setReadonly": {

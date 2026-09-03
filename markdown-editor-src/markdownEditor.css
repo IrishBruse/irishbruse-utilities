@@ -98,6 +98,38 @@ body {
 	user-select: none;
 }
 
+/* Mermaid: CodeLens-style Open Preview replaces the language badge. */
+.md-code-block[data-ib-mermaid-preview]:not(.md-block-active)::before {
+	content: none;
+}
+
+.md-code-block[data-ib-mermaid-preview]:not(.md-block-active) > .ib-mermaid-open-preview {
+	display: block;
+}
+
+.ib-mermaid-open-preview {
+	display: none;
+	position: absolute;
+	top: 4px;
+	right: 8px;
+	z-index: 2;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	background: transparent;
+	font-family: var(--vscode-font-family, sans-serif);
+	font-size: 12px;
+	line-height: 1.2;
+	color: var(--vscode-textLink-foreground, #35A854);
+	cursor: pointer;
+	user-select: none;
+}
+
+.ib-mermaid-open-preview:hover {
+	color: var(--vscode-textLink-activeForeground, #98C379);
+	text-decoration: underline;
+}
+
 .md-theme-vscode-default .md-blockquote {
 	color: var(--vscode-descriptionForeground, #5C6370);
 }

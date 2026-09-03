@@ -352,6 +352,14 @@ class Editor extends Disposable {
 				} else {
 					delete el.dataset.ibLanguage;
 				}
+				syncMermaidOpenPreviewButton(el, language, () => {
+					const doc = model.document.get();
+					const offset = findNodeOffsetById(doc, block);
+					if (offset === undefined) {
+						return;
+					}
+					this.#postToHost({ type: 'openMermaidPreview', offset });
+				});
 			}
 		}));
 
@@ -585,6 +593,40 @@ function loadMermaid(): Promise<(typeof import('mermaid'))['default']> {
 		});
 	}
 	return mermaidPromise;
+}
+
+function syncMermaidOpenPreviewButton(
+	el: HTMLElement,
+	language: string,
+	onOpenPreview: () => void,
+): void {
+	const existing = el.querySelector(':scope > .ib-mermaid-open-preview');
+	if (language.toLowerCase() !== 'mermaid') {
+		delete el.dataset.ibMermaidPreview;
+		existing?.remove();
+		return;
+	}
+
+	el.dataset.ibMermaidPreview = '';
+	let button = existing instanceof HTMLButtonElement ? existing : undefined;
+	if (!button) {
+		button = document.createElement('button');
+		button.type = 'button';
+		button.className = 'ib-mermaid-open-preview';
+		button.textContent = 'Open Preview';
+		button.title = 'Open Mermaid preview';
+		el.prepend(button);
+	}
+
+	button.onclick = (event) => {
+		event.preventDefault();
+		event.stopPropagation();
+		onOpenPreview();
+	};
+	button.onmousedown = (event) => {
+		event.preventDefault();
+		event.stopPropagation();
+	};
 }
 
 function readInitialState(): InitialState {

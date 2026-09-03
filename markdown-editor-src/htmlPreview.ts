@@ -160,6 +160,15 @@ export class HtmlPreviewController extends Disposable {
 		return anchor instanceof HTMLAnchorElement && preview.contains(anchor) ? anchor : undefined;
 	}
 
+	#summaryInPreview(event: Event, preview: HTMLElement): HTMLElement | undefined {
+		const target = event.target;
+		if (!(target instanceof Element)) {
+			return undefined;
+		}
+		const summary = target.closest('summary');
+		return summary instanceof HTMLElement && preview.contains(summary) ? summary : undefined;
+	}
+
 	readonly #onPointerDown = (event: PointerEvent): void => {
 		const entry = this.#previewFromEvent(event);
 		if (!entry) {
@@ -168,6 +177,10 @@ export class HtmlPreviewController extends Disposable {
 		const anchor = this.#anchorInPreview(event, entry.element);
 		if (anchor) {
 			event.preventDefault();
+			event.stopPropagation();
+			return;
+		}
+		if (this.#summaryInPreview(event, entry.element)) {
 			event.stopPropagation();
 			return;
 		}
@@ -183,6 +196,10 @@ export class HtmlPreviewController extends Disposable {
 	readonly #onClick = (event: MouseEvent): void => {
 		const entry = this.#previewFromEvent(event);
 		if (!entry) {
+			return;
+		}
+		if (this.#summaryInPreview(event, entry.element)) {
+			event.stopPropagation();
 			return;
 		}
 		const anchor = this.#anchorInPreview(event, entry.element);

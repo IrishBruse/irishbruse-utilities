@@ -79,20 +79,42 @@ declare global {
     }
 }
 
+export function getWorkbenchMermaidTokens(): MermaidTokens {
+    return getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
+}
+
+export function getWorkbenchMermaidInit(): {
+    readonly tokens: MermaidTokens;
+    readonly themeVariables: Record<string, string | boolean>;
+    readonly themeCSS: string;
+} {
+    const tokens = getWorkbenchMermaidTokens();
+    return {
+        tokens,
+        themeVariables: getThemeVariables(tokens, pickColor),
+        themeCSS: getThemeCSS(tokens),
+    };
+}
+
+export function applyWorkbenchMermaidTokens(element: HTMLElement): MermaidTokens {
+    const tokens = getWorkbenchMermaidTokens();
+    applyDiagramTokens(element, tokens);
+    return tokens;
+}
+
 window.IbMermaidVsCodeTheme = {
     getTokens() {
-        return getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
+        return getWorkbenchMermaidTokens();
     },
     getThemeVariables(tokens?: MermaidTokens) {
-        const resolved = tokens ?? getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
+        const resolved = tokens ?? getWorkbenchMermaidTokens();
         return getThemeVariables(resolved, pickColor);
     },
     getThemeCSS(tokens?: MermaidTokens) {
-        const resolved = tokens ?? getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
+        const resolved = tokens ?? getWorkbenchMermaidTokens();
         return getThemeCSS(resolved);
     },
     applyDiagramTokens(element: HTMLElement) {
-        const tokens = getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
-        applyDiagramTokens(element, tokens);
+        applyWorkbenchMermaidTokens(element);
     },
 };

@@ -73,3 +73,13 @@ export function findMarkdownMermaidFenceAtOpenLine(
 ): MarkdownMermaidFence | undefined {
     return parseMarkdownMermaidFences(text).find((fence) => fence.openLine === openLine);
 }
+
+/** Finds the fence that contains `line`, including the opening and closing fence lines. */
+export function findMarkdownMermaidFenceContainingLine(
+    text: string,
+    line: number,
+): MarkdownMermaidFence | undefined {
+    return parseMarkdownMermaidFences(text).find(
+        (fence) => line >= fence.openLine && line <= fence.closeLine,
+    );
+}

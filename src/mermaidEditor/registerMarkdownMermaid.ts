@@ -16,7 +16,10 @@ import { Commands } from "../constants";
 import { registerCommandIB } from "../utils/vscode";
 import { MERMAID_PREVIEW_VIEW_TYPE } from "./MermaidCustomEditorProvider";
 import { ensureMarkdownMermaidPreviewFile } from "./markdownMermaidPreview";
-import { findMarkdownMermaidFenceAtOpenLine, parseMarkdownMermaidFences } from "./parseMarkdownMermaidFences";
+import {
+    findMarkdownMermaidFenceContainingLine,
+    parseMarkdownMermaidFences,
+} from "./parseMarkdownMermaidFences";
 
 class MarkdownMermaidCodeLensProvider implements CodeLensProvider {
     provideCodeLenses(document: { getText(): string; uri: Uri }): CodeLens[] {
@@ -57,14 +60,14 @@ async function openMermaidMarkdownPreview(markdownUriString: string, openLine: n
         return;
     }
 
-    const fence = findMarkdownMermaidFenceAtOpenLine(document.getText(), openLine);
+    const fence = findMarkdownMermaidFenceContainingLine(document.getText(), openLine);
     if (!fence) {
         void window.showErrorMessage("Mermaid code block not found at that location.");
         return;
     }
 
     const context = getMarkdownMermaidContext();
-    const previewUri = await ensureMarkdownMermaidPreviewFile(context, markdownUri, openLine, fence.source);
+    const previewUri = await ensureMarkdownMermaidPreviewFile(context, markdownUri, fence.openLine, fence.source);
 
     const activeTab = window.tabGroups.activeTabGroup.activeTab;
     await commands.executeCommand("vscode.openWith", previewUri, MERMAID_PREVIEW_VIEW_TYPE, {

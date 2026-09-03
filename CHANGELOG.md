@@ -2,7 +2,8 @@
 
 ## Unreleased
 
--   Add: **Open Preview** button on Mermaid fences in the Markdown Editor (opens the themed Mermaid Preview)
+-   Fix: Markdown Editor HTML `<details>` summary uses a pointer cursor and opens on a single click
+-   Fix: Markdown Editor Mermaid diagrams use the workbench theme, so sequence labels stay readable on dark backgrounds
 -   Fix: Markdown Editor fenced code blocks use plain editor text color instead of yellow default
 -   Change: Sync Markdown Editor webview source with VS Code main and bump `@vscode/markdown-editor` to `0.0.2-87`
 

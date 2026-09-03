@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { findMarkdownMermaidFenceAtOpenLine, parseMarkdownMermaidFences } from "./parseMarkdownMermaidFences";
+import {
+    findMarkdownMermaidFenceAtOpenLine,
+    findMarkdownMermaidFenceContainingLine,
+    parseMarkdownMermaidFences,
+} from "./parseMarkdownMermaidFences";
 
 describe("mermaidEditor/parseMarkdownMermaidFences", () => {
     it("parses a basic mermaid fence", () => {
@@ -35,5 +39,12 @@ graph TD
         expect(fences).toHaveLength(2);
         const fence = findMarkdownMermaidFenceAtOpenLine(text, fences[1]!.openLine);
         expect(fence?.source).toBe("b");
+    });
+
+    it("finds a fence from a line inside the block", () => {
+        const text = "```mermaid\ngraph TD\n  A --> B\n```\n";
+        expect(findMarkdownMermaidFenceContainingLine(text, 1)?.source).toContain("graph TD");
+        expect(findMarkdownMermaidFenceContainingLine(text, 3)?.source).toContain("graph TD");
+        expect(findMarkdownMermaidFenceContainingLine(text, 4)).toBeUndefined();
     });
 });

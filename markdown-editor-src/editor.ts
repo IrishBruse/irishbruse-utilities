@@ -16,6 +16,10 @@ import { WebviewSyntaxHighlighter } from './syntaxHighlighter';
 import { WebviewLinkPresentationProvider } from './linkPresentationProvider';
 import { TableGridController } from './tableGridEditor';
 import { HtmlPreviewController } from './htmlPreview';
+import {
+	applyWorkbenchMermaidTokens,
+	getWorkbenchMermaidInit,
+} from '../src/mermaidEditor/vsCodeTheme.browser';
 
 interface VsCodeApi {
 	postMessage(message: unknown): void;
@@ -308,18 +312,25 @@ class Editor extends Disposable {
 				}
 				const div = document.createElement('div');
 				div.className = 'md-mermaid';
-				div.textContent = content;
-				div.setAttribute('aria-busy', 'true');
+				const diagram = document.createElement('div');
+				diagram.className = 'md-mermaid-diagram';
+				diagram.textContent = content;
+				diagram.setAttribute('aria-busy', 'true');
+				div.appendChild(diagram);
 				const id = `mermaid-${this.#mermaidCounter++}`;
 				loadMermaid()
-					.then(mermaid => mermaid.render(id, content))
+					.then(mermaid => {
+						configureMermaid(mermaid);
+						return mermaid.render(id, content);
+					})
 					.then(({ svg }) => {
-						div.innerHTML = svg;
-						div.setAttribute('aria-busy', 'false');
+						diagram.innerHTML = svg;
+						applyWorkbenchMermaidTokens(diagram);
+						diagram.setAttribute('aria-busy', 'false');
 					})
 					.catch(error => {
-						div.textContent = content;
-						div.setAttribute('aria-busy', 'false');
+						diagram.textContent = content;
+						diagram.setAttribute('aria-busy', 'false');
 						this.#postToHost({
 							type: 'codeBlockEditorDiagnostic',
 							message: `Failed to render Mermaid diagram: ${error instanceof Error ? error.message : String(error)}`,
@@ -587,12 +598,19 @@ let mermaidPromise: Promise<(typeof import('mermaid'))['default']> | undefined;
 
 function loadMermaid(): Promise<(typeof import('mermaid'))['default']> {
 	if (!mermaidPromise) {
-		mermaidPromise = import('mermaid').then(module => {
-			module.default.initialize({ startOnLoad: false, theme: 'default' });
-			return module.default;
-		});
+		mermaidPromise = import('mermaid').then(module => module.default);
 	}
 	return mermaidPromise;
+}
+
+function configureMermaid(mermaid: (typeof import('mermaid'))['default']): void {
+	const theme = getWorkbenchMermaidInit();
+	mermaid.initialize({
+		startOnLoad: false,
+		theme: 'base',
+		themeVariables: theme.themeVariables,
+		themeCSS: theme.themeCSS,
+	});
 }
 
 function syncMermaidOpenPreviewButton(
@@ -616,18 +634,16 @@ function syncMermaidOpenPreviewButton(
 		button.textContent = 'Open Preview';
 		button.title = 'Open Mermaid preview';
 		el.prepend(button);
+		button.addEventListener('pointerdown', (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			mermaidOpenPreviewByButton.get(button!)?.();
+		});
 	}
-
-	button.onclick = (event) => {
-		event.preventDefault();
-		event.stopPropagation();
-		onOpenPreview();
-	};
-	button.onmousedown = (event) => {
-		event.preventDefault();
-		event.stopPropagation();
-	};
+	mermaidOpenPreviewByButton.set(button, onOpenPreview);
 }
+
+const mermaidOpenPreviewByButton = new WeakMap<HTMLButtonElement, () => void>();
 
 function readInitialState(): InitialState {
 	const element = document.getElementById('vscode-markdown-editor-initial-state');

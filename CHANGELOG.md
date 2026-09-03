@@ -2,19 +2,14 @@
 
 ## Unreleased
 
--   Fix: Markdown Editor tables wrap wide cells without forcing equal column widths or a horizontal scrollbar
--   Fix: Markdown Editor tables wrap cells to the content width with no horizontal scrollbar
--   Fix: Markdown Editor tables scroll inside the content column instead of clipping past the editor edge
--   Fix: Markdown Editor table links open on click instead of entering table edit
--   Fix: Markdown Editor link reference definitions no longer look like parse errors
--   Fix: Markdown Editor keeps the orange unhandled outline when HTML is stripped as dangerous
--   Fix: Markdown Editor shows alt text when an image fails to load
--   Fix: Markdown Editor HTML `<details>` summary uses a pointer cursor and opens on a single click
--   Add: **Open Preview** button on Mermaid fences in the Markdown Editor (opens the themed Mermaid Preview)
--   Fix: Markdown Editor Mermaid **Open Preview** does not overlap the language badge
--   Fix: Markdown Editor Mermaid diagrams use the workbench theme, so sequence labels stay readable on dark backgrounds
--   Fix: Markdown Editor fenced code blocks use plain editor text color instead of yellow default
--   Change: Sync Markdown Editor webview source with VS Code main and bump `@vscode/markdown-editor` to `0.0.2-87`
+## 0.20.0
+
+-   Add: **Open Preview** button on Mermaid fences in the Markdown Editor
+-   Fix: Markdown Editor Mermaid diagrams follow the workbench theme; Open Preview no longer overlaps the language badge
+-   Fix: Markdown Editor fenced code blocks use plain editor text color instead of yellow
+-   Fix: Markdown Editor tables wrap wide cells without equal-width columns or a horizontal scrollbar; table links open on click
+-   Fix: Markdown Editor HTML `<details>` toggles on one click; stripped dangerous HTML keeps the orange outline; broken images show alt text; link definitions no longer look like errors
+-   Change: Sync Markdown Editor with VS Code main (`@vscode/markdown-editor` 0.0.2-87)
 
 ## 0.19.0
 

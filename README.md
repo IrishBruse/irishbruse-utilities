@@ -53,7 +53,9 @@ Open `*.md` files with **Markdown Editor (ib-utilities)** from **Reopen Editor W
 
 The editor shows WYSIWYG Markdown with colors from the active theme, fenced-code highlighting, a language label on inactive code blocks, and HTML preview for inactive HTML blocks.
 
-Tables open as a grid. Edit a cell, add a row or column from the gap controls, and select a row or column from the cell border. Then press Backspace or Delete to remove that row or column.
+Tables open as a grid. Edit a cell, add a row or column from the gap controls, and select a row or column from the cell border. Then press Backspace or Delete to remove that row or column. Wide cells wrap inside the editor; short columns stay narrow. Click a link in a table to open it.
+
+Idle `` ```mermaid `` `` fences render a themed diagram and show an **Open Preview** button that opens the same Mermaid Preview as the CodeLens in the text editor.
 
 ### Mermaid Preview
 

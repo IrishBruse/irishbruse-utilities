@@ -624,8 +624,8 @@ export class TableGridController extends Disposable {
 	}
 
 	/**
-	 * Empty columns collapse to a hairline (delimiter row is hidden in preview).
-	 * Give them a real width from sibling columns so insert-column expands the table.
+	 * Cap wide columns so the table stays in the content column and wraps.
+	 * Leave short columns alone so they keep their intrinsic width.
 	 */
 	#syncColumnWidths(): void {
 		const table = this.#nativeTable;
@@ -642,36 +642,26 @@ export class TableGridController extends Disposable {
 			for (const cell of row.cells) {
 				cell.style.minWidth = '';
 				cell.style.maxWidth = '';
+				cell.style.width = '';
 			}
 		}
 
-		const naturalWidths: number[] = [];
-		for (let col = 0; col < colCount; col++) {
-			let width = 0;
-			for (const row of dataRows) {
-				const cell = row.cells[col];
-				if (cell) {
-					width = Math.max(width, cell.getBoundingClientRect().width);
-				}
-			}
-			naturalWidths.push(width);
+		const wrapper = table.closest('.md-table-wrapper');
+		const available = wrapper instanceof HTMLElement
+			? Math.max(0, wrapper.clientWidth)
+			: table.parentElement?.clientWidth ?? 0;
+		if (available <= 0) {
+			return;
 		}
 
-		const filledWidths = naturalWidths.filter((_, col) => this.#rows.some(row => (row[col] ?? '').trim().length > 0));
-		const emptyMinPx = Math.round(
-			Math.max(
-				64,
-				Math.min(
-					filledWidths.length > 0
-						? filledWidths.reduce((sum, width) => sum + width, 0) / filledWidths.length
-						: 96,
-					this.#measureCh(Math.min(16, Math.max(8, this.#options.maxColumnWidth))),
-				),
-			),
-		);
-		const maxPx = this.#options.style === 'wrapped'
+		// Prefer content-based sizing, but never let one column dominate past
+		// the configured wrap limit or the remaining share of the content width.
+		const configuredMax = this.#options.style === 'wrapped'
 			? this.#measureCh(this.#options.maxColumnWidth)
-			: undefined;
+			: available;
+		const softMax = Math.max(64, Math.min(configuredMax, available * 0.72));
+
+		const emptyMinPx = Math.round(Math.min(96, Math.max(48, available / Math.max(colCount * 2, 1))));
 
 		for (let col = 0; col < colCount; col++) {
 			const empty = this.#rows.every(row => !(row[col] ?? '').trim());
@@ -680,11 +670,9 @@ export class TableGridController extends Disposable {
 				if (!cell) {
 					continue;
 				}
+				cell.style.maxWidth = `${Math.round(softMax)}px`;
 				if (empty) {
 					cell.style.minWidth = `${emptyMinPx}px`;
-				}
-				if (maxPx !== undefined) {
-					cell.style.maxWidth = `${Math.round(maxPx)}px`;
 				}
 			}
 		}
@@ -709,6 +697,7 @@ export class TableGridController extends Disposable {
 			for (const cell of row.cells) {
 				cell.style.minWidth = '';
 				cell.style.maxWidth = '';
+				cell.style.width = '';
 				cell.style.height = '';
 			}
 		}

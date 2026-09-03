@@ -77,6 +77,21 @@ body {
 .md-theme-vscode-default .md-table td {
 	vertical-align: top !important;
 	overflow-wrap: anywhere;
+	word-break: break-word;
+}
+
+/* Fit tables to the content column; wrap cells instead of horizontal scroll.
+ * Keep intrinsic column sizing so short columns stay narrow. */
+.md-theme-vscode-default .md-table-wrapper {
+	overflow-x: hidden;
+	width: fit-content;
+	max-width: 100%;
+}
+
+.md-theme-vscode-default .md-table {
+	width: auto;
+	max-width: 100%;
+	table-layout: auto;
 }
 
 /* Fence language badge in the top-right while the block is not being edited. */
@@ -168,7 +183,10 @@ body {
 
 .md-table-wrapper.ib-table-grid-active {
 	position: relative;
-	overflow: visible !important;
+	overflow: visible;
+	/* Room on the start/top edges for insert + / handles (compensated with margin). */
+	padding: 28px 4px 8px 28px;
+	margin: -28px -4px -8px -28px;
 }
 
 .ib-table-grid-chrome {
@@ -450,10 +468,11 @@ body {
 	vertical-align: top;
 }
 
-/* Let the table grow with new/empty columns instead of collapsing them. */
+/* Keep the active table inside the content column; cells wrap. */
 .md-table-wrapper.ib-table-grid-active .md-table {
-	width: max-content;
-	max-width: none;
+	width: auto;
+	max-width: 100%;
+	table-layout: auto;
 }
 
 .ib-table-grid-mode .md-table.md-block-active tr:first-child td {

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor tables wrap wide cells without forcing equal column widths or a horizontal scrollbar
+-   Fix: Markdown Editor tables wrap cells to the content width with no horizontal scrollbar
+-   Fix: Markdown Editor tables scroll inside the content column instead of clipping past the editor edge
+-   Fix: Markdown Editor table links open on click instead of entering table edit
+-   Fix: Markdown Editor link reference definitions no longer look like parse errors
 -   Fix: Markdown Editor keeps the orange unhandled outline when HTML is stripped as dangerous
 -   Fix: Markdown Editor shows alt text when an image fails to load
 -   Fix: Markdown Editor HTML `<details>` summary uses a pointer cursor and opens on a single click

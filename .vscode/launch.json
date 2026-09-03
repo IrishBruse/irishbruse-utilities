@@ -9,12 +9,12 @@
             "name": "Run Extension",
             "type": "extensionHost",
             "request": "launch",
-            "args": ["--extensionDevelopmentPath=${workspaceFolder}"],
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}",
+                "${workspaceFolder}/docs"
+            ],
             "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-            "preLaunchTask": "build: extension + markdown editor",
-            "settings": {
-                "ib-utilities.gitHelpers.debugMode": true
-            }
+            "preLaunchTask": "build: extension + markdown editor"
         }
     ]
 }

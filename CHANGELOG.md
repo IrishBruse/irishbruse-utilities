@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor keeps the orange unhandled outline when HTML is stripped as dangerous
+-   Fix: Markdown Editor shows alt text when an image fails to load
 -   Fix: Markdown Editor HTML `<details>` summary uses a pointer cursor and opens on a single click
+-   Add: **Open Preview** button on Mermaid fences in the Markdown Editor (opens the themed Mermaid Preview)
+-   Fix: Markdown Editor Mermaid **Open Preview** does not overlap the language badge
 -   Fix: Markdown Editor Mermaid diagrams use the workbench theme, so sequence labels stay readable on dark backgrounds
 -   Fix: Markdown Editor fenced code blocks use plain editor text color instead of yellow default
 -   Change: Sync Markdown Editor webview source with VS Code main and bump `@vscode/markdown-editor` to `0.0.2-87`

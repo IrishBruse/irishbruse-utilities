@@ -183,6 +183,9 @@ export class TableGridController extends Disposable {
 		if (target.closest('.ib-table-grid-cell-editor, .ib-table-grid-cell-md-editor')) {
 			return;
 		}
+		if (target.closest('a[href], [data-md-url]')) {
+			return;
+		}
 
 		const wrapper = target.closest('.md-table-wrapper');
 		if (wrapper instanceof HTMLElement) {

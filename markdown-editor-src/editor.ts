@@ -16,6 +16,7 @@ import { WebviewSyntaxHighlighter } from './syntaxHighlighter';
 import { WebviewLinkPresentationProvider } from './linkPresentationProvider';
 import { TableGridController } from './tableGridEditor';
 import { HtmlPreviewController } from './htmlPreview';
+import { UnhandledBlockChromeController } from './unhandledBlockChrome';
 import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
@@ -345,6 +346,7 @@ class Editor extends Disposable {
 		this._register(new HtmlPreviewController(model, view, url => {
 			this.#postToHost({ type: 'openLink', href: url });
 		}));
+		this._register(new UnhandledBlockChromeController(view));
 		this._register(autorun((reader) => {
 			reader.readObservable(model.document);
 			const measurements = reader.readObservable(view.measuredLayout.measurements);

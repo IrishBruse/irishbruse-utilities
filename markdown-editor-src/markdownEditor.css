@@ -521,3 +521,43 @@ body {
 	border: 1px solid var(--vscode-editorWidget-border, #d1d9e0);
 	padding: 4px 8px;
 }
+
+/* Link reference definitions: quiet metadata, not a parse warning. */
+.md-unhandled-block.ib-md-link-definition {
+	margin: 0.125em 0 0.35em;
+	border: none;
+	border-radius: 0;
+	color: var(--vscode-descriptionForeground, #5C6370);
+	font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+	font-size: 0.85em;
+	line-height: 1.45;
+}
+
+.md-unhandled-block.ib-md-link-definition .md-unhandled-scroll {
+	background: transparent;
+	border: none;
+	padding: 0;
+}
+
+.md-editor img {
+	max-width: 100%;
+	height: auto;
+}
+
+.md-editor img.ib-md-image-broken {
+	display: none;
+}
+
+.ib-md-image-fallback {
+	display: inline-block;
+	box-sizing: border-box;
+	max-width: 100%;
+	margin: 0.25em 0;
+	padding: 0.4em 0.65em;
+	border: 1px dashed var(--vscode-descriptionForeground, #5C6370);
+	border-radius: 3px;
+	background: var(--vscode-textCodeBlock-background, #2b2b2b);
+	color: var(--vscode-descriptionForeground, #5C6370);
+	font-size: 0.9em;
+	line-height: 1.3;
+}

@@ -83,9 +83,14 @@ export class HtmlPreviewController extends Disposable {
 				this.#detach(block.id, wrapper);
 				continue;
 			}
+			const source = htmlSource(block);
+			if (sanitizeHtml(source).trim().length === 0) {
+				this.#detach(block.id, wrapper);
+				continue;
+			}
 			seen.add(block.id);
 			const offset = findNodeOffsetById(doc, block) ?? measurement.absoluteStart;
-			this.#attach(wrapper, block.id, htmlSource(block), offset);
+			this.#attach(wrapper, block.id, source, offset);
 		}
 
 		for (const id of [...this.#previews.keys()]) {

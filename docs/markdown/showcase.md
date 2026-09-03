@@ -10,6 +10,8 @@ Open this file with **Reopen Editor With... → Markdown Editor (ib-utilities)**
 
 Theme colors: **H1–H6**, **bold**, *italic*, ***both***, ~~strike~~, `inline code`, and [links](https://example.com). Escapes: \*not italic\*, \`not code\`. Mix: call `getValue()` on **MyClass**.
 
+[Link](https://github.com/IrishBruse/)
+
 ## How to try features
 
 1. Click a **table cell** to edit Markdown in that cell. Hover **row/column gaps** for + insert. Click a **row or column border**, then Backspace or Delete to remove it.
@@ -196,7 +198,7 @@ Inline HTML in a sentence: <span>colored span</span> and <br> a break.
 
 [ref]: https://example.com/ref "Reference"
 
-![Alt placeholder](https://via.placeholder.com/120x40.png "Placeholder")
+![Alt placeholder](https://raw.githubusercontent.com/microsoft/vscode/main/resources/linux/code.png "Placeholder")
 
 Inline math: $E = mc^2$ and $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$.
 

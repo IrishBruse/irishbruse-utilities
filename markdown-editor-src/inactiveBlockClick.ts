@@ -10,22 +10,37 @@ import {
 	Selection,
 	findNodeOffsetById,
 } from '@vscode/markdown-editor';
-import { Disposable } from '@vscode/observables';
+import { Disposable, autorun } from '@vscode/observables';
 
 /**
- * Inactive custom code blocks (Mermaid preview) and empty editor padding do not
- * map through the stock DOM hit test. Route those clicks into the source model.
+ * Inactive custom code blocks (Mermaid preview), empty documents, and editor
+ * padding do not map through the stock DOM hit test. Route those clicks into
+ * the source model.
  */
 export class InactiveBlockClickController extends Disposable {
 	readonly #model: EditorModel;
 	readonly #view: EditorView;
+	readonly #host: HTMLElement;
+	#seededEmptySelection = false;
 
-	constructor(model: EditorModel, view: EditorView) {
+	constructor(model: EditorModel, view: EditorView, host: HTMLElement) {
 		super();
 		this.#model = model;
 		this.#view = view;
-		this.#view.element.addEventListener('pointerdown', this.#onPointerDown, true);
-		this._register({ dispose: () => this.#view.element.removeEventListener('pointerdown', this.#onPointerDown, true) });
+		this.#host = host;
+		this.#host.addEventListener('pointerdown', this.#onPointerDown, true);
+		this._register({ dispose: () => this.#host.removeEventListener('pointerdown', this.#onPointerDown, true) });
+		this._register(autorun((reader) => {
+			if (this.#seededEmptySelection) {
+				return;
+			}
+			const text = reader.readObservable(model.sourceText).value;
+			const selection = reader.readObservable(model.selection);
+			if (text.length === 0 && !selection) {
+				this.#seededEmptySelection = true;
+				queueMicrotask(() => this.#focusBlankDocument());
+			}
+		}));
 	}
 
 	readonly #onPointerDown = (event: PointerEvent): void => {
@@ -36,10 +51,14 @@ export class InactiveBlockClickController extends Disposable {
 		if (!(target instanceof Element)) {
 			return;
 		}
-		if (target.closest('.ib-mermaid-open-preview, .ib-html-preview, .md-table-wrapper, .ib-table-grid-overlay')) {
+		if (this.#isExcludedTarget(target)) {
 			return;
 		}
-		if (target.closest('a[href], [data-md-url], summary')) {
+
+		if (this.#isEmptyDocument()) {
+			event.preventDefault();
+			event.stopPropagation();
+			this.#focusBlankDocument();
 			return;
 		}
 
@@ -64,11 +83,34 @@ export class InactiveBlockClickController extends Disposable {
 
 		event.preventDefault();
 		event.stopPropagation();
+		this.#focusDocumentEnd();
+	};
+
+	#isExcludedTarget(target: Element): boolean {
+		return !!target.closest(
+			'.ib-mermaid-open-preview, .ib-html-preview, .md-table-wrapper, .ib-table-grid-overlay, .md-readonly-toggle, a[href], [data-md-url], summary',
+		);
+	}
+
+	#isEmptyDocument(): boolean {
+		return this.#model.sourceText.get().value.length === 0;
+	}
+
+	#focusBlankDocument(): void {
+		if (this.#model.readonlyMode.get()) {
+			return;
+		}
+		this.#view.element.focus();
+		this.#model.cancelPendingParagraph();
+		this.#model.selection.set(Selection.collapsed(0), undefined);
+	}
+
+	#focusDocumentEnd(): void {
 		this.#view.element.focus();
 		this.#model.cancelPendingParagraph();
 		const length = this.#model.sourceText.get().value.length;
 		this.#model.selection.set(Selection.collapsed(length), undefined);
-	};
+	}
 
 	#codeBlockFromDom(node: HTMLElement): CodeBlockAstNode | undefined {
 		const codeBlockEl = node.closest('.md-code-block');

@@ -348,7 +348,7 @@ class Editor extends Disposable {
 			this.#postToHost({ type: 'openLink', href: url });
 		}));
 		this._register(new UnhandledBlockChromeController(view));
-		this._register(new InactiveBlockClickController(model, view));
+		this._register(new InactiveBlockClickController(model, view, host));
 		this._register(autorun((reader) => {
 			reader.readObservable(model.document);
 			const measurements = reader.readObservable(view.measuredLayout.measurements);

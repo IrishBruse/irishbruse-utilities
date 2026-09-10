@@ -22,6 +22,11 @@ body {
 	overflow: scroll;
 }
 
+.md-editor {
+	min-height: 100%;
+	box-sizing: border-box;
+}
+
 /*
  * Headings / inline code: --ib-md-* come from markdownInlineEditor.colors
  * (injected on :root). Hardcoded fallbacks match those settings.
@@ -167,8 +172,35 @@ body {
 	color: var(--vscode-descriptionForeground, #5C6370);
 }
 
-.md-theme-vscode-default .md-list-gutter > .md-marker-listItemMarker {
-	color: var(--ib-md-heading-2, #E06C75);
+/* `[ ]` / `[x]` source markers must stay on one line in the marker column. */
+.md-task-list-item {
+	--md-task-marker-width: 4ch;
+}
+
+.md-task-list-item > .md-paragraph > .md-glue:first-child {
+	white-space: nowrap;
+	overflow: visible;
+}
+
+/*
+ * Hide invented whitespace glyphs. Soft `\n` still wraps; hard breaks still
+ * show trailing spaces or `\`; block gaps still use paragraph spacing.
+ */
+.md-editor .md-ws-space::before,
+.md-editor .md-ws-tab::before,
+.md-editor .md-ws-newline::before {
+	content: none;
+}
+
+.md-editor .md-hardbreak-src .md-ws-space::before {
+	content: '·';
+}
+
+.md-editor .md-ws-newline-glyph,
+.md-editor .md-ws-blockbreak-glyph {
+	font-size: 0;
+	line-height: 0;
+	color: transparent;
 }
 
 .md-theme-vscode-default strong,

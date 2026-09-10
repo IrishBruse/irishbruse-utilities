@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor task checkbox source markers (`[ ]` / `[x]`) stay on one line when editing
+-   Fix: Markdown Editor hides `↵` / space / tab markers; hard breaks still show trailing spaces or `\`
+-   Fix: Markdown Editor list markers no longer use the H2 heading color
+-   Fix: Markdown Editor blank documents accept clicks anywhere in the view and start typing at offset 0
 -   Fix: Markdown Editor Mermaid diagrams and empty editor padding enter edit mode on click
 -   Fix: Markdown Editor showcase image placeholder no longer uses a 1024px icon
 -   Fix: Markdown Editor table columns keep short cells on one line; long columns wrap first

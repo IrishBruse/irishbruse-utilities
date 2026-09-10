@@ -8,4 +8,4 @@ media/markdownEditor/
 media/mermaidPreview/mermaid.min.js
 media/mermaidPreview/vsCodeTheme.js
 media/mermaidPreview/vsCodeTheme.js.map
-docs/mermaid/
+docs/tests/mermaid/

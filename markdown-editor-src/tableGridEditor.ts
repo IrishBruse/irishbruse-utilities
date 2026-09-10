@@ -20,6 +20,7 @@ import {
 	type TableAstNode,
 } from '@vscode/markdown-editor';
 import { Disposable, autorun, observableValue } from '@vscode/observables';
+import { allocateColumnWidths } from './tableColumnLayout';
 import {
 	applyTableData,
 	deleteColumn,
@@ -78,6 +79,10 @@ export class TableGridController extends Disposable {
 	#cellPreviewHeight = 0;
 	#fittingCellHeight = false;
 	#cellFitRetry = false;
+	#syncingColumnWidths = false;
+	#lockedColumnWidths: number[] | undefined;
+	#lockedTableWidth: number | undefined;
+	#lastAvailableWidth = 0;
 
 	constructor(model: EditorModel, view: EditorView, host: HTMLElement, options: TableGridOptions) {
 		super();
@@ -450,10 +455,19 @@ export class TableGridController extends Disposable {
 			return;
 		}
 
+		const alreadyOpen = this.#activeTableOffset === offset && this.#chromeHost?.isConnected;
+		if (!alreadyOpen) {
+			const located = this.#getTableWrapper(offset);
+			if (located) {
+				this.#snapshotIdleColumnLayout(located.nativeTable);
+			} else {
+				this.#lockedColumnWidths = undefined;
+				this.#lockedTableWidth = undefined;
+			}
+		}
+
 		this.#model.activeBlocksOverride.set([], undefined);
 		this.#view.element.classList.add('ib-table-grid-mode');
-
-		const alreadyOpen = this.#activeTableOffset === offset && this.#chromeHost?.isConnected;
 		if (this.#activeTableOffset !== undefined && this.#activeTableOffset !== offset) {
 			this.#flushTableEdits();
 			this.#tearDownGridDom();
@@ -509,6 +523,9 @@ export class TableGridController extends Disposable {
 		// clearing #dirty afterwards would drop edits (common after insert row/col).
 		this.#flushTableEdits();
 		this.#tearDownGridDom();
+		this.#lockedColumnWidths = undefined;
+		this.#lockedTableWidth = undefined;
+		this.#lastAvailableWidth = 0;
 		this.#activeTableOffset = undefined;
 		this.#focusedCell = undefined;
 		this.#dirty = false;
@@ -616,77 +633,118 @@ export class TableGridController extends Disposable {
 
 		this.#resizeObserver?.disconnect();
 		this.#resizeObserver = new ResizeObserver(() => {
+			const available = this.#measureAvailableWidth(nativeTable);
+			if (Math.abs(available - this.#lastAvailableWidth) >= 1) {
+				this.#lockedColumnWidths = undefined;
+				this.#lockedTableWidth = undefined;
+				this.#syncColumnWidths();
+			}
 			this.#syncCellEditorLayout(false);
 			this.#positionInsertAffordance();
 		});
 		this.#resizeObserver.observe(wrapper);
-		this.#resizeObserver.observe(nativeTable);
+		this.#resizeObserver.observe(this.#host);
 	}
 
 	/**
-	 * Cap wide columns so the table stays in the content column and wraps.
-	 * Leave short columns alone so they keep their intrinsic width.
+	 * Keep idle column widths when the grid opens so the table does not jump.
+	 * On editor resize, let CSS layout run again, then lock the new widths.
 	 */
 	#syncColumnWidths(): void {
 		const table = this.#nativeTable;
-		if (!table) {
+		if (!table || this.#syncingColumnWidths) {
 			return;
 		}
+		this.#syncingColumnWidths = true;
+		try {
+			this.#applyColumnWidths(table);
+		} finally {
+			this.#syncingColumnWidths = false;
+		}
+	}
+
+	#applyColumnWidths(table: HTMLTableElement): void {
 		const colCount = this.#rows[0]?.length ?? 0;
 		if (colCount === 0) {
 			return;
 		}
 
-		const dataRows = [...table.rows].filter(row => !row.classList.contains('md-table-delimiter-row'));
-		for (const row of dataRows) {
-			for (const cell of row.cells) {
-				cell.style.minWidth = '';
-				cell.style.maxWidth = '';
-				cell.style.width = '';
-			}
-		}
-
-		const wrapper = table.closest('.md-table-wrapper');
-		const available = wrapper instanceof HTMLElement
-			? Math.max(0, wrapper.clientWidth)
-			: table.parentElement?.clientWidth ?? 0;
-		if (available <= 0) {
+		const available = this.#measureAvailableWidth(table);
+		const locked = this.#lockedColumnWidths;
+		if (locked && locked.length === colCount && Math.abs(available - this.#lastAvailableWidth) < 1) {
+			this.#writeColumnWidths(table, locked, this.#lockedTableWidth);
 			return;
 		}
 
-		// Prefer content-based sizing, but never let one column dominate past
-		// the configured wrap limit or the remaining share of the content width.
-		const configuredMax = this.#options.style === 'wrapped'
-			? this.#measureCh(this.#options.maxColumnWidth)
-			: available;
-		const softMax = Math.max(64, Math.min(configuredMax, available * 0.72));
+		this.#clearColumnWidths(table);
+		void table.offsetWidth;
 
-		const emptyMinPx = Math.round(Math.min(96, Math.max(48, available / Math.max(colCount * 2, 1))));
+		let widths = this.#readColumnWidths(table);
+		if (widths.length !== colCount) {
+			return;
+		}
+		if (available > 0 && this.#options.style !== 'compact') {
+			const total = widths.reduce((sum, width) => sum + width, 0);
+			if (total > available) {
+				const widest = Math.max(...widths);
+				const mins = widths.map(width => (width === widest ? Math.min(64, width) : width));
+				widths = allocateColumnWidths(mins, widths, available);
+			}
+		}
+		const tableWidth = Math.min(
+			widths.reduce((sum, width) => sum + width, 0),
+			available > 0 ? available : Number.POSITIVE_INFINITY,
+		);
+		this.#lockedColumnWidths = widths;
+		this.#lockedTableWidth = tableWidth;
+		this.#lastAvailableWidth = available;
+		this.#writeColumnWidths(table, widths, tableWidth);
+	}
 
-		for (let col = 0; col < colCount; col++) {
-			const empty = this.#rows.every(row => !(row[col] ?? '').trim());
-			for (const row of dataRows) {
+	#snapshotIdleColumnLayout(table: HTMLTableElement): void {
+		const widths = this.#readColumnWidths(table);
+		if (widths.length === 0) {
+			this.#lockedColumnWidths = undefined;
+			this.#lockedTableWidth = undefined;
+			return;
+		}
+		this.#lockedColumnWidths = widths;
+		this.#lockedTableWidth = table.getBoundingClientRect().width;
+		this.#lastAvailableWidth = this.#measureAvailableWidth(table);
+	}
+
+	#readColumnWidths(table: HTMLTableElement): number[] {
+		const row = [...table.rows].find(candidate => !candidate.classList.contains('md-table-delimiter-row'));
+		if (!row) {
+			return [];
+		}
+		return [...row.cells].map(cell => cell.getBoundingClientRect().width);
+	}
+
+	#writeColumnWidths(table: HTMLTableElement, widths: number[], tableWidth: number | undefined): void {
+		const dataRows = [...table.rows].filter(row => !row.classList.contains('md-table-delimiter-row'));
+		for (const row of dataRows) {
+			for (let col = 0; col < widths.length; col++) {
 				const cell = row.cells[col];
 				if (!cell) {
 					continue;
 				}
-				cell.style.maxWidth = `${Math.round(softMax)}px`;
-				if (empty) {
-					cell.style.minWidth = `${emptyMinPx}px`;
-				}
+				const px = `${Math.round(widths[col] ?? 0)}px`;
+				cell.style.boxSizing = 'border-box';
+				cell.style.minWidth = px;
+				cell.style.maxWidth = px;
+				cell.style.width = px;
 			}
+		}
+		if (tableWidth !== undefined && tableWidth > 0) {
+			table.style.width = `${Math.round(tableWidth)}px`;
 		}
 	}
 
-	#measureCh(ch: number): number {
-		const host = this.#nativeTable ?? this.#view.element;
-		const probe = host.ownerDocument.createElement('span');
-		probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none;white-space:pre;font:inherit';
-		probe.textContent = '0'.repeat(Math.max(1, Math.round(ch)));
-		host.appendChild(probe);
-		const width = probe.getBoundingClientRect().width;
-		probe.remove();
-		return Math.max(ch * 6, width);
+	#measureAvailableWidth(table: HTMLTableElement): number {
+		const wrapper = table.closest('.md-table-wrapper');
+		const availableHost = wrapper?.parentElement ?? wrapper ?? table.parentElement ?? this.#host;
+		return availableHost instanceof HTMLElement ? Math.max(0, availableHost.clientWidth) : 0;
 	}
 
 	#clearColumnWidths(table: HTMLTableElement | undefined): void {
@@ -699,8 +757,11 @@ export class TableGridController extends Disposable {
 				cell.style.maxWidth = '';
 				cell.style.width = '';
 				cell.style.height = '';
+				cell.style.boxSizing = '';
 			}
 		}
+		table.style.width = '';
+		table.style.tableLayout = '';
 	}
 
 	#createChromeButton(className: string, label: string, onPress: () => void): HTMLButtonElement {
@@ -1099,6 +1160,8 @@ export class TableGridController extends Disposable {
 		const axis = this.#selectedAxis;
 		if (remount) {
 			this.#isRemounting = true;
+			this.#lockedColumnWidths = undefined;
+			this.#lockedTableWidth = undefined;
 		}
 		applyTableData(this.#model, table, this.#rows, this.#alignments);
 		this.#dirty = false;

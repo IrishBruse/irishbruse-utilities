@@ -76,12 +76,12 @@ body {
 
 .md-theme-vscode-default .md-table td {
 	vertical-align: top !important;
-	overflow-wrap: anywhere;
-	word-break: break-word;
+	overflow-wrap: break-word;
+	word-break: normal;
 }
 
 /* Fit tables to the content column; wrap cells instead of horizontal scroll.
- * Keep intrinsic column sizing so short columns stay narrow. */
+ * Keep min-content (longest word) so short columns are not squashed. */
 .md-theme-vscode-default .md-table-wrapper {
 	overflow-x: hidden;
 	width: fit-content;
@@ -272,7 +272,7 @@ body {
 	border: none;
 	border-radius: 0;
 	overflow: hidden;
-	overflow-wrap: anywhere;
+	overflow-wrap: break-word;
 	background: color-mix(in srgb, var(--vscode-editor-background, #282c34) 70%, #000);
 	color: var(--vscode-editor-foreground);
 	box-shadow: none;
@@ -457,7 +457,8 @@ body {
  * because the delimiter row that used the extra space is also hidden. */
 .ib-table-grid-mode .md-table td {
 	vertical-align: top !important;
-	overflow-wrap: anywhere;
+	overflow-wrap: break-word;
+	word-break: normal;
 }
 
 .ib-table-grid-mode .md-table td::before {
@@ -473,11 +474,6 @@ body {
 	width: auto;
 	max-width: 100%;
 	table-layout: auto;
-}
-
-.ib-table-grid-mode .md-table.md-block-active tr:first-child td {
-	padding-top: 10px !important;
-	padding-bottom: 10px !important;
 }
 
 .ib-table-grid-mode .md-table-wrapper:not(.ib-table-grid-active):hover .md-table {

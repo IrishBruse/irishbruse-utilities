@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor Mermaid diagrams and empty editor padding enter edit mode on click
+-   Fix: Markdown Editor showcase image placeholder no longer uses a 1024px icon
+-   Fix: Markdown Editor table columns keep short cells on one line; long columns wrap first
+-   Fix: Markdown Editor table layout stays put when you click a cell to edit
+-   Change: Move Markdown and Mermaid editor test docs to `docs/tests/`; add `docs/tests/markdown/blank.md`
+-   Add: Markdown Editor table wrap examples in `docs/tests/markdown/table-columns.md`
+
 ## 0.20.0
 
 -   Add: **Open Preview** button on Mermaid fences in the Markdown Editor

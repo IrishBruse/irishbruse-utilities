@@ -199,7 +199,7 @@ Inline HTML in a sentence: <span>colored span</span> and <br> a break.
 
 [ref]: https://example.com/ref "Reference"
 
-![Alt placeholder](https://raw.githubusercontent.com/microsoft/vscode/main/resources/linux/code.png "Placeholder")
+![Alt placeholder](data:image/svg+xml,%3Csvg%20xmlns%3D'http://www.w3.org/2000/svg'%20width%3D'128'%20height%3D'128'%20viewBox%3D'0%200%20128%20128'%3E%3Crect%20fill%3D'%230078d4'%20width%3D'128'%20height%3D'128'%20rx%3D'12'/%3E%3Ctext%20x%3D'64'%20y%3D'72'%20text-anchor%3D'middle'%20fill%3D'white'%20font-family%3D'sans-serif'%20font-size%3D'20'%3Eimg%3C/text%3E%3C/svg%3E "Placeholder")
 
 Inline math: $E = mc^2$ and $x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}$.
 

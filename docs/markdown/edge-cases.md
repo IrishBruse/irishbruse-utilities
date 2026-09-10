@@ -1,6 +1,6 @@
 # Edge cases
 
-Use this file after [showcase.md](./showcase.md) for odd syntax, wrap, and sanitizer edges.
+Use this file after [showcase.md](./showcase.md) for odd syntax, wrap, and sanitizer edges. For short vs long table columns, use [table-columns.md](./table-columns.md).
 
 ## Sparse headings
 

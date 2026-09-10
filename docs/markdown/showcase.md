@@ -1,6 +1,6 @@
 ---
 title: Markdown Editor showcase
-tags: [headings, tables, code, mermaid, html, math]
+tags: [headings, tables, code, mermaid, html, math, wrap]
 draft: false
 ---
 
@@ -65,7 +65,7 @@ Below a rule.
 
 ## Tables (grid)
 
-Click a cell. Cells accept Markdown. Wide text wraps when `markdownInlineEditor.tables.style` is `wrapped`.
+Click a cell. Cells accept Markdown. Wide text wraps when `markdownInlineEditor.tables.style` is `wrapped`. Short columns keep one word on one line. Use [table-columns.md](./table-columns.md) to check that wrap.
 
 | Name | Role | Notes |
 | :--- | :---: | ---: |
@@ -192,6 +192,7 @@ Inline HTML in a sentence: <span>colored span</span> and <br> a break.
 - [Example](https://example.com "Example title")
 - [Headings in this file](#headings-h1h6)
 - [Relative](./edge-cases.md)
+- [Table column wrap](./table-columns.md)
 - Autolink: https://example.com/path?q=1
 - <https://example.com>
 - Reference: [same ref twice][ref] and [again][ref]

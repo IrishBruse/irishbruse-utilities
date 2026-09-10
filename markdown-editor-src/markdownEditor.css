@@ -183,8 +183,9 @@ body {
 }
 
 /*
- * Hide invented whitespace glyphs. Soft `\n` still wraps; hard breaks still
- * show trailing spaces or `\`; block gaps still use paragraph spacing.
+ * Hide invented whitespace glyphs except end-of-line spaces (Markdown
+ * trailing space / hard break). Soft `\n` still wraps; block gaps still use
+ * paragraph spacing. Leading and in-sentence spaces stay unmarked.
  */
 .md-editor .md-ws-space::before,
 .md-editor .md-ws-tab::before,
@@ -192,15 +193,20 @@ body {
 	content: none;
 }
 
+.md-editor .md-ws-space.ib-md-eol-ws::before,
 .md-editor .md-hardbreak-src .md-ws-space::before {
 	content: '·';
 }
 
+.md-editor .md-ws-tab.ib-md-eol-ws::before {
+	content: '⇥';
+}
+
 .md-editor .md-ws-newline-glyph,
 .md-editor .md-ws-blockbreak-glyph {
-	font-size: 0;
-	line-height: 0;
-	color: transparent;
+	/* Keep the ↵ layout box. The caret at the end of a block sits on these
+	 * offsets. `font-size: 0` dropped that box so the caret did not paint. */
+	visibility: hidden;
 }
 
 .md-theme-vscode-default strong,

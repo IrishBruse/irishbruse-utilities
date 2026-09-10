@@ -18,6 +18,7 @@ import { TableGridController } from './tableGridEditor';
 import { HtmlPreviewController } from './htmlPreview';
 import { UnhandledBlockChromeController } from './unhandledBlockChrome';
 import { InactiveBlockClickController } from './inactiveBlockClick';
+import { EolWhitespaceController } from './eolWhitespace';
 import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
@@ -349,6 +350,7 @@ class Editor extends Disposable {
 		}));
 		this._register(new UnhandledBlockChromeController(view));
 		this._register(new InactiveBlockClickController(model, view, host));
+		this._register(new EolWhitespaceController(view));
 		this._register(autorun((reader) => {
 			reader.readObservable(model.document);
 			const measurements = reader.readObservable(view.measuredLayout.measurements);

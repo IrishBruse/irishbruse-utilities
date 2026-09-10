@@ -3,7 +3,9 @@
 ## Unreleased
 
 -   Fix: Markdown Editor task checkbox source markers (`[ ]` / `[x]`) stay on one line when editing
--   Fix: Markdown Editor hides `↵` / space / tab markers; hard breaks still show trailing spaces or `\`
+-   Fix: Markdown Editor shows `·` only for trailing spaces, not list indent or in-sentence spaces
+-   Fix: Markdown Editor paints trailing spaces at the end of a block (before the next heading)
+-   Fix: Markdown Editor caret stays visible at the end of a block
 -   Fix: Markdown Editor list markers no longer use the H2 heading color
 -   Fix: Markdown Editor blank documents accept clicks anywhere in the view and start typing at offset 0
 -   Fix: Markdown Editor Mermaid diagrams and empty editor padding enter edit mode on click

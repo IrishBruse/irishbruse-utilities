@@ -55,7 +55,7 @@ Duplicate later: # this is not a heading because it is mid-paragraph.
 >
 > > Nested quote
 >
-> - List in a quote
+>  - List in a quote
 
 Above a rule.
 

@@ -2,18 +2,15 @@
 
 ## Unreleased
 
--   Fix: Markdown Editor task checkbox source markers (`[ ]` / `[x]`) stay on one line when editing
--   Fix: Markdown Editor shows `·` only for trailing spaces, not list indent or in-sentence spaces
--   Fix: Markdown Editor paints trailing spaces at the end of a block (before the next heading)
+## 0.21.0
+
+-   Fix: Markdown Editor task checkboxes keep `[ ]` / `[x]` on one line
+-   Fix: Markdown Editor shows `·` only for trailing spaces, including at the end of a block
 -   Fix: Markdown Editor caret stays visible at the end of a block
 -   Fix: Markdown Editor list markers no longer use the H2 heading color
--   Fix: Markdown Editor blank documents accept clicks anywhere in the view and start typing at offset 0
--   Fix: Markdown Editor Mermaid diagrams and empty editor padding enter edit mode on click
--   Fix: Markdown Editor showcase image placeholder no longer uses a 1024px icon
--   Fix: Markdown Editor table columns keep short cells on one line; long columns wrap first
--   Fix: Markdown Editor table layout stays put when you click a cell to edit
--   Change: Move Markdown and Mermaid editor test docs to `docs/tests/`; add `docs/tests/markdown/blank.md`
--   Add: Markdown Editor table wrap examples in `docs/tests/markdown/table-columns.md`
+-   Fix: Markdown Editor empty areas, Mermaid diagrams, and padding enter edit mode on click
+-   Fix: Markdown Editor showcase image placeholder size
+-   Fix: Markdown Editor table columns wrap long cells first; layout stays put when you click a cell
 
 ## 0.20.0
 

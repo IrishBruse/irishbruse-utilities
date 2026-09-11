@@ -15,10 +15,10 @@ import {
 	blocksIntersecting,
 	findBlockAtOffset,
 	findNodeOffsetById,
-	vscodeKeyboardProfile,
 	type BlockMeasurement,
 	type TableAstNode,
 } from '@vscode/markdown-editor';
+import { markdownEditorKeyboardProfile } from './keyboardProfile';
 import { Disposable, autorun, observableValue } from '@vscode/observables';
 import { allocateColumnWidths } from './tableColumnLayout';
 import {
@@ -829,7 +829,7 @@ export class TableGridController extends Disposable {
 		});
 		const cellController = new EditorController(cellModel, cellView, {
 			clipboardStrategy: new AsyncClipboardStrategy(),
-			keyboardProfile: vscodeKeyboardProfile,
+			keyboardProfile: markdownEditorKeyboardProfile,
 			historyStrategy: new LocalHistoryStrategy(cellModel),
 			find: false,
 		});

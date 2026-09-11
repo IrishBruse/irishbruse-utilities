@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { AsyncClipboardStrategy, CommentModeController, CommentsModel, CommentsView, EditorController, EditorModel, EditorView, GutterMarker, OffsetRange, Selection, StringEdit, StringReplacement, StringValue, commands, findNodeOffsetById, vscodeKeyboardProfile, CodeBlockAstNode, type LinkPresentationKind } from '@vscode/markdown-editor';
+import { AsyncClipboardStrategy, CommentModeController, CommentsModel, CommentsView, EditorController, EditorModel, EditorView, GutterMarker, OffsetRange, Selection, StringEdit, StringReplacement, StringValue, commands, findNodeOffsetById, CodeBlockAstNode, type LinkPresentationKind } from '@vscode/markdown-editor';
 import { VirtualizedIframeEmbeddedEditorFactory, type IframeEmbeddedEditorHostTransport, type IframeEmbeddedEditorProvider, type IframeEmbeddedEditorProviderSelector, type ResolvedIframeEmbeddedEditor } from '@vscode/markdown-editor/web-editors';
 import { Disposable, autorun, observableValue } from '@vscode/observables';
 import 'katex/dist/katex.min.css';
@@ -19,6 +19,7 @@ import { HtmlPreviewController } from './htmlPreview';
 import { UnhandledBlockChromeController } from './unhandledBlockChrome';
 import { InactiveBlockClickController } from './inactiveBlockClick';
 import { EolWhitespaceController } from './eolWhitespace';
+import { markdownEditorKeyboardProfile } from './keyboardProfile';
 import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
@@ -386,7 +387,7 @@ class Editor extends Disposable {
 		// would be swallowed unless handled locally.
 		this.#controller = this._register(new EditorController(model, view, {
 			clipboardStrategy: new AsyncClipboardStrategy(),
-			keyboardProfile: vscodeKeyboardProfile,
+			keyboardProfile: markdownEditorKeyboardProfile,
 			historyStrategy: {
 				undo: () => this.#postToHost({ type: 'history', command: 'undo' }),
 				redo: () => this.#postToHost({ type: 'history', command: 'redo' }),

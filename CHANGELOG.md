@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+-   Change: Markdown Editor Enter inserts a hard line break (two trailing spaces); Shift+Enter starts a new paragraph or continues a list
+
 ## 0.21.0
 
 -   Fix: Markdown Editor task checkboxes keep `[ ]` / `[x]` on one line

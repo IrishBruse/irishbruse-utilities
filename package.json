@@ -407,6 +407,18 @@
                 "shortTitle": "Terminal paste"
             },
             {
+                "command": "ib-utilities.openMarkdownEditor",
+                "title": "Open Markdown Editor",
+                "shortTitle": "Markdown Editor",
+                "icon": "$(markdown)"
+            },
+            {
+                "command": "ib-utilities.openMarkdownSource",
+                "title": "Open Text Editor",
+                "shortTitle": "Text Editor",
+                "icon": "$(code)"
+            },
+            {
                 "command": "ib-utilities.openMermaidPreview",
                 "title": "Open Preview",
                 "shortTitle": "Open Preview",
@@ -521,10 +533,31 @@
                 "title": "Copy GitHub Head URL",
                 "shortTitle": "Copy head URL",
                 "icon": "$(copy)"
+            },
+            {
+                "command": "ib-utilities.revertToDisk",
+                "title": "Discard Editor Changes",
+                "shortTitle": "Discard",
+                "icon": "$(discard)"
             }
         ],
         "menus": {
             "editor/title": [
+                {
+                    "command": "ib-utilities.revertToDisk",
+                    "when": "ib-utilities.diskEditorConflict",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.openMarkdownEditor",
+                    "when": "resourceExtname == .md && activeCustomEditorId != 'ib-utilities.markdownEditor'",
+                    "group": "navigation"
+                },
+                {
+                    "command": "ib-utilities.openMarkdownSource",
+                    "when": "resourceExtname == .md && activeCustomEditorId == 'ib-utilities.markdownEditor'",
+                    "group": "navigation"
+                },
                 {
                     "command": "ib-utilities.openMermaidPreview",
                     "when": "(resourceExtname == .mmd || resourceExtname == .mermaid) && activeCustomEditorId != 'ib-utilities.mermaidPreview'",

@@ -1,6 +1,9 @@
 import { ExtensionContext, Uri, window } from "vscode";
+import { activateDiskEditorConflict } from "./diskConflict/activateDiskEditorConflict";
 import { activateBranchDiffRevert } from "./git/branchDiffRevert";
 import { syncBranchDiffWorkingTreeFiles } from "./git/branchDiffFiles";
+import { openMarkdownEditor } from "./commands/openMarkdownEditor";
+import { openMarkdownSource } from "./commands/openMarkdownSource";
 import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
@@ -29,6 +32,8 @@ export function activate(context: ExtensionContext) {
 
     registerCommandIB(Commands.RelativeGoTo, relativeGoTo, context);
     registerCommandIB(Commands.TerminalPaste, terminalPaste, context);
+    registerCommandIB(Commands.OpenMarkdownEditor, openMarkdownEditor, context);
+    registerCommandIB(Commands.OpenMarkdownSource, openMarkdownSource, context);
     registerCommandIB(Commands.OpenMermaidPreview, openMermaidPreview, context);
     registerCommandIB(Commands.OpenMermaidSource, openMermaidSource, context);
     registerCommandIB(Commands.CopyScmResourcePath, copyScmResourcePath, context);
@@ -39,6 +44,7 @@ export function activate(context: ExtensionContext) {
     registerMarkdownEditor(context);
     registerMarkdownMermaidFeatures(context);
     SnippetViewProvider.activate(context);
+    activateDiskEditorConflict(context);
     activateBranchDiffRevert(context);
     context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));
     ActionPanelViewProvider.activate(context);

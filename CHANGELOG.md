@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+-   Add: **Discard** editor title bar action when the file on disk changed and the editor text is different; reloads from disk and keeps the file open
+-   Add: Editor title bar icons to swap between the Markdown text editor and Markdown Editor (ib-utilities) for the same `.md` file
 -   Change: Markdown Editor Enter inserts a hard line break (two trailing spaces); Shift+Enter starts a new paragraph or continues a list
 
 ## 0.21.0

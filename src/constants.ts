@@ -129,6 +129,20 @@ export enum Commands {
     TerminalPaste = `ib-utilities.terminalPaste`,
 
     /**
+     * Open Markdown Editor
+     * Short Title: Markdown Editor
+     * Icon: $(markdown)
+     */
+    OpenMarkdownEditor = `ib-utilities.openMarkdownEditor`,
+
+    /**
+     * Open Text Editor
+     * Short Title: Text Editor
+     * Icon: $(code)
+     */
+    OpenMarkdownSource = `ib-utilities.openMarkdownSource`,
+
+    /**
      * Open Preview
      * Short Title: Open Preview
      * Icon: $(open-preview)
@@ -267,6 +281,13 @@ export enum Commands {
      * Icon: $(copy)
      */
     CopyGithubHeadFileUrl = `ib-utilities.copyGithubHeadFileUrl`,
+
+    /**
+     * Discard Editor Changes
+     * Short Title: Discard
+     * Icon: $(discard)
+     */
+    RevertToDisk = `ib-utilities.revertToDisk`,
 
     /**
      * Snippet Manager

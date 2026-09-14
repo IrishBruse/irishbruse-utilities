@@ -1,6 +1,6 @@
 # Edge cases
 
-Use this file after [showcase.md](./showcase.md) for odd syntax, wrap, and sanitizer edges. For short vs long table columns, use [table-columns.md](./table-columns.md).
+Use this file after [showcase.md](./showcase.md) for odd syntax, wrap, and sanitizer edges. For short vs long table columns, use [table-columns.md](./table-columns.md). Index: [README.md](./README.md).
 
 ## Sparse headings
 
@@ -29,6 +29,14 @@ Talk about ``` fences ``` without opening a real block.
 <!-- HTML comment should stay out of the painted preview -->
 
 Visible after comment.
+
+## Autolinks and references
+
+Angle bracket: <https://example.com/edge-case>
+
+Bare URL in a sentence: see https://example.com/bare for autolink behavior.
+
+[edge-ref]: https://example.com/ref "Reference definition — should look subdued, not like an error"
 
 ## Weird tables
 

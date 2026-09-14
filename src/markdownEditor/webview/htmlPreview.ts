@@ -13,9 +13,10 @@ import {
 } from '@vscode/markdown-editor';
 import { Disposable } from './disposable';
 import { observeAll } from './react';
-import { sanitizeHtml } from './htmlSanitize';
+import { htmlPreviewKind, sanitizeHtml } from './htmlSanitize';
 
 const PREVIEW_CLASS = 'ib-html-preview';
+const RAW_CLASS = 'ib-html-raw';
 const RENDERED_CLASS = 'ib-html-rendered';
 
 interface HtmlFlowFields {
@@ -27,6 +28,7 @@ interface HtmlFlowFields {
 interface HtmlPreviewEntry {
 	readonly element: HTMLElement;
 	source: string;
+	mode: 'html' | 'raw';
 	offset: number;
 }
 
@@ -85,13 +87,15 @@ export class HtmlPreviewController extends Disposable {
 				continue;
 			}
 			const source = htmlSource(block);
-			if (sanitizeHtml(source).trim().length === 0) {
+			const sanitized = sanitizeHtml(source);
+			const kind = htmlPreviewKind(source, sanitized);
+			if (kind === 'warning') {
 				this.#detach(block.id, wrapper);
 				continue;
 			}
 			seen.add(block.id);
 			const offset = findNodeOffsetById(doc, block) ?? measurement.absoluteStart;
-			this.#attach(wrapper, block.id, source, offset);
+			this.#attach(wrapper, block.id, source, sanitized, offset, kind);
 		}
 
 		for (const id of [...this.#previews.keys()]) {
@@ -101,7 +105,14 @@ export class HtmlPreviewController extends Disposable {
 		}
 	}
 
-	#attach(wrapper: HTMLElement, id: number, source: string, offset: number): void {
+	#attach(
+		wrapper: HTMLElement,
+		id: number,
+		source: string,
+		sanitized: string,
+		offset: number,
+		mode: 'html' | 'raw',
+	): void {
 		let entry = this.#previews.get(id);
 		if (entry && entry.element.parentElement !== wrapper) {
 			entry.element.remove();
@@ -110,13 +121,20 @@ export class HtmlPreviewController extends Disposable {
 		if (!entry) {
 			const element = document.createElement('div');
 			element.className = PREVIEW_CLASS;
-			entry = { element, source: '', offset };
+			entry = { element, source: '', mode, offset };
 			this.#previews.set(id, entry);
 		}
 		entry.offset = offset;
-		if (entry.source !== source) {
+		if (entry.source !== source || entry.mode !== mode) {
 			entry.source = source;
-			entry.element.innerHTML = sanitizeHtml(source);
+			entry.mode = mode;
+			if (mode === 'raw') {
+				entry.element.classList.add(RAW_CLASS);
+				entry.element.textContent = source;
+			} else {
+				entry.element.classList.remove(RAW_CLASS);
+				entry.element.innerHTML = sanitized;
+			}
 		}
 		if (entry.element.parentElement !== wrapper) {
 			wrapper.insertBefore(entry.element, wrapper.firstChild);

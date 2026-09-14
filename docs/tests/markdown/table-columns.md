@@ -4,7 +4,7 @@ Open this file with **Reopen Editor With... → Markdown Editor (ib-utilities)**
 
 Short columns stay wide enough for one word. Long columns wrap first when the table is wider than the editor.
 
-Related files: [showcase.md](./showcase.md), [edge-cases.md](./edge-cases.md).
+Related files: [showcase.md](./showcase.md), [edge-cases.md](./edge-cases.md), [README.md](./README.md).
 
 ## Short words plus a long notes column
 

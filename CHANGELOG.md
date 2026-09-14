@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+-   Add: `npm run fetch-markdown-large-fixtures` — downloads large real-world Markdown stress tests (Reltio corpus, awesome-selfhosted, MDN, etc.) into `docs/tests/markdown/large/`
+-   Add: Expanded Markdown Editor manual test fixtures under `docs/tests/markdown/` (README, keyboard-whitespace, lists-tasks, links-autolinks)
+-   Fix: Markdown Editor shows angle-bracket autolinks and HTML it cannot paint as raw source
 -   Change: Group markdown editor code under `src/markdownEditor/` (`host/`, `webview/`); replace webview `@vscode/observables` usage with local helpers
 -   Add: **Discard** editor title bar action when the file on disk changed and the editor text is different; reloads from disk and keeps the file open
 -   Add: Editor title bar icons to swap between the Markdown text editor and Markdown Editor (ib-utilities) for the same `.md` file

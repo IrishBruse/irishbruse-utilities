@@ -6,7 +6,7 @@ draft: false
 
 # Markdown Editor showcase
 
-Open this file with **Reopen Editor With... → Markdown Editor (ib-utilities)**. YAML front matter is the first block.
+Open this file with **Reopen Editor With... → Markdown Editor (ib-utilities)**. YAML front matter is the first block. See [README.md](./README.md) for the full fixture list and checklist.
 
 Theme colors: **H1–H6**, **bold**, *italic*, ***both***, ~~strike~~, `inline code`, and [links](https://example.com). Escapes: \*not italic\*, \`not code\`. Mix: call `getValue()` on **MyClass**.
 
@@ -19,6 +19,7 @@ Theme colors: **H1–H6**, **bold**, *italic*, ***both***, ~~strike~~, `inline c
 3. On a **mermaid** fence, use **Open Preview** (top-right) for the themed preview.
 4. Leave an **HTML block** idle for the sanitized preview. Click it to edit raw HTML.
 5. Click a **task checkbox** to toggle. Click a **link** to open it.
+6. Focused fixtures: [lists-tasks.md](./lists-tasks.md), [keyboard-whitespace.md](./keyboard-whitespace.md), [links-autolinks.md](./links-autolinks.md).
 
 ## Headings H1–H6
 
@@ -137,6 +138,11 @@ Feature: Markdown editor
 plain fence without a language tag
 ```
 
+```json
+{
+  "test": 123
+}
+```
 ```typescript
 ```
 
@@ -193,6 +199,9 @@ Inline HTML in a sentence: <span>colored span</span> and <br> a break.
 - [Headings in this file](#headings-h1h6)
 - [Relative](./edge-cases.md)
 - [Table column wrap](./table-columns.md)
+- [Lists and tasks](./lists-tasks.md)
+- [Keyboard and whitespace](./keyboard-whitespace.md)
+- [Links and autolinks](./links-autolinks.md)
 - Autolink: https://example.com/path?q=1
 - <https://example.com>
 - Reference: [same ref twice][ref] and [again][ref]

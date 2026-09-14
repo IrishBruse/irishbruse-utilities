@@ -563,6 +563,10 @@ body {
 	z-index: 1;
 }
 
+.ib-html-preview.ib-html-raw {
+	white-space: pre-wrap;
+}
+
 .ib-html-preview summary {
 	cursor: pointer;
 }

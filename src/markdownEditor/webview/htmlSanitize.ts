@@ -148,6 +148,26 @@ function cleanNode(node: Node): Node | undefined {
 	return element;
 }
 
+const DANGEROUS_TAG_PATTERN = new RegExp(
+	`</?(?:${[...DANGEROUS_TAGS].map(tag => tag.toLowerCase()).join('|')})\\b`,
+	'i',
+);
+
+/** True when the source contains a tag the sanitizer strips entirely. */
+export function isDangerousHtmlSource(html: string): boolean {
+	return DANGEROUS_TAG_PATTERN.test(html);
+}
+
+export type HtmlPreviewKind = 'html' | 'raw' | 'warning';
+
+/** Choose painted HTML, raw source, or the unhandled warning chrome. */
+export function htmlPreviewKind(source: string, sanitized: string): HtmlPreviewKind {
+	if (sanitized.trim().length > 0) {
+		return 'html';
+	}
+	return isDangerousHtmlSource(source) ? 'warning' : 'raw';
+}
+
 /** Strip scripts, event handlers, and unsafe URLs. Keep a Markdown-preview tag subset. */
 export function sanitizeHtml(html: string): string {
 	const parsed = new DOMParser().parseFromString(html, 'text/html');

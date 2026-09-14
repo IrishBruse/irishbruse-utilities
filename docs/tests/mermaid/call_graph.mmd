@@ -1,0 +1,12 @@
+flowchart TD
+    Helper[Helper]
+    Main[Main]
+    Nested[Nested]
+    Other[Other]
+    Main --> Helper
+    Main --> Nested
+    Main --> Other
+    click Helper href "../test.gbl:7:1" "../test.gbl:7:1"
+    click Main href "../test.gbl:1:1" "../test.gbl:1:1"
+    click Nested href "../test.gbl:17:1" "../test.gbl:17:1"
+    click Other href "test.txt:3:2" "test.txt:3:2"

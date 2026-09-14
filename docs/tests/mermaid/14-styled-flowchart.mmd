@@ -1,0 +1,14 @@
+flowchart TD
+    A[Parser] --> B[Decorator]
+    B --> C[VS Code API]
+
+    classDef parser fill:#2d4a3e,stroke:#5fb3a2,color:#e6fffa
+    classDef decorator fill:#3d2d4a,stroke:#b392f0,color:#f8f0ff
+    classDef api fill:#2d3d4a,stroke:#61afef,color:#e6f4ff
+
+    class A parser
+    class B decorator
+    class C api
+
+    linkStyle 0 stroke:#5fb3a2,stroke-width:2px
+    linkStyle 1 stroke:#61afef,stroke-width:2px

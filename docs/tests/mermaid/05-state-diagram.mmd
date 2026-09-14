@@ -1,0 +1,21 @@
+stateDiagram-v2
+    [*] --> Idle
+
+    Idle --> Loading : open
+    Loading --> Ready : success
+    Loading --> Error : failure
+
+    Ready --> Editing : edit
+    Editing --> Saving : save
+    Saving --> Ready : committed
+    Saving --> Error : conflict
+
+    Error --> Idle : dismiss
+    Ready --> Idle : close
+    Editing --> Idle : discard
+
+    state Ready {
+        [*] --> Preview
+        Preview --> Source : toggle
+        Source --> Preview : toggle
+    }

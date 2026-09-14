@@ -1,0 +1,24 @@
+sequenceDiagram
+    autonumber
+    actor User
+    participant App
+    participant API
+    participant DB
+
+    User->>App: Open document
+    App->>API: GET /document/42
+    API->>DB: SELECT *
+    DB-->>API: rows
+    API-->>App: 200 OK
+    App-->>User: Render preview
+
+    alt Save succeeds
+        User->>App: Save
+        App->>API: PUT /document/42
+        API-->>App: 204 No Content
+    else Save fails
+        User->>App: Save
+        App->>API: PUT /document/42
+        API-->>App: 409 Conflict
+        App-->>User: Show error
+    end

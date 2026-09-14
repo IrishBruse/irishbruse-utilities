@@ -1,0 +1,16 @@
+flowchart LR
+    long["This node has a very long label to test wrapping and width inside the preview viewport"]
+    unicode["Emoji and symbols: ✓ → ← λ ∑"]
+    nums["IDs: #42, 3.14, -0.5e2"]
+
+    long --> unicode
+    unicode --> nums
+    nums --> long
+
+    note1[/Parallelogram/]
+    note2[\Trapezoid\]
+    note3[[Subroutine]]
+
+    nums --> note1
+    note1 --> note2
+    note2 --> note3

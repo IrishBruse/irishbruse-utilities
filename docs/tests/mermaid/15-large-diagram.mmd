@@ -1,0 +1,36 @@
+flowchart TB
+    subgraph Ingest
+        A1[Webhook] --> A2[Validate]
+        A2 --> A3[Enqueue]
+    end
+
+    subgraph Workers
+        B1[Worker 1] --> B3[Transform]
+        B2[Worker 2] --> B3
+        B3 --> B4[Persist]
+    end
+
+    subgraph Read path
+        C1[API] --> C2[Cache]
+        C2 --> C3[Query]
+        C3 --> C4[Response]
+    end
+
+    subgraph Observability
+        D1[Metrics]
+        D2[Logs]
+        D3[Traces]
+    end
+
+    A3 --> B1
+    A3 --> B2
+    B4 --> C3
+    B1 -.-> D1
+    B2 -.-> D2
+    B3 -.-> D3
+    C1 -.-> D1
+    C4 -.-> D2
+
+    E1[Admin UI] --> C1
+    E2[CLI] --> C1
+    E3[Mobile] --> C1

@@ -1,0 +1,19 @@
+gantt
+    title Extension release plan
+    dateFormat YYYY-MM-DD
+    axisFormat %b %d
+    todayMarker off
+
+    section Foundation
+    Preview editor    :done,    a1, 2026-03-01, 2026-03-10
+    Theme + CSP       :done,    a2, 2026-03-08, 3d
+    Pan and zoom      :active,  a3, 2026-03-11, 4d
+
+    section Polish
+    Toolbar toggle    :         b1, after a3, 4d
+    Diagram gallery   :         b2, after b1, 4d
+    Documentation              :         b3, after b2, 4d
+
+    section Release
+    Verify            :crit,    c1, after b3, 4d
+    Publish           :milestone, c2, after c1, 0d

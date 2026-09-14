@@ -1,0 +1,19 @@
+flowchart TB
+    subgraph Client
+        UI[Web UI]
+        API[REST Client]
+    end
+
+    subgraph Server
+        GW[Gateway]
+        SVC[Service]
+        DB[(Database)]
+    end
+
+    UI --> API
+    API --> GW
+    GW --> SVC
+    SVC --> DB
+    DB --> SVC
+    SVC --> GW
+    GW --> API

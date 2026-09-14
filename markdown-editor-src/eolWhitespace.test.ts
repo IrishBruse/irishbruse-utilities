@@ -107,4 +107,18 @@ describe('eolWhitespace', () => {
 		el('md-editor-content').append(paragraph, gap, heading);
 		expect(isEolWhitespaceSpan(trail)).toBe(true);
 	});
+
+	it('marks trailing spaces at the end of the last block when a caret overlay follows', () => {
+		const trail = el('md-ws-space', ' ');
+		const paragraph = el('md-paragraph md-block').append(text('test adsasd'), trail);
+		const overlay = el('md-cursor').append(text('|'));
+		el('md-editor').append(paragraph, overlay);
+		expect(isEolWhitespaceSpan(trail)).toBe(true);
+	});
+
+	it('marks trailing-space glue at the end of a paragraph', () => {
+		const glue = el('md-glue', ' ');
+		el('md-paragraph md-block').append(text('test adsasd'), glue);
+		expect(isEolWhitespaceSpan(glue)).toBe(true);
+	});
 });

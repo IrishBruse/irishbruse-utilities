@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { vscodeKeyboardProfile } from '@vscode/markdown-editor';
-import { markdownEditorKeyboardProfile, withHardBreakOnEnter } from './keyboardProfile';
+import { markdownEditorKeyboardProfile } from './keyboardProfile';
 
-function enterCommands(profile: ReturnType<typeof withHardBreakOnEnter>) {
+function enterCommands(profile: typeof markdownEditorKeyboardProfile) {
 	return profile.bindings
 		.filter(binding => binding.key === 'Enter' && binding.action.kind === 'enter')
 		.map(binding => ({
@@ -13,26 +13,24 @@ function enterCommands(profile: ReturnType<typeof withHardBreakOnEnter>) {
 		}));
 }
 
-describe('withHardBreakOnEnter', () => {
-	it('maps Enter to a hard line break and Shift+Enter to smart enter', () => {
+describe('markdownEditorKeyboardProfile', () => {
+	it('keeps Enter as smart enter and Shift+Enter as a hard line break', () => {
 		const commands = enterCommands(markdownEditorKeyboardProfile);
 		expect(commands).toContainEqual({
 			shift: false,
 			ctrl: false,
 			meta: false,
-			command: 'insertHardLineBreak',
+			command: 'smartEnter',
 		});
 		expect(commands).toContainEqual({
 			shift: true,
 			ctrl: false,
 			meta: false,
-			command: 'smartEnter',
+			command: 'insertHardLineBreak',
 		});
 	});
 
-	it('does not change Ctrl/Cmd+Enter paragraph insertion', () => {
-		const before = enterCommands(vscodeKeyboardProfile).filter(binding => binding.ctrl || binding.meta);
-		const after = enterCommands(markdownEditorKeyboardProfile).filter(binding => binding.ctrl || binding.meta);
-		expect(after).toEqual(before);
+	it('matches the VS Code Markdown editor Enter bindings', () => {
+		expect(enterCommands(markdownEditorKeyboardProfile)).toEqual(enterCommands(vscodeKeyboardProfile));
 	});
 });

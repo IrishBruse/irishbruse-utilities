@@ -25,7 +25,12 @@ import {
     invalidateMarkdownSyntaxTheme,
     unstyledHighlight,
 } from "./syntaxHighlighting";
-import { encodeWebviewInitialState, prefixMarkdownForFastOpen } from "./webviewInitialState";
+import {
+    encodeWebviewInitialState,
+    isSkillMarkdownPath,
+    prefixMarkdownForFastOpen,
+    skillFolderNameFromPath,
+} from "./webviewInitialState";
 
 export const MARKDOWN_EDITOR_VIEW_TYPE = "ib-utilities.markdownEditor";
 
@@ -84,6 +89,8 @@ function getEditorHtml(
         richLinksEnabled: false,
         linkPresentationRules: [],
         tables: getMarkdownInlineEditorTables(),
+        skillFrontMatter: isSkillMarkdownPath(documentUri.path),
+        skillFolderName: skillFolderNameFromPath(documentUri.path),
     });
     const colorVars = markdownInlineEditorColorsCssVars(getMarkdownInlineEditorColors());
 

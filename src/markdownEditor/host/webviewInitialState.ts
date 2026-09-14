@@ -15,6 +15,21 @@ export interface MarkdownEditorInitialState {
         readonly maxColumnWidth: number;
         readonly style: "wrapped" | "compact";
     };
+    readonly skillFrontMatter: boolean;
+    readonly skillFolderName: string;
+}
+
+export function isSkillMarkdownPath(path: string): boolean {
+    const file = path.split(/[/\\]/).pop() ?? "";
+    return file === "SKILL.md";
+}
+
+export function skillFolderNameFromPath(path: string): string {
+    const parts = path.split(/[/\\]/).filter((part) => part.length > 0);
+    if (parts.length < 2) {
+        return "";
+    }
+    return parts[parts.length - 2] ?? "";
 }
 
 export function encodeWebviewInitialState(state: MarkdownEditorInitialState): string {

@@ -20,6 +20,9 @@ const LINE_END_CLASSES = new Set([
 	'md-ws-newline-glyph',
 	'md-ws-blockbreak-glyph',
 	'md-hardbreak',
+	'ib-md-virtual-spacer',
+	'md-cursor',
+	'md-selection',
 ]);
 
 const STRUCTURAL_GLUE_CLASSES = [
@@ -179,8 +182,7 @@ export function isEolWhitespaceSpan(el: WhitespaceWalkNode): boolean {
 	return isFollowedOnlyByLineEnd(el);
 }
 
-function glueDotCount(el: HTMLElement): number {
-	const text = el.textContent ?? '';
+function glueDotCount(text: string): number {
 	let count = 0;
 	for (const ch of text) {
 		if (ch === ' ' || ch === '\t' || ch === '\u00a0') {
@@ -188,6 +190,37 @@ function glueDotCount(el: HTMLElement): number {
 		}
 	}
 	return count;
+}
+
+function hardBreakDotCount(hardBreak: HTMLElement): number {
+	const src = hardBreak.querySelector('.md-hardbreak-src');
+	const text = src?.textContent ?? hardBreak.textContent ?? '';
+	let count = 0;
+	for (const ch of text) {
+		if (ch === '\n' || ch === '\r') {
+			break;
+		}
+		if (ch === ' ' || ch === '\t' || ch === '\u00a0') {
+			count++;
+		}
+	}
+	return count;
+}
+
+function markHardBreak(el: HTMLElement, keep: Set<HTMLElement>): void {
+	const count = hardBreakDotCount(el);
+	if (count <= 0) {
+		return;
+	}
+	el.classList.add(EOL_WS_CLASS);
+	keep.add(el);
+	const src = el.querySelector('.md-hardbreak-src');
+	const hidden = src instanceof HTMLElement && src.classList.contains('md-hardbreak-src-hidden');
+	if (hidden) {
+		el.setAttribute(EOL_DOTS_ATTR, '·'.repeat(count));
+	} else {
+		el.removeAttribute(EOL_DOTS_ATTR);
+	}
 }
 
 export function markEolWhitespace(root: ParentNode): void {
@@ -207,11 +240,16 @@ export function markEolWhitespace(root: ParentNode): void {
 		}
 		node.classList.add(EOL_WS_CLASS);
 		if (!node.querySelector('.md-ws-space, .md-ws-tab')) {
-			node.setAttribute(EOL_DOTS_ATTR, '·'.repeat(glueDotCount(node)));
+			node.setAttribute(EOL_DOTS_ATTR, '·'.repeat(glueDotCount(node.textContent ?? '')));
 		} else {
 			node.removeAttribute(EOL_DOTS_ATTR);
 		}
 		keep.add(node);
+	}
+	for (const node of root.querySelectorAll('.md-hardbreak')) {
+		if (node instanceof HTMLElement) {
+			markHardBreak(node, keep);
+		}
 	}
 	for (const node of root.querySelectorAll(`.${EOL_WS_CLASS}`)) {
 		if (node instanceof HTMLElement && !keep.has(node)) {
@@ -223,12 +261,49 @@ export function markEolWhitespace(root: ParentNode): void {
 
 /**
  * Paint trailing (end-of-line) spaces and tabs after each view layout.
+ * Glue rebuilds overwrite `className` and drop our mark, so paint again on
+ * DOM mutations and on the next frame after layout.
  */
 export class EolWhitespaceController extends Disposable {
 	constructor(view: EditorView) {
 		super();
-		observeAll(this._store, () => {
+		let paintRaf = 0;
+		let observer: MutationObserver | undefined;
+		const paint = (): void => {
+			paintRaf = 0;
+			observer?.disconnect();
 			markEolWhitespace(view.element);
-		}, view.measuredLayout.measurements, view.documentViewNode);
+			observer?.observe(view.element, {
+				subtree: true,
+				childList: true,
+				characterData: true,
+				attributes: true,
+				attributeFilter: ['class'],
+			});
+		};
+		const schedule = (): void => {
+			if (paintRaf) {
+				return;
+			}
+			paintRaf = requestAnimationFrame(paint);
+		};
+		observeAll(this._store, schedule, view.measuredLayout.measurements, view.documentViewNode);
+		observer = new MutationObserver(schedule);
+		observer.observe(view.element, {
+			subtree: true,
+			childList: true,
+			characterData: true,
+			attributes: true,
+			attributeFilter: ['class'],
+		});
+		this._register({
+			dispose: () => {
+				observer?.disconnect();
+				if (paintRaf) {
+					cancelAnimationFrame(paintRaf);
+				}
+			},
+		});
+		schedule();
 	}
 }

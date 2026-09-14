@@ -121,4 +121,12 @@ describe('eolWhitespace', () => {
 		el('md-paragraph md-block').append(text('test adsasd'), glue);
 		expect(isEolWhitespaceSpan(glue)).toBe(true);
 	});
+
+	it('marks trailing spaces when a virtualization spacer follows the block', () => {
+		const trail = el('md-ws-space', ' ');
+		const paragraph = el('md-paragraph md-block').append(text('end'), trail);
+		const spacer = el('ib-md-virtual-spacer');
+		el('md-document').append(paragraph, spacer);
+		expect(isEolWhitespaceSpan(trail)).toBe(true);
+	});
 });

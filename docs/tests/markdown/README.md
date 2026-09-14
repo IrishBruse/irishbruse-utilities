@@ -13,7 +13,8 @@ For Mermaid-only samples see [../mermaid/](../mermaid/).
 5. [links-autolinks.md](./links-autolinks.md) — inline links, autolinks, reference definitions.
 6. [edge-cases.md](./edge-cases.md) — odd syntax, sanitizer, sparse tables.
 7. [blank.md](./blank.md) — empty document and click-to-edit baseline.
-8. [large/](./large/) — downloaded real-world stress tests (14 MB docs, huge tables, 128k-line README).
+8. [SKILL.md](./SKILL.md) — YAML front matter properties panel and Add property autocomplete.
+9. [large/](./large/) — downloaded real-world stress tests (14 MB docs, huge tables, 128k-line README).
 
 ## Large fixtures (online sources)
 
@@ -34,6 +35,7 @@ Run `npm run fetch-markdown-large-fixtures` to download into [large/](./large/).
 | [links-autolinks.md](./links-autolinks.md) | Clickable links, angle-bracket autolinks, reference links, link-definition styling |
 | [edge-cases.md](./edge-cases.md) | Long wrap, unclosed emphasis, dangerous HTML stripped, broken images |
 | [blank.md](./blank.md) | Empty file click places caret; typing works from a blank state |
+| [SKILL.md](./SKILL.md) | Front matter paints as a Properties card; typed fields write YAML; Add property autocompletes unused keys |
 | [large/*](./large/) (after fetch) | Scroll/parse stress: 14 MB corpus, huge tables, 128k-line README, MDN reference |
 
 ## Settings to try

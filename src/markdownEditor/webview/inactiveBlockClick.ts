@@ -89,7 +89,7 @@ export class InactiveBlockClickController extends Disposable {
 
 	#isExcludedTarget(target: Element): boolean {
 		return !!target.closest(
-			'.ib-mermaid-open-preview, .ib-html-preview, .md-table-wrapper, .ib-table-grid-overlay, .md-readonly-toggle, a[href], [data-md-url], summary',
+			'.ib-mermaid-open-preview, .ib-html-preview, .ib-skill-properties-panel, .md-table-wrapper, .ib-table-grid-overlay, .md-readonly-toggle, a[href], [data-md-url], summary',
 		);
 	}
 

@@ -20,6 +20,7 @@ import { HtmlPreviewController } from './htmlPreview';
 import { UnhandledBlockChromeController } from './unhandledBlockChrome';
 import { InactiveBlockClickController } from './inactiveBlockClick';
 import { EolWhitespaceController } from './eolWhitespace';
+import { SkillFrontMatterController } from './skillFrontMatter';
 import { markdownEditorKeyboardProfile } from './keyboardProfile';
 import {
 	bindViewportVirtualization,
@@ -66,6 +67,8 @@ interface InitialState {
 		readonly maxColumnWidth: number;
 		readonly style: 'wrapped' | 'compact';
 	};
+	readonly skillFrontMatter: boolean;
+	readonly skillFolderName: string;
 }
 
 class CodeBlockEditorHostTransport implements IframeEmbeddedEditorHostTransport {
@@ -384,6 +387,9 @@ class Editor extends Disposable {
 		this._register(new HtmlPreviewController(model, view, url => {
 			this.#postToHost({ type: 'openLink', href: url });
 		}));
+		if (initialState.skillFrontMatter) {
+			this._register(new SkillFrontMatterController(model, view, host, initialState.skillFolderName));
+		}
 		this._register(new UnhandledBlockChromeController(view));
 		this._register(new InactiveBlockClickController(model, view, host));
 		this._register(new EolWhitespaceController(view));
@@ -700,7 +706,9 @@ function isInitialState(value: unknown): value is InitialState {
 		&& typeof candidate.readonly === 'boolean'
 		&& typeof candidate.richLinksEnabled === 'boolean'
 		&& Array.isArray(candidate.linkPresentationRules)
-		&& isTableSettings(candidate.tables);
+		&& isTableSettings(candidate.tables)
+		&& typeof candidate.skillFrontMatter === 'boolean'
+		&& typeof candidate.skillFolderName === 'string';
 }
 
 function isTableSettings(value: unknown): value is InitialState['tables'] {

@@ -4,21 +4,16 @@
  *--------------------------------------------------------------------------------------------*/
 
 import {
-	AsyncClipboardStrategy,
-	BlockViewNode,
-	EditorController,
 	EditorModel,
-	EditorView,
-	LocalHistoryStrategy,
 	Selection,
 	StringValue,
 	blocksIntersecting,
 	findBlockAtOffset,
 	findNodeOffsetById,
-	type BlockMeasurement,
 	type TableAstNode,
-} from '@vscode/markdown-editor';
-import { markdownEditorKeyboardProfile } from './keyboardProfile';
+} from '../core/index';
+import { AsyncClipboardStrategy, EditorController, LocalHistoryStrategy, markdownEditorKeyboardProfile } from './editorController';
+import { BlockViewNode, EditorView, type BlockMeasurement } from './editorView';
 import { Disposable, DisposableStore } from './disposable';
 import { observableValue } from './markdownObservable';
 import { observeAll } from './react';
@@ -302,6 +297,10 @@ export class TableGridController extends Disposable {
 		const viewNode = measurement.viewNode;
 		if (!(viewNode instanceof BlockViewNode)) {
 			return undefined;
+		}
+		const inner = viewNode.element.querySelector('.md-table-wrapper');
+		if (inner instanceof HTMLElement) {
+			return inner;
 		}
 		return viewNode.scrollElement ?? viewNode.element;
 	}
@@ -851,6 +850,11 @@ export class TableGridController extends Disposable {
 		}, true);
 		cellView.element.addEventListener('keydown', event => event.stopPropagation());
 		cellView.element.addEventListener('pointerdown', event => event.stopPropagation());
+		cellView.element.addEventListener('beforeinput', event => event.stopPropagation());
+		cellView.element.addEventListener('compositionend', event => event.stopPropagation());
+		cellView.element.addEventListener('copy', event => event.stopPropagation());
+		cellView.element.addEventListener('cut', event => event.stopPropagation());
+		cellView.element.addEventListener('paste', event => event.stopPropagation());
 
 		host.appendChild(cellView.element);
 		this.#chromeHost.appendChild(host);
@@ -918,16 +922,16 @@ export class TableGridController extends Disposable {
 			editor.style.height = 'auto';
 			editor.style.minHeight = '0';
 			editor.style.maxHeight = 'none';
-			const paragraph = editor.querySelector('.md-paragraph');
+			const textHost = editor.querySelector('.md-active-source, .md-paragraph');
 			const padTop = Number.parseFloat(editor.style.paddingTop) || 0;
 			const padBottom = Number.parseFloat(editor.style.paddingBottom) || 0;
 			let needed = this.#cellPreviewHeight;
-			if (paragraph instanceof HTMLElement) {
-				const style = getComputedStyle(paragraph);
+			if (textHost instanceof HTMLElement) {
+				const style = getComputedStyle(textHost);
 				const fontSize = Number.parseFloat(style.fontSize) || 16;
 				const parsedLine = Number.parseFloat(style.lineHeight);
 				const lineHeight = Number.isFinite(parsedLine) ? parsedLine : fontSize * 1.2;
-				const textHeight = paragraph.getBoundingClientRect().height;
+				const textHeight = textHost.getBoundingClientRect().height;
 				if (textHeight > lineHeight * 1.35) {
 					needed = Math.max(this.#cellPreviewHeight, Math.ceil(textHeight + padTop + padBottom));
 				}

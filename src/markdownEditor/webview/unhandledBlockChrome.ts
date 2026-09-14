@@ -3,11 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import {
-	EditorView,
-	type BlockAstNode,
-	type BlockMeasurement,
-} from '@vscode/markdown-editor';
+import type { BlockAstNode } from '../core/index';
+import { EditorView, type BlockMeasurement } from './editorView';
 import { Disposable } from './disposable';
 import { observeAll } from './react';
 

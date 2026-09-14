@@ -1,7 +1,3 @@
-import { GlueAstNode, ViewNode, type EditorView } from '@vscode/markdown-editor';
-
-export const DOCUMENT_VIEW_CREATE_HOOK = '__ibMdDocumentViewCreate';
-
 export const VIRTUALIZE_AFTER_CHILDREN = 48;
 export const VIEWPORT_OVERSCAN_PX = 1600;
 export const DEFAULT_LINE_HEIGHT_PX = 22;
@@ -31,48 +27,7 @@ export interface MountSegment {
 	readonly height: number;
 }
 
-export interface DocumentViewCreateApi {
-	readonly originalCreate: (viewData: unknown, options: unknown, previous: unknown) => unknown;
-	readonly createViewNode: (view: unknown, options: unknown, previous: unknown) => ViewNode;
-	readonly patchDomNodes: (parent: HTMLElement, nodes: readonly Node[]) => void;
-	readonly pairNodes: (views: readonly unknown[], previous: readonly ViewNode[]) => {
-		readonly paired: Map<unknown, ViewNode>;
-		readonly unused: readonly ViewNode[];
-	};
-	readonly emptyNodes: readonly ViewNode[];
-	readonly PendingParagraph: new (view: unknown) => ViewNode & { update(text: string): void };
-	readonly DocumentViewNode: new (
-		ast: unknown,
-		dom: HTMLElement,
-		blocks: readonly { readonly node: ViewNode; readonly absoluteStart: number }[],
-		nodes: readonly ViewNode[],
-		pending?: ViewNode,
-	) => unknown;
-}
-
-interface PreviousDocument {
-	readonly contentDomNode?: HTMLElement;
-	readonly children?: readonly ViewNode[];
-}
-
-interface DocumentChildView {
-	readonly kind: string;
-	readonly isActive: boolean;
-	readonly absoluteStart: number;
-	readonly diffKind?: 'added' | 'modified';
-	readonly view: {
-		readonly ast: { readonly id: number; readonly length: number };
-		readonly text?: string;
-	};
-}
-
-interface DocumentViewDataLike {
-	readonly ast: unknown;
-	readonly children: readonly DocumentChildView[];
-}
-
 let viewport: ViewportBox = { scrollTop: 0, height: DEFAULT_VIEWPORT_HEIGHT_PX };
-let editorView: EditorView | undefined;
 let heightByAstId = new Map<number, number>();
 let lastRangeKey = '';
 let lastChildCount = 0;
@@ -189,17 +144,17 @@ export function mountSegments(mounted: readonly number[], heights: readonly numb
 		}
 		let height = 0;
 		for (let i = from; i < to; i++) {
-			height += heights[i];
+			height += heights[i] ?? 0;
 		}
 		if (height > 0) {
 			segments.push({ type: 'spacer', start: from, end: to, height });
 		}
 	};
-	let runStart = mounted[0];
+	let runStart = mounted[0] ?? 0;
 	let runEnd = runStart + 1;
 	flushSpacer(cursor, runStart);
 	for (let i = 1; i < mounted.length; i++) {
-		const index = mounted[i];
+		const index = mounted[i] ?? 0;
 		if (index === runEnd) {
 			runEnd++;
 			continue;
@@ -228,6 +183,7 @@ export function planDocumentMount(
 	const extra = extraMountIndices(children);
 	const mounted = mergeMountIndices(range.start, range.end, extra, children.length);
 	const segments = mountSegments(mounted, heights);
+	rememberPlan(children.length, heights, rangeKey(range.start, range.end, extra));
 	return {
 		virtualized: true,
 		segments,
@@ -271,115 +227,7 @@ function rememberPlan(childCount: number, heights: readonly number[], mountKey: 
 	lastRangeKey = mountKey;
 }
 
-class SpacerViewNode extends ViewNode {
-	constructor(height: number) {
-		const el = document.createElement('div');
-		el.className = 'ib-md-virtual-spacer';
-		el.style.height = `${Math.max(0, height)}px`;
-		el.setAttribute('aria-hidden', 'true');
-		super(new GlueAstNode('\n'), el);
-	}
-}
-
-function applyBlockChrome(
-	node: ViewNode,
-	child: DocumentChildView,
-	activeByView: Map<unknown, boolean>,
-): void {
-	if (child.kind !== 'block') {
-		return;
-	}
-	const element = (node as ViewNode & { element?: HTMLElement }).element;
-	if (!(element instanceof HTMLElement)) {
-		return;
-	}
-	const isActive = activeByView.get(child.view);
-	if (isActive !== undefined) {
-		element.classList.toggle('md-block-active', isActive);
-		element.classList.toggle('md-markers-hidden', !isActive);
-	}
-	element.classList.toggle('md-diff-added', child.diffKind === 'added');
-	element.classList.toggle('md-diff-modified', child.diffKind === 'modified');
-}
-
-export function createVirtualizedDocument(
-	viewData: unknown,
-	options: unknown,
-	previous: unknown,
-	api: DocumentViewCreateApi,
-): unknown {
-	const data = viewData as DocumentViewDataLike;
-	const children = data.children;
-	const plan = planDocumentMount(children, viewport, heightByAstId);
-	const heights = childHeightsPx(children, heightByAstId);
-	rememberPlan(children.length, heights, plan.mountKey);
-	if (!plan.virtualized) {
-		return api.originalCreate(viewData, options, previous);
-	}
-
-	const prev = previous as PreviousDocument | undefined;
-	const contentDomNode = prev?.contentDomNode ?? document.createElement('div');
-	contentDomNode.classList.add('md-document');
-	const activeByView = new Map<unknown, boolean>(
-		children.filter(child => child.kind === 'block').map(child => [child.view, child.isActive]),
-	);
-
-	const mountedViews: unknown[] = [];
-	for (const segment of plan.segments) {
-		if (segment.type === 'range') {
-			for (let i = segment.start; i < segment.end; i++) {
-				mountedViews.push(children[i].view);
-			}
-		}
-	}
-	const { paired, unused } = api.pairNodes(mountedViews, prev?.children ?? api.emptyNodes);
-	let pendingParagraph: ViewNode | undefined;
-	const nodes: ViewNode[] = [];
-	const blocks: { readonly node: ViewNode; readonly absoluteStart: number }[] = [];
-	for (const segment of plan.segments) {
-		if (segment.type === 'spacer') {
-			nodes.push(new SpacerViewNode(segment.height));
-			continue;
-		}
-		for (let i = segment.start; i < segment.end; i++) {
-			const child = children[i];
-			const view = child.view;
-			const prevNode = paired.get(view);
-			if (child.kind === 'pendingParagraph') {
-				const node = prevNode instanceof api.PendingParagraph
-					? prevNode
-					: new api.PendingParagraph(view);
-				node.update(view.text ?? '');
-				pendingParagraph = node;
-				nodes.push(node);
-				continue;
-			}
-			const node = api.createViewNode(view, options, prevNode);
-			applyBlockChrome(node, child, activeByView);
-			nodes.push(node);
-			if (child.kind === 'block') {
-				blocks.push({ node, absoluteStart: child.absoluteStart });
-			}
-		}
-	}
-	for (const node of unused) {
-		node.dispose();
-	}
-	api.patchDomNodes(contentDomNode, nodes.map(node => node.mountNode));
-	return new api.DocumentViewNode(data.ast, contentDomNode, blocks, nodes, pendingParagraph);
-}
-
-export function installDocumentViewCreateHook(): void {
-	(globalThis as Record<string, unknown>)[DOCUMENT_VIEW_CREATE_HOOK] = (
-		viewData: unknown,
-		options: unknown,
-		previous: unknown,
-		api: DocumentViewCreateApi,
-	) => createVirtualizedDocument(viewData, options, previous, api);
-}
-
-export function bindViewportVirtualization(view: EditorView, host: HTMLElement): () => void {
-	editorView = view;
+export function bindViewportVirtualization(view: { refreshEmbeddedCodeEditors(): void }, host: HTMLElement): () => void {
 	const syncViewport = (): void => {
 		const next: ViewportBox = {
 			scrollTop: host.scrollTop,
@@ -405,8 +253,5 @@ export function bindViewportVirtualization(view: EditorView, host: HTMLElement):
 	return () => {
 		host.removeEventListener('scroll', onScroll);
 		resizeObserver.disconnect();
-		if (editorView === view) {
-			editorView = undefined;
-		}
 	};
 }

@@ -5,7 +5,7 @@
 
 import type { DisposableStore } from './disposable';
 
-/** Subset of `@vscode/observables` used by `@vscode/markdown-editor` model fields. */
+/** Subset of local observables used by editor model fields. */
 export interface ObservableLike<T> {
 	get(): T;
 	recomputeInitiallyAndOnChange(

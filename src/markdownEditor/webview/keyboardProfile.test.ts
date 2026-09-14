@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { vscodeKeyboardProfile } from '@vscode/markdown-editor';
 import { markdownEditorKeyboardProfile } from './keyboardProfile';
 
 function enterCommands(profile: typeof markdownEditorKeyboardProfile) {
@@ -28,9 +27,5 @@ describe('markdownEditorKeyboardProfile', () => {
 			meta: false,
 			command: 'insertHardLineBreak',
 		});
-	});
-
-	it('matches the VS Code Markdown editor Enter bindings', () => {
-		expect(enterCommands(markdownEditorKeyboardProfile)).toEqual(enterCommands(vscodeKeyboardProfile));
 	});
 });

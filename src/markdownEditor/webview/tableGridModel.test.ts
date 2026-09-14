@@ -1,4 +1,4 @@
-import { EditorModel, StringValue, type TableAstNode } from '@vscode/markdown-editor';
+import { EditorModel, StringValue, TableAstNode } from '../core/index';
 import { describe, expect, it } from 'vitest';
 import {
 	applyTableData,
@@ -8,14 +8,13 @@ import {
 	type TableAlignment,
 } from './tableGridModel';
 
-function findTable(node: { kind: string; children?: readonly unknown[] }): TableAstNode | undefined {
+function findTable(node: { kind: string; blocks?: readonly { kind: string }[] }): TableAstNode | undefined {
 	if (node.kind === 'table') {
 		return node as TableAstNode;
 	}
-	for (const child of node.children ?? []) {
-		const found = findTable(child as { kind: string; children?: readonly unknown[] });
-		if (found) {
-			return found;
+	for (const child of node.blocks ?? []) {
+		if (child.kind === 'table') {
+			return child as TableAstNode;
 		}
 	}
 	return undefined;

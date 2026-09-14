@@ -2,10 +2,17 @@
 
 ## Unreleased
 
+-   Change: Markdown Editor paints the focused edit block as a darker rounded panel
+-   Fix: Markdown Editor types into the focused block; active lists no longer double the gap between lines
+-   Change: Parse Markdown with `marked` (GFM) instead of the in-repo line scanner
+-   Fix: Markdown Editor can edit again after **Unlock**; clicks on idle text set the caret
+-   Change: Parse Markdown in the editor with no remark / micromark / mdast packages
+-   Change: Replace `@vscode/markdown-editor` with an in-repo Markdown editor (no VS Code first-party editor packages)
+-   Remove: Markdown Editor comments, iframe code-block editors, rich-link cards, and `sync-markdown-editor` VS Code checkout copy
 -   Add: Markdown Editor paints `SKILL.md` YAML front matter as a Properties card with typed fields and Add property key autocomplete
 -   Change: SKILL.md Properties card is full content width with a transparent fill and a border only
 -   Change: SKILL.md Properties rows no longer show a type icon before the key
--   Fix: SKILL.md boolean fields use the workbench dropdown colors instead of the light HTML select
+-   Change: SKILL.md boolean fields use the same quiet field chrome as the text inputs
 -   Fix: SKILL.md Properties text fields show a caret (the document editor hides the native caret)
 -   Fix: Markdown Editor shows selected leading spaces as `·`, like the VS Code text editor
 -   Fix: Markdown Editor keeps `·` on trailing spaces after glue rebuilds and on idle hard breaks

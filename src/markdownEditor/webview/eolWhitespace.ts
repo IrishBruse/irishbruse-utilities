@@ -3,7 +3,8 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { EditorModel, EditorView, ViewNode, type Selection } from '@vscode/markdown-editor';
+import type { EditorModel, Selection } from '../core/index';
+import { EditorView, ViewNode } from './editorView';
 import { Disposable } from './disposable';
 import { observeAll } from './react';
 

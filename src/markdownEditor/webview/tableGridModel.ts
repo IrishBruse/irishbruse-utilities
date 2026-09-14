@@ -1,19 +1,12 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
-
 import {
 	EditorModel,
 	OffsetRange,
 	StringEdit,
-	StringReplacement,
 	findBlockAtOffset,
 	findNodeOffsetById,
 	type DocumentAstNode,
 	type TableAstNode,
-	type TableCellAstNode,
-} from '@vscode/markdown-editor';
+} from '../core/index';
 
 export type TableAlignment = 'left' | 'center' | 'right';
 
@@ -22,36 +15,41 @@ export interface ParsedTable {
 	readonly alignments: TableAlignment[];
 }
 
-/**
- * Cell AST spans include leading/trailing `|` glue. Return only the cell body
- * (inline markdown), trimmed — never the pipe characters.
- */
-export function getCellText(cell: TableCellAstNode, doc: DocumentAstNode, source: string): string {
-	let text = '';
-	for (const child of cell.children) {
-		if (child.kind === 'glue' && (child as { glueKind?: string }).glueKind === 'tableCellGlue') {
+function splitRow(line: string): string[] {
+	let body = line.trim();
+	if (body.startsWith('|')) {
+		body = body.slice(1);
+	}
+	if (body.endsWith('|')) {
+		body = body.slice(0, -1);
+	}
+	const cells: string[] = [];
+	let current = '';
+	let escaped = false;
+	for (const ch of body) {
+		if (escaped) {
+			current += ch;
+			escaped = false;
 			continue;
 		}
-		if (child.kind === 'marker') {
-			const markerKind = (child as { markerKind?: string }).markerKind;
-			if (markerKind === 'tableDelimiter' || markerKind === 'tableDelimiterClose') {
-				continue;
-			}
-		}
-		const childOffset = findNodeOffsetById(doc, child);
-		if (childOffset === undefined) {
+		if (ch === '\\') {
+			escaped = true;
+			current += ch;
 			continue;
 		}
-		text += source.slice(childOffset, childOffset + child.length);
-	}
-	if (text.length === 0) {
-		const offset = findNodeOffsetById(doc, cell);
-		if (offset === undefined) {
-			return '';
+		if (ch === '|') {
+			cells.push(current.replace(/^\s+|\s+$/g, ''));
+			current = '';
+			continue;
 		}
-		text = source.slice(offset, offset + cell.length);
+		current += ch;
 	}
-	return text.replace(/^\s*\|?\s*/, '').replace(/\s*\|?\s*$/, '').trim();
+	cells.push(current.replace(/^\s+|\s+$/g, ''));
+	return cells;
+}
+
+function isDelimiterRow(cells: readonly string[]): boolean {
+	return cells.length > 0 && cells.every(cell => /^:?-{3,}:?$/.test(cell.replace(/\s+/g, '')));
 }
 
 export function parseAlignment(delimiterText: string): TableAlignment {
@@ -67,26 +65,20 @@ export function parseAlignment(delimiterText: string): TableAlignment {
 	return 'left';
 }
 
-export function parseTable(table: TableAstNode, doc: DocumentAstNode, source: string): ParsedTable {
-	const rows: string[][] = [];
-	const alignments: TableAlignment[] = [];
-
-	if (table.headerRow) {
-		rows.push(table.headerRow.cells.map(cell => getCellText(cell, doc, source)));
-	}
-
-	if (table.delimiterRow) {
-		for (const cell of table.delimiterRow.cells) {
-			alignments.push(parseAlignment(getCellText(cell, doc, source)));
+export function parseTableSource(source: string): ParsedTable {
+	const lines = source.replace(/\r\n/g, '\n').replace(/\n+$/, '').split('\n').filter(line => line.trim().length > 0);
+	const parsedRows: string[][] = [];
+	let alignments: TableAlignment[] = [];
+	for (const line of lines) {
+		const cells = splitRow(line);
+		if (isDelimiterRow(cells)) {
+			alignments = cells.map(parseAlignment);
+			continue;
 		}
+		parsedRows.push(cells);
 	}
-
-	for (const bodyRow of table.bodyRows) {
-		rows.push(bodyRow.cells.map(cell => getCellText(cell, doc, source)));
-	}
-
-	const colCount = Math.max(alignments.length, ...rows.map(row => row.length), 1);
-	for (const row of rows) {
+	const colCount = Math.max(alignments.length, ...parsedRows.map(row => row.length), 1);
+	for (const row of parsedRows) {
 		while (row.length < colCount) {
 			row.push('');
 		}
@@ -94,16 +86,15 @@ export function parseTable(table: TableAstNode, doc: DocumentAstNode, source: st
 	while (alignments.length < colCount) {
 		alignments.push('left');
 	}
-
-	return { rows, alignments };
+	return { rows: parsedRows, alignments };
 }
 
-export function getTableSourceRange(table: TableAstNode, doc: DocumentAstNode): OffsetRange | undefined {
-	const start = findNodeOffsetById(doc, table);
-	if (start === undefined) {
-		return undefined;
-	}
-	return OffsetRange.fromTo(start, start + table.length);
+export function parseTable(table: TableAstNode, _doc: DocumentAstNode, source: string): ParsedTable {
+	return parseTableSource(source.slice(table.start, table.end));
+}
+
+export function getTableSourceRange(table: TableAstNode, _doc: DocumentAstNode): OffsetRange | undefined {
+	return OffsetRange.fromTo(table.start, table.end);
 }
 
 function escapeCell(text: string): string {
@@ -227,17 +218,16 @@ export function applyTableData(
 	if (!range) {
 		return;
 	}
-	// The AST range often keeps the blank line(s) after the table. serializeTable
-	// has no trailing newline, so dropping that suffix would glue the next block
-	// onto the last row (e.g. `| cell |## Heading`).
 	const source = model.sourceText.get().value;
 	const original = source.slice(range.start, range.endExclusive);
 	const trailingNewlines = original.match(/\r?\n*$/)?.[0] ?? '';
 	const newText = serializeTable(rows, alignments) + (trailingNewlines || '\n');
-	model.applyEdit(new StringEdit([StringReplacement.replace(range, newText)]));
+	model.applyEdit(StringEdit.replace(range, newText));
 }
 
 export function findTableAtOffset(doc: DocumentAstNode, offset: number): TableAstNode | undefined {
 	const block = findBlockAtOffset(doc, offset);
-	return block?.kind === 'table' ? block : undefined;
+	return block?.kind === 'table' ? block as TableAstNode : undefined;
 }
+
+export { findNodeOffsetById };

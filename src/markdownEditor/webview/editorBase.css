@@ -1,0 +1,131 @@
+.md-editor {
+	position: relative;
+	min-height: 100%;
+	box-sizing: border-box;
+	padding: 16px 48px 64px 32px;
+	font-family: var(--vscode-font-family, sans-serif);
+	font-size: var(--vscode-editor-font-size, 14px);
+	line-height: 1.6;
+	caret-color: var(--vscode-editorCursor-foreground, var(--vscode-editor-foreground, currentColor));
+	outline: none;
+	white-space: pre-wrap;
+	word-wrap: break-word;
+}
+
+.md-document {
+	display: flex;
+	flex-direction: column;
+	gap: 0.35em;
+}
+
+.md-block {
+	position: relative;
+}
+
+.md-block-active {
+	box-sizing: border-box;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: var(
+		--md-block-active-background,
+		color-mix(in srgb, var(--vscode-editor-background, #1e1e1e) 70%, #000)
+	);
+}
+
+.md-heading {
+	margin: 0.6em 0 0.3em;
+	font-weight: 600;
+}
+
+.md-paragraph {
+	margin: 0;
+}
+
+.md-list {
+	margin: 0.2em 0;
+	padding-left: 1.4em;
+}
+
+.md-list-item {
+	margin: 0;
+}
+
+.md-list-item > .md-paragraph {
+	display: inline;
+	margin: 0;
+}
+
+.md-task-list-item {
+	list-style: none;
+	margin-left: -1.2em;
+}
+
+.md-task-checkbox {
+	margin-right: 0.4em;
+}
+
+.md-blockquote {
+	margin: 0.4em 0;
+	padding-left: 0.8em;
+	border-left: 4px solid var(--vscode-editorWidget-border, #454545);
+}
+
+.md-thematic-break {
+	width: 100%;
+	border: 0;
+	border-top: 1px solid var(--vscode-editorWidget-border, #454545);
+}
+
+.md-code-block,
+.md-code-pre,
+.md-code-inner {
+	font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+	background: var(--vscode-textCodeBlock-background, transparent);
+	padding: 8px 12px;
+	overflow: auto;
+	white-space: pre;
+}
+
+.md-active-source {
+	white-space: pre-wrap;
+	font-family: inherit;
+}
+
+.md-ws-space,
+.md-ws-tab {
+	position: relative;
+}
+
+.md-unhandled-block {
+	white-space: pre-wrap;
+}
+
+.md-unhandled-scroll {
+	margin: 0;
+	white-space: pre-wrap;
+}
+
+.md-table {
+	border-collapse: collapse;
+}
+
+.md-table th,
+.md-table td {
+	border: 1px solid var(--vscode-editorWidget-border, #454545);
+	padding: 6px 10px;
+}
+
+.md-readonly-toggle {
+	position: absolute;
+	top: 8px;
+	right: 12px;
+	z-index: 4;
+	border: 0;
+	background: transparent;
+	color: var(--vscode-descriptionForeground, #888);
+	cursor: pointer;
+}
+
+.md-math {
+	overflow-x: auto;
+}

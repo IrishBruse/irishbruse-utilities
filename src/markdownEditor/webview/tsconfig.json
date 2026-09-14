@@ -1,6 +1,5 @@
 {
 	"compilerOptions": {
-		"rootDir": ".",
 		"module": "esnext",
 		"moduleResolution": "bundler",
 		"lib": [
@@ -16,6 +15,10 @@
 		"strict": true
 	},
 	"include": [
-		"./**/*.ts"
+		"./**/*.ts",
+		"../core/**/*.ts"
+	],
+	"exclude": [
+		"**/*.test.ts"
 	]
 }

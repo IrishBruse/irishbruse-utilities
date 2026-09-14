@@ -6,10 +6,10 @@
 import {
 	CodeBlockAstNode,
 	EditorModel,
-	EditorView,
 	Selection,
 	findNodeOffsetById,
-} from '@vscode/markdown-editor';
+} from '../core/index';
+import { EditorView } from './editorView';
 import { Disposable } from './disposable';
 import { observeAll } from './react';
 

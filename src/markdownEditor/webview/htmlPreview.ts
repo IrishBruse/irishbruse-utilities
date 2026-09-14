@@ -5,12 +5,11 @@
 
 import {
 	EditorModel,
-	EditorView,
 	Selection,
 	findNodeOffsetById,
 	type BlockAstNode,
-	type BlockMeasurement,
-} from '@vscode/markdown-editor';
+} from '../core/index';
+import { EditorView, type BlockMeasurement } from './editorView';
 import { Disposable } from './disposable';
 import { observeAll } from './react';
 import { htmlPreviewKind, sanitizeHtml } from './htmlSanitize';

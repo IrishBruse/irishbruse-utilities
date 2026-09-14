@@ -386,15 +386,21 @@ body {
 	width: 100%;
 	height: auto !important;
 	min-height: 0 !important;
-	caret-color: transparent;
+	caret-color: var(--vscode-editorCursor-foreground, var(--vscode-editor-foreground, currentColor));
 	background: transparent !important;
 }
 
 .ib-table-grid-cell-md-editor .md-editor-content,
 .ib-table-grid-cell-md-editor .md-block,
 .ib-table-grid-cell-md-editor .md-block-active {
+	padding: 0 !important;
+	border-radius: 0 !important;
 	background: transparent !important;
 	box-shadow: none !important;
+}
+
+.ib-table-grid-cell-md-editor .md-document {
+	gap: 0;
 }
 
 .ib-table-grid-cell-md-editor .md-editor-content {
@@ -684,7 +690,8 @@ body {
 	line-height: 1.3;
 }
 
-.md-front-matter.ib-skill-properties-rendered {
+.md-front-matter.ib-skill-properties-rendered,
+.md-block.ib-skill-properties-rendered {
 	position: relative;
 	width: 100%;
 	border: none;
@@ -693,7 +700,8 @@ body {
 	overflow: visible;
 }
 
-.md-front-matter.ib-skill-properties-rendered > :not(.ib-skill-properties-panel) {
+.md-front-matter.ib-skill-properties-rendered > :not(.ib-skill-properties-panel),
+.md-block.ib-skill-properties-rendered > :not(.ib-skill-properties-panel) {
 	position: absolute;
 	inset: 0;
 	opacity: 0;
@@ -782,17 +790,26 @@ body {
 select.ib-skill-properties-select {
 	appearance: none;
 	padding-right: 22px;
-	border-color: var(--vscode-dropdown-border, var(--vscode-input-border, #454545));
-	background-color: var(--vscode-dropdown-background, var(--vscode-input-background, transparent));
-	background-image: linear-gradient(45deg, transparent 50%, currentColor 50%),
-		linear-gradient(135deg, currentColor 50%, transparent 50%);
+	border-color: transparent;
+	background-color: transparent;
+	background-image: linear-gradient(45deg, transparent 50%, var(--vscode-descriptionForeground, #5C6370) 50%),
+		linear-gradient(135deg, var(--vscode-descriptionForeground, #5C6370) 50%, transparent 50%);
 	background-position:
 		calc(100% - 11px) calc(50% - 1px),
 		calc(100% - 6px) calc(50% - 1px);
 	background-size: 5px 5px;
 	background-repeat: no-repeat;
-	color: var(--vscode-dropdown-foreground, var(--vscode-foreground));
+	color: inherit;
 	cursor: pointer;
+}
+
+select.ib-skill-properties-select:hover {
+	border-color: var(--vscode-input-border, #454545);
+}
+
+select.ib-skill-properties-select:focus {
+	outline: 1px solid var(--vscode-focusBorder, #007fd4);
+	border-color: var(--vscode-focusBorder, #007fd4);
 }
 
 select.ib-skill-properties-select:disabled {

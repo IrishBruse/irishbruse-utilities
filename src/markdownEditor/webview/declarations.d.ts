@@ -4,3 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 declare module '*.css';
+declare module 'katex' {
+	const katex: {
+		render(source: string, element: HTMLElement, options?: { displayMode?: boolean; throwOnError?: boolean }): void;
+	};
+	export default katex;
+}

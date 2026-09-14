@@ -19,7 +19,9 @@ import {
 	type TableAstNode,
 } from '@vscode/markdown-editor';
 import { markdownEditorKeyboardProfile } from './keyboardProfile';
-import { Disposable, autorun, observableValue } from '@vscode/observables';
+import { Disposable, DisposableStore } from './disposable';
+import { observableValue } from './markdownObservable';
+import { observeAll } from './react';
 import { allocateColumnWidths } from './tableColumnLayout';
 import {
 	applyTableData,
@@ -102,15 +104,15 @@ export class TableGridController extends Disposable {
 		this._register({ dispose: () => this.#host.removeEventListener('scroll', this.#onScroll) });
 		this._register({ dispose: () => this.#exitGrid() });
 
-		this._register(autorun((reader) => {
+		observeAll(this._store, () => {
 			if (this.#model.readonlyMode.get()) {
 				if (this.#activeTableOffset !== undefined) {
 					this.#exitGrid();
 				}
 				return;
 			}
-			const selection = reader.readObservable(this.#model.selection);
-			const doc = reader.readObservable(this.#model.document);
+			const selection = this.#model.selection.get();
+			const doc = this.#model.document.get();
 			if (!selection) {
 				return;
 			}
@@ -123,16 +125,15 @@ export class TableGridController extends Disposable {
 			if (this.#activeTableOffset === undefined) {
 				this.#model.activeBlocksOverride.set(undefined, undefined);
 			}
-		}));
-		this._register(autorun((reader) => {
-			reader.readObservable(this.#model.sourceText);
+		}, this.#model.readonlyMode, this.#model.selection, this.#model.document);
+		this.#model.sourceText.recomputeInitiallyAndOnChange(this._store, () => {
 			if (this.#activeTableOffset === undefined || this.#isRemounting) {
 				return;
 			}
 			if (!this.#getActiveTable()) {
 				this.#exitGrid();
 			}
-		}));
+		});
 	}
 
 	#onPointerDown = (event: PointerEvent): void => {
@@ -859,8 +860,9 @@ export class TableGridController extends Disposable {
 		this.#cellController = cellController;
 		this.#editContextSuspend = this.#view.suspendEditContextWhileFocused(cellView.element);
 		this.#cellLayoutSub?.dispose();
-		this.#cellLayoutSub = autorun((reader) => {
-			reader.readObservable(cellModel.sourceText);
+		const layoutStore = new DisposableStore();
+		this.#cellLayoutSub = layoutStore;
+		cellModel.sourceText.recomputeInitiallyAndOnChange(layoutStore, () => {
 			this.#syncCellEditorLayout(true);
 		});
 		this.#syncCellEditorLayout(true);

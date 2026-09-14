@@ -11,7 +11,7 @@ import { terminalPaste } from "./commands/terminalPaste";
 import { ActionPanelViewProvider } from "./actionPanel/ActionPanelView";
 import { BranchChangesViewProvider } from "./gitHelpers/BranchChangesView";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
-import { registerMarkdownEditor } from "./markdownEditor/MarkdownEditorProvider";
+import { registerMarkdownEditor } from "./markdownEditor/host/MarkdownEditorProvider";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { registerMarkdownMermaidFeatures } from "./mermaidEditor/registerMarkdownMermaid";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";

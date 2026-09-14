@@ -8,7 +8,8 @@ import {
 	type BlockAstNode,
 	type BlockMeasurement,
 } from '@vscode/markdown-editor';
-import { Disposable, autorun } from '@vscode/observables';
+import { Disposable } from './disposable';
+import { observeAll } from './react';
 
 const LINK_DEFINITION_CLASS = 'ib-md-link-definition';
 const IMAGE_FALLBACK_CLASS = 'ib-md-image-fallback';
@@ -31,11 +32,11 @@ export class UnhandledBlockChromeController extends Disposable {
 		super();
 		this.#view = view;
 
-		this._register(autorun((reader) => {
-			const measurements = reader.readObservable(this.#view.measuredLayout.measurements);
+		observeAll(this._store, () => {
+			const measurements = this.#view.measuredLayout.measurements.get();
 			this.#syncDefinitions(measurements);
 			this.#syncImages();
-		}));
+		}, this.#view.measuredLayout.measurements);
 	}
 
 	#syncDefinitions(measurements: readonly BlockMeasurement[]): void {

@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Change: Group markdown editor code under `src/markdownEditor/` (`host/`, `webview/`); replace webview `@vscode/observables` usage with local helpers
 -   Add: **Discard** editor title bar action when the file on disk changed and the editor text is different; reloads from disk and keeps the file open
 -   Add: Editor title bar icons to swap between the Markdown text editor and Markdown Editor (ib-utilities) for the same `.md` file
 -   Fix: Markdown Editor Enter starts a new paragraph or continues a list; Shift+Enter inserts a hard line break (two trailing spaces)

@@ -1,6 +1,6 @@
 import { commands, window } from "vscode";
-import { getActiveMarkdownUri } from "../markdownEditor/getActiveMarkdownUri";
-import { MARKDOWN_EDITOR_VIEW_TYPE } from "../markdownEditor/MarkdownEditorProvider";
+import { getActiveMarkdownUri } from "../markdownEditor/host/getActiveMarkdownUri";
+import { MARKDOWN_EDITOR_VIEW_TYPE } from "../markdownEditor/host/MarkdownEditorProvider";
 
 export async function openMarkdownEditor(): Promise<void> {
     const uri = getActiveMarkdownUri();

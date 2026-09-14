@@ -10,7 +10,8 @@ import type {
 	LinkPresentationKind,
 	LinkPresentationStatusKind,
 } from '@vscode/markdown-editor';
-import { Disposable, observableValue, type ISettableObservable } from '@vscode/observables';
+import { Disposable } from './disposable';
+import { observableValue, type ISettableObservable } from './markdownObservable';
 
 interface LinkPresentationEntry {
 	readonly presentation: ISettableObservable<WebviewLinkPresentation | undefined>;

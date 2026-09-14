@@ -3,7 +3,7 @@ import { TabInputCustom, TabInputText, Uri, window } from "vscode";
 import { MARKDOWN_EDITOR_VIEW_TYPE } from "./MarkdownEditorProvider";
 import { getActiveMarkdownUri, isMarkdownUri } from "./getActiveMarkdownUri";
 
-describe("markdownEditor/getActiveMarkdownUri", () => {
+describe("markdownEditor/host/getActiveMarkdownUri", () => {
     beforeEach(() => {
         vi.mocked(window).activeTextEditor = undefined;
         vi.mocked(window.tabGroups).activeTabGroup = {

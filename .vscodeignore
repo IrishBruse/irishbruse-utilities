@@ -6,7 +6,8 @@ src/**
 .gitignore
 .yarnrc
 esbuild.mjs
-esbuild.markdownEditor.mjs
+src/markdownEditor/build.mjs
+src/markdownEditor/webview/**
 vsc-extension-quickstart.md
 **/tsconfig.json
 **/.eslintrc.json

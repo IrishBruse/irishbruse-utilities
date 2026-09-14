@@ -5,7 +5,8 @@
 
 import { AsyncClipboardStrategy, CommentModeController, CommentsModel, CommentsView, EditorController, EditorModel, EditorView, GutterMarker, OffsetRange, Selection, StringEdit, StringReplacement, StringValue, commands, findNodeOffsetById, CodeBlockAstNode, type LinkPresentationKind } from '@vscode/markdown-editor';
 import { VirtualizedIframeEmbeddedEditorFactory, type IframeEmbeddedEditorHostTransport, type IframeEmbeddedEditorProvider, type IframeEmbeddedEditorProviderSelector, type ResolvedIframeEmbeddedEditor } from '@vscode/markdown-editor/web-editors';
-import { Disposable, autorun, observableValue } from '@vscode/observables';
+import { Disposable } from './disposable';
+import { observeAll } from './react';
 import 'katex/dist/katex.min.css';
 import '@vscode/markdown-editor/editor.css';
 import '@vscode/markdown-editor/themes/vscode-default.css';
@@ -23,7 +24,7 @@ import { markdownEditorKeyboardProfile } from './keyboardProfile';
 import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
-} from '../src/mermaidEditor/vsCodeTheme.browser';
+} from '../../mermaidEditor/vsCodeTheme.browser';
 
 interface VsCodeApi {
 	postMessage(message: unknown): void;
@@ -139,8 +140,9 @@ class Editor extends Disposable {
 
 	readonly #comments = new CommentsModel();
 	#commentsView: CommentsView | undefined;
+	#commentController: CommentModeController | undefined;
 	/** Whether the workbench feedback store currently accepts new comments for this resource. */
-	readonly #acceptsComments = observableValue<boolean>('acceptsComments', false);
+	#acceptsComments = false;
 	// the message secret allows to distinguish vscode sending us a message vs a nested iframe
 	readonly #messageSecret: string;
 	readonly #vscode = acquireVsCodeApi();
@@ -227,7 +229,7 @@ class Editor extends Disposable {
 						author: comment.author,
 					})));
 					this.#isUpdatingComments = false;
-					this.#acceptsComments.set(!!message.acceptsComments, undefined);
+					this.#setAcceptsComments(!!message.acceptsComments);
 					break;
 				}
 				case 'revealComment': {
@@ -264,6 +266,29 @@ class Editor extends Disposable {
 			return;
 		}
 		this.#vscode.postMessage({ ...message, messageSecret: this.#messageSecret });
+	}
+
+	#setAcceptsComments(acceptsComments: boolean): void {
+		this.#acceptsComments = acceptsComments;
+		this.#syncCommentController();
+	}
+
+	#syncCommentController(): void {
+		const model = this.model;
+		const view = this.#view;
+		if (!view) {
+			return;
+		}
+		if (this.#acceptsComments && !this.#commentController) {
+			this.#commentController = new CommentModeController(model, view, {
+				onSubmit: ({ text, range }) => {
+					this.#postToHost({ type: 'addComment', start: range.start, endExclusive: range.endExclusive, text });
+				},
+			});
+		} else if (!this.#acceptsComments && this.#commentController) {
+			this.#commentController.dispose();
+			this.#commentController = undefined;
+		}
 	}
 
 	#createView(host: HTMLElement, initialState: InitialState): void {
@@ -352,9 +377,9 @@ class Editor extends Disposable {
 		this._register(new UnhandledBlockChromeController(view));
 		this._register(new InactiveBlockClickController(model, view, host));
 		this._register(new EolWhitespaceController(view));
-		this._register(autorun((reader) => {
-			reader.readObservable(model.document);
-			const measurements = reader.readObservable(view.measuredLayout.measurements);
+		observeAll(this._store, () => {
+			model.document.get();
+			const measurements = view.measuredLayout.measurements.get();
 			for (const measurement of measurements) {
 				const block = measurement.block;
 				if (!(block instanceof CodeBlockAstNode)) {
@@ -379,7 +404,7 @@ class Editor extends Disposable {
 					this.#postToHost({ type: 'openMermaidPreview', offset });
 				});
 			}
-		}));
+		}, model.document, view.measuredLayout.measurements);
 
 		// Handle all keyboard actions in the webview. The built-in Markdown editor
 		// splits local vs host routing and registers `markdown.editor.*` commands;
@@ -424,21 +449,8 @@ class Editor extends Disposable {
 		// useful when the workbench feedback store will actually accept the comment;
 		// otherwise submitting is a no-op. Mount the controller only while the
 		// resource is in scope for a session, and tear it down when it leaves scope.
-		let commentController: CommentModeController | undefined;
-		this._register(autorun((reader) => {
-			const accepts = reader.readObservable(this.#acceptsComments);
-			if (accepts && !commentController) {
-				commentController = new CommentModeController(model, view, {
-					onSubmit: ({ text, range }) => {
-						this.#postToHost({ type: 'addComment', start: range.start, endExclusive: range.endExclusive, text });
-					},
-				});
-			} else if (!accepts && commentController) {
-				commentController.dispose();
-				commentController = undefined;
-			}
-		}));
-		this._register({ dispose: () => commentController?.dispose() });
+		this.#syncCommentController();
+		this._register({ dispose: () => this.#commentController?.dispose() });
 
 		// The comment card's delete button mutates the local CommentsModel
 		// directly. Mirror those removals back to the extension so the shared
@@ -446,8 +458,8 @@ class Editor extends Disposable {
 		// extension-driven update set `#isUpdatingComments`, so they are not
 		// echoed back.
 		let knownCommentIds = new Set(this.#comments.comments.get().map(comment => comment.id));
-		this._register(autorun((reader) => {
-			const currentIds = new Set(reader.readObservable(this.#comments.comments).map(comment => comment.id));
+		const syncDeletedComments = (): void => {
+			const currentIds = new Set(this.#comments.comments.get().map(comment => comment.id));
 			if (!this.#isUpdatingComments) {
 				for (const id of knownCommentIds) {
 					if (!currentIds.has(id)) {
@@ -456,7 +468,8 @@ class Editor extends Disposable {
 				}
 			}
 			knownCommentIds = currentIds;
-		}));
+		};
+		this.#comments.comments.recomputeInitiallyAndOnChange(this._store, syncDeletedComments);
 
 		if (savedViewState.selection) {
 			const max = content.length;
@@ -492,34 +505,34 @@ class Editor extends Disposable {
 		this._register({ dispose: () => { document.removeEventListener('visibilitychange', onHide); window.removeEventListener('pagehide', saveScroll); } });
 
 		// Persist the cursor whenever it moves.
-		this._register(autorun((reader) => {
-			const sel = reader.readObservable(this.model.selection);
+		this.model.selection.recomputeInitiallyAndOnChange(this._store, () => {
+			const sel = this.model.selection.get();
 			this.#patchViewState({ selection: sel ? { anchor: sel.anchor, active: sel.active } : undefined });
-		}));
+		});
 
 		// Persist the edit/read-only mode as the global default whenever the lock
 		// toggle flips it, so the next Markdown editor opens in the same mode. The
 		// initial (restored) value is skipped so opening an editor doesn't re-write it.
 		let firstReadonly = true;
-		this._register(autorun((reader) => {
-			const isReadonly = reader.readObservable(this.model.readonlyMode);
+		this.model.readonlyMode.recomputeInitiallyAndOnChange(this._store, () => {
+			const isReadonly = this.model.readonlyMode.get();
 			if (!firstReadonly) {
 				this.#postToHost({ type: 'setReadonly', readonly: isReadonly });
 			}
 			firstReadonly = false;
-		}));
+		});
 
 		// Forward user edits to the extension. Edits are ignored by the model while
 		// read-only, so this is a no-op in that mode; keeping it always registered
 		// means unlocking a read-only editor immediately resumes edit forwarding.
 		let previousText = this.model.sourceText.get().value;
-		this._register(autorun((reader) => {
-			const text = reader.readObservable(this.model.sourceText).value;
+		this.model.sourceText.recomputeInitiallyAndOnChange(this._store, () => {
+			const text = this.model.sourceText.get().value;
 			if (!this.isUpdatingFromExtension && text !== previousText) {
 				this.#postToHost({ type: 'edit', ...computeTextEdit(previousText, text) });
 			}
 			previousText = text;
-		}));
+		});
 
 		// Restore scroll last: content height settles over a few frames (async parse,
 		// syntax highlighting, mermaid), so re-apply until it sticks.

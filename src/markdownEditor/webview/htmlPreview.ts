@@ -11,7 +11,8 @@ import {
 	type BlockAstNode,
 	type BlockMeasurement,
 } from '@vscode/markdown-editor';
-import { Disposable, autorun } from '@vscode/observables';
+import { Disposable } from './disposable';
+import { observeAll } from './react';
 import { sanitizeHtml } from './htmlSanitize';
 
 const PREVIEW_CLASS = 'ib-html-preview';
@@ -51,14 +52,14 @@ export class HtmlPreviewController extends Disposable {
 		this.#view.element.addEventListener('click', this.#onClick, true);
 		this._register({ dispose: () => this.#view.element.removeEventListener('click', this.#onClick, true) });
 
-		this._register(autorun((reader) => {
-			reader.readObservable(this.#model.document);
-			reader.readObservable(this.#model.sourceText);
-			const measurements = reader.readObservable(this.#view.measuredLayout.measurements);
-			const activeBlocks = reader.readObservable(this.#model.activeBlocks);
-			const readonly = reader.readObservable(this.#model.readonlyMode);
+		observeAll(this._store, () => {
+			this.#model.document.get();
+			this.#model.sourceText.get();
+			const measurements = this.#view.measuredLayout.measurements.get();
+			const activeBlocks = this.#model.activeBlocks.get();
+			const readonly = this.#model.readonlyMode.get();
 			this.#sync(measurements, activeBlocks, readonly);
-		}));
+		}, this.#model.document, this.#model.sourceText, this.#view.measuredLayout.measurements, this.#model.activeBlocks, this.#model.readonlyMode);
 		this._register({ dispose: () => this.#clearAll() });
 	}
 

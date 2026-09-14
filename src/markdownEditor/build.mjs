@@ -1,13 +1,14 @@
 import * as esbuild from "esbuild";
-import { cpSync, mkdirSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { cpSync, mkdirSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const srcDir = join(__dirname, "markdown-editor-src");
-const outDir = join(__dirname, "media", "markdownEditor");
+const repoRoot = join(__dirname, "..", "..");
+const srcDir = join(__dirname, "webview");
+const outDir = join(repoRoot, "media", "markdownEditor");
 const vscodeOutDir = join(
-    __dirname,
+    repoRoot,
     "..",
     "vscode",
     "extensions",

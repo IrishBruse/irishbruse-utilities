@@ -10,7 +10,8 @@ import {
 	Selection,
 	findNodeOffsetById,
 } from '@vscode/markdown-editor';
-import { Disposable, autorun } from '@vscode/observables';
+import { Disposable } from './disposable';
+import { observeAll } from './react';
 
 /**
  * Inactive custom code blocks (Mermaid preview), empty documents, and editor
@@ -30,17 +31,17 @@ export class InactiveBlockClickController extends Disposable {
 		this.#host = host;
 		this.#host.addEventListener('pointerdown', this.#onPointerDown, true);
 		this._register({ dispose: () => this.#host.removeEventListener('pointerdown', this.#onPointerDown, true) });
-		this._register(autorun((reader) => {
+		observeAll(this._store, () => {
 			if (this.#seededEmptySelection) {
 				return;
 			}
-			const text = reader.readObservable(model.sourceText).value;
-			const selection = reader.readObservable(model.selection);
+			const text = model.sourceText.get().value;
+			const selection = model.selection.get();
 			if (text.length === 0 && !selection) {
 				this.#seededEmptySelection = true;
 				queueMicrotask(() => this.#focusBlankDocument());
 			}
-		}));
+		}, model.sourceText, model.selection);
 	}
 
 	readonly #onPointerDown = (event: PointerEvent): void => {

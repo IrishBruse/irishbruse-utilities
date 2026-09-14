@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { EditorView } from '@vscode/markdown-editor';
-import { Disposable, autorun } from '@vscode/observables';
+import { Disposable } from './disposable';
+import { observeAll } from './react';
 
 /** Spaces / tabs that sit at the end of a source line (Markdown trailing whitespace). */
 export const EOL_WS_CLASS = 'ib-md-eol-ws';
@@ -226,10 +227,8 @@ export function markEolWhitespace(root: ParentNode): void {
 export class EolWhitespaceController extends Disposable {
 	constructor(view: EditorView) {
 		super();
-		this._register(autorun((reader) => {
-			reader.readObservable(view.measuredLayout.measurements);
-			reader.readObservable(view.documentViewNode);
+		observeAll(this._store, () => {
 			markEolWhitespace(view.element);
-		}));
+		}, view.measuredLayout.measurements, view.documentViewNode);
 	}
 }

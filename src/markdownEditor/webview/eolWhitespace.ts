@@ -3,13 +3,16 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { EditorView } from '@vscode/markdown-editor';
+import { EditorModel, EditorView, ViewNode, type Selection } from '@vscode/markdown-editor';
 import { Disposable } from './disposable';
 import { observeAll } from './react';
 
 /** Spaces / tabs that sit at the end of a source line (Markdown trailing whitespace). */
 export const EOL_WS_CLASS = 'ib-md-eol-ws';
 export const EOL_DOTS_ATTR = 'data-ib-eol-dots';
+/** Leading / other whitespace that is covered by the current selection. */
+export const SEL_WS_CLASS = 'ib-md-sel-ws';
+export const SEL_DOTS_ATTR = 'data-ib-sel-dots';
 
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
@@ -182,6 +185,19 @@ export function isEolWhitespaceSpan(el: WhitespaceWalkNode): boolean {
 	return isFollowedOnlyByLineEnd(el);
 }
 
+/** True when `[start, start + length)` overlaps a non-empty selection. */
+export function selectionCoversRange(
+	selectionStart: number,
+	selectionEndExclusive: number,
+	start: number,
+	length: number,
+): boolean {
+	if (selectionEndExclusive <= selectionStart || length <= 0) {
+		return false;
+	}
+	return start < selectionEndExclusive && start + length > selectionStart;
+}
+
 function glueDotCount(text: string): number {
 	let count = 0;
 	for (const ch of text) {
@@ -223,6 +239,66 @@ function markHardBreak(el: HTMLElement, keep: Set<HTMLElement>): void {
 	}
 }
 
+function firstMappedNode(el: HTMLElement): globalThis.Node {
+	return el.firstChild instanceof Text ? el.firstChild : el;
+}
+
+function whitespaceSourceRange(el: HTMLElement, documentView: ViewNode): { start: number; length: number } | undefined {
+	const mapped = firstMappedNode(el);
+	const start = documentView.resolveSource({ node: mapped, offset: 0 });
+	if (start === undefined) {
+		return undefined;
+	}
+	if (mapped instanceof Text) {
+		const end = documentView.resolveSource({ node: mapped, offset: mapped.data.length });
+		if (end !== undefined && end > start) {
+			return { start, length: end - start };
+		}
+	}
+	const leaf = ViewNode.forDom(mapped);
+	return { start, length: Math.max(1, leaf?.sourceLength ?? 1) };
+}
+
+function markSelectedWhitespace(
+	root: ParentNode,
+	documentView: ViewNode | undefined,
+	selection: Selection | undefined,
+): void {
+	const keep = new Set<HTMLElement>();
+	const range = selection && !selection.isCollapsed ? selection.range : undefined;
+	if (documentView && range) {
+		for (const node of root.querySelectorAll('.md-ws-space, .md-ws-tab')) {
+			if (!(node instanceof HTMLElement) || node.classList.contains(EOL_WS_CLASS)) {
+				continue;
+			}
+			const span = whitespaceSourceRange(node, documentView);
+			if (!span || !selectionCoversRange(range.start, range.endExclusive, span.start, span.length)) {
+				continue;
+			}
+			node.classList.add(SEL_WS_CLASS);
+			keep.add(node);
+		}
+		for (const node of root.querySelectorAll('.md-glue-indent')) {
+			if (!(node instanceof HTMLElement) || node.querySelector('.md-ws-space, .md-ws-tab')) {
+				continue;
+			}
+			const span = whitespaceSourceRange(node, documentView);
+			if (!span || !selectionCoversRange(range.start, range.endExclusive, span.start, span.length)) {
+				continue;
+			}
+			node.classList.add(SEL_WS_CLASS);
+			node.setAttribute(SEL_DOTS_ATTR, '·'.repeat(glueDotCount(node.textContent ?? '')));
+			keep.add(node);
+		}
+	}
+	for (const node of root.querySelectorAll(`.${SEL_WS_CLASS}`)) {
+		if (node instanceof HTMLElement && !keep.has(node)) {
+			node.classList.remove(SEL_WS_CLASS);
+			node.removeAttribute(SEL_DOTS_ATTR);
+		}
+	}
+}
+
 export function markEolWhitespace(root: ParentNode): void {
 	const keep = new Set<HTMLElement>();
 	for (const node of root.querySelectorAll('.md-ws-space, .md-ws-tab')) {
@@ -259,20 +335,30 @@ export function markEolWhitespace(root: ParentNode): void {
 	}
 }
 
+export function paintEditorWhitespace(
+	root: ParentNode,
+	documentView: ViewNode | undefined,
+	selection: Selection | undefined,
+): void {
+	markEolWhitespace(root);
+	markSelectedWhitespace(root, documentView, selection);
+}
+
 /**
- * Paint trailing (end-of-line) spaces and tabs after each view layout.
+ * Paint trailing spaces always, and other whitespace while it is selected
+ * (the VS Code default `editor.renderWhitespace: selection` behaviour).
  * Glue rebuilds overwrite `className` and drop our mark, so paint again on
  * DOM mutations and on the next frame after layout.
  */
 export class EolWhitespaceController extends Disposable {
-	constructor(view: EditorView) {
+	constructor(model: EditorModel, view: EditorView) {
 		super();
 		let paintRaf = 0;
 		let observer: MutationObserver | undefined;
 		const paint = (): void => {
 			paintRaf = 0;
 			observer?.disconnect();
-			markEolWhitespace(view.element);
+			paintEditorWhitespace(view.element, view.documentViewNode.get(), model.selection.get());
 			observer?.observe(view.element, {
 				subtree: true,
 				childList: true,
@@ -287,7 +373,13 @@ export class EolWhitespaceController extends Disposable {
 			}
 			paintRaf = requestAnimationFrame(paint);
 		};
-		observeAll(this._store, schedule, view.measuredLayout.measurements, view.documentViewNode);
+		observeAll(
+			this._store,
+			schedule,
+			view.measuredLayout.measurements,
+			view.documentViewNode,
+			model.selection,
+		);
 		observer = new MutationObserver(schedule);
 		observer.observe(view.element, {
 			subtree: true,

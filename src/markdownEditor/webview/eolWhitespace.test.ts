@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEolWhitespaceSpan, type WhitespaceWalkNode } from './eolWhitespace';
+import { isEolWhitespaceSpan, selectionCoversRange, type WhitespaceWalkNode } from './eolWhitespace';
 
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
@@ -128,5 +128,14 @@ describe('eolWhitespace', () => {
 		const spacer = el('ib-md-virtual-spacer');
 		el('md-document').append(paragraph, spacer);
 		expect(isEolWhitespaceSpan(trail)).toBe(true);
+	});
+});
+
+describe('selectionCoversRange', () => {
+	it('matches VS Code selection whitespace: overlap only, not a caret', () => {
+		expect(selectionCoversRange(2, 2, 0, 2)).toBe(false);
+		expect(selectionCoversRange(0, 2, 0, 2)).toBe(true);
+		expect(selectionCoversRange(1, 3, 0, 2)).toBe(true);
+		expect(selectionCoversRange(2, 4, 0, 2)).toBe(false);
 	});
 });

@@ -3,6 +3,8 @@
 ## Unreleased
 
 -   Add: Markdown Editor paints `SKILL.md` YAML front matter as a Properties card with typed fields and Add property key autocomplete
+-   Change: SKILL.md Properties card is full content width with a transparent fill and a border only
+-   Fix: Markdown Editor shows selected leading spaces as `·`, like the VS Code text editor
 -   Fix: Markdown Editor keeps `·` on trailing spaces after glue rebuilds and on idle hard breaks
 -   Add: Markdown Editor mounts only the visible blocks of large files, so open and scroll stay fast
 -   Add: `npm run fetch-markdown-large-fixtures` — downloads large real-world Markdown stress tests (Reltio corpus, awesome-selfhosted, MDN, etc.) into `docs/tests/markdown/large/`

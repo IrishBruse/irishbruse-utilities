@@ -392,7 +392,7 @@ class Editor extends Disposable {
 		}
 		this._register(new UnhandledBlockChromeController(view));
 		this._register(new InactiveBlockClickController(model, view, host));
-		this._register(new EolWhitespaceController(view));
+		this._register(new EolWhitespaceController(model, view));
 		observeAll(this._store, () => {
 			model.document.get();
 			const measurements = view.measuredLayout.measurements.get();

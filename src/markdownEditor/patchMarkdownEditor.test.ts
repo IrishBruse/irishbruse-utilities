@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { patchMarkdownEditorParse } from './patchMarkdownEditor.mjs';
+import { patchMarkdownEditor, patchMarkdownEditorParse } from './patchMarkdownEditor.mjs';
 
 const markdownEditorIndex = join(
 	dirname(fileURLToPath(import.meta.url)),
@@ -23,5 +23,13 @@ describe('patchMarkdownEditorParse', () => {
 		expect(patched).toContain('case "htmlText":');
 		expect(patched).toContain('_parseRawInline(t.tokenType)');
 		expect(patched).toContain('new Qe(this._source.substring(e.startOffset, r.endOffset))');
+	});
+
+	it('hooks DocumentViewNode.create for viewport virtualization', () => {
+		const source = readFileSync(markdownEditorIndex, 'utf8');
+		const patched = patchMarkdownEditor(source);
+		expect(patched).toContain('globalThis.__ibMdDocumentViewCreate');
+		expect(patched).toContain('originalCreate');
+		expect(patched).toContain('createViewNode: Y');
 	});
 });

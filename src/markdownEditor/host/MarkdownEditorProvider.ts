@@ -25,7 +25,7 @@ import {
     invalidateMarkdownSyntaxTheme,
     unstyledHighlight,
 } from "./syntaxHighlighting";
-import { encodeWebviewInitialState } from "./webviewInitialState";
+import { encodeWebviewInitialState, prefixMarkdownForFastOpen } from "./webviewInitialState";
 
 export const MARKDOWN_EDITOR_VIEW_TYPE = "ib-utilities.markdownEditor";
 
@@ -169,16 +169,20 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
         let isUpdatingFromWebview = false;
         let editQueue = Promise.resolve();
         let webviewReady = false;
+        let htmlContentIsPrefix = false;
 
         const renderHtml = () => {
             webviewReady = false;
+            const text = document.getText();
+            const prefix = prefixMarkdownForFastOpen(text);
+            htmlContentIsPrefix = prefix !== text;
             webviewPanel.webview.html = getEditorHtml(
                 document.uri,
                 webviewPanel.webview,
                 this.context.extensionUri,
                 editorWebview.messageSecret,
                 this.context.globalState.get(READONLY_STATE_KEY, false),
-                document.getText(),
+                prefix,
                 document.version,
             );
         };
@@ -194,7 +198,7 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                 switch (message.type) {
                     case "ready": {
                         webviewReady = true;
-                        if (message.documentVersion !== document.version) {
+                        if (htmlContentIsPrefix || message.documentVersion !== document.version) {
                             await editorWebview.postMessage({ type: "update", content: document.getText() });
                         }
                         await editorWebview.postMessage({ type: "codeBlockEditorProviders", codeBlockEditorProviders: [] });

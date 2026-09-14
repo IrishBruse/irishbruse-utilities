@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Add: Markdown Editor mounts only the visible blocks of large files, so open and scroll stay fast
 -   Add: `npm run fetch-markdown-large-fixtures` — downloads large real-world Markdown stress tests (Reltio corpus, awesome-selfhosted, MDN, etc.) into `docs/tests/markdown/large/`
 -   Add: Expanded Markdown Editor manual test fixtures under `docs/tests/markdown/` (README, keyboard-whitespace, lists-tasks, links-autolinks)
 -   Fix: Markdown Editor shows angle-bracket autolinks and HTML it cannot paint as raw source

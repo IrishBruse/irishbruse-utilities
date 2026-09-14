@@ -27,6 +27,11 @@ body {
 	box-sizing: border-box;
 }
 
+.ib-md-virtual-spacer {
+	flex-shrink: 0;
+	pointer-events: none;
+}
+
 /*
  * Headings / inline code: --ib-md-* come from markdownInlineEditor.colors
  * (injected on :root). Hardcoded fallbacks match those settings.

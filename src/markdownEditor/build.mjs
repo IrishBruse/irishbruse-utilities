@@ -2,7 +2,7 @@ import * as esbuild from "esbuild";
 import { cpSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { patchMarkdownEditorParse } from "./patchMarkdownEditor.mjs";
+import { patchMarkdownEditor } from "./patchMarkdownEditor.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..", "..");
@@ -52,7 +52,7 @@ const config = {
                 build.onLoad(
                     { filter: /node_modules\/@vscode\/markdown-editor\/dist\/index\.js$/ },
                     (args) => ({
-                        contents: patchMarkdownEditorParse(readFileSync(args.path, "utf8")),
+                        contents: patchMarkdownEditor(readFileSync(args.path, "utf8")),
                         loader: "js",
                     }),
                 );

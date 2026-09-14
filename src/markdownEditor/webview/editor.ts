@@ -22,6 +22,12 @@ import { InactiveBlockClickController } from './inactiveBlockClick';
 import { EolWhitespaceController } from './eolWhitespace';
 import { markdownEditorKeyboardProfile } from './keyboardProfile';
 import {
+	bindViewportVirtualization,
+	installDocumentViewCreateHook,
+	recordMeasuredHeights,
+	setViewportBox,
+} from './viewportVirtualization';
+import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
 } from '../../mermaidEditor/vsCodeTheme.browser';
@@ -311,6 +317,10 @@ class Editor extends Disposable {
 		// before any listener below can overwrite it, so it survives the editor being
 		// re-created (e.g. after a session switch).
 		const savedViewState = this.#getViewState();
+		setViewportBox({
+			scrollTop: typeof savedViewState.scrollTop === 'number' ? savedViewState.scrollTop : 0,
+			height: host.clientHeight || 800,
+		});
 
 		const view = this._register(new EditorView(model, {
 			classNames: ['md-theme-vscode-default'],
@@ -380,6 +390,7 @@ class Editor extends Disposable {
 		observeAll(this._store, () => {
 			model.document.get();
 			const measurements = view.measuredLayout.measurements.get();
+			recordMeasuredHeights(measurements);
 			for (const measurement of measurements) {
 				const block = measurement.block;
 				if (!(block instanceof CodeBlockAstNode)) {
@@ -441,6 +452,7 @@ class Editor extends Disposable {
 			},
 		});
 		host.appendChild(view.element);
+		this._register({ dispose: bindViewportVirtualization(view, host) });
 		postEditorFocus();
 
 		// Render comments as the VS Code V2 markdown cards. The card colours come
@@ -789,4 +801,5 @@ function computeTextEdit(previousText: string, text: string): { start: number; e
 	};
 }
 
+installDocumentViewCreateHook();
 new Editor(document.getElementById('editor')!, readInitialState());

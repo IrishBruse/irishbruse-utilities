@@ -4,6 +4,9 @@
 
 -   Add: Markdown Editor paints `SKILL.md` YAML front matter as a Properties card with typed fields and Add property key autocomplete
 -   Change: SKILL.md Properties card is full content width with a transparent fill and a border only
+-   Change: SKILL.md Properties rows no longer show a type icon before the key
+-   Fix: SKILL.md boolean fields use the workbench dropdown colors instead of the light HTML select
+-   Fix: SKILL.md Properties text fields show a caret (the document editor hides the native caret)
 -   Fix: Markdown Editor shows selected leading spaces as `·`, like the VS Code text editor
 -   Fix: Markdown Editor keeps `·` on trailing spaces after glue rebuilds and on idle hard breaks
 -   Add: Markdown Editor mounts only the visible blocks of large files, so open and scroll stay fast

@@ -3,6 +3,7 @@ import {
 	completeSkillPropertyKeys,
 	parseSkillFrontMatter,
 	serializeSkillFrontMatter,
+	skillFrontMatterValueContent,
 } from './skillFrontMatterYaml';
 
 describe('parseSkillFrontMatter', () => {
@@ -90,3 +91,17 @@ describe('completeSkillPropertyKeys', () => {
 		expect(completeSkillPropertyKeys([ 'license' ], 'l')).toEqual([]);
 	});
 });
+
+describe('skillFrontMatterValueContent', () => {
+	it('keeps the line ending that follows the open fence', () => {
+		expect(skillFrontMatterValueContent('name: b\n', '\nname: a\n')).toBe('\nname: b\n');
+	});
+
+	it('keeps a CRLF line ending', () => {
+		expect(skillFrontMatterValueContent('name: b\n', '\r\nname: a\r\n')).toBe('\r\nname: b\n');
+	});
+
+	it('adds a line ending when the previous value has none', () => {
+		expect(skillFrontMatterValueContent('name: b\n', '')).toBe('\nname: b\n');
+	});
+})

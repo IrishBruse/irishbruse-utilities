@@ -20,10 +20,19 @@ import {
 	emptyProperty,
 	parseSkillFrontMatter,
 	serializeSkillFrontMatter,
+	skillFrontMatterValueContent,
 	widgetForKey,
 	type SkillMapEntry,
 	type SkillProperty,
 } from './skillFrontMatterYaml';
+
+/** Chords a text field handles itself, so they never reach the document editor. */
+const FIELD_CHORD_KEYS = new Set([
+	'a', 'c', 'v', 'x', 'z', 'y',
+	'backspace', 'delete',
+	'arrowleft', 'arrowright', 'arrowup', 'arrowdown',
+	'home', 'end',
+]);
 
 const PANEL_CLASS = 'ib-skill-properties-panel';
 const HOST_CLASS = 'ib-skill-properties';
@@ -41,7 +50,8 @@ export class SkillFrontMatterController extends Disposable {
 	#addOpen = false;
 	#addPrefix = '';
 	#suggestionIndex = 0;
-	#writeQueued = false;
+	#writeTimer: ReturnType<typeof setTimeout> | undefined;
+	#pendingFocus: { key: string; start: number; end: number } | undefined;
 
 	constructor(model: EditorModel, view: EditorView, host: HTMLElement, folderName: string) {
 		super();
@@ -57,6 +67,10 @@ export class SkillFrontMatterController extends Disposable {
 		this.#panel.addEventListener('click', event => event.stopPropagation());
 		this.#panel.addEventListener('keydown', this.#onPanelKeyDown);
 		this.#panel.addEventListener('beforeinput', event => event.stopPropagation());
+		this.#panel.addEventListener('focusin', this.#rememberFocus);
+		this.#panel.addEventListener('input', this.#rememberFocus);
+		this.#panel.addEventListener('keyup', this.#rememberFocus);
+		this.#panel.addEventListener('focusout', this.#forgetFocus);
 
 		observeAll(this._store, () => {
 			this.#model.document.get();
@@ -67,6 +81,7 @@ export class SkillFrontMatterController extends Disposable {
 
 		this._register({
 			dispose: () => {
+				this.#flushWrite();
 				this.#panel.remove();
 				this.#clearHost();
 			},
@@ -108,6 +123,7 @@ export class SkillFrontMatterController extends Disposable {
 		this.#clearBlockRendered();
 		if (this.#panel.parentElement !== wrapper) {
 			wrapper.appendChild(this.#panel);
+			this.#restoreFocus();
 		}
 		wrapper.classList.add(RENDERED_CLASS);
 	}
@@ -116,8 +132,48 @@ export class SkillFrontMatterController extends Disposable {
 		this.#host.classList.add(HOST_CLASS);
 		if (this.#panel.parentElement !== this.#host) {
 			this.#host.insertBefore(this.#panel, this.#host.firstChild);
+			this.#restoreFocus();
 		}
 		this.#clearBlockRendered();
+	}
+
+	readonly #rememberFocus = (event: Event): void => {
+		const field = editableField(event.target);
+		const key = field?.dataset.key;
+		if (!field || !key) {
+			return;
+		}
+		this.#pendingFocus = { key, start: field.selectionStart ?? 0, end: field.selectionEnd ?? 0 };
+	};
+
+	/**
+	 * Forget the caret only when the user moves focus away. A rebuild of the
+	 * front matter block detaches the field instead, and that focus has to come
+	 * back once the panel is re-attached.
+	 */
+	readonly #forgetFocus = (event: FocusEvent): void => {
+		const next = event.relatedTarget;
+		if (next instanceof Node && this.#panel.contains(next)) {
+			return;
+		}
+		const field = editableField(event.target);
+		if (field?.isConnected) {
+			this.#pendingFocus = undefined;
+		}
+	};
+
+	#restoreFocus(): void {
+		const pending = this.#pendingFocus;
+		const active = document.activeElement;
+		if (!pending || (active !== null && active !== document.body)) {
+			return;
+		}
+		const field = editableField(this.#panel.querySelector(`[data-key="${cssEscape(pending.key)}"]`));
+		if (!field) {
+			return;
+		}
+		field.focus();
+		field.setSelectionRange(pending.start, pending.end);
 	}
 
 	#clearHost(): void {
@@ -174,7 +230,9 @@ export class SkillFrontMatterController extends Disposable {
 				input.focus();
 				input.setSelectionRange(this.#addPrefix.length, this.#addPrefix.length);
 			}
+			return;
 		}
+		this.#restoreFocus();
 	}
 
 	#row(property: SkillProperty, readonly: boolean): HTMLElement {
@@ -183,11 +241,11 @@ export class SkillFrontMatterController extends Disposable {
 		}
 		const row = document.createElement('div');
 		row.className = 'ib-skill-properties-row';
-		row.append(codicon('symbol-field'), span('ib-skill-properties-key', property.key));
+		row.append(span('ib-skill-properties-key', property.key));
 		const widget = widgetForKey(property.key);
 		if (property.kind === 'boolean' || widget === 'boolean') {
 			const select = document.createElement('select');
-			select.className = 'ib-skill-properties-value';
+			select.className = 'ib-skill-properties-value ib-skill-properties-select';
 			select.disabled = readonly;
 			select.dataset.key = property.key;
 			for (const optionValue of [ 'true', 'false' ]) {
@@ -237,7 +295,7 @@ export class SkillFrontMatterController extends Disposable {
 		block.className = 'ib-skill-properties-map';
 		const header = document.createElement('div');
 		header.className = 'ib-skill-properties-row';
-		header.append(codicon('symbol-namespace'), span('ib-skill-properties-key', key));
+		header.append(span('ib-skill-properties-key', key));
 		block.appendChild(header);
 		entries.forEach((entry, index) => {
 			const row = document.createElement('div');
@@ -356,7 +414,13 @@ export class SkillFrontMatterController extends Disposable {
 	}
 
 	#onPanelKeyDown = (event: KeyboardEvent): void => {
-		event.stopPropagation();
+		// Keystrokes must not reach the document editor underneath. Chords are
+		// the exception: the field keeps the text-editing ones, and the rest
+		// (Ctrl+S and friends) have to bubble out to the workbench.
+		const chord = event.ctrlKey || event.metaKey || event.altKey;
+		if (!chord || FIELD_CHORD_KEYS.has(event.key.toLowerCase())) {
+			event.stopPropagation();
+		}
 		if (!this.#addOpen) {
 			return;
 		}
@@ -425,24 +489,36 @@ export class SkillFrontMatterController extends Disposable {
 		this.#queueWrite();
 	}
 
+	/**
+	 * Coalesce a burst of keystrokes into one document edit. A timer, not
+	 * `requestAnimationFrame`: an occluded webview never paints, and the edit
+	 * still has to reach the document.
+	 */
 	#queueWrite(): void {
-		if (this.#writeQueued || this.#model.readonlyMode.get()) {
+		if (this.#writeTimer !== undefined || this.#model.readonlyMode.get()) {
 			return;
 		}
-		this.#writeQueued = true;
-		requestAnimationFrame(() => {
-			this.#writeQueued = false;
+		this.#writeTimer = setTimeout(() => {
+			this.#writeTimer = undefined;
 			this.#write();
-		});
+		}, 0);
+	}
+
+	#flushWrite(): void {
+		if (this.#writeTimer === undefined) {
+			return;
+		}
+		clearTimeout(this.#writeTimer);
+		this.#writeTimer = undefined;
+		this.#write();
 	}
 
 	#write(): void {
 		const yaml = serializeSkillFrontMatter(this.#properties);
-		const source = this.#model.sourceText.get().value;
 		const doc = this.#model.document.get();
 		const block = doc.blocks.find((node): node is FrontMatterAstNode => node instanceof FrontMatterAstNode);
 		if (!block) {
-			this.#lastYaml = yaml;
+			this.#lastYaml = `\n${yaml}`;
 			this.#model.applyEdit(StringEdit.insert(0, wrapFrontMatter(yaml)));
 			return;
 		}
@@ -451,25 +527,30 @@ export class SkillFrontMatterController extends Disposable {
 			return;
 		}
 		const value = block.value;
-		this.#lastYaml = yaml;
 		if (value) {
 			const start = findNodeOffsetById(doc, value);
 			if (start === undefined) {
 				return;
 			}
-			if (source.slice(start, start + value.content.length) === yaml) {
+			const content = skillFrontMatterValueContent(yaml, value.content);
+			this.#lastYaml = content;
+			if (value.content === content) {
 				return;
 			}
-			this.#model.applyEdit(StringEdit.replace(OffsetRange.ofStartAndLength(start, value.content.length), yaml));
+			this.#model.applyEdit(StringEdit.replace(OffsetRange.ofStartAndLength(start, value.content.length), content));
 			return;
 		}
 		const open = block.openFence;
 		if (!open) {
 			return;
 		}
-		const insertAt = blockStart + open.content.length;
-		this.#model.applyEdit(StringEdit.insert(insertAt, `\n${yaml}`));
+		this.#lastYaml = `\n${yaml}`;
+		this.#model.applyEdit(StringEdit.insert(blockStart + open.content.length, `\n${yaml}`));
 	}
+}
+
+function editableField(target: EventTarget | null): HTMLInputElement | HTMLTextAreaElement | undefined {
+	return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement ? target : undefined;
 }
 
 function frontMatterDom(measurements: readonly BlockMeasurement[], block: BlockAstNode): HTMLElement | undefined {

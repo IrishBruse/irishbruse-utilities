@@ -270,3 +270,14 @@ function wrapFolded(value: string, width = 80): string[] {
 	}
 	return lines.length > 0 ? lines : [ '' ];
 }
+
+/**
+ * Build the replacement for a front matter value node. The node starts at the
+ * line ending that follows the open fence, so the replacement has to carry that
+ * prefix; without it the fence absorbs the first key and the block stops
+ * parsing as front matter.
+ */
+export function skillFrontMatterValueContent(yaml: string, previousContent: string): string {
+	const prefix = /^[\r\n]*/.exec(previousContent)?.[0] || '\n';
+	return `${prefix}${yaml}`;
+}

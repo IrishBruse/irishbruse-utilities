@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor places the caret in paragraph text on click
+-   Fix: Markdown Editor places the caret in heading text on click, not in the `#` prefix
+-   Fix: Markdown Editor keeps heading size when you click from one heading to another
+-   Fix: Markdown Editor keeps heading text aligned when the dark edit panel shows
+-   Fix: Markdown Editor does not indent heading text relative to the body
+-   Fix: Markdown Editor keeps the scroll position when the caret is restored
+-   Fix: Markdown Editor keeps heading `#` markers next to the edit panel so they are not clipped
+-   Fix: Markdown Editor paints heading `#` markers outside the dark edit panel
+-   Fix: Markdown Editor keeps heading text in place when `#` markers show in edit mode
+-   Fix: Markdown Editor paints again after a missing heading type stopped the render
+-   Change: Markdown Editor keeps heading size and color, and inline styles, while you edit a block
+-   Fix: Markdown Editor keeps block size when you click to edit (no layout jump)
 -   Change: Markdown Editor paints the focused edit block as a darker rounded panel
 -   Fix: Markdown Editor types into the focused block; active lists no longer double the gap between lines
 -   Change: Parse Markdown with `marked` (GFM) instead of the in-repo line scanner

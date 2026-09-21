@@ -30,7 +30,7 @@
         "build-markdown-editor": "node src/markdownEditor/build.mjs",
         "watch-markdown-editor": "node src/markdownEditor/build.mjs --watch",
         "package": "node esbuild.mjs --production && npm run build-markdown-editor",
-        "lint": "eslint src && tsc --noEmit",
+        "lint": "eslint src && tsc --noEmit && tsc --noEmit -p src/markdownEditor/webview/tsconfig.json",
         "test": "vitest run",
         "verify": "npm run build && npm run test && npm run lint",
         "package:vsix": "vsce package --out ib-utilities-$(node -p \"require('./package.json').version\").vsix",

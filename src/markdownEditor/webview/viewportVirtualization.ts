@@ -228,7 +228,8 @@ function rememberPlan(childCount: number, heights: readonly number[], mountKey: 
 }
 
 export function bindViewportVirtualization(view: { refreshEmbeddedCodeEditors(): void }, host: HTMLElement): () => void {
-	const syncViewport = (): void => {
+	let remountTimer = 0;
+	const syncViewport = (remount: boolean): void => {
 		const next: ViewportBox = {
 			scrollTop: host.scrollTop,
 			height: host.clientHeight || DEFAULT_VIEWPORT_HEIGHT_PX,
@@ -237,20 +238,26 @@ export function bindViewportVirtualization(view: { refreshEmbeddedCodeEditors():
 		setViewportBox(next);
 		const scrolled = Math.abs(previous.scrollTop - next.scrollTop) > 8
 			|| Math.abs(previous.height - next.height) > 8;
-		if (scrolled && mountWindowChanged()) {
+		if (remount && scrolled && mountWindowChanged()) {
 			view.refreshEmbeddedCodeEditors();
 		}
 	};
-	syncViewport();
+	const remountAfterScroll = (): void => {
+		syncViewport(true);
+	};
+	syncViewport(false);
 	const onScroll = (): void => {
-		syncViewport();
+		syncViewport(false);
+		clearTimeout(remountTimer);
+		remountTimer = window.setTimeout(remountAfterScroll, 80);
 	};
 	host.addEventListener('scroll', onScroll, { passive: true });
 	const resizeObserver = new ResizeObserver(() => {
-		syncViewport();
+		syncViewport(true);
 	});
 	resizeObserver.observe(host);
 	return () => {
+		clearTimeout(remountTimer);
 		host.removeEventListener('scroll', onScroll);
 		resizeObserver.disconnect();
 	};

@@ -1,7 +1,11 @@
 import katex from 'katex';
 import { Lexer, marked, type Token, type Tokens } from 'marked';
 import { CodeBlockAstNode, HeadingAstNode, type MdBlock } from '../core/ast';
+import { activeSourceStyles, headingDisplayText, headingMarkerPrefix, styleClassName } from './activeSourceStyle';
 import { parseTableSource } from './tableGridModel';
+import { stampHitMarks } from './sourceHit';
+
+export { caretOffsetFromPoint, resolveSourceOffset } from './sourceHit';
 
 export interface RenderOptions {
 	readonly onOpenLink: (href: string) => void;
@@ -247,10 +251,6 @@ function renderList(source: string, blockStart: number, options: RenderOptions):
 	return fallback;
 }
 
-function headingText(source: string): string {
-	return source.replace(/^\s{0,3}#{1,6}\s+/, '').replace(/\s+#+\s*$/, '').trimEnd();
-}
-
 function mathText(source: string): string {
 	return source.replace(/^\s*\$\$\s*/, '').replace(/\s*\$\$\s*$/, '').trim();
 }
@@ -307,17 +307,21 @@ export function renderIdleBlock(block: MdBlock, source: string, options: RenderO
 	}
 	if (block.kind === 'heading' && block instanceof HeadingAstNode) {
 		const heading = el(`h${block.depth}`, 'md-heading');
-		heading.append(renderInline(headingText(slice), options));
+		heading.append(renderInline(headingDisplayText(slice), options));
+		stampHitMarks(heading, block.start, slice);
 		return heading;
 	}
 	if (block.kind === 'list') {
-		return renderList(slice, block.start, options);
+		const list = renderList(slice, block.start, options);
+		stampHitMarks(list, block.start, slice);
+		return list;
 	}
 	if (block.kind === 'blockquote') {
 		const quote = el('blockquote', 'md-blockquote');
 		const paragraph = el('p', 'md-paragraph');
 		paragraph.append(renderInline(quoteText(slice), options));
 		quote.append(paragraph);
+		stampHitMarks(quote, block.start, slice);
 		return quote;
 	}
 	if (block.kind === 'thematicBreak') {
@@ -340,25 +344,45 @@ export function renderIdleBlock(block: MdBlock, source: string, options: RenderO
 		host.append(pre);
 		return host;
 	}
+	const paragraphSource = slice.replace(/\n$/, '');
 	const paragraph = el('p', 'md-paragraph');
-	paragraph.append(renderInline(slice.replace(/\n$/, ''), options));
+	paragraph.append(renderInline(paragraphSource, options));
+	stampHitMarks(paragraph, block.start, paragraphSource);
 	return paragraph;
 }
 
-export function renderActiveSource(text: string, absoluteStart: number): HTMLElement {
-	const host = el('div', 'md-active-source');
+export function renderActiveSource(
+	text: string,
+	absoluteStart: number,
+	inline = false,
+	headingDepth?: number,
+): HTMLElement {
+	const host = headingDepth
+		? el(`h${headingDepth}`, 'md-heading md-active-source')
+		: el('div', 'md-active-source');
 	host.dataset.blockStart = String(absoluteStart);
-	for (let i = 0; i < text.length; i++) {
+	const styles = activeSourceStyles(text, inline);
+	const headingPrefix = headingMarkerPrefix(text);
+	let i = 0;
+	if (headingPrefix.length > 0) {
+		const marker = el('span', 'md-marker md-heading-marker');
+		marker.dataset.sourceOffset = String(absoluteStart);
+		marker.textContent = headingPrefix;
+		host.append(marker);
+		i = headingPrefix.length;
+	}
+	for (; i < text.length; i++) {
 		const ch = text[i] ?? '';
+		const styleName = styleClassName(styles[i] ?? '');
 		if (ch === ' ') {
-			const span = el('span', 'md-ws-space');
+			const span = el('span', ['md-ws-space', styleName].filter(Boolean).join(' '));
 			span.textContent = ' ';
 			span.dataset.sourceOffset = String(absoluteStart + i);
 			host.append(span);
 			continue;
 		}
 		if (ch === '\t') {
-			const span = el('span', 'md-ws-tab');
+			const span = el('span', ['md-ws-tab', styleName].filter(Boolean).join(' '));
 			span.textContent = '\t';
 			span.dataset.sourceOffset = String(absoluteStart + i);
 			host.append(span);
@@ -371,12 +395,15 @@ export function renderActiveSource(text: string, absoluteStart: number): HTMLEle
 			host.append(newline);
 			continue;
 		}
-		const span = el('span', 'md-text');
+		const span = el('span', ['md-text', styleName].filter(Boolean).join(' '));
 		span.dataset.sourceOffset = String(absoluteStart + i);
 		let run = ch;
 		while (i + 1 < text.length) {
 			const next = text[i + 1] ?? '';
 			if (next === ' ' || next === '\t' || next === '\n') {
+				break;
+			}
+			if ((styles[i + 1] ?? '') !== (styles[i] ?? '')) {
 				break;
 			}
 			run += next;
@@ -392,50 +419,4 @@ export function renderActiveSource(text: string, absoluteStart: number): HTMLEle
 		host.append(zws);
 	}
 	return host;
-}
-
-export function resolveSourceOffset(node: Node, offset: number): number | undefined {
-	const fromAttr = offsetFromNode(node);
-	if (fromAttr !== undefined) {
-		return fromAttr + offset;
-	}
-	if (node instanceof HTMLElement && node.dataset.sourceOffset !== undefined) {
-		return Number(node.dataset.sourceOffset) + offset;
-	}
-	const parent = node.parentElement;
-	if (parent) {
-		return resolveSourceOffset(parent, 0);
-	}
-	return undefined;
-}
-
-function offsetFromNode(node: Node): number | undefined {
-	if (node instanceof HTMLElement && node.dataset.sourceOffset !== undefined) {
-		return Number(node.dataset.sourceOffset);
-	}
-	if (node.parentElement?.dataset.sourceOffset !== undefined) {
-		return Number(node.parentElement.dataset.sourceOffset);
-	}
-	return undefined;
-}
-
-export function caretOffsetFromPoint(root: HTMLElement, clientX: number, clientY: number): number | undefined {
-	const withPosition = document as Document & {
-		caretPositionFromPoint?(x: number, y: number): { offsetNode: Node; offset: number } | null;
-	};
-	const position = withPosition.caretPositionFromPoint?.(clientX, clientY);
-	if (position) {
-		if (!root.contains(position.offsetNode) && position.offsetNode !== root) {
-			return undefined;
-		}
-		return resolveSourceOffset(position.offsetNode, position.offset);
-	}
-	const range = document.caretRangeFromPoint?.(clientX, clientY);
-	if (!range) {
-		return undefined;
-	}
-	if (!root.contains(range.startContainer) && range.startContainer !== root) {
-		return undefined;
-	}
-	return resolveSourceOffset(range.startContainer, range.startOffset);
 }

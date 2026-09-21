@@ -3,6 +3,7 @@ import { observeAll } from './react';
 import {
 	CodeBlockAstNode,
 	EditorModel,
+	HeadingAstNode,
 	MdBlock,
 	Selection,
 	observableValue,
@@ -15,6 +16,8 @@ import {
 	resolveSourceOffset,
 	type RenderOptions,
 } from './renderBlocks';
+import { headingBodyStart, headingDisplayText, headingSourceForEdit } from './activeSourceStyle';
+import { activeBlockMinHeightPx } from './activeBlockLayout';
 import {
 	DEFAULT_VIEWPORT_HEIGHT_PX,
 	VIRTUALIZE_AFTER_CHILDREN,
@@ -146,7 +149,7 @@ export class EditorView extends Disposable {
 	}
 
 	focus(): void {
-		this.element.focus();
+		this.element.focus({ preventScroll: true });
 	}
 
 	isPointInContent(point: { x: number; y: number }): boolean {
@@ -181,6 +184,9 @@ export class EditorView extends Disposable {
 			if (clientX < rect.left || clientX > rect.right || clientY < rect.top || clientY > rect.bottom) {
 				continue;
 			}
+			if (measurement.block.kind === 'heading') {
+				return this.#offsetFromHeadingHit(measurement, clientX);
+			}
 			const length = Math.max(0, measurement.block.length);
 			if (length === 0 || rect.height <= 0) {
 				return measurement.block.start;
@@ -189,6 +195,16 @@ export class EditorView extends Disposable {
 			return measurement.block.start + Math.min(length, Math.floor(ratio * length));
 		}
 		return undefined;
+	}
+
+	#offsetFromHeadingHit(measurement: BlockMeasurement, clientX: number): number {
+		const slice = this.#model.getText().slice(measurement.block.start, measurement.block.end);
+		const body = headingDisplayText(slice);
+		const inner = measurement.viewNode.element.querySelector('.md-heading, .md-active-source');
+		const rect = (inner instanceof HTMLElement ? inner : measurement.viewNode.element).getBoundingClientRect();
+		const ratio = rect.width <= 0 ? 0 : Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
+		const displayed = Math.round(ratio * body.length);
+		return measurement.block.start + headingBodyStart(slice) + displayed;
 	}
 
 	#applyLimitedWidth(): void {
@@ -230,6 +246,8 @@ export class EditorView extends Disposable {
 	}
 
 	#rebuild(): void {
+		const host = this.element.parentElement;
+		const scrollTop = host?.scrollTop ?? 0;
 		const doc = this.#model.document.get();
 		const source = this.#model.getText();
 		const active = this.#model.activeBlocks.get();
@@ -239,8 +257,8 @@ export class EditorView extends Disposable {
 			view: { ast: { id: block.id, length: block.length } },
 		}));
 		const box: ViewportBox = {
-			scrollTop: this.element.parentElement?.scrollTop ?? 0,
-			height: this.element.parentElement?.clientHeight || DEFAULT_VIEWPORT_HEIGHT_PX,
+			scrollTop,
+			height: host?.clientHeight || DEFAULT_VIEWPORT_HEIGHT_PX,
 		};
 		setViewportBox(box);
 		const plan = planDocumentMount(children, box, new Map(
@@ -266,6 +284,9 @@ export class EditorView extends Disposable {
 		this.#highlights.clear();
 		this.#content.replaceChildren();
 		const measurements: BlockMeasurement[] = [];
+		const previousHeights = new Map(
+			this.measuredLayout.measurements.get().map(measurement => [measurement.block.id, measurement.height]),
+		);
 		const mountRange = (start: number, end: number): void => {
 			for (let i = start; i < end; i++) {
 				const block = doc.blocks[i];
@@ -274,6 +295,10 @@ export class EditorView extends Disposable {
 				}
 				const isActive = active.has(block) && !this.#keepIdle(block);
 				const node = this.#renderBlock(block, source, isActive, renderOptions);
+				const minHeight = activeBlockMinHeightPx(isActive, previousHeights.get(block.id));
+				if (minHeight !== undefined) {
+					node.element.style.minHeight = `${minHeight}px`;
+				}
 				this.#content.append(node.element);
 				measurements.push({
 					block,
@@ -313,6 +338,9 @@ export class EditorView extends Disposable {
 		viewNodes.set(this.#content, rootView);
 		this.documentViewNode.set(rootView, undefined);
 		this.#syncDomSelection();
+		if (host) {
+			host.scrollTop = scrollTop;
+		}
 	}
 
 	#keepIdle(block: MdBlock): boolean {
@@ -337,8 +365,17 @@ export class EditorView extends Disposable {
 		host.classList.toggle('md-block-active', active);
 		host.classList.toggle('md-markers-hidden', !active);
 		host.dataset.blockId = String(block.id);
+		if (block instanceof HeadingAstNode) {
+			host.classList.add(`md-h${block.depth}`);
+		}
 		if (active && !this.#model.readonlyMode.get()) {
-			host.append(renderActiveSource(source.slice(block.start, block.end), block.start));
+			const inline = block.kind === 'paragraph' || block.kind === 'list' || block.kind === 'blockquote' || block.kind === 'heading';
+			const slice = source.slice(block.start, block.end);
+			if (block instanceof HeadingAstNode) {
+				host.append(renderActiveSource(headingSourceForEdit(slice), block.start, inline, block.depth));
+			} else {
+				host.append(renderActiveSource(slice, block.start, inline));
+			}
 		} else {
 			host.append(renderIdleBlock(block, source, options));
 		}
@@ -385,6 +422,8 @@ export class EditorView extends Disposable {
 		if (!start) {
 			return;
 		}
+		const host = this.element.parentElement;
+		const scrollTop = host?.scrollTop ?? 0;
 		const range = document.createRange();
 		range.setStart(start.node, start.offset);
 		if (selection.isCollapsed) {
@@ -396,6 +435,9 @@ export class EditorView extends Disposable {
 		const domSel = window.getSelection();
 		domSel?.removeAllRanges();
 		domSel?.addRange(range);
+		if (host) {
+			host.scrollTop = scrollTop;
+		}
 	}
 
 	#domPointFromOffset(offset: number): { node: Node; offset: number } | undefined {

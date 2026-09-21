@@ -2,7 +2,7 @@
 	position: relative;
 	min-height: 100%;
 	box-sizing: border-box;
-	padding: 16px 48px 64px 32px;
+	padding: 16px 48px 64px 4.5em;
 	font-family: var(--vscode-font-family, sans-serif);
 	font-size: var(--vscode-editor-font-size, 14px);
 	line-height: 1.6;
@@ -20,11 +20,11 @@
 
 .md-block {
 	position: relative;
+	box-sizing: border-box;
+	padding: 8px 12px;
 }
 
 .md-block-active {
-	box-sizing: border-box;
-	padding: 8px 12px;
 	border-radius: 8px;
 	background: var(
 		--md-block-active-background,
@@ -33,8 +33,116 @@
 }
 
 .md-heading {
-	margin: 0.6em 0 0.3em;
 	font-weight: 600;
+}
+
+.md-block.md-heading {
+	margin: 0.6em 0 0.3em;
+	overflow: visible;
+}
+
+.md-block.md-heading.md-block-active {
+	background: transparent;
+}
+
+.md-block.md-heading > .md-heading,
+.md-block.md-heading > .md-active-source {
+	display: block;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.md-block.md-heading.md-block-active > .md-active-source {
+	position: relative;
+	z-index: 0;
+	box-sizing: border-box;
+	background: transparent;
+}
+
+.md-block.md-heading.md-block-active > .md-active-source::before {
+	content: '';
+	position: absolute;
+	inset: -8px -12px;
+	border-radius: 8px;
+	background: var(
+		--md-block-active-background,
+		color-mix(in srgb, var(--vscode-editor-background, #1e1e1e) 70%, #000)
+	);
+	z-index: -1;
+	pointer-events: none;
+}
+
+.md-heading-marker {
+	position: absolute;
+	right: 100%;
+	top: 0;
+	margin-right: calc(12px + 0.35ch);
+	white-space: pre;
+	color: inherit;
+	font: inherit;
+}
+
+.md-block.md-h1 > h1.md-heading,
+.md-block.md-h1 > .md-active-source {
+	font-size: 2em;
+	line-height: 1.3;
+	font-weight: 600;
+}
+
+.md-block.md-h2 > h2.md-heading,
+.md-block.md-h2 > .md-active-source {
+	font-size: 1.5em;
+	line-height: 1.3;
+	font-weight: 600;
+}
+
+.md-block.md-h3 > h3.md-heading,
+.md-block.md-h3 > .md-active-source {
+	font-size: 1.25em;
+	line-height: 1.3;
+	font-weight: 600;
+}
+
+.md-block.md-h4 > h4.md-heading,
+.md-block.md-h4 > .md-active-source {
+	font-size: 1em;
+	line-height: 1.3;
+	font-weight: 600;
+}
+
+.md-block.md-h5 > h5.md-heading,
+.md-block.md-h5 > .md-active-source {
+	font-size: 0.875em;
+	line-height: 1.3;
+	font-weight: 600;
+}
+
+.md-block.md-h6 > h6.md-heading,
+.md-block.md-h6 > .md-active-source {
+	font-size: 0.85em;
+	line-height: 1.3;
+	font-weight: 600;
+}
+
+.md-block.md-code > .md-active-source {
+	font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+	font-size: var(--vscode-editor-font-size, 14px);
+}
+
+.md-block.md-blockquote {
+	margin: 0.4em 0;
+	border-left: 4px solid var(--vscode-editorWidget-border, #454545);
+}
+
+.md-blockquote {
+	margin: 0;
+	padding-left: 0.8em;
+	border-left: 0;
+}
+
+.md-block.md-blockquote > .md-active-source {
+	padding-left: 0.8em;
 }
 
 .md-paragraph {
@@ -42,7 +150,11 @@
 }
 
 .md-list {
-	margin: 0.2em 0;
+	margin: 0;
+	padding-left: 1.4em;
+}
+
+.md-block.md-list > .md-active-source {
 	padding-left: 1.4em;
 }
 
@@ -64,12 +176,6 @@
 	margin-right: 0.4em;
 }
 
-.md-blockquote {
-	margin: 0.4em 0;
-	padding-left: 0.8em;
-	border-left: 4px solid var(--vscode-editorWidget-border, #454545);
-}
-
 .md-thematic-break {
 	width: 100%;
 	border: 0;
@@ -81,7 +187,7 @@
 .md-code-inner {
 	font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 	background: var(--vscode-textCodeBlock-background, transparent);
-	padding: 8px 12px;
+	padding: 0;
 	overflow: auto;
 	white-space: pre;
 }

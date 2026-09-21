@@ -19,6 +19,7 @@
 		"../core/**/*.ts"
 	],
 	"exclude": [
-		"**/*.test.ts"
+		"**/*.test.ts",
+		"**/*.harness.ts"
 	]
 }

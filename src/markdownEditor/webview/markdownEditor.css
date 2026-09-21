@@ -31,6 +31,7 @@ body {
 	height: 100%;
 	width: 100%;
 	overflow: scroll;
+	overflow-anchor: none;
 }
 
 .md-editor {
@@ -49,29 +50,41 @@ body {
  * Links use workbench `textLink.foreground` (green `#35A854` fallback).
  */
 
-.md-theme-vscode-default h1.md-heading {
+.md-theme-vscode-default h1.md-heading,
+.md-theme-vscode-default .md-block.md-h1,
+.md-theme-vscode-default .md-block.md-h1 > .md-active-source {
 	color: var(--ib-md-heading-1, #D19A66);
 	border-bottom-color: var(--md-separator-color);
 }
 
-.md-theme-vscode-default h2.md-heading {
+.md-theme-vscode-default h2.md-heading,
+.md-theme-vscode-default .md-block.md-h2,
+.md-theme-vscode-default .md-block.md-h2 > .md-active-source {
 	color: var(--ib-md-heading-2, #E06C75);
 	border-bottom-color: var(--md-separator-color);
 }
 
-.md-theme-vscode-default h3.md-heading {
+.md-theme-vscode-default h3.md-heading,
+.md-theme-vscode-default .md-block.md-h3,
+.md-theme-vscode-default .md-block.md-h3 > .md-active-source {
 	color: var(--ib-md-heading-3, #61AFEF);
 }
 
-.md-theme-vscode-default h4.md-heading {
+.md-theme-vscode-default h4.md-heading,
+.md-theme-vscode-default .md-block.md-h4,
+.md-theme-vscode-default .md-block.md-h4 > .md-active-source {
 	color: var(--ib-md-heading-4, #C678DD);
 }
 
-.md-theme-vscode-default h5.md-heading {
+.md-theme-vscode-default h5.md-heading,
+.md-theme-vscode-default .md-block.md-h5,
+.md-theme-vscode-default .md-block.md-h5 > .md-active-source {
 	color: var(--ib-md-heading-5, #C678DD);
 }
 
-.md-theme-vscode-default h6.md-heading {
+.md-theme-vscode-default h6.md-heading,
+.md-theme-vscode-default .md-block.md-h6,
+.md-theme-vscode-default .md-block.md-h6 > .md-active-source {
 	color: var(--ib-md-heading-6, #C678DD);
 }
 
@@ -85,7 +98,8 @@ body {
 	color: var(--vscode-textLink-activeForeground, #98C379);
 }
 
-.md-theme-vscode-default :not(pre) > code {
+.md-theme-vscode-default :not(pre) > code,
+.md-theme-vscode-default .md-inline-code {
 	color: var(--ib-md-inline-code, #C678DD);
 	background-color: var(--ib-md-inline-code-background, #21252bA0);
 }
@@ -184,7 +198,8 @@ body {
 	text-decoration: underline;
 }
 
-.md-theme-vscode-default .md-blockquote {
+.md-theme-vscode-default .md-blockquote,
+.md-theme-vscode-default .md-block.md-blockquote > .md-active-source {
 	color: var(--vscode-descriptionForeground, #5C6370);
 }
 
@@ -278,6 +293,31 @@ body {
 .md-theme-vscode-default .md-strong {
 	color: color-mix(in srgb, var(--vscode-editor-foreground, #abb2bf) 55%, #fff);
 	font-weight: 700;
+}
+
+.md-theme-vscode-default em,
+.md-theme-vscode-default .md-emphasis {
+	font-style: italic;
+}
+
+.md-theme-vscode-default .md-link {
+	color: var(--vscode-textLink-foreground, #35A854);
+}
+
+.md-theme-vscode-default .md-strikethrough {
+	text-decoration: line-through;
+}
+
+.md-block.md-list > .md-active-source .md-marker,
+.md-block.md-paragraph > .md-active-source .md-marker,
+.md-block.md-blockquote > .md-active-source .md-marker {
+	color: var(--vscode-descriptionForeground, #5C6370);
+	font-weight: 400;
+}
+
+.md-block.md-heading .md-marker {
+	color: inherit;
+	opacity: 1;
 }
 
 /* Confluence-style table grid editor

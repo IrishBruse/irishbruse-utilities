@@ -56,7 +56,6 @@ function styleLine(text: string, start: number, end: number, out: ActiveSourceSt
 	}
 	const list = /^(\s*)([-*+]|\d{1,9}[.)])(\s+)/.exec(line);
 	if (list) {
-		fill(out, start, start + list[0].length, 'marker');
 		styleInline(text, start + list[0].length, end, out);
 		return;
 	}

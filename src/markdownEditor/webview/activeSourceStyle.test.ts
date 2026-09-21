@@ -40,7 +40,7 @@ describe('activeSourceStyles', () => {
 	it('marks list prefixes and bold spans', () => {
 		const text = '1. Click a **table cell** now';
 		const styles = activeSourceStyles(text, true);
-		expect(styles.slice(0, 3).every(style => style === 'marker')).toBe(true);
+		expect(styles.slice(0, 3).every(style => style === '')).toBe(true);
 		const bold = text.indexOf('table cell');
 		expect(styles[bold]).toBe('strong');
 		expect(styles[text.indexOf('**')]).toBe('strong');

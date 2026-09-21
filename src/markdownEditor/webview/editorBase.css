@@ -80,36 +80,6 @@
 	font: inherit;
 }
 
-.md-block.md-list.md-block-active {
-	overflow: visible;
-}
-
-.md-source-line {
-	display: block;
-	position: relative;
-}
-
-/* Line breaks are already made by .md-source-line; keep the `\n` node for offsets. */
-.md-source-line + .md-ws-newline {
-	display: block;
-	height: 0;
-	overflow: hidden;
-	font-size: 0;
-}
-
-.md-line-marker {
-	position: absolute;
-	top: 0;
-	left: calc(-1 * var(--md-line-marker-width, 1.4em));
-	width: var(--md-line-marker-width, 1.4em);
-	box-sizing: border-box;
-	margin: 0;
-	text-align: right;
-	white-space: pre;
-	color: inherit;
-	font: inherit;
-}
-
 .md-block.md-h1 > h1.md-heading,
 .md-block.md-h1 > .md-active-source {
 	font-size: 2em;
@@ -174,18 +144,20 @@
 
 .md-list {
 	margin: 0;
-	padding-left: 1.4em;
-	list-style-position: outside;
+	padding-left: 0;
+	list-style: none;
 }
 
 .md-block.md-list > .md-active-source {
-	padding-left: 1.4em;
-	--md-line-marker-width: 1.4em;
+	padding-left: 0;
 }
 
 .md-block.md-blockquote > .md-active-source {
 	padding-left: 0.8em;
-	--md-line-marker-width: 0.8em;
+}
+
+.md-list-raw-marker {
+	white-space: pre;
 }
 
 .md-list-item {
@@ -199,7 +171,7 @@
 
 .md-task-list-item {
 	list-style: none;
-	margin-left: -1.2em;
+	margin-left: 0;
 }
 
 .md-task-checkbox {

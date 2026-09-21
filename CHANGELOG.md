@@ -2,8 +2,8 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor shows raw `1.` list numbers in preview and while you edit, in the text flow
 -   Fix: Markdown Editor keeps inline code, bold, italic, strike, and link colors on the markers while you edit
--   Fix: Markdown Editor keeps list `1.` markers in the same gutter as idle lists while you edit
 -   Fix: Markdown Editor paints a dark edit panel behind a list or paragraph without shifting the text
 -   Fix: Markdown Editor selects a word on double-click when `preventDefault` on pointer down hides `event.detail`
 -   Fix: Markdown Editor extends a double-click word selection (and a triple-click line selection) while you drag

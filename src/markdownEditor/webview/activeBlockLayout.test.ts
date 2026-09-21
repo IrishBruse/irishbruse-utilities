@@ -50,11 +50,10 @@ describe('editorBase.css active chrome', () => {
 		expect(ruleBody(css, '.md-heading-marker')).toMatch(/right:\s*100%/);
 	});
 
-	it('keeps the same list indent in idle and source mode', () => {
-		expect(ruleBody(css, '.md-list')).toMatch(/padding-left:\s*1\.4em/);
-		expect(ruleBody(css, '.md-block.md-list > .md-active-source')).toMatch(/padding-left:\s*1\.4em/);
-		expect(ruleBody(css, '.md-line-marker')).toMatch(/text-align:\s*right/);
-		expect(ruleBody(css, '.md-line-marker')).toMatch(/width:\s*var\(--md-line-marker-width/);
+	it('keeps raw list numbers in preview and in source mode', () => {
+		expect(ruleBody(css, '.md-list')).toMatch(/list-style:\s*none/);
+		expect(ruleBody(css, '.md-list')).toMatch(/padding-left:\s*0/);
+		expect(ruleBody(css, '.md-block.md-list > .md-active-source')).toMatch(/padding-left:\s*0/);
 		expect(ruleBody(css, '.md-block-active')).toMatch(/background:\s*transparent/);
 	});
 });

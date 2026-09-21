@@ -213,6 +213,15 @@ function renderListItem(
 		checkbox.addEventListener('click', event => event.stopPropagation());
 		checkbox.addEventListener('change', () => options.onToggleCheckbox(offset, checkbox.checked));
 		li.append(checkbox);
+	} else {
+		const firstLine = item.raw.split('\n')[0] ?? '';
+		const prefix = lineMarkerPrefix(firstLine);
+		if (prefix.length > 0) {
+			const marker = el('span', 'md-list-raw-marker');
+			marker.textContent = prefix;
+			marker.dataset.sourceOffset = String(blockStart + itemAt);
+			li.append(marker);
+		}
 	}
 	let paragraph: HTMLElement | undefined;
 	const ensureParagraph = (): HTMLElement => {
@@ -371,31 +380,7 @@ export function renderActiveSource(
 		host.append(marker);
 		i = headingPrefix.length;
 	}
-	while (i < text.length) {
-		const newline = text.indexOf('\n', i);
-		const lineEnd = newline === -1 ? text.length : newline;
-		const prefix = headingPrefix.length > 0 ? '' : lineMarkerPrefix(text.slice(i, lineEnd));
-		const lineHost = prefix.length > 0 ? el('span', 'md-source-line') : host;
-		if (prefix.length > 0) {
-			const marker = el('span', 'md-marker md-line-marker');
-			marker.dataset.sourceOffset = String(absoluteStart + i);
-			marker.textContent = prefix;
-			lineHost.append(marker);
-			i += prefix.length;
-		}
-		appendActiveSourceRun(lineHost, text, styles, absoluteStart, i, lineEnd);
-		if (prefix.length > 0) {
-			host.append(lineHost);
-		}
-		if (newline === -1) {
-			break;
-		}
-		const breakEl = el('span', 'md-ws-newline');
-		breakEl.textContent = '\n';
-		breakEl.dataset.sourceOffset = String(absoluteStart + newline);
-		host.append(breakEl);
-		i = newline + 1;
-	}
+	appendActiveSourceRun(host, text, styles, absoluteStart, i, text.length);
 	if (text.length === 0) {
 		const zws = el('span', 'md-text');
 		zws.dataset.sourceOffset = String(absoluteStart);
@@ -428,6 +413,13 @@ function appendActiveSourceRun(
 			span.textContent = '\t';
 			span.dataset.sourceOffset = String(absoluteStart + i);
 			host.append(span);
+			continue;
+		}
+		if (ch === '\n') {
+			const newline = el('span', 'md-ws-newline');
+			newline.textContent = '\n';
+			newline.dataset.sourceOffset = String(absoluteStart + i);
+			host.append(newline);
 			continue;
 		}
 		const span = el('span', ['md-text', styleName].filter(Boolean).join(' '));

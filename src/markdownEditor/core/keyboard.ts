@@ -93,6 +93,41 @@ export function wordBounds(text: string, offset: number): { start: number; end: 
 	return { start: clamped, end: clamped };
 }
 
+function unitRange(bounds: { start: number; end: number }, fallback: number): { start: number; end: number } {
+	if (bounds.end > bounds.start) {
+		return bounds;
+	}
+	return { start: fallback, end: fallback };
+}
+
+/** Word-by-word range while the pointer is down after a double-click. */
+export function dragWordSelection(
+	source: string,
+	originOffset: number,
+	pointerOffset: number,
+): { anchor: number; active: number } {
+	const origin = unitRange(wordBounds(source, originOffset), originOffset);
+	const pointer = unitRange(wordBounds(source, pointerOffset), pointerOffset);
+	if (pointerOffset >= originOffset) {
+		return { anchor: origin.start, active: Math.max(origin.end, pointer.end) };
+	}
+	return { anchor: origin.end, active: Math.min(origin.start, pointer.start) };
+}
+
+/** Line-by-line range while the pointer is down after a triple-click. */
+export function dragLineSelection(
+	source: string,
+	originOffset: number,
+	pointerOffset: number,
+): { anchor: number; active: number } {
+	const origin = lineSelectionBounds(source, originOffset);
+	const pointer = lineSelectionBounds(source, pointerOffset);
+	if (pointerOffset >= originOffset) {
+		return { anchor: origin.start, active: Math.max(origin.endExclusive, pointer.endExclusive) };
+	}
+	return { anchor: origin.endExclusive, active: Math.min(origin.start, pointer.start) };
+}
+
 const LIST_PREFIX = /^(\s*)([-*+]|\d+\.)(\s+)(?:\[([ xX])\]\s+)?/;
 
 export function applySmartEnter(source: string, offset: number): { start: number; endExclusive: number; text: string; caret: number } {
@@ -149,6 +184,113 @@ export function toggleTaskAt(source: string, offset: number, checked: boolean): 
 		start: boxStart,
 		endExclusive: boxStart + 3,
 		text: checked ? '[x]' : '[ ]',
+	};
+}
+
+export type InlineWrapEdit = {
+	readonly start: number;
+	readonly endExclusive: number;
+	readonly text: string;
+	readonly anchor: number;
+	readonly active: number;
+};
+
+function countCharRun(source: string, index: number, direction: -1 | 1, ch: string): number {
+	let count = 0;
+	if (direction < 0) {
+		for (let i = index - 1; i >= 0 && source[i] === ch; i--) {
+			count++;
+		}
+		return count;
+	}
+	for (let i = index; i < source.length && source[i] === ch; i++) {
+		count++;
+	}
+	return count;
+}
+
+function markerIsRepeatedChar(marker: string): boolean {
+	const unit = marker[0];
+	return marker.length > 0 && unit !== undefined && marker.split('').every(ch => ch === unit);
+}
+
+/**
+ * Wrap or unwrap an inline Markdown marker around the selection.
+ * A collapsed caret wraps the word under the caret, or inserts a marker pair.
+ */
+export function toggleInlineWrap(source: string, selStart: number, selEnd: number, marker: string): InlineWrapEdit {
+	let start = Math.max(0, Math.min(selStart, selEnd, source.length));
+	let end = Math.max(0, Math.min(Math.max(selStart, selEnd), source.length));
+	if (marker.length === 0) {
+		return { start, endExclusive: end, text: source.slice(start, end), anchor: start, active: end };
+	}
+
+	if (start === end) {
+		const word = wordBounds(source, start);
+		if (word.end > word.start) {
+			start = word.start;
+			end = word.end;
+		} else {
+			return {
+				start,
+				endExclusive: end,
+				text: marker + marker,
+				anchor: start + marker.length,
+				active: start + marker.length,
+			};
+		}
+	}
+
+	const inner = source.slice(start, end);
+	const need = marker.length;
+	if (inner.startsWith(marker) && inner.endsWith(marker) && inner.length >= need * 2) {
+		const stripped = inner.slice(need, inner.length - need);
+		return {
+			start,
+			endExclusive: end,
+			text: stripped,
+			anchor: start,
+			active: start + stripped.length,
+		};
+	}
+
+	if (markerIsRepeatedChar(marker)) {
+		const unit = marker[0] ?? '';
+		const left = countCharRun(source, start, -1, unit);
+		const right = countCharRun(source, end, 1, unit);
+		const italicParity = need > 1 || (left % 2 === 1 && right % 2 === 1);
+		if (left >= need && right >= need && italicParity) {
+			const unwrapStart = start - need;
+			const unwrapEnd = end + need;
+			return {
+				start: unwrapStart,
+				endExclusive: unwrapEnd,
+				text: inner,
+				anchor: unwrapStart,
+				active: unwrapStart + inner.length,
+			};
+		}
+	} else if (
+		source.slice(Math.max(0, start - need), start) === marker
+		&& source.slice(end, end + need) === marker
+	) {
+		const unwrapStart = start - need;
+		const unwrapEnd = end + need;
+		return {
+			start: unwrapStart,
+			endExclusive: unwrapEnd,
+			text: inner,
+			anchor: unwrapStart,
+			active: unwrapStart + inner.length,
+		};
+	}
+
+	return {
+		start,
+		endExclusive: end,
+		text: marker + inner + marker,
+		anchor: start + need,
+		active: start + need + inner.length,
 	};
 }
 

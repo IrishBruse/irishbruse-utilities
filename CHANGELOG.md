@@ -2,6 +2,13 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor keeps inline code, bold, italic, strike, and link colors on the markers while you edit
+-   Fix: Markdown Editor keeps list `1.` markers in the same gutter as idle lists while you edit
+-   Fix: Markdown Editor paints a dark edit panel behind a list or paragraph without shifting the text
+-   Fix: Markdown Editor selects a word on double-click when `preventDefault` on pointer down hides `event.detail`
+-   Fix: Markdown Editor extends a double-click word selection (and a triple-click line selection) while you drag
+-   Add: Markdown Editor wraps the selection with `**` (Ctrl/Cmd+B), `*` (Ctrl/Cmd+I), and `` ` `` (type or Ctrl/Cmd+`)
+-   Fix: Markdown Editor paints space and tab `·` / `⇥` marks over the real character so selection width does not jump
 -   Fix: Markdown Editor places the caret in paragraph text on click
 -   Fix: Markdown Editor places the caret in heading text on click, not in the `#` prefix
 -   Fix: Markdown Editor keeps heading size when you click from one heading to another

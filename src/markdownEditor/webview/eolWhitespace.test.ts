@@ -1,5 +1,10 @@
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { isEolWhitespaceSpan, selectionCoversRange, type WhitespaceWalkNode } from './eolWhitespace';
+
+const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), 'markdownEditor.css'), 'utf8');
 
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
@@ -128,6 +133,14 @@ describe('eolWhitespace', () => {
 		const spacer = el('ib-md-virtual-spacer');
 		el('md-document').append(paragraph, spacer);
 		expect(isEolWhitespaceSpan(trail)).toBe(true);
+	});
+});
+
+describe('whitespace glyph CSS', () => {
+	it('paints space and tab marks as overlays so the source space keeps its width', () => {
+		expect(css).toMatch(/\.md-ws-space\.ib-md-sel-ws::before[\s\S]*?position:\s*absolute/);
+		expect(css).toMatch(/\.md-ws-space\.ib-md-sel-ws::before[\s\S]*?pointer-events:\s*none/);
+		expect(css).toContain("content: '·'");
 	});
 });
 

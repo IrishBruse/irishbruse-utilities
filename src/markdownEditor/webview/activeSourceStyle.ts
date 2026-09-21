@@ -4,6 +4,13 @@ export function headingMarkerPrefix(text: string): string {
 	return /^( {0,3}#{1,6}[ \t]+)/.exec(text)?.[0] ?? '';
 }
 
+/** Ordered/bullet marker or blockquote prefix at the start of a source line. */
+export function lineMarkerPrefix(line: string): string {
+	return /^(\s*)([-*+]|\d{1,9}[.)])(\s+)/.exec(line)?.[0]
+		?? /^( {0,3}>\s?)/.exec(line)?.[0]
+		?? '';
+}
+
 export function headingSourceForEdit(text: string): string {
 	return text.replace(/\n$/, '');
 }
@@ -87,9 +94,7 @@ function styleInline(text: string, start: number, end: number, out: ActiveSource
 		if (text[i] === '`') {
 			const close = text.indexOf('`', i + 1);
 			if (close > i && close < end) {
-				fill(out, i, i + 1, 'marker');
-				fill(out, i + 1, close, 'code');
-				fill(out, close, close + 1, 'marker');
+				fill(out, i, close + 1, 'code');
 				i = close + 1;
 				continue;
 			}
@@ -97,9 +102,7 @@ function styleInline(text: string, start: number, end: number, out: ActiveSource
 		if (text.startsWith('~~', i)) {
 			const close = findClose(text, i + 2, end, '~~');
 			if (close > i) {
-				fill(out, i, i + 2, 'marker');
-				fill(out, i + 2, close, 'strike');
-				fill(out, close, close + 2, 'marker');
+				fill(out, i, close + 2, 'strike');
 				i = close + 2;
 				continue;
 			}
@@ -108,10 +111,8 @@ function styleInline(text: string, start: number, end: number, out: ActiveSource
 			const delimiter = text.slice(i, i + 2);
 			const close = findClose(text, i + 2, end, delimiter);
 			if (close > i) {
-				fill(out, i, i + 2, 'marker');
-				fill(out, i + 2, close, 'strong');
-				fill(out, close, close + 2, 'marker');
-				i = close + 2;
+				fill(out, i, close + delimiter.length, 'strong');
+				i = close + delimiter.length;
 				continue;
 			}
 		}
@@ -119,9 +120,7 @@ function styleInline(text: string, start: number, end: number, out: ActiveSource
 			const delimiter = text[i] ?? '*';
 			const close = findClose(text, i + 1, end, delimiter);
 			if (close > i) {
-				fill(out, i, i + 1, 'marker');
-				fill(out, i + 1, close, 'em');
-				fill(out, close, close + 1, 'marker');
+				fill(out, i, close + 1, 'em');
 				i = close + 1;
 				continue;
 			}

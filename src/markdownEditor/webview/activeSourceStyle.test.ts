@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { activeSourceStyles, headingBodyStart, headingDisplayText, headingMarkerPrefix, headingSourceForEdit, styleClassName } from './activeSourceStyle';
+import { activeSourceStyles, headingBodyStart, headingDisplayText, headingMarkerPrefix, headingSourceForEdit, lineMarkerPrefix, styleClassName } from './activeSourceStyle';
 
 describe('headingMarkerPrefix', () => {
 	it('reads the ATX hashes and following space', () => {
@@ -21,6 +21,16 @@ describe('headingMarkerPrefix', () => {
 	});
 });
 
+describe('lineMarkerPrefix', () => {
+	it('reads ordered and bullet list markers', () => {
+		expect(lineMarkerPrefix('1. Click a cell')).toBe('1. ');
+		expect(lineMarkerPrefix('3. On a mermaid fence')).toBe('3. ');
+		expect(lineMarkerPrefix('- item')).toBe('- ');
+		expect(lineMarkerPrefix('> quote')).toBe('> ');
+		expect(lineMarkerPrefix('plain')).toBe('');
+	});
+});
+
 describe('activeSourceStyles', () => {
 	it('does not restyle heading lines so heading color and size inherit', () => {
 		const text = '## Headings H1-H6';
@@ -33,13 +43,17 @@ describe('activeSourceStyles', () => {
 		expect(styles.slice(0, 3).every(style => style === 'marker')).toBe(true);
 		const bold = text.indexOf('table cell');
 		expect(styles[bold]).toBe('strong');
-		expect(styles[text.indexOf('**')]).toBe('marker');
+		expect(styles[text.indexOf('**')]).toBe('strong');
 	});
 
-	it('marks inline code', () => {
+	it('marks inline code including the backticks', () => {
 		const text = 'use `getValue()` here';
 		const styles = activeSourceStyles(text, true);
+		const open = text.indexOf('`');
+		const close = text.lastIndexOf('`');
+		expect(styles[open]).toBe('code');
 		expect(styles[text.indexOf('getValue()')]).toBe('code');
+		expect(styles[close]).toBe('code');
 		expect(styleClassName('code')).toBe('md-inline-code');
 	});
 

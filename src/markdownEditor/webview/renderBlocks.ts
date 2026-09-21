@@ -1,7 +1,7 @@
 import katex from 'katex';
 import { Lexer, marked, type Token, type Tokens } from 'marked';
 import { CodeBlockAstNode, HeadingAstNode, type MdBlock } from '../core/ast';
-import { activeSourceStyles, headingDisplayText, headingMarkerPrefix, styleClassName } from './activeSourceStyle';
+import { activeSourceStyles, headingDisplayText, headingMarkerPrefix, lineMarkerPrefix, styleClassName, type ActiveSourceStyle } from './activeSourceStyle';
 import { parseTableSource } from './tableGridModel';
 import { stampHitMarks } from './sourceHit';
 
@@ -371,7 +371,49 @@ export function renderActiveSource(
 		host.append(marker);
 		i = headingPrefix.length;
 	}
-	for (; i < text.length; i++) {
+	while (i < text.length) {
+		const newline = text.indexOf('\n', i);
+		const lineEnd = newline === -1 ? text.length : newline;
+		const prefix = headingPrefix.length > 0 ? '' : lineMarkerPrefix(text.slice(i, lineEnd));
+		const lineHost = prefix.length > 0 ? el('span', 'md-source-line') : host;
+		if (prefix.length > 0) {
+			const marker = el('span', 'md-marker md-line-marker');
+			marker.dataset.sourceOffset = String(absoluteStart + i);
+			marker.textContent = prefix;
+			lineHost.append(marker);
+			i += prefix.length;
+		}
+		appendActiveSourceRun(lineHost, text, styles, absoluteStart, i, lineEnd);
+		if (prefix.length > 0) {
+			host.append(lineHost);
+		}
+		if (newline === -1) {
+			break;
+		}
+		const breakEl = el('span', 'md-ws-newline');
+		breakEl.textContent = '\n';
+		breakEl.dataset.sourceOffset = String(absoluteStart + newline);
+		host.append(breakEl);
+		i = newline + 1;
+	}
+	if (text.length === 0) {
+		const zws = el('span', 'md-text');
+		zws.dataset.sourceOffset = String(absoluteStart);
+		zws.textContent = '\u200b';
+		host.append(zws);
+	}
+	return host;
+}
+
+function appendActiveSourceRun(
+	host: HTMLElement,
+	text: string,
+	styles: readonly ActiveSourceStyle[],
+	absoluteStart: number,
+	from: number,
+	to: number,
+): void {
+	for (let i = from; i < to; i++) {
 		const ch = text[i] ?? '';
 		const styleName = styleClassName(styles[i] ?? '');
 		if (ch === ' ') {
@@ -388,17 +430,10 @@ export function renderActiveSource(
 			host.append(span);
 			continue;
 		}
-		if (ch === '\n') {
-			const newline = el('span', 'md-ws-newline');
-			newline.textContent = '\n';
-			newline.dataset.sourceOffset = String(absoluteStart + i);
-			host.append(newline);
-			continue;
-		}
 		const span = el('span', ['md-text', styleName].filter(Boolean).join(' '));
 		span.dataset.sourceOffset = String(absoluteStart + i);
 		let run = ch;
-		while (i + 1 < text.length) {
+		while (i + 1 < to) {
 			const next = text[i + 1] ?? '';
 			if (next === ' ' || next === '\t' || next === '\n') {
 				break;
@@ -412,11 +447,4 @@ export function renderActiveSource(
 		span.textContent = run;
 		host.append(span);
 	}
-	if (text.length === 0) {
-		const zws = el('span', 'md-text');
-		zws.dataset.sourceOffset = String(absoluteStart);
-		zws.textContent = '\u200b';
-		host.append(zws);
-	}
-	return host;
 }

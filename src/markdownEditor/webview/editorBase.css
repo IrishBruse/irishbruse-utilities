@@ -26,10 +26,27 @@
 
 .md-block-active {
 	border-radius: 8px;
+	background: transparent;
+}
+
+.md-block-active > .md-active-source {
+	position: relative;
+	z-index: 0;
+	box-sizing: border-box;
+	background: transparent;
+}
+
+.md-block-active > .md-active-source::before {
+	content: '';
+	position: absolute;
+	inset: -8px -12px;
+	border-radius: 8px;
 	background: var(
 		--md-block-active-background,
 		color-mix(in srgb, var(--vscode-editor-background, #1e1e1e) 70%, #000)
 	);
+	z-index: -1;
+	pointer-events: none;
 }
 
 .md-heading {
@@ -53,31 +70,41 @@
 	border: 0;
 }
 
-.md-block.md-heading.md-block-active > .md-active-source {
-	position: relative;
-	z-index: 0;
-	box-sizing: border-box;
-	background: transparent;
-}
-
-.md-block.md-heading.md-block-active > .md-active-source::before {
-	content: '';
-	position: absolute;
-	inset: -8px -12px;
-	border-radius: 8px;
-	background: var(
-		--md-block-active-background,
-		color-mix(in srgb, var(--vscode-editor-background, #1e1e1e) 70%, #000)
-	);
-	z-index: -1;
-	pointer-events: none;
-}
-
 .md-heading-marker {
 	position: absolute;
 	right: 100%;
 	top: 0;
 	margin-right: calc(12px + 0.35ch);
+	white-space: pre;
+	color: inherit;
+	font: inherit;
+}
+
+.md-block.md-list.md-block-active {
+	overflow: visible;
+}
+
+.md-source-line {
+	display: block;
+	position: relative;
+}
+
+/* Line breaks are already made by .md-source-line; keep the `\n` node for offsets. */
+.md-source-line + .md-ws-newline {
+	display: block;
+	height: 0;
+	overflow: hidden;
+	font-size: 0;
+}
+
+.md-line-marker {
+	position: absolute;
+	top: 0;
+	left: calc(-1 * var(--md-line-marker-width, 1.4em));
+	width: var(--md-line-marker-width, 1.4em);
+	box-sizing: border-box;
+	margin: 0;
+	text-align: right;
 	white-space: pre;
 	color: inherit;
 	font: inherit;
@@ -141,10 +168,6 @@
 	border-left: 0;
 }
 
-.md-block.md-blockquote > .md-active-source {
-	padding-left: 0.8em;
-}
-
 .md-paragraph {
 	margin: 0;
 }
@@ -152,10 +175,17 @@
 .md-list {
 	margin: 0;
 	padding-left: 1.4em;
+	list-style-position: outside;
 }
 
 .md-block.md-list > .md-active-source {
 	padding-left: 1.4em;
+	--md-line-marker-width: 1.4em;
+}
+
+.md-block.md-blockquote > .md-active-source {
+	padding-left: 0.8em;
+	--md-line-marker-width: 0.8em;
 }
 
 .md-list-item {

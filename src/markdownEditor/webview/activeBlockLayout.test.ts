@@ -42,9 +42,9 @@ describe('editorBase.css active chrome', () => {
 
 	it('paints the heading edit panel without changing the heading box', () => {
 		expect(ruleBody(css, '.md-editor')).toMatch(/padding:\s*16px 48px 64px 4\.5em/);
-		expect(ruleBody(css, '.md-block.md-heading.md-block-active > .md-active-source')).not.toMatch(/margin:/);
-		expect(ruleBody(css, '.md-block.md-heading.md-block-active > .md-active-source')).not.toMatch(/padding:/);
-		expect(ruleBody(css, '.md-block.md-heading.md-block-active > .md-active-source::before')).toMatch(
+		expect(ruleBody(css, '.md-block-active > .md-active-source')).not.toMatch(/margin:/);
+		expect(ruleBody(css, '.md-block-active > .md-active-source')).not.toMatch(/padding:/);
+		expect(ruleBody(css, '.md-block-active > .md-active-source::before')).toMatch(
 			/inset:\s*-8px -12px/,
 		);
 		expect(ruleBody(css, '.md-heading-marker')).toMatch(/right:\s*100%/);
@@ -53,5 +53,8 @@ describe('editorBase.css active chrome', () => {
 	it('keeps the same list indent in idle and source mode', () => {
 		expect(ruleBody(css, '.md-list')).toMatch(/padding-left:\s*1\.4em/);
 		expect(ruleBody(css, '.md-block.md-list > .md-active-source')).toMatch(/padding-left:\s*1\.4em/);
+		expect(ruleBody(css, '.md-line-marker')).toMatch(/text-align:\s*right/);
+		expect(ruleBody(css, '.md-line-marker')).toMatch(/width:\s*var\(--md-line-marker-width/);
+		expect(ruleBody(css, '.md-block-active')).toMatch(/background:\s*transparent/);
 	});
 });

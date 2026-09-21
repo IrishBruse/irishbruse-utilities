@@ -6,10 +6,14 @@ import {
 	applySmartEnter,
 	deleteSelectionOrBackward,
 	deleteSelectionOrForward,
+	dragLineSelection,
+	dragWordSelection,
 	lineSelectionBounds,
+	toggleInlineWrap,
 	wordBounds,
 } from '../core/index';
 import type { EditorView } from './editorView';
+import { nextMultiClickCount, type MultiClickState } from './multiClick';
 
 export class AsyncClipboardStrategy {}
 
@@ -43,7 +47,16 @@ export const markdownEditorKeyboardProfile = {
 	bindings: [
 		{ key: 'Enter', modifiers: { shift: false, ctrl: false, meta: false }, action: { kind: 'enter', command: 'smartEnter' } },
 		{ key: 'Enter', modifiers: { shift: true, ctrl: false, meta: false }, action: { kind: 'enter', command: 'insertHardLineBreak' } },
+		{ key: 'b', modifiers: { shift: false, ctrl: true, meta: true }, action: { kind: 'wrap', command: 'bold' } },
+		{ key: 'i', modifiers: { shift: false, ctrl: true, meta: true }, action: { kind: 'wrap', command: 'italic' } },
+		{ key: '`', modifiers: { shift: false, ctrl: true, meta: true }, action: { kind: 'wrap', command: 'code' } },
 	],
+};
+
+const INLINE_WRAP_KEYS: Readonly<Record<string, string>> = {
+	b: '**',
+	i: '*',
+	'`': '`',
 };
 
 const SELECTION_SYNC_KEYS = new Set([
@@ -63,6 +76,10 @@ export class EditorController extends Disposable {
 	readonly #history: HistoryStrategy | undefined;
 	#pointerDragging = false;
 	#pointerId: number | undefined;
+	#dragMode: 'char' | 'word' | 'line' = 'char';
+	#dragOrigin = 0;
+	#multiClick: MultiClickState | undefined;
+	#ignoreSelectionChange = false;
 
 	constructor(model: EditorModel, view: EditorView, options: EditorControllerOptions = {}) {
 		super();
@@ -98,7 +115,7 @@ export class EditorController extends Disposable {
 	}
 
 	readonly #onSelectionChange = (): void => {
-		if (this.#pointerDragging) {
+		if (this.#pointerDragging || this.#ignoreSelectionChange) {
 			return;
 		}
 		if (document.activeElement !== this.#view.element) {
@@ -126,15 +143,26 @@ export class EditorController extends Disposable {
 		event.preventDefault();
 		this.#view.focus();
 
+		this.#multiClick = nextMultiClickCount(
+			this.#multiClick,
+			performance.now(),
+			event.clientX,
+			event.clientY,
+			event.shiftKey,
+		);
+		const clickCount = Math.max(event.detail, this.#multiClick.count);
+
 		const source = this.#model.getText();
-		if (event.detail >= 3) {
+		if (clickCount >= 3) {
 			const { start, endExclusive } = lineSelectionBounds(source, offset);
 			this.#setSelection(start, endExclusive);
+			this.#beginPointerDrag(event, offset, 'line');
 			return;
 		}
-		if (event.detail === 2) {
+		if (clickCount >= 2) {
 			const { start, end } = wordBounds(source, offset);
 			this.#setSelection(start, end);
+			this.#beginPointerDrag(event, offset, 'word');
 			return;
 		}
 
@@ -146,10 +174,16 @@ export class EditorController extends Disposable {
 			this.#setSelection(offset, offset);
 		}
 
+		this.#beginPointerDrag(event, offset, 'char');
+	};
+
+	#beginPointerDrag(event: PointerEvent, origin: number, mode: 'char' | 'word' | 'line'): void {
 		this.#pointerDragging = true;
 		this.#pointerId = event.pointerId;
+		this.#dragOrigin = origin;
+		this.#dragMode = mode;
 		this.#view.element.setPointerCapture(event.pointerId);
-	};
+	}
 
 	readonly #onPointerMove = (event: PointerEvent): void => {
 		if (!this.#pointerDragging || event.pointerId !== this.#pointerId) {
@@ -157,6 +191,19 @@ export class EditorController extends Disposable {
 		}
 		const offset = this.#view.offsetFromPointer(event.clientX, event.clientY);
 		if (offset === undefined) {
+			return;
+		}
+		const source = this.#model.getText();
+		if (this.#dragMode === 'word') {
+			const range = dragWordSelection(source, this.#dragOrigin, offset);
+			this.#setSelection(range.anchor, range.active);
+			event.preventDefault();
+			return;
+		}
+		if (this.#dragMode === 'line') {
+			const range = dragLineSelection(source, this.#dragOrigin, offset);
+			this.#setSelection(range.anchor, range.active);
+			event.preventDefault();
 			return;
 		}
 		const current = this.#model.selection.get();
@@ -182,6 +229,13 @@ export class EditorController extends Disposable {
 			}
 			this.#pointerDragging = false;
 			this.#pointerId = undefined;
+			this.#dragMode = 'char';
+			this.#ignoreSelectionChange = true;
+			requestAnimationFrame(() => {
+				requestAnimationFrame(() => {
+					this.#ignoreSelectionChange = false;
+				});
+			});
 		}
 	};
 
@@ -192,6 +246,16 @@ export class EditorController extends Disposable {
 			const length = this.#model.getText().length;
 			this.#setSelection(0, length);
 			return;
+		}
+		if (chord && !event.altKey && !event.shiftKey) {
+			const wrapMarker = INLINE_WRAP_KEYS[event.key.toLowerCase()] ?? INLINE_WRAP_KEYS[event.key];
+			if (wrapMarker !== undefined) {
+				event.preventDefault();
+				if (!this.#model.readonlyMode.get()) {
+					this.#applyInlineWrap(wrapMarker);
+				}
+				return;
+			}
 		}
 		if (SELECTION_SYNC_KEYS.has(event.key)) {
 			queueMicrotask(() => this.#syncFromDom());
@@ -260,7 +324,19 @@ export class EditorController extends Disposable {
 
 	#insert(text: string): void {
 		const sel = this.#range();
+		if (text === '`' && sel.end > sel.start) {
+			this.#applyInlineWrap('`');
+			return;
+		}
 		this.#model.replaceRange(sel.start, sel.end, text, sel.start + text.length);
+	}
+
+	#applyInlineWrap(marker: string): void {
+		this.#syncFromDom();
+		const sel = this.#range();
+		const edit = toggleInlineWrap(this.#model.getText(), sel.start, sel.end, marker);
+		this.#model.replaceRange(edit.start, edit.endExclusive, edit.text);
+		this.#setSelection(edit.anchor, edit.active);
 	}
 
 	readonly #onCopy = (event: ClipboardEvent): void => {

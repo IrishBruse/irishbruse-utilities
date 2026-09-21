@@ -104,6 +104,11 @@ body {
 	background-color: var(--ib-md-inline-code-background, #21252bA0);
 }
 
+.md-theme-vscode-default .md-active-source .md-inline-code {
+	color: var(--ib-md-inline-code, #C678DD);
+	background-color: var(--ib-md-inline-code-background, #21252bA0);
+}
+
 .md-theme-vscode-default .md-code-block,
 .md-theme-vscode-default .md-code-block code {
 	color: var(--vscode-editor-foreground);
@@ -222,6 +227,25 @@ body {
 .md-editor .md-ws-tab::before,
 .md-editor .md-ws-newline::before {
 	content: none;
+}
+
+/*
+ * Overlay glyphs on the real space/tab. In-flow `content` doubles the
+ * width, so selection jumps and the extra box is not the source space.
+ */
+.md-editor .md-ws-space.ib-md-eol-ws::before,
+.md-editor .md-ws-space.ib-md-sel-ws::before,
+.md-editor .md-hardbreak-src .md-ws-space::before,
+.md-editor .md-ws-tab.ib-md-eol-ws::before,
+.md-editor .md-ws-tab.ib-md-sel-ws::before {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	pointer-events: none;
+	user-select: none;
+	color: var(--vscode-editorWhitespace-foreground, #b0b0b0);
 }
 
 .md-editor .md-ws-space.ib-md-eol-ws::before,

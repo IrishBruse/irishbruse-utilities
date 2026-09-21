@@ -33,8 +33,11 @@ export {
 	applySmartEnter,
 	deleteSelectionOrBackward,
 	deleteSelectionOrForward,
+	dragLineSelection,
+	dragWordSelection,
 	lineBounds,
 	lineSelectionBounds,
+	toggleInlineWrap,
 	toggleTaskAt,
 	wordBounds,
 } from './keyboard';

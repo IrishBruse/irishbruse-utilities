@@ -34,5 +34,7 @@ export {
 	deleteSelectionOrBackward,
 	deleteSelectionOrForward,
 	lineBounds,
+	lineSelectionBounds,
 	toggleTaskAt,
+	wordBounds,
 } from './keyboard';

@@ -37,6 +37,12 @@
 -   Add: Editor title bar icons to swap between the Markdown text editor and Markdown Editor (ib-utilities) for the same `.md` file
 -   Fix: Markdown Editor Enter starts a new paragraph or continues a list; Shift+Enter inserts a hard line break (two trailing spaces)
 -   Fix: Markdown Editor shows `·` for trailing spaces at the end of the last paragraph
+-   Add: Markdown Editor supports Shift+click, click-drag, and Select All for text selection
+-   Add: Markdown Editor selects a word on double-click and a line on triple-click
+-   Fix: Markdown Editor copy, cut, and paste use the current selection; the edit model no longer kept selection collapsed
+-   Fix: Markdown Editor paste skips clipboard payloads with no `text/plain` (no empty insert)
+-   Fix: Markdown Editor copy does not fall back to rich HTML when the model selection is empty but the DOM still shows a range
+-   Fix: Markdown Editor read-only mode still supports pointer selection and copy; cut and paste stay disabled
 
 ## 0.21.0
 

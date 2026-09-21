@@ -5,6 +5,94 @@ export function lineBounds(source: string, offset: number): { start: number; end
 	return { start, end };
 }
 
+/** Line range for triple-click: line text plus trailing `\n` when present. */
+export function lineSelectionBounds(source: string, offset: number): { start: number; endExclusive: number } {
+	const { start, end } = lineBounds(source, offset);
+	const endExclusive = source[end] === '\n' ? end + 1 : end;
+	return { start, endExclusive };
+}
+
+const WORD_CHAR = /[\p{L}\p{M}\p{N}_]/u;
+
+function clampOffset(source: string, offset: number): number {
+	return Math.max(0, Math.min(offset, source.length));
+}
+
+function codeUnitWidthAt(source: string, index: number): number {
+	const cp = source.codePointAt(index) ?? 0;
+	return cp > 0xffff ? 2 : 1;
+}
+
+function isLowSurrogateTail(source: string, index: number): boolean {
+	return index > 0 && source.codePointAt(index - 1)! > 0xffff;
+}
+
+function wordCharIndex(source: string, offset: number): number {
+	let index = clampOffset(source, offset);
+	if (index === source.length && index > 0) {
+		index -= codeUnitWidthAt(source, index - 1);
+	}
+	if (isLowSurrogateTail(source, index)) {
+		index -= 1;
+	}
+	return index;
+}
+
+function isWordCharAt(source: string, index: number): boolean {
+	if (index < 0 || index >= source.length) {
+		return false;
+	}
+	const width = codeUnitWidthAt(source, index);
+	return WORD_CHAR.test(source.slice(index, index + width));
+}
+
+function expandWordBounds(source: string, index: number): { start: number; end: number } {
+	let start = index;
+	while (start > 0 && isWordCharAt(source, start - codeUnitWidthAt(source, start - 1))) {
+		start -= codeUnitWidthAt(source, start - 1);
+	}
+	let end = index + codeUnitWidthAt(source, index);
+	while (end < source.length && isWordCharAt(source, end)) {
+		end += codeUnitWidthAt(source, end);
+	}
+	return { start, end };
+}
+
+export function wordBounds(text: string, offset: number): { start: number; end: number } {
+	if (text.length === 0) {
+		return { start: 0, end: 0 };
+	}
+	const clamped = clampOffset(text, offset);
+	const index = wordCharIndex(text, clamped);
+	const width = codeUnitWidthAt(text, index);
+	const unit = text.slice(index, index + width);
+	if (isWordCharAt(text, index)) {
+		return expandWordBounds(text, index);
+	}
+	if (!/\s/.test(unit)) {
+		return { start: index, end: index + width };
+	}
+	for (let i = index - 1; i >= 0; i -= codeUnitWidthAt(text, i)) {
+		if (/\s/.test(text[i])) {
+			continue;
+		}
+		if (isWordCharAt(text, i)) {
+			return expandWordBounds(text, i);
+		}
+		break;
+	}
+	for (let i = index + width; i < text.length; i += codeUnitWidthAt(text, i)) {
+		if (/\s/.test(text[i])) {
+			continue;
+		}
+		if (isWordCharAt(text, i)) {
+			return expandWordBounds(text, i);
+		}
+		break;
+	}
+	return { start: clamped, end: clamped };
+}
+
 const LIST_PREFIX = /^(\s*)([-*+]|\d+\.)(\s+)(?:\[([ xX])\]\s+)?/;
 
 export function applySmartEnter(source: string, offset: number): { start: number; endExclusive: number; text: string; caret: number } {

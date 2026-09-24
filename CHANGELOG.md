@@ -13,6 +13,9 @@
 -   Change: Markdown Editor opens editable by default (lock still persists after the user toggles it)
 -   Fix: Markdown Editor empty areas, Mermaid diagrams, and padding enter edit mode on click
 -   Fix: Markdown Editor link definitions no longer look like errors; broken images show alt text
+-   Add: Markdown Editor sanitized HTML preview for inactive `htmlFlow` blocks (links open via the host)
+-   Fix: Markdown Editor HTML `<details>` toggles on one click in the inactive preview
+-   Fix: Markdown Editor blocks with stripped dangerous HTML keep the unhandled warning chrome instead of a blank preview
 -   Fix: Markdown Editor task checkboxes keep `[ ]` / `[x]` on one line
 -   Add: `npm run fetch-markdown-large-fixtures` — downloads large real-world Markdown stress tests (Reltio corpus, awesome-selfhosted, MDN, etc.) into `docs/tests/markdown/large/`
 -   Add: Expanded Markdown Editor manual test fixtures under `docs/tests/markdown/` (README, keyboard-whitespace, lists-tasks, links-autolinks)

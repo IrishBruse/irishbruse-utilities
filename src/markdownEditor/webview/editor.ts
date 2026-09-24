@@ -13,6 +13,7 @@ import './markdownEditor.css';
 import { WebviewSyntaxHighlighter } from './syntaxHighlighter';
 import { UnhandledBlockChromeController } from './unhandledBlockChrome';
 import { InactiveBlockClickController } from './inactiveBlockClick';
+import { HtmlPreviewController } from './htmlPreview';
 import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
@@ -162,6 +163,7 @@ class Editor extends Disposable {
 		this.#view = view;
 		this._register(new UnhandledBlockChromeController(view));
 		this._register(new InactiveBlockClickController(model, view, host));
+		this._register(new HtmlPreviewController(model, view, url => this.#postToHost({ type: 'openLink', href: url })));
 
 		observeAll(this._store, () => {
 			model.document.get();

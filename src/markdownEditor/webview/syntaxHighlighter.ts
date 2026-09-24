@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { LengthEdit, OffsetRange, StringEdit } from '@vscode/markdown-editor';
-import { observableValue, type ISettableObservable, type ITransaction } from './markdownObservable';
+import { observableValue, type ISettableObservable, type ITransaction } from '@vscode/observables';
 
 /**
  * A single coloured run as returned by the `documentSyntaxHighlighting`
@@ -56,10 +56,7 @@ function fontStyleRules(): string {
 }
 
 function colorRules(colorMap: readonly string[]): string {
-	return colorMap
-		.map((color, index) => color ? `.tok-mdhl-fg-${index} { color: ${color}; }` : '')
-		.filter((rule) => rule.length > 0)
-		.join('\n');
+	return colorMap.map((color, index) => `.tok-mdhl-fg-${index} { color: ${color}; }`).join('\n');
 }
 
 function classNameFor(foreground: number, fontStyle: number): string | undefined {

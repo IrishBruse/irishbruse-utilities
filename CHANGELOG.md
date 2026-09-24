@@ -2,22 +2,13 @@
 
 ## Unreleased
 
--   Add: Markdown Editor paints `SKILL.md` YAML front matter as a Properties card with typed fields and Add property key autocomplete
--   Change: SKILL.md Properties card is full content width with a transparent fill and a border only
--   Change: SKILL.md Properties rows no longer show a type icon before the key
--   Fix: SKILL.md boolean fields use the workbench dropdown colors instead of the light HTML select
--   Fix: SKILL.md Properties text fields show a caret (the document editor hides the native caret)
--   Fix: Markdown Editor shows selected leading spaces as `·`, like the VS Code text editor
--   Fix: Markdown Editor keeps `·` on trailing spaces after glue rebuilds and on idle hard breaks
--   Add: Markdown Editor mounts only the visible blocks of large files, so open and scroll stay fast
+-   Change: Markdown Editor webview matches VS Code's markdown-editor (`@vscode/markdown-editor` 0.0.2-110)
+-   Remove: ib-utilities Markdown Editor overlays (table grid, SKILL properties, themed Mermaid, HTML preview, virtualization, parser patches, whitespace marks)
 -   Add: `npm run fetch-markdown-large-fixtures` — downloads large real-world Markdown stress tests (Reltio corpus, awesome-selfhosted, MDN, etc.) into `docs/tests/markdown/large/`
 -   Add: Expanded Markdown Editor manual test fixtures under `docs/tests/markdown/` (README, keyboard-whitespace, lists-tasks, links-autolinks)
--   Fix: Markdown Editor shows angle-bracket autolinks and HTML it cannot paint as raw source
--   Change: Group markdown editor code under `src/markdownEditor/` (`host/`, `webview/`); replace webview `@vscode/observables` usage with local helpers
+-   Change: Group markdown editor code under `src/markdownEditor/` (`host/`, `webview/`)
 -   Add: **Discard** editor title bar action when the file on disk changed and the editor text is different; reloads from disk and keeps the file open
 -   Add: Editor title bar icons to swap between the Markdown text editor and Markdown Editor (ib-utilities) for the same `.md` file
--   Fix: Markdown Editor Enter starts a new paragraph or continues a list; Shift+Enter inserts a hard line break (two trailing spaces)
--   Fix: Markdown Editor shows `·` for trailing spaces at the end of the last paragraph
 
 ## 0.21.0
 

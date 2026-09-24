@@ -14,23 +14,13 @@ import {
     window,
     workspace,
 } from "vscode";
-import { Commands } from "../../constants";
-import {
-    getMarkdownInlineEditorColors,
-    markdownInlineEditorColorsCssVars,
-} from "./markdownInlineEditorColors";
+import { encodeWebviewInitialState } from "./webviewInitialState";
 import {
     configureMarkdownSyntaxHighlighting,
     highlightMarkdownCode,
     invalidateMarkdownSyntaxTheme,
     unstyledHighlight,
 } from "./syntaxHighlighting";
-import {
-    encodeWebviewInitialState,
-    isSkillMarkdownPath,
-    prefixMarkdownForFastOpen,
-    skillFolderNameFromPath,
-} from "./webviewInitialState";
 
 export const MARKDOWN_EDITOR_VIEW_TYPE = "ib-utilities.markdownEditor";
 
@@ -59,15 +49,6 @@ class AuthenticatedWebview {
     }
 }
 
-function getMarkdownInlineEditorTables(): { maxColumnWidth: number; style: 'wrapped' | 'compact' } {
-    const config = workspace.getConfiguration("markdownInlineEditor");
-    const style = config.get<string>("tables.style", "wrapped");
-    return {
-        maxColumnWidth: config.get<number>("tables.maxColumnWidth", 160),
-        style: style === "compact" ? "compact" : "wrapped",
-    };
-}
-
 function getEditorHtml(
     documentUri: Uri,
     webview: Webview,
@@ -86,13 +67,9 @@ function getEditorHtml(
         content,
         documentVersion,
         readonly: globalReadonly,
-        richLinksEnabled: false,
+        richLinksEnabled: workspace.getConfiguration("markdown").get<boolean>("experimental.richLinks.enabled", false),
         linkPresentationRules: [],
-        tables: getMarkdownInlineEditorTables(),
-        skillFrontMatter: isSkillMarkdownPath(documentUri.path),
-        skillFolderName: skillFolderNameFromPath(documentUri.path),
     });
-    const colorVars = markdownInlineEditorColorsCssVars(getMarkdownInlineEditorColors());
 
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -106,12 +83,7 @@ function getEditorHtml(
     <meta id="vscode-markdown-editor-initial-state" content="${initialState}" />
     <base href="${baseUri}" />
     <link rel="stylesheet" href="${styleUri}" />
-    <style>
-        :root {
-            ${colorVars}
-        }
-    </style>
-    <title>Markdown Editor (ib-utilities)</title>
+    <title>Markdown Editor</title>
 </head>
 <body>
     <div id="editor"></div>
@@ -176,20 +148,16 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
         let isUpdatingFromWebview = false;
         let editQueue = Promise.resolve();
         let webviewReady = false;
-        let htmlContentIsPrefix = false;
 
         const renderHtml = () => {
             webviewReady = false;
-            const text = document.getText();
-            const prefix = prefixMarkdownForFastOpen(text);
-            htmlContentIsPrefix = prefix !== text;
             webviewPanel.webview.html = getEditorHtml(
                 document.uri,
                 webviewPanel.webview,
                 this.context.extensionUri,
                 editorWebview.messageSecret,
-                this.context.globalState.get(READONLY_STATE_KEY, false),
-                prefix,
+                this.context.globalState.get(READONLY_STATE_KEY, true),
+                document.getText(),
                 document.version,
             );
         };
@@ -205,10 +173,9 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                 switch (message.type) {
                     case "ready": {
                         webviewReady = true;
-                        if (htmlContentIsPrefix || message.documentVersion !== document.version) {
+                        if (message.documentVersion !== document.version) {
                             await editorWebview.postMessage({ type: "update", content: document.getText() });
                         }
-                        await editorWebview.postMessage({ type: "codeBlockEditorProviders", codeBlockEditorProviders: [] });
                         break;
                     }
                     case "history": {
@@ -226,20 +193,24 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                         }
                         break;
                     }
-                    case "openMermaidPreview": {
-                        if (typeof message.offset !== "number" || !Number.isFinite(message.offset)) {
-                            break;
-                        }
-                        const openLine = document.positionAt(Math.max(0, message.offset)).line;
-                        await commands.executeCommand(
-                            Commands.OpenMermaidMarkdownPreview,
-                            document.uri.toString(),
-                            openLine,
-                        );
-                        break;
-                    }
                     case "setReadonly": {
                         await this.context.globalState.update(READONLY_STATE_KEY, !!message.readonly);
+                        break;
+                    }
+                    case "resolveCodeBlockEditor": {
+                        if (typeof message.requestId === "number") {
+                            await editorWebview.postMessage({
+                                type: "resolvedCodeBlockEditor",
+                                requestId: message.requestId,
+                                descriptor: undefined,
+                            });
+                        }
+                        break;
+                    }
+                    case "codeBlockEditorDiagnostic": {
+                        if (typeof message.message === "string") {
+                            console.error(message.message);
+                        }
                         break;
                     }
                     case "edit": {
@@ -282,8 +253,6 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                         });
                         break;
                     }
-                    case "codeBlockEditorDiagnostic":
-                        break;
                 }
             }),
             workspace.onDidChangeTextDocument((event) => {
@@ -292,14 +261,6 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                 }
                 if (webviewReady) {
                     void editorWebview.postMessage({ type: "update", content: document.getText() });
-                }
-            }),
-            workspace.onDidChangeConfiguration((event) => {
-                if (
-                    event.affectsConfiguration("markdownInlineEditor.colors")
-                    || event.affectsConfiguration("markdownInlineEditor.tables")
-                ) {
-                    renderHtml();
                 }
             }),
             window.onDidChangeActiveColorTheme(() => {

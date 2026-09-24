@@ -10,8 +10,7 @@ import type {
 	LinkPresentationKind,
 	LinkPresentationStatusKind,
 } from '@vscode/markdown-editor';
-import { Disposable } from './disposable';
-import { observableValue, type ISettableObservable } from './markdownObservable';
+import { Disposable, observableValue, type ISettableObservable } from '@vscode/observables';
 
 interface LinkPresentationEntry {
 	readonly presentation: ISettableObservable<WebviewLinkPresentation | undefined>;
@@ -22,19 +21,19 @@ type WebviewLinkPresentation = LinkPresentation & { readonly isLoading?: boolean
 
 export class WebviewLinkPresentationProvider extends Disposable implements ILinkPresentationProvider {
 	readonly #entries = new Map<string, LinkPresentationEntry>();
-	readonly #rules: readonly { id: string; uriPattern: RegExp; kind: LinkPresentationKind }[];
+	readonly #rules: readonly { id: string; uriPattern: RegExp; initialKind: LinkPresentationKind }[];
 	readonly #postMessage: (message: unknown) => void;
 	#syncScheduled = false;
 
 	constructor(
-		rules: readonly { id: string; source: string; flags: string; kind: LinkPresentationKind }[],
+		rules: readonly { id: string; source: string; flags: string; initialKind: LinkPresentationKind }[],
 		postMessage: (message: unknown) => void,
 	) {
 		super();
 		this.#rules = rules.map(rule => ({
 			id: rule.id,
 			uriPattern: new RegExp(rule.source, rule.flags),
-			kind: rule.kind,
+			initialKind: rule.initialKind,
 		}));
 		this.#postMessage = postMessage;
 	}
@@ -49,7 +48,7 @@ export class WebviewLinkPresentationProvider extends Disposable implements ILink
 		if (!entry) {
 			entry = {
 				presentation: observableValue(`linkPresentation:${url}`, {
-					kind: rule.kind,
+					kind: rule.initialKind,
 					isLoading: true,
 				}),
 				references: 0,

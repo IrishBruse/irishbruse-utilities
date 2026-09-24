@@ -15,6 +15,7 @@ import { UnhandledBlockChromeController } from './unhandledBlockChrome';
 import { InactiveBlockClickController } from './inactiveBlockClick';
 import { HtmlPreviewController } from './htmlPreview';
 import { TableGridController } from './tableGridEditor';
+import { EolWhitespaceController } from './eolWhitespace';
 import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
@@ -170,6 +171,7 @@ class Editor extends Disposable {
 		this._register(new InactiveBlockClickController(model, view, host));
 		this._register(new HtmlPreviewController(model, view, url => this.#postToHost({ type: 'openLink', href: url })));
 		this._register(new TableGridController(model, view, host, initialState.tables));
+		this._register(new EolWhitespaceController(model, view));
 
 		observeAll(this._store, () => {
 			model.document.get();

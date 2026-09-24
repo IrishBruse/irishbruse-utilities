@@ -23,6 +23,7 @@
 -   Change: Group markdown editor code under `src/markdownEditor/` (`host/`, `webview/`)
 -   Add: **Discard** editor title bar action when the file on disk changed and the editor text is different; reloads from disk and keeps the file open
 -   Add: Editor title bar icons to swap between the Markdown text editor and Markdown Editor (ib-utilities) for the same `.md` file
+-   Fix: Markdown Editor shows `·` for selected leading spaces like VS Code, and keeps `·` on trailing spaces after glue rebuilds and idle hard breaks
 
 ## 0.21.0
 

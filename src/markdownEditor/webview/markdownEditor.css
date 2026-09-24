@@ -197,6 +197,82 @@ body {
 	overflow: visible;
 }
 
+/*
+ * Hide invented whitespace glyphs except end-of-line spaces (Markdown
+ * trailing space / hard break). Soft `\n` still wraps; block gaps still use
+ * paragraph spacing. Leading and in-sentence spaces stay unmarked.
+ */
+.md-editor .md-ws-space::before,
+.md-editor .md-ws-tab::before,
+.md-editor .md-ws-newline::before {
+	content: none;
+}
+
+.md-editor .md-ws-space.ib-md-eol-ws::before,
+.md-editor .md-ws-space.ib-md-sel-ws::before,
+.md-editor .md-hardbreak-src .md-ws-space::before {
+	content: '·';
+}
+
+.md-editor .md-ws-tab.ib-md-eol-ws::before,
+.md-editor .md-ws-tab.ib-md-sel-ws::before {
+	content: '⇥';
+}
+
+/*
+ * Paragraph trailing spaces parse as unkinded glue. Inactive glue is
+ * `visibility: hidden`; keep the width and paint `·` over the spaces.
+ */
+.md-editor .md-glue.md-glue-hidden.ib-md-eol-ws,
+.md-editor .md-glue.md-glue-hidden.ib-md-sel-ws,
+.md-editor .md-glue.ib-md-eol-ws,
+.md-editor .md-glue.ib-md-sel-ws {
+	visibility: visible;
+	position: relative;
+	white-space: pre;
+}
+
+.md-editor .md-paragraph > .md-glue-indent.md-glue-hidden.ib-md-sel-ws {
+	display: inline;
+}
+
+.md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots],
+.md-editor .md-glue.ib-md-sel-ws[data-ib-sel-dots],
+.md-editor .md-hardbreak.ib-md-eol-ws[data-ib-eol-dots] {
+	color: transparent;
+}
+
+.md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots]::before,
+.md-editor .md-hardbreak.ib-md-eol-ws[data-ib-eol-dots]::before,
+.md-editor .md-glue.ib-md-sel-ws[data-ib-sel-dots]::before {
+	color: var(--vscode-editorWhitespace-foreground, #b0b0b0);
+	pointer-events: none;
+}
+
+.md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots]::before,
+.md-editor .md-hardbreak.ib-md-eol-ws[data-ib-eol-dots]::before {
+	content: attr(data-ib-eol-dots);
+}
+
+.md-editor .md-glue.ib-md-sel-ws[data-ib-sel-dots]::before {
+	content: attr(data-ib-sel-dots);
+}
+
+.md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots]::before,
+.md-editor .md-glue.ib-md-sel-ws[data-ib-sel-dots]::before {
+	position: absolute;
+	left: 0;
+	right: 0;
+	text-align: center;
+}
+
+.md-editor .md-ws-newline-glyph,
+.md-editor .md-ws-blockbreak-glyph {
+	/* Keep the ↵ layout box. The caret at the end of a block sits on these
+	 * offsets. `font-size: 0` dropped that box so the caret did not paint. */
+	visibility: hidden;
+}
+
 /* Confluence-style table grid editor
  * Preview table stays visible; only the focused cell is overlaid for editing.
  */

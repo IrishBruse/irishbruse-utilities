@@ -16,6 +16,7 @@ import { InactiveBlockClickController } from './inactiveBlockClick';
 import { HtmlPreviewController } from './htmlPreview';
 import { TableGridController } from './tableGridEditor';
 import { EolWhitespaceController } from './eolWhitespace';
+import { SkillFrontMatterController } from './skillFrontMatter';
 import {
 	bindViewportVirtualization,
 	installDocumentViewCreateHook,
@@ -53,6 +54,8 @@ interface InitialState {
 		readonly maxColumnWidth: number;
 		readonly style: 'wrapped' | 'compact';
 	};
+	readonly skillFrontMatter: boolean;
+	readonly skillFolderName: string;
 }
 
 class Editor extends Disposable {
@@ -181,6 +184,9 @@ class Editor extends Disposable {
 		this._register(new InactiveBlockClickController(model, view, host));
 		this._register(new HtmlPreviewController(model, view, url => this.#postToHost({ type: 'openLink', href: url })));
 		this._register(new TableGridController(model, view, host, initialState.tables));
+		if (initialState.skillFrontMatter) {
+			this._register(new SkillFrontMatterController(model, view, host, initialState.skillFolderName));
+		}
 		this._register(new EolWhitespaceController(model, view));
 
 		observeAll(this._store, () => {
@@ -426,7 +432,9 @@ function isInitialState(value: unknown): value is InitialState {
 	return typeof candidate.content === 'string'
 		&& typeof candidate.documentVersion === 'number'
 		&& typeof candidate.readonly === 'boolean'
-		&& isTableSettings(candidate.tables);
+		&& isTableSettings(candidate.tables)
+		&& typeof candidate.skillFrontMatter === 'boolean'
+		&& typeof candidate.skillFolderName === 'string';
 }
 
 function isTableSettings(value: unknown): value is InitialState['tables'] {

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+-   Add: Markdown Editor paints `SKILL.md` YAML front matter as a Properties card with typed fields and Add property key autocomplete
+-   Change: SKILL.md Properties card is full content width with a transparent fill and a border only
+-   Change: SKILL.md Properties rows no longer show a type icon before the key
+-   Fix: SKILL.md boolean fields use the workbench dropdown colors instead of the light HTML select
+-   Fix: SKILL.md Properties text fields show a caret (the document editor hides the native caret)
 -   Add: Markdown Editor mounts only visible blocks in large files so open and scroll stay fast; large files paint an initial prefix in the webview then receive the full document after `ready`
 -   Add: Markdown Editor Confluence-style table grid with cell markdown edit and add/delete row/column
 -   Change: Sync Markdown Editor with `@vscode/markdown-editor` 0.0.2-110

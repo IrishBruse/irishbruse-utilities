@@ -14,6 +14,7 @@ import { WebviewSyntaxHighlighter } from './syntaxHighlighter';
 import { UnhandledBlockChromeController } from './unhandledBlockChrome';
 import { InactiveBlockClickController } from './inactiveBlockClick';
 import { HtmlPreviewController } from './htmlPreview';
+import { TableGridController } from './tableGridEditor';
 import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
@@ -41,6 +42,10 @@ interface InitialState {
 	readonly content: string;
 	readonly documentVersion: number;
 	readonly readonly: boolean;
+	readonly tables: {
+		readonly maxColumnWidth: number;
+		readonly style: 'wrapped' | 'compact';
+	};
 }
 
 class Editor extends Disposable {
@@ -164,6 +169,7 @@ class Editor extends Disposable {
 		this._register(new UnhandledBlockChromeController(view));
 		this._register(new InactiveBlockClickController(model, view, host));
 		this._register(new HtmlPreviewController(model, view, url => this.#postToHost({ type: 'openLink', href: url })));
+		this._register(new TableGridController(model, view, host, initialState.tables));
 
 		observeAll(this._store, () => {
 			model.document.get();
@@ -405,7 +411,17 @@ function isInitialState(value: unknown): value is InitialState {
 	const candidate = value as Record<string, unknown>;
 	return typeof candidate.content === 'string'
 		&& typeof candidate.documentVersion === 'number'
-		&& typeof candidate.readonly === 'boolean';
+		&& typeof candidate.readonly === 'boolean'
+		&& isTableSettings(candidate.tables);
+}
+
+function isTableSettings(value: unknown): value is InitialState['tables'] {
+	if (!value || typeof value !== 'object') {
+		return false;
+	}
+	const candidate = value as Record<string, unknown>;
+	return typeof candidate.maxColumnWidth === 'number'
+		&& (candidate.style === 'wrapped' || candidate.style === 'compact');
 }
 
 function computeTextEdit(previousText: string, text: string): { start: number; endExclusive: number; text: string } {

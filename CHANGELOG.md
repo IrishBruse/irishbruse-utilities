@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Add: Markdown Editor Confluence-style table grid with cell markdown edit and add/delete row/column
 -   Change: Sync Markdown Editor with `@vscode/markdown-editor` 0.0.2-110
 -   Remove: Runtime patches of `@vscode/markdown-editor` (`patchMarkdownEditor.mjs`)
 -   Remove: Markdown Editor comments overlay (the host never sent comments)

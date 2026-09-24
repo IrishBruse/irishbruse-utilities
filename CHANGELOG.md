@@ -2,35 +2,15 @@
 
 ## Unreleased
 
--   Change: Markdown Editor is only used when directly editing a file, not in diffs
--   Add: Markdown Editor paints `SKILL.md` YAML front matter as a Properties card with typed fields and Add property key autocomplete
--   Change: SKILL.md Properties card is full content width with a transparent fill and a border only
--   Change: SKILL.md Properties rows no longer show a type icon before the key
--   Fix: SKILL.md boolean fields use the workbench dropdown colors instead of the light HTML select
--   Fix: SKILL.md Properties text fields show a caret (the document editor hides the native caret)
--   Add: Markdown Editor mounts only visible blocks in large files so open and scroll stay fast; large files paint an initial prefix in the webview then receive the full document after `ready`
--   Add: Markdown Editor Confluence-style table grid with cell markdown edit and add/delete row/column
+## 0.22.0
+
 -   Change: Sync Markdown Editor with `@vscode/markdown-editor` 0.0.2-110
--   Remove: Runtime patches of `@vscode/markdown-editor` except the DocumentViewNode.create hook used for viewport virtualization
--   Remove: Markdown Editor comments overlay (the host never sent comments)
--   Remove: Unused iframe code-block editor plumbing and rich-link presentation
--   Add: Markdown Editor injects `markdownInlineEditor.colors` as `--ib-md-*` CSS variables on the webview
--   Add: Markdown Editor headings, links, inline code, blockquotes, and fenced code use those colors / workbench text colors
--   Add: Language badge on idle fenced code blocks
--   Add: Themed in-editor Mermaid diagrams plus an Open Preview control that opens the Mermaid preview at that fence
--   Change: Markdown Editor opens editable by default (lock still persists after the user toggles it)
--   Fix: Markdown Editor empty areas, Mermaid diagrams, and padding enter edit mode on click
--   Fix: Markdown Editor link definitions no longer look like errors; broken images show alt text
--   Add: Markdown Editor sanitized HTML preview for inactive `htmlFlow` blocks (links open via the host)
--   Fix: Markdown Editor HTML `<details>` toggles on one click in the inactive preview
--   Fix: Markdown Editor blocks with stripped dangerous HTML keep the unhandled warning chrome instead of a blank preview
--   Fix: Markdown Editor task checkboxes keep `[ ]` / `[x]` on one line
--   Add: `npm run fetch-markdown-large-fixtures` — downloads large real-world Markdown stress tests (Reltio corpus, awesome-selfhosted, MDN, etc.) into `docs/tests/markdown/large/`
--   Add: Expanded Markdown Editor manual test fixtures under `docs/tests/markdown/` (README, keyboard-whitespace, lists-tasks, links-autolinks)
--   Change: Group markdown editor code under `src/markdownEditor/` (`host/`, `webview/`)
--   Add: **Discard** editor title bar action when the file on disk changed and the editor text is different; reloads from disk and keeps the file open
--   Add: Editor title bar icons to swap between the Markdown text editor and Markdown Editor (ib-utilities) for the same `.md` file
--   Fix: Markdown Editor shows `·` for selected leading spaces like VS Code, and keeps `·` on trailing spaces after glue rebuilds and idle hard breaks
+-   Add: `SKILL.md` YAML front matter as a Properties card with typed fields and key autocomplete
+-   Add: Large Markdown files mount only visible blocks and paint a prefix first so open and scroll stay fast
+-   Add: Confluence-style table grid, sanitized HTML preview, and themed Mermaid **Open Preview** on the 110 webview
+-   Fix: Selected leading spaces and trailing EOL spaces show as `·`; empty areas and Mermaid enter edit on click; link definitions and broken images no longer look like errors
+-   Change: Markdown Editor is only used when directly editing a file, not in diffs
+-   Change: Markdown Editor opens editable by default (the lock still persists after you toggle it)
 
 ## 0.21.0
 

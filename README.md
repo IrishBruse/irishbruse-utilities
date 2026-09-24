@@ -49,9 +49,9 @@ An **Actions** activity bar panel for customizable shortcuts: built-in actions, 
 
 ### Markdown Editor (ib-utilities)
 
-Open `*.md` files with **Markdown Editor (ib-utilities)** from **Reopen Editor With...**. The custom editor is optional, so it is not the default Markdown editor.
+Open `*.md` files with **Markdown Editor (ib-utilities)** from **Reopen Editor With...**. The custom editor is optional, so it is not the default Markdown editor. Git diffs and other compare views keep the stock text editor.
 
-The editor shows WYSIWYG Markdown with colors from the active theme, fenced-code highlighting, a language label on inactive code blocks, and HTML preview for inactive HTML blocks.
+The editor shows WYSIWYG Markdown with colors from the active theme, fenced-code highlighting, a language label on inactive code blocks, and HTML preview for inactive HTML blocks. Large files mount only the blocks on screen. `SKILL.md` YAML opens as a Properties card with typed fields.
 
 Tables open as a grid. Edit a cell, add a row or column from the gap controls, and select a row or column from the cell border. Then press Backspace or Delete to remove that row or column. Wide cells wrap inside the editor; short columns stay narrow. Click a link in a table to open it.
 

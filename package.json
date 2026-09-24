@@ -551,7 +551,7 @@
                 },
                 {
                     "command": "ib-utilities.openMarkdownEditor",
-                    "when": "resourceExtname == .md && activeCustomEditorId != 'ib-utilities.markdownEditor'",
+                    "when": "resourceExtname == .md && !inDiffEditor && resourceScheme != git && activeCustomEditorId != 'ib-utilities.markdownEditor'",
                     "group": "navigation"
                 },
                 {

@@ -15,6 +15,7 @@ import {
     workspace,
 } from "vscode";
 import { Commands } from "../../constants";
+import { shouldUseMarkdownCustomEditor } from "./shouldUseMarkdownCustomEditor";
 import {
     getMarkdownInlineEditorColors,
     markdownInlineEditorColorsCssVars,
@@ -157,6 +158,11 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
         webviewPanel: WebviewPanel,
         _token: CancellationToken,
     ): Promise<void> {
+        if (!shouldUseMarkdownCustomEditor(document.uri)) {
+            await commands.executeCommand("vscode.openWith", document.uri, "default");
+            return;
+        }
+
         const mediaRoot = Uri.joinPath(this.context.extensionUri, "media", "markdownEditor");
         const editorWebview = new AuthenticatedWebview(webviewPanel.webview);
 

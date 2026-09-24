@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Change: Markdown Editor is only used when directly editing a file, not in diffs
 -   Add: Markdown Editor paints `SKILL.md` YAML front matter as a Properties card with typed fields and Add property key autocomplete
 -   Change: SKILL.md Properties card is full content width with a transparent fill and a border only
 -   Change: SKILL.md Properties rows no longer show a type icon before the key

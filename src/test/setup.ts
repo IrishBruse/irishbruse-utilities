@@ -122,6 +122,7 @@ vi.mock("vscode", () => ({
         Expanded: 2,
     },
     TabInputText: class {},
+    TabInputTextDiff: class {},
     TabInputCustom: class {},
     ViewColumn: {
         Beside: 2,

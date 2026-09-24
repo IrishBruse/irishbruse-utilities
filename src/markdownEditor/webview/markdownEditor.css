@@ -38,6 +38,11 @@ body {
 	box-sizing: border-box;
 }
 
+.ib-md-virtual-spacer {
+	flex-shrink: 0;
+	pointer-events: none;
+}
+
 /*
  * Headings / inline code: host injects --ib-md-* on :root from
  * markdownInlineEditor.colors (see markdownInlineEditorColors.ts).

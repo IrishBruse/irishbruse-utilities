@@ -1,7 +1,8 @@
 import * as esbuild from "esbuild";
-import { cpSync, mkdirSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { patchMarkdownEditor } from "./patchMarkdownEditor.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(__dirname, "..", "..");
@@ -44,6 +45,20 @@ const config = {
     },
     assetNames: "[name]-[hash]",
     logLevel: "info",
+    plugins: [
+        {
+            name: "patch-markdown-editor-document-virtualization",
+            setup(build) {
+                build.onLoad(
+                    { filter: /node_modules\/@vscode\/markdown-editor\/dist\/index\.js$/ },
+                    (args) => ({
+                        contents: patchMarkdownEditor(readFileSync(args.path, "utf8")),
+                        loader: "js",
+                    }),
+                );
+            },
+        },
+    ],
 };
 
 function syncBuildToVscode() {

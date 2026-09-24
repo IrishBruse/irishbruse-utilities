@@ -17,6 +17,12 @@ import { HtmlPreviewController } from './htmlPreview';
 import { TableGridController } from './tableGridEditor';
 import { EolWhitespaceController } from './eolWhitespace';
 import {
+	bindViewportVirtualization,
+	installDocumentViewCreateHook,
+	recordMeasuredHeights,
+	setViewportBox,
+} from './viewportVirtualization';
+import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
 } from '../../mermaidEditor/vsCodeTheme.browser';
@@ -124,6 +130,10 @@ class Editor extends Disposable {
 		const model = this.model;
 		const content = initialState.content;
 		const savedViewState = this.#getViewState();
+		setViewportBox({
+			scrollTop: typeof savedViewState.scrollTop === 'number' ? savedViewState.scrollTop : 0,
+			height: host.clientHeight || 800,
+		});
 
 		const view = this._register(new EditorView(model, {
 			classNames: ['md-theme-vscode-default'],
@@ -175,6 +185,7 @@ class Editor extends Disposable {
 
 		observeAll(this._store, () => {
 			model.document.get();
+			recordMeasuredHeights(view.measuredLayout.measurements.get());
 			forEachMeasuredCodeBlock(view, (el, block) => {
 				syncCodeBlockLanguageBadge(el, block.language.trim());
 				syncMermaidOpenPreviewButton(el, block.language.trim(), () => {
@@ -224,6 +235,7 @@ class Editor extends Disposable {
 			},
 		});
 		host.appendChild(view.element);
+		this._register({ dispose: bindViewportVirtualization(view, host) });
 		postEditorFocus();
 
 		if (savedViewState.selection) {
@@ -446,4 +458,5 @@ function computeTextEdit(previousText: string, text: string): { start: number; e
 	};
 }
 
+installDocumentViewCreateHook();
 new Editor(document.getElementById('editor')!, readInitialState());

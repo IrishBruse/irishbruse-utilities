@@ -2,9 +2,10 @@
 
 ## Unreleased
 
+-   Add: Markdown Editor mounts only visible blocks in large files so open and scroll stay fast; large files paint an initial prefix in the webview then receive the full document after `ready`
 -   Add: Markdown Editor Confluence-style table grid with cell markdown edit and add/delete row/column
 -   Change: Sync Markdown Editor with `@vscode/markdown-editor` 0.0.2-110
--   Remove: Runtime patches of `@vscode/markdown-editor` (`patchMarkdownEditor.mjs`)
+-   Remove: Runtime patches of `@vscode/markdown-editor` except the DocumentViewNode.create hook used for viewport virtualization
 -   Remove: Markdown Editor comments overlay (the host never sent comments)
 -   Remove: Unused iframe code-block editor plumbing and rich-link presentation
 -   Add: Markdown Editor injects `markdownInlineEditor.colors` as `--ib-md-*` CSS variables on the webview

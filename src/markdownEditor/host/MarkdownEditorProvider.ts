@@ -14,13 +14,18 @@ import {
     window,
     workspace,
 } from "vscode";
-import { encodeWebviewInitialState } from "./webviewInitialState";
+import { Commands } from "../../constants";
+import {
+    getMarkdownInlineEditorColors,
+    markdownInlineEditorColorsCssVars,
+} from "./markdownInlineEditorColors";
 import {
     configureMarkdownSyntaxHighlighting,
     highlightMarkdownCode,
     invalidateMarkdownSyntaxTheme,
     unstyledHighlight,
 } from "./syntaxHighlighting";
+import { encodeWebviewInitialState } from "./webviewInitialState";
 
 export const MARKDOWN_EDITOR_VIEW_TYPE = "ib-utilities.markdownEditor";
 
@@ -67,9 +72,8 @@ function getEditorHtml(
         content,
         documentVersion,
         readonly: globalReadonly,
-        richLinksEnabled: workspace.getConfiguration("markdown").get<boolean>("experimental.richLinks.enabled", false),
-        linkPresentationRules: [],
     });
+    const colorVars = markdownInlineEditorColorsCssVars(getMarkdownInlineEditorColors());
 
     return /* html */ `<!DOCTYPE html>
 <html lang="en">
@@ -83,7 +87,12 @@ function getEditorHtml(
     <meta id="vscode-markdown-editor-initial-state" content="${initialState}" />
     <base href="${baseUri}" />
     <link rel="stylesheet" href="${styleUri}" />
-    <title>Markdown Editor</title>
+    <style>
+        :root {
+            ${colorVars}
+        }
+    </style>
+    <title>Markdown Editor (ib-utilities)</title>
 </head>
 <body>
     <div id="editor"></div>
@@ -156,7 +165,7 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                 webviewPanel.webview,
                 this.context.extensionUri,
                 editorWebview.messageSecret,
-                this.context.globalState.get(READONLY_STATE_KEY, true),
+                this.context.globalState.get(READONLY_STATE_KEY, false),
                 document.getText(),
                 document.version,
             );
@@ -193,24 +202,20 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                         }
                         break;
                     }
+                    case "openMermaidPreview": {
+                        if (typeof message.offset !== "number" || !Number.isFinite(message.offset)) {
+                            break;
+                        }
+                        const openLine = document.positionAt(Math.max(0, message.offset)).line;
+                        await commands.executeCommand(
+                            Commands.OpenMermaidMarkdownPreview,
+                            document.uri.toString(),
+                            openLine,
+                        );
+                        break;
+                    }
                     case "setReadonly": {
                         await this.context.globalState.update(READONLY_STATE_KEY, !!message.readonly);
-                        break;
-                    }
-                    case "resolveCodeBlockEditor": {
-                        if (typeof message.requestId === "number") {
-                            await editorWebview.postMessage({
-                                type: "resolvedCodeBlockEditor",
-                                requestId: message.requestId,
-                                descriptor: undefined,
-                            });
-                        }
-                        break;
-                    }
-                    case "codeBlockEditorDiagnostic": {
-                        if (typeof message.message === "string") {
-                            console.error(message.message);
-                        }
                         break;
                     }
                     case "edit": {
@@ -261,6 +266,11 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
                 }
                 if (webviewReady) {
                     void editorWebview.postMessage({ type: "update", content: document.getText() });
+                }
+            }),
+            workspace.onDidChangeConfiguration((event) => {
+                if (event.affectsConfiguration("markdownInlineEditor.colors")) {
+                    renderHtml();
                 }
             }),
             window.onDidChangeActiveColorTheme(() => {

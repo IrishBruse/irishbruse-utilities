@@ -9,16 +9,182 @@ html, body {
 	height: 100%;
 	width: 100%;
 	background: var(--vscode-editor-background);
+	color-scheme: dark;
+}
+
+body.vscode-light,
+body.vscode-high-contrast-light {
+	color-scheme: light;
+}
+
+body.vscode-dark,
+body.vscode-high-contrast {
+	color-scheme: dark;
 }
 
 body {
 	overflow: hidden;
+	color: var(--vscode-editor-foreground);
 }
 
 #editor {
 	height: 100%;
 	width: 100%;
 	overflow: scroll;
+}
+
+.md-editor {
+	min-height: 100%;
+	box-sizing: border-box;
+}
+
+/*
+ * Headings / inline code: host injects --ib-md-* on :root from
+ * markdownInlineEditor.colors (see markdownInlineEditorColors.ts).
+ * Links use workbench `textLink.foreground` (green `#35A854` fallback).
+ */
+
+.md-theme-vscode-default h1.md-heading {
+	color: var(--ib-md-heading-1);
+	border-bottom-color: var(--md-separator-color);
+}
+
+.md-theme-vscode-default h2.md-heading {
+	color: var(--ib-md-heading-2);
+	border-bottom-color: var(--md-separator-color);
+}
+
+.md-theme-vscode-default h3.md-heading {
+	color: var(--ib-md-heading-3);
+}
+
+.md-theme-vscode-default h4.md-heading {
+	color: var(--ib-md-heading-4);
+}
+
+.md-theme-vscode-default h5.md-heading {
+	color: var(--ib-md-heading-5);
+}
+
+.md-theme-vscode-default h6.md-heading {
+	color: var(--ib-md-heading-6);
+}
+
+.md-theme-vscode-default a,
+.md-theme-vscode-default a code {
+	color: var(--vscode-textLink-foreground, #35A854);
+}
+
+.md-theme-vscode-default a:hover,
+.md-theme-vscode-default a:hover code {
+	color: var(--vscode-textLink-activeForeground, #98C379);
+}
+
+.md-theme-vscode-default :not(pre) > code {
+	color: var(--ib-md-inline-code);
+	background-color: var(--ib-md-inline-code-background);
+}
+
+.md-theme-vscode-default .md-code-block,
+.md-theme-vscode-default .md-code-block code {
+	color: var(--vscode-editor-foreground);
+}
+
+.md-theme-vscode-default .md-table td {
+	vertical-align: top !important;
+	overflow-wrap: break-word;
+	word-break: normal;
+}
+
+/* Fit tables to the content column; wrap cells instead of horizontal scroll.
+ * Keep min-content (longest word) so short columns are not squashed. */
+.md-theme-vscode-default .md-table-wrapper {
+	overflow-x: hidden;
+	width: fit-content;
+	max-width: 100%;
+}
+
+.md-theme-vscode-default .md-table {
+	width: auto;
+	max-width: 100%;
+	table-layout: auto;
+}
+
+/* Fence language badge in the top-right while the block is not being edited. */
+.md-code-block[data-ib-language]:not(.md-block-active) {
+	position: relative;
+}
+
+.md-code-block[data-ib-language]:not(.md-block-active)::before {
+	content: attr(data-ib-language);
+	position: absolute;
+	top: 4px;
+	right: 8px;
+	z-index: 1;
+	font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+	font-size: 11px;
+	line-height: 1;
+	color: var(--vscode-descriptionForeground, #5C6370);
+	pointer-events: none;
+	user-select: none;
+}
+
+/* Mermaid: CodeLens-style Open Preview replaces the language badge. */
+.md-code-block[data-ib-language][data-ib-mermaid-preview]:not(.md-block-active)::before,
+.md-code-block[data-ib-mermaid-preview]::before {
+	content: none;
+}
+
+.md-code-block[data-ib-mermaid-preview] > .ib-mermaid-open-preview {
+	display: block;
+}
+
+.md-mermaid {
+	padding-top: 22px;
+}
+
+.md-mermaid-diagram svg {
+	max-width: 100%;
+	height: auto;
+}
+
+.md-mermaid-diagram.ib-mermaid-error {
+	color: var(--vscode-errorForeground);
+}
+
+.md-mermaid-diagram .messageText,
+.md-mermaid-diagram .loopText,
+.md-mermaid-diagram .labelText,
+.md-mermaid-diagram .sequenceNumber {
+	fill: var(--vscode-editor-foreground) !important;
+}
+
+.ib-mermaid-open-preview {
+	display: none;
+	position: absolute;
+	top: 4px;
+	right: 8px;
+	z-index: 8;
+	margin: 0;
+	padding: 2px 4px;
+	border: 0;
+	background: transparent;
+	font-family: var(--vscode-font-family, sans-serif);
+	font-size: 12px;
+	line-height: 1.2;
+	color: var(--vscode-textLink-foreground, #35A854);
+	cursor: pointer;
+	user-select: none;
+	pointer-events: auto;
+}
+
+.ib-mermaid-open-preview:hover {
+	color: var(--vscode-textLink-activeForeground, #98C379);
+	text-decoration: underline;
+}
+
+.md-theme-vscode-default .md-blockquote {
+	color: var(--vscode-descriptionForeground, #5C6370);
 }
 
 /* `[ ]` / `[x]` source markers must stay on one line in the marker column. */

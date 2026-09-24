@@ -2,9 +2,16 @@
 
 ## Unreleased
 
+-   Change: Sync Markdown Editor with `@vscode/markdown-editor` 0.0.2-110
+-   Remove: Runtime patches of `@vscode/markdown-editor` (`patchMarkdownEditor.mjs`)
+-   Remove: Markdown Editor comments overlay (the host never sent comments)
+-   Remove: Unused iframe code-block editor plumbing and rich-link presentation
+-   Add: Markdown Editor injects `markdownInlineEditor.colors` as `--ib-md-*` CSS variables on the webview
+-   Add: Markdown Editor headings, links, inline code, blockquotes, and fenced code use those colors / workbench text colors
+-   Add: Language badge on idle fenced code blocks
+-   Add: Themed in-editor Mermaid diagrams plus an Open Preview control that opens the Mermaid preview at that fence
+-   Change: Markdown Editor opens editable by default (lock still persists after the user toggles it)
 -   Fix: Markdown Editor task checkboxes keep `[ ]` / `[x]` on one line
--   Change: Markdown Editor webview matches VS Code's markdown-editor (`@vscode/markdown-editor` 0.0.2-110)
--   Remove: ib-utilities Markdown Editor overlays (table grid, SKILL properties, themed Mermaid, HTML preview, virtualization, parser patches, whitespace marks)
 -   Add: `npm run fetch-markdown-large-fixtures` — downloads large real-world Markdown stress tests (Reltio corpus, awesome-selfhosted, MDN, etc.) into `docs/tests/markdown/large/`
 -   Add: Expanded Markdown Editor manual test fixtures under `docs/tests/markdown/` (README, keyboard-whitespace, lists-tasks, links-autolinks)
 -   Change: Group markdown editor code under `src/markdownEditor/` (`host/`, `webview/`)

@@ -11,6 +11,8 @@ import '@vscode/markdown-editor/editor.css';
 import '@vscode/markdown-editor/themes/vscode-default.css';
 import './markdownEditor.css';
 import { WebviewSyntaxHighlighter } from './syntaxHighlighter';
+import { UnhandledBlockChromeController } from './unhandledBlockChrome';
+import { InactiveBlockClickController } from './inactiveBlockClick';
 import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
@@ -158,6 +160,8 @@ class Editor extends Disposable {
 			},
 		}));
 		this.#view = view;
+		this._register(new UnhandledBlockChromeController(view));
+		this._register(new InactiveBlockClickController(model, view, host));
 
 		observeAll(this._store, () => {
 			model.document.get();

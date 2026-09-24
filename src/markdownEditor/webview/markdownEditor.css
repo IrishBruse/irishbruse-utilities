@@ -20,3 +20,13 @@ body {
 	width: 100%;
 	overflow: scroll;
 }
+
+/* `[ ]` / `[x]` source markers must stay on one line in the marker column. */
+.md-task-list-item {
+	--md-task-marker-width: 4ch;
+}
+
+.md-task-list-item > .md-paragraph > .md-glue:first-child {
+	white-space: nowrap;
+	overflow: visible;
+}

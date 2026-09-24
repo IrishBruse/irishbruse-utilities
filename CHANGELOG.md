@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor task checkboxes keep `[ ]` / `[x]` on one line
 -   Change: Markdown Editor webview matches VS Code's markdown-editor (`@vscode/markdown-editor` 0.0.2-110)
 -   Remove: ib-utilities Markdown Editor overlays (table grid, SKILL properties, themed Mermaid, HTML preview, virtualization, parser patches, whitespace marks)
 -   Add: `npm run fetch-markdown-large-fixtures` — downloads large real-world Markdown stress tests (Reltio corpus, awesome-selfhosted, MDN, etc.) into `docs/tests/markdown/large/`

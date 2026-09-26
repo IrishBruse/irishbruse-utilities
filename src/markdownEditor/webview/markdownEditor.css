@@ -203,6 +203,35 @@ body {
 }
 
 /*
+ * A list inside a blockquote stores the next line's `>` as source-gap glue
+ * at the end of the previous item. Hang that single continuation in the quote
+ * gutter on the following line. `white-space: normal` keeps the one newline
+ * from adding a blank line; the next item already starts that line.
+ * Inactive gaps stay `display: none` (library `.md-glue-hidden`).
+ */
+.md-editor .md-glue-blockQuoteSourceGap.ib-md-quote-next-line:not(.md-glue-hidden) {
+	position: absolute;
+	top: 100%;
+	right: calc(100% + (var(--md-list-level, 1) * var(--md-list-indent-step, 2em)) - 1ch);
+	left: auto;
+	display: inline-flex;
+	align-items: center;
+	height: 1lh;
+	min-width: 2ch;
+	margin: 0;
+	white-space: normal;
+	text-align: left;
+	color: #999;
+	font-family: 'Cascadia Code', 'Fira Code', monospace;
+	font-size: inherit;
+	line-height: inherit;
+	--md-blockquote-marker-shift: -0.18ch;
+	--md-blockquote-marker-scale: 0.9;
+	transform: translateX(var(--md-blockquote-marker-shift)) scale(var(--md-blockquote-marker-scale));
+	transform-origin: left center;
+}
+
+/*
  * Hide invented whitespace glyphs except end-of-line spaces (Markdown
  * trailing space / hard break). Soft `\n` still wraps; block gaps still use
  * paragraph spacing. Leading and in-sentence spaces stay unmarked.

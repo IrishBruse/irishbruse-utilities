@@ -13,6 +13,14 @@ export const EOL_DOTS_ATTR = 'data-ib-eol-dots';
 /** Leading / other whitespace that is covered by the current selection. */
 export const SEL_WS_CLASS = 'ib-md-sel-ws';
 export const SEL_DOTS_ATTR = 'data-ib-sel-dots';
+/**
+ * A list inside a blockquote stores the next line's `>` as source-gap glue
+ * on the previous item. This class pulls a single continuation into the gutter.
+ */
+export const QUOTE_NEXT_LINE_CLASS = 'ib-md-quote-next-line';
+
+/** One source line of quote prefixes, such as `\n> `, `\n> > `, or `\n   > `. */
+const QUOTE_CONTINUATION_GAP = /^\r?\n[ \t]*(?:>[ \t]*)+$/;
 
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
@@ -185,6 +193,28 @@ export function isEolWhitespaceSpan(el: WhitespaceWalkNode): boolean {
 	return isFollowedOnlyByLineEnd(el);
 }
 
+/** True when glue text is a single blockquote continuation, not a blank quote line. */
+export function isQuoteContinuationGap(text: string): boolean {
+	return QUOTE_CONTINUATION_GAP.test(text);
+}
+
+function isQuotePrefixWhitespace(node: HTMLElement): boolean {
+	return node.closest(`.${QUOTE_NEXT_LINE_CLASS}`) !== null;
+}
+
+/**
+ * Mark source-gap glue that is only the next line's quote prefix so CSS can
+ * hang it in the gutter. Blank lines (`\n>\n> `) stay on the library path.
+ */
+export function markQuoteContinuationGaps(root: ParentNode): void {
+	for (const node of root.querySelectorAll('.md-glue-blockQuoteSourceGap')) {
+		if (!(node instanceof HTMLElement)) {
+			continue;
+		}
+		node.classList.toggle(QUOTE_NEXT_LINE_CLASS, isQuoteContinuationGap(node.textContent ?? ''));
+	}
+}
+
 /** True when `[start, start + length)` overlaps a non-empty selection. */
 export function selectionCoversRange(
 	selectionStart: number,
@@ -268,7 +298,7 @@ function markSelectedWhitespace(
 	const range = selection && !selection.isCollapsed ? selection.range : undefined;
 	if (documentView && range) {
 		for (const node of root.querySelectorAll('.md-ws-space, .md-ws-tab')) {
-			if (!(node instanceof HTMLElement) || node.classList.contains(EOL_WS_CLASS)) {
+			if (!(node instanceof HTMLElement) || node.classList.contains(EOL_WS_CLASS) || isQuotePrefixWhitespace(node)) {
 				continue;
 			}
 			const span = whitespaceSourceRange(node, documentView);
@@ -302,7 +332,7 @@ function markSelectedWhitespace(
 export function markEolWhitespace(root: ParentNode): void {
 	const keep = new Set<HTMLElement>();
 	for (const node of root.querySelectorAll('.md-ws-space, .md-ws-tab')) {
-		if (!(node instanceof HTMLElement)) {
+		if (!(node instanceof HTMLElement) || isQuotePrefixWhitespace(node)) {
 			continue;
 		}
 		if (isEolWhitespaceSpan(node)) {
@@ -340,6 +370,7 @@ export function paintEditorWhitespace(
 	documentView: ViewNode | undefined,
 	selection: Selection | undefined,
 ): void {
+	markQuoteContinuationGaps(root);
 	markEolWhitespace(root);
 	markSelectedWhitespace(root, documentView, selection);
 }

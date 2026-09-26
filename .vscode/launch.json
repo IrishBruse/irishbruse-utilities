@@ -14,7 +14,7 @@
                 "${workspaceFolder}/docs"
             ],
             "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-            "preLaunchTask": "build: extension + markdown editor"
+            "preLaunchTask": "build: extension"
         }
     ]
 }

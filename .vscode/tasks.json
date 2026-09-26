@@ -10,6 +10,15 @@
             "problemMatcher": []
         },
         {
+            "label": "build: extension",
+            "type": "process",
+            "command": "node",
+            "args": ["esbuild.mjs"],
+            "options": { "cwd": "${workspaceFolder}" },
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
             "type": "npm",
             "script": "build-markdown-editor",
             "group": "build",
@@ -22,14 +31,19 @@
             "problemMatcher": []
         },
         {
-            "label": "build: extension + markdown editor",
-            "dependsOn": ["npm: build", "npm: build-markdown-editor"],
-            "dependsOrder": "sequence",
-            "problemMatcher": []
+            "type": "npm",
+            "script": "watch",
+            "problemMatcher": [],
+            "isBackground": true,
+            "presentation": {
+                "reveal": "never",
+                "group": "watchers"
+            },
+            "runOptions": { "runOn": "folderOpen" }
         },
         {
             "type": "npm",
-            "script": "watch",
+            "script": "watch-markdown-editor",
             "problemMatcher": [],
             "isBackground": true,
             "presentation": {

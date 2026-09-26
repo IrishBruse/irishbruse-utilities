@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+-   Fix: Ctrl+F / Cmd+F opens find in the Markdown Editor
+
 ## 0.22.0
 
 -   Change: Sync Markdown Editor with `@vscode/markdown-editor` 0.0.2-110

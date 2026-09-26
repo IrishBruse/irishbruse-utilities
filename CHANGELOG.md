@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Change: Markdown Editor tab marks use a `>|` icon instead of a dot
 -   Fix: Ctrl+F / Cmd+F opens find in the Markdown Editor
 
 ## 0.22.0

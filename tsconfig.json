@@ -20,6 +20,7 @@
         "src/**/*.browser.ts",
         "src/test/**",
         "src/markdownEditor/webview/**",
-        "src/markdownEditor/vendor/**"
+        "src/markdownEditor/vendor/**",
+        "src/markdownEditor/packages/**"
     ]
 }

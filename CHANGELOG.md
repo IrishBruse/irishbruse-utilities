@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Add: Markdown Editor vendors the `@vscode/markdown-editor` 0.0.2-110 TypeScript recovered from its source maps
 -   Fix: Markdown Editor quote markers on lists stay in the gutter
 -   Change: Markdown Editor tab marks use a `>|` icon instead of a dot
 -   Fix: Ctrl+F / Cmd+F opens find in the Markdown Editor

@@ -8,9 +8,12 @@ Related: [lists-tasks.md](./lists-tasks.md), [README.md](./README.md).
 
 Place the caret at the end of each line below and press the key.
 
+
+
+
 ### Plain paragraph
 
-First line of a paragraph.  
+First line of a paragraph.
 Second line after a hard break (two trailing spaces before this line).
 
 **Expected:** Enter at end of "paragraph." starts a new paragraph. Shift+Enter at end of "paragraph." inserts a hard line break (you should see `··↵` before the next line).
@@ -53,10 +56,10 @@ Editable samples (add or remove trailing spaces to test):
 
 Line with no trailing spaces.
 
-Line with two trailing spaces before break.  
+Line with two trailing spaces before break.
 Next line after hard break.
 
-- List item with trailing spaces at end.   
+- List item with trailing spaces at end.
 - Second item normal.
 
 ## Caret at block end

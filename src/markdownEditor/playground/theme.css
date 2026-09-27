@@ -1,0 +1,301 @@
+/*
+ * Dark workbench stand-in used when VS Code user settings.json is missing.
+ * The dev server injects that file's color theme after this stylesheet
+ * (see vscodeUserTheme.ts).
+ */
+:root {
+	--vscode-editor-background: #1e1e1e;
+	--vscode-editor-foreground: #d4d4d4;
+	--vscode-foreground: #cccccc;
+	--vscode-errorForeground: #f48771;
+	--vscode-editorWidget-background: #252526;
+	--vscode-editorWidget-foreground: #cccccc;
+	--vscode-editorWidget-border: #454545;
+	--vscode-editorCursor-foreground: #aeafad;
+	--vscode-editorWhitespace-foreground: #3b3a32;
+	--vscode-descriptionForeground: #9d9d9d;
+	--vscode-focusBorder: #007fd4;
+	--vscode-textLink-foreground: #35a854;
+	--vscode-textLink-activeForeground: #98c379;
+	--vscode-textCodeBlock-background: #2b2b2b;
+	--vscode-button-background: #0e639c;
+	--vscode-button-foreground: #ffffff;
+	--vscode-button-hoverBackground: #1177bb;
+	--vscode-button-border: transparent;
+	--vscode-input-background: #3c3c3c;
+	--vscode-input-foreground: #cccccc;
+	--vscode-input-border: #454545;
+	--vscode-dropdown-background: #3c3c3c;
+	--vscode-dropdown-foreground: #cccccc;
+	--vscode-dropdown-border: #454545;
+	--vscode-sideBar-background: #252526;
+	--vscode-toolbar-hoverBackground: rgb(90 93 94 / 31%);
+	--vscode-list-hoverBackground: rgb(90 93 94 / 31%);
+	--vscode-widget-shadow: rgb(0 0 0 / 36%);
+	--vscode-font-family: system-ui, sans-serif;
+	--vscode-editor-font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	--ib-md-heading-1: #d19a66;
+	--ib-md-heading-2: #e06c75;
+	--ib-md-heading-3: #61afef;
+	--ib-md-heading-4: #c678dd;
+	--ib-md-heading-5: #c678dd;
+	--ib-md-heading-6: #c678dd;
+	--ib-md-inline-code: #c678dd;
+	--ib-md-inline-code-background: #21252ba0;
+	color-scheme: dark;
+}
+
+/*
+ * Shell is in this file so the first paint matches the settled page.
+ * Editor CSS arrives with the script and must not change the backdrop or add a scrollbar.
+ */
+html,
+body.markdown-playground {
+	margin: 0;
+	height: 100%;
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+	overflow: hidden;
+}
+
+body.markdown-playground {
+	display: flex;
+	flex-direction: column;
+}
+
+#toolbar {
+	flex: 0 0 auto;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 10px;
+	border-bottom: 1px solid var(--vscode-editorWidget-border);
+	background: var(--vscode-sideBar-background);
+	color: var(--vscode-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: 13px;
+}
+
+#toolbar select {
+	font: inherit;
+	color: var(--vscode-dropdown-foreground);
+	background: var(--vscode-dropdown-background);
+	border: 1px solid var(--vscode-dropdown-border);
+	padding: 2px 6px;
+}
+
+#workspace {
+	flex: 1 1 auto;
+	min-height: 0;
+	display: flex;
+	--workspace-source-width: 50%;
+}
+
+body.markdown-playground #editor {
+	flex: 1 1 0;
+	height: auto;
+	min-width: 0;
+	min-height: 0;
+	overflow: auto;
+	background: var(--vscode-editor-background);
+	color: var(--vscode-editor-foreground);
+	font-family: var(--markdown-font-family, var(--vscode-editor-font-family));
+	font-size: var(--markdown-font-size, 14px);
+}
+
+#source-inspector {
+	flex: 0 0 var(--workspace-source-width);
+	min-width: 0;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	background: var(--vscode-sideBar-background);
+	color: var(--vscode-editor-foreground);
+	font-family: var(--vscode-editor-font-family);
+	font-size: 13px;
+	line-height: 1.5;
+}
+
+#workspace-split {
+	flex: 0 0 10px;
+	cursor: col-resize;
+	background: linear-gradient(
+		to right,
+		transparent calc(50% - 1px),
+		var(--vscode-editorWidget-border) calc(50% - 1px),
+		var(--vscode-editorWidget-border) calc(50% + 1px),
+		transparent calc(50% + 1px)
+	);
+	transition: background 0.1s ease;
+}
+
+#workspace-split:hover,
+#workspace-split:focus-visible {
+	background: linear-gradient(
+		to right,
+		transparent calc(50% - 1.5px),
+		var(--vscode-focusBorder) calc(50% - 1.5px),
+		var(--vscode-focusBorder) calc(50% + 1.5px),
+		transparent calc(50% + 1.5px)
+	);
+}
+
+#workspace-split:focus-visible {
+	outline: none;
+}
+
+#source-status {
+	flex: 0 0 auto;
+	min-height: 148px;
+	max-height: 50%;
+	overflow: auto;
+	padding: 10px 12px;
+	border-bottom: 1px solid var(--vscode-editorWidget-border);
+}
+
+.source-heading {
+	margin: 8px 0 2px;
+	color: var(--vscode-foreground);
+	font-family: var(--vscode-font-family);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.source-heading:first-child {
+	margin-top: 0;
+}
+
+.source-subheading,
+#source-selection-label,
+#source-edit-label {
+	margin: 0;
+	color: var(--vscode-descriptionForeground);
+	font-family: var(--vscode-font-family);
+	font-size: 12px;
+}
+
+#source-selection-blocks {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 4px 0 0;
+}
+
+.source-active-block {
+	padding: 6px 8px;
+	border: 1px solid var(--vscode-editorWidget-border);
+	border-left: 3px solid var(--vscode-focusBorder);
+	background: var(--vscode-editor-background);
+}
+
+.source-active-block-label {
+	margin: 0 0 4px;
+	color: var(--vscode-descriptionForeground);
+	font-family: var(--vscode-font-family);
+	font-size: 11px;
+}
+
+.source-active-block-source {
+	margin: 0;
+	padding: 0;
+	overflow: auto;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	border: 0;
+	background: transparent;
+	font: inherit;
+}
+
+#source-edit-deleted,
+#source-edit-inserted {
+	margin: 4px 0 0;
+	padding: 4px 8px;
+	overflow: auto;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	border: 1px solid var(--vscode-editorWidget-border);
+	background: var(--vscode-editor-background);
+	font: inherit;
+}
+
+#source-edit-deleted,
+#source-edit-inserted {
+	border-left: 3px solid var(--vscode-textLink-foreground);
+}
+
+#source-scroller {
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: 0;
+	display: flex;
+	overflow-x: hidden;
+	overflow-y: auto;
+}
+
+#source-gutter {
+	position: sticky;
+	left: 0;
+	z-index: 1;
+	flex: 0 0 auto;
+	margin: 0;
+	padding: 8px 12px 24px 10px;
+	background: var(--vscode-sideBar-background);
+	color: var(--vscode-editorLineNumber-foreground, #6e7681);
+	text-align: right;
+	user-select: none;
+	font: inherit;
+	line-height: inherit;
+	white-space: pre;
+}
+
+#source-text {
+	position: relative;
+	flex: 1 1 auto;
+	min-width: 0;
+	min-height: min-content;
+	margin: 0;
+	padding: 8px 12px 24px 0;
+	overflow: visible;
+	tab-size: 4;
+	white-space: pre-wrap;
+	overflow-wrap: anywhere;
+	font: inherit;
+}
+
+#source-caret {
+	position: absolute;
+	width: 2px;
+	min-height: 1.25em;
+	margin-left: -1px;
+	background: var(--vscode-editorCursor-foreground);
+	pointer-events: none;
+}
+
+::highlight(md-source-heading) {
+	color: #e06c75;
+}
+
+::highlight(md-source-bold) {
+	color: #d19a66;
+}
+
+::highlight(md-source-italic) {
+	color: #c678dd;
+}
+
+::highlight(md-source-code) {
+	color: #98c379;
+}
+
+::highlight(md-source-link-label) {
+	color: #61afef;
+}
+
+::highlight(md-source-link) {
+	color: #c678dd;
+	text-decoration: underline;
+}
+
+::highlight(md-source-edit) {
+	background-color: color-mix(in srgb, var(--vscode-textLink-foreground) 40%, transparent);
+}

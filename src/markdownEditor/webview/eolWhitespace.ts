@@ -13,6 +13,7 @@ export const EOL_DOTS_ATTR = 'data-ib-eol-dots';
 /** Leading / other whitespace that is covered by the current selection. */
 export const SEL_WS_CLASS = 'ib-md-sel-ws';
 export const SEL_DOTS_ATTR = 'data-ib-sel-dots';
+const GLUE_WS_OVERLAY_CLASS = 'ib-md-glue-ws-overlay';
 /**
  * A list inside a blockquote stores the next line's `>` as source-gap glue
  * on the previous item. This class pulls a single continuation into the gutter.
@@ -238,6 +239,59 @@ function glueDotCount(text: string): number {
 	return count;
 }
 
+/** Space-only glue overlay string; `null` when tabs need per-character `>|` marks. */
+export function glueWhitespaceDots(text: string): string | null {
+	if (text.includes('\t')) {
+		return null;
+	}
+	const count = glueDotCount(text);
+	return count > 0 ? '·'.repeat(count) : '';
+}
+
+function clearGlueWhitespaceOverlays(glue: HTMLElement, mode?: 'eol' | 'sel'): void {
+	for (const node of glue.querySelectorAll(`.${GLUE_WS_OVERLAY_CLASS}`)) {
+		if (!(node instanceof HTMLElement)) {
+			continue;
+		}
+		if (!mode || node.classList.contains(mode === 'eol' ? 'ib-md-glue-ws-eol' : 'ib-md-glue-ws-sel')) {
+			node.remove();
+		}
+	}
+}
+
+function paintGlueWhitespaceOverlays(glue: HTMLElement, text: string, mode: 'eol' | 'sel'): void {
+	clearGlueWhitespaceOverlays(glue, mode);
+	const modeClass = mode === 'eol' ? 'ib-md-glue-ws-eol' : 'ib-md-glue-ws-sel';
+	for (let i = 0; i < text.length; i++) {
+		const ch = text[i];
+		if (ch !== ' ' && ch !== '\t' && ch !== '\u00a0') {
+			continue;
+		}
+		const overlay = document.createElement('span');
+		overlay.className = `${GLUE_WS_OVERLAY_CLASS} ${modeClass}`;
+		overlay.setAttribute('aria-hidden', 'true');
+		overlay.dataset.ibGlueWs = ch === '\t' ? 'tab' : 'space';
+		overlay.style.left = `${i}ch`;
+		glue.appendChild(overlay);
+	}
+}
+
+function applyGlueWhitespaceDisplay(glue: HTMLElement, text: string, mode: 'eol' | 'sel'): void {
+	const attr = mode === 'eol' ? EOL_DOTS_ATTR : SEL_DOTS_ATTR;
+	const dots = glueWhitespaceDots(text);
+	clearGlueWhitespaceOverlays(glue, mode);
+	if (dots === null) {
+		glue.removeAttribute(attr);
+		paintGlueWhitespaceOverlays(glue, text, mode);
+		return;
+	}
+	if (dots.length > 0) {
+		glue.setAttribute(attr, dots);
+	} else {
+		glue.removeAttribute(attr);
+	}
+}
+
 function hardBreakDotCount(hardBreak: HTMLElement): number {
 	const src = hardBreak.querySelector('.md-hardbreak-src');
 	const text = src?.textContent ?? hardBreak.textContent ?? '';
@@ -251,6 +305,40 @@ function hardBreakDotCount(hardBreak: HTMLElement): number {
 		}
 	}
 	return count;
+}
+
+/** Visible stand-in for a hard-break newline. Same length as the source character. */
+export const NEWLINE_INDICATOR = '↵';
+
+export function withNewlineIndicator(text: string): string {
+	return text.replace(/[\n\r]/g, NEWLINE_INDICATOR);
+}
+
+/**
+ * The last newline in visible block-break glue is mapped but not given a glyph by
+ * the library. Paint it as `↵` without changing the mapped length.
+ */
+export function showParagraphEndNewlines(root: ParentNode): void {
+	for (const glue of root.querySelectorAll('.md-glue-blockBreak:not(.md-glue-hidden)')) {
+		if (!(glue instanceof HTMLElement)) {
+			continue;
+		}
+		for (const node of glue.querySelectorAll('.md-ws-newline')) {
+			paintNewlineIndicator(node.firstChild);
+		}
+		// The mapped paragraph-ending newline is often a bare text node after the break glyph.
+		paintNewlineIndicator(glue.lastChild);
+	}
+}
+
+function paintNewlineIndicator(text: ChildNode | null | undefined): void {
+	if (!(text instanceof Text) || !/[\n\r]/.test(text.data)) {
+		return;
+	}
+	const next = withNewlineIndicator(text.data);
+	if (next !== text.data) {
+		text.data = next;
+	}
 }
 
 function markHardBreak(el: HTMLElement, keep: Set<HTMLElement>): void {
@@ -317,7 +405,7 @@ function markSelectedWhitespace(
 				continue;
 			}
 			node.classList.add(SEL_WS_CLASS);
-			node.setAttribute(SEL_DOTS_ATTR, '·'.repeat(glueDotCount(node.textContent ?? '')));
+			applyGlueWhitespaceDisplay(node, node.textContent ?? '', 'sel');
 			keep.add(node);
 		}
 	}
@@ -325,6 +413,7 @@ function markSelectedWhitespace(
 		if (node instanceof HTMLElement && !keep.has(node)) {
 			node.classList.remove(SEL_WS_CLASS);
 			node.removeAttribute(SEL_DOTS_ATTR);
+			clearGlueWhitespaceOverlays(node, 'sel');
 		}
 	}
 }
@@ -346,9 +435,10 @@ export function markEolWhitespace(root: ParentNode): void {
 		}
 		node.classList.add(EOL_WS_CLASS);
 		if (!node.querySelector('.md-ws-space, .md-ws-tab')) {
-			node.setAttribute(EOL_DOTS_ATTR, '·'.repeat(glueDotCount(node.textContent ?? '')));
+			applyGlueWhitespaceDisplay(node, node.textContent ?? '', 'eol');
 		} else {
 			node.removeAttribute(EOL_DOTS_ATTR);
+			clearGlueWhitespaceOverlays(node, 'eol');
 		}
 		keep.add(node);
 	}
@@ -361,6 +451,7 @@ export function markEolWhitespace(root: ParentNode): void {
 		if (node instanceof HTMLElement && !keep.has(node)) {
 			node.classList.remove(EOL_WS_CLASS);
 			node.removeAttribute(EOL_DOTS_ATTR);
+			clearGlueWhitespaceOverlays(node, 'eol');
 		}
 	}
 }
@@ -372,6 +463,7 @@ export function paintEditorWhitespace(
 ): void {
 	markQuoteContinuationGaps(root);
 	markEolWhitespace(root);
+	showParagraphEndNewlines(root);
 	markSelectedWhitespace(root, documentView, selection);
 }
 

@@ -1,55 +1,56 @@
 ---
 name: markdown-editor-visual-qa
-description: "Visual and flow QA for Markdown Editor and Markdown Editor Standalone via agent-browser. Use when testing those custom editors, recording docs/markdownEditorStandalone screenshots, or checking lock, tables, Mermaid, HTML, SKILL.md Properties, or title-bar swap."
+description: "Verify Markdown Editor webview and playground changes in the Vite playground with agent-browser. Use when editing, fixing, or testing the markdown editor, its CSS, fixtures, lock, tables, Mermaid, HTML, or SKILL.md Properties."
 ---
 
 # markdown-editor-visual-qa
 
-If the isolated host is not attached, read and follow `.cursor/skills/agent-browser-vscode-extension/` first (host, CDP session `ib-ext`, webview iframe).
+When a change touches the Markdown Editor webview or playground, verify it here before finishing.
 
-Fixtures: `docs/tests/markdown/README.md`.
-Screenshot campaign (one folder per part): `docs/markdownEditorStandalone/README.md`.
-Title-bar names: [title-bar.md](title-bar.md).
+Playground: `npm run dev:markdown-editor`. Use the Local URL Vite prints (default `http://localhost:5174/`).
+Fixtures live in `docs/tests/markdown/`. `?fixture=` is the path under that folder (`showcase.md`, `SKILL.md`, `large/awesome-selfhosted.md`).
+Drive the page with agent-browser. Load `agent-browser skills get core` first. Keep `--session markdown-editor` on every command.
 
-## 1. Build
+The playground serves the webview source. A webview edit is on the next load. No extension rebuild.
+
+## 1. Serve
+
+If the playground URL is down:
 
 ```bash
-npm run build
+npm run dev:markdown-editor
 ```
 
-Reload the Extension Development Host after webview CSS/JS changes.
+**Done when:** that URL responds.
 
-**Done when:** `dist/` and both markdown-editor webview bundles are current.
+## 2. Open the fixture the change touches
 
-## 2. Open a fixture
+```bash
+agent-browser --session markdown-editor open "http://localhost:5174/?fixture=showcase.md"
+agent-browser --session markdown-editor snapshot -i
+```
 
-Open files under `docs/tests/markdown/`. New tabs often use the **text** editor.
+**Done when:** the snapshot shows that fixture's content.
 
-To enter standalone, snapshot then click **Open Standalone Markdown Editor**.
-To enter Markdown Editor (110), click **Open Markdown Editor**.
+## 3. Exercise the change
 
-Picker label when standalone is active: **Markdown Editor Standalone (ib-utilities)**.
+Click, type, and switch fixtures the way the change is used. Snapshot again after the page changes. Reload if the edit is not visible yet.
 
-**Done when:** the active tab's editor picker matches the editor under test.
+**Done when:** the snapshot shows the new behavior, or the failure names the fixture and what the page shows.
 
-## 3. Record a part
+## 4. Smoke when the change is broad
 
-For each folder in `docs/markdownEditorStandalone/`:
-
-1. Follow that folder's README (fixture + expected chrome).
-2. Screenshot into that folder (no `--color-scheme`).
-3. Read the PNG. Keep the shot only if it shows that part (not a leftover scroll position).
-
-**Done when:** every campaign folder has a README and a PNG that matches it.
-
-## 4. Smoke checks (both editors)
-
-- Title bar: standalone hidden when already standalone; Markdown Editor hidden when that editor is active, neither used for diffs.
-- Lock pill top-right, default unlocked.
-- `showcase.md`: headings colors, code badges, Mermaid **Open Preview**, HTML sanitizer / `<details>`.
-- `table-columns.md`: short columns one word, long cells wrap, no `+ row` chrome.
+- Lock control top-right, default unlocked (`Editing; switch to locked mode`).
+- `showcase.md`: heading colors, a code language badge, a Mermaid diagram, HTML `<details>`.
+- `table-columns.md`: short columns one word, long cells wrap.
 - `SKILL.md`: Properties card. Other files: YAML as a fence.
 - `lists-tasks.md`: checkbox toggle stays one line.
 - `blank.md`: empty canvas, click-to-edit.
 
-**Done when:** failures are listed with fixture name and what the screenshot shows.
+**Done when:** failures are listed with fixture name and what the snapshot shows.
+
+## Host limits
+
+- Code fence colors are unstyled. A language badge means the fence painted.
+- Mermaid **Open Preview** does not open a side panel. The inline diagram is the check.
+- Edits stay in the page until reload.

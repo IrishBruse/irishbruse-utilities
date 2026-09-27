@@ -5,6 +5,7 @@ import {
 	mergeMountIndices,
 	mountSegments,
 	planDocumentMount,
+	setPinnedMountAstIds,
 	viewportChildRange,
 	type MountChild,
 } from './viewportVirtualization';
@@ -38,6 +39,18 @@ describe('planDocumentMount', () => {
 		const plan = planDocumentMount(children, { scrollTop: 0, height: 200 }, new Map());
 		const ranges = plan.segments.filter(segment => segment.type === 'range');
 		expect(ranges.some(range => range.start <= 180 && range.end > 180)).toBe(true);
+	});
+
+	it('keeps a pinned block mounted when it is far from the viewport', () => {
+		const children = Array.from({ length: 200 }, (_, i) => child(i, 72));
+		setPinnedMountAstIds([180]);
+		try {
+			const plan = planDocumentMount(children, { scrollTop: 0, height: 200 }, new Map());
+			const ranges = plan.segments.filter(segment => segment.type === 'range');
+			expect(ranges.some(range => range.start <= 180 && range.end > 180)).toBe(true);
+		} finally {
+			setPinnedMountAstIds([]);
+		}
 	});
 });
 

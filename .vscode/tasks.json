@@ -51,6 +51,58 @@
                 "group": "watchers"
             },
             "runOptions": { "runOn": "folderOpen" }
+        },
+        {
+            "label": "markdown preview: dev server",
+            "type": "npm",
+            "script": "dev:markdown-editor",
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "vite",
+                "pattern": { "regexp": "^$" },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "Local:\\s+http://localhost:\\d+/"
+                }
+            },
+            "presentation": {
+                "reveal": "never",
+                "group": "watchers"
+            },
+            "runOptions": { "runOn": "folderOpen" }
+        },
+        {
+            "label": "markdown preview: open",
+            "type": "shell",
+            "command": "echo ${input:openMarkdownPreview}",
+            "options": {
+                "shell": {
+                    "executable": "/bin/sh",
+                    "args": ["-c"]
+                }
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+                "echo": false,
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "markdown preview",
+            "dependsOn": ["markdown preview: dev server", "markdown preview: open"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
+        }
+    ],
+    "inputs": [
+        {
+            "id": "openMarkdownPreview",
+            "type": "command",
+            "command": "simpleBrowser.show",
+            "args": ["http://localhost:5174/"]
         }
     ]
 }

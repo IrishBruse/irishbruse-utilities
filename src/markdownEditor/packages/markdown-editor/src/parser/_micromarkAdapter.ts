@@ -4,6 +4,7 @@ import { math } from 'micromark-extension-math';
 import { gfmTable } from 'micromark-extension-gfm-table';
 import { gfmTaskListItem } from 'micromark-extension-gfm-task-list-item';
 import { gfmStrikethrough } from 'micromark-extension-gfm-strikethrough';
+import { gfmAutolinkLiteral } from 'micromark-extension-gfm-autolink-literal';
 
 export interface MicromarkEvent {
 	readonly type: 'enter' | 'exit';
@@ -13,7 +14,7 @@ export interface MicromarkEvent {
 }
 
 export function tokenize(source: string): MicromarkEvent[] {
-	const parser = parse({ extensions: [frontmatter(), math(), gfmTable(), gfmTaskListItem(), gfmStrikethrough()] });
+	const parser = parse({ extensions: [frontmatter(), math(), gfmTable(), gfmTaskListItem(), gfmStrikethrough(), gfmAutolinkLiteral()] });
 	const chunks = preprocess()(source, undefined, true);
 	const nativeEvents = postprocess(parser.document().write(chunks));
 

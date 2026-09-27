@@ -7,6 +7,7 @@ import {
 	CodeBlockAstNode,
 	EditorModel,
 	EditorView,
+	Point2D,
 	Selection,
 	findNodeOffsetById,
 } from '@vscode/markdown-editor';
@@ -74,7 +75,7 @@ export class InactiveBlockClickController extends Disposable {
 			}
 		}
 
-		const point = { x: event.clientX, y: event.clientY };
+		const point = new Point2D(event.clientX, event.clientY);
 		if (this.#view.isPointInContent(point)) {
 			return;
 		}

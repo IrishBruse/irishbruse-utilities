@@ -31,6 +31,7 @@
         "watch-markdown-editor": "node src/markdownEditor/build.mjs --watch",
         "sync-markdown-editor": "node src/markdownEditor/build.mjs --sync-vscode",
         "watch-markdown-editor:vscode": "node src/markdownEditor/build.mjs --watch --sync-vscode",
+        "dev:markdown-editor": "vite --config src/markdownEditor/playground/vite.config.ts",
         "package": "node esbuild.mjs --production && npm run build-markdown-editor",
         "lint": "eslint src && tsc --noEmit",
         "test": "vitest run",
@@ -721,8 +722,10 @@
         "esbuild": "0.28.1",
         "eslint": "^9.39.5",
         "katex": "^0.16.33",
+        "micromark-extension-gfm-autolink-literal": "^2.1.0",
         "ts-loader": "^9.6.2",
         "typescript": "^6.0.3",
+        "vite": "^8.3.1",
         "vitest": "^4.1.10",
         "webpack": "^5.108.4",
         "webpack-cli": "^7.2.1"

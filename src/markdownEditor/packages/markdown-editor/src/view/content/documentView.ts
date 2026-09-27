@@ -43,6 +43,11 @@ export class DocumentViewNode extends ViewNode {
         options: BlockViewOptions | undefined,
         previous: DocumentViewNode | undefined,
     ): DocumentViewNode {
+        const originalCreate = (
+            viewData: DocumentViewData,
+            options: BlockViewOptions | undefined,
+            previous: DocumentViewNode | undefined,
+        ): DocumentViewNode => {
         const contentDomNode = previous?.contentDomNode ?? document.createElement('div');
         contentDomNode.classList.add('md-document');
         const activeByView = new Map<AnyViewData, boolean>(
@@ -100,6 +105,20 @@ export class DocumentViewNode extends ViewNode {
             if (c.kind === 'block') { blocks.push({ node: nodes[i] as BlockViewNode, absoluteStart: c.absoluteStart }); }
         });
         return new DocumentViewNode(viewData.ast, contentDomNode, blocks, nodes, pendingParagraph);
+        };
+        const hook = (globalThis as { __ibMdDocumentViewCreate?: (...args: unknown[]) => unknown }).__ibMdDocumentViewCreate;
+        if (typeof hook === 'function') {
+            return hook(viewData, options, previous, {
+                originalCreate,
+                createViewNode,
+                patchDomNodes: _patchDomNodes,
+                pairNodes,
+                emptyNodes: _NO_NODES,
+                PendingParagraph: PendingParagraphViewNode,
+                DocumentViewNode,
+            }) as DocumentViewNode;
+        }
+        return originalCreate(viewData, options, previous);
     }
 
     private constructor(

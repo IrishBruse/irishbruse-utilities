@@ -427,6 +427,35 @@ export interface PendingParagraphResult {
 }
 
 /**
+ * Arrow Down at the end of the last list item arms a paragraph after the list.
+ * Enter still continues the list; this only runs from the pending-paragraph path.
+ */
+function _pendingParagraphAfterListEnd(
+	ctx: CursorCommandContext,
+	block: BlockAstNode,
+	blockStart: number,
+): PendingParagraphResult | undefined {
+	const located = findListItemForCaret(ctx.document, ctx.text, ctx.selection.active);
+	if (!located) { return undefined; }
+	const lastItem = located.list.items[located.list.items.length - 1];
+	if (located.item !== lastItem) { return undefined; }
+	const paragraph = lastItem.blocks.find(child => child.kind === 'paragraph');
+	if (!paragraph) { return undefined; }
+	const paragraphStart = _blockAbsoluteStart(ctx.document, paragraph);
+	if (paragraphStart === undefined) { return undefined; }
+	const textEnd = _blockTextEnd(paragraph, paragraphStart);
+	if (ctx.selection.active < textEnd) { return undefined; }
+	const listEnd = blockStart + block.length;
+	return {
+		kind: 'pending',
+		anchorBlock: block,
+		replaceRange: new OffsetRange(textEnd, listEnd),
+		separateFromPreviousBlock: true,
+		atEof: listEnd >= ctx.text.length,
+	};
+}
+
+/**
  * Return the source-less paragraph that Enter or a no-op Arrow Down may enter
  * after a completed block. Cases where Enter must edit source instead (such as
  * continuing a list or an unclosed fence) deliberately return `undefined`.
@@ -452,6 +481,8 @@ export function pendingParagraphAfterCompletedBlock(ctx: CursorCommandContext): 
 				: undefined;
 		case 'blockQuote':
 			return blockQuoteExitPendingParagraph(ctx);
+		case 'list':
+			return _pendingParagraphAfterListEnd(ctx, block, blockStart);
 		case 'unhandledBlock': {
 			const comment = block.htmlComment;
 			if (comment?.kind !== 'complete') { return undefined; }

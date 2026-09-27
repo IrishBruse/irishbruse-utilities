@@ -2,8 +2,27 @@
 
 ## Unreleased
 
+-   Change: Markdown Editor virtualization, autolink, and list-end paragraph behavior live in the vendored TypeScript instead of a bundle patcher
 -   Add: Markdown Editor vendors the `@vscode/markdown-editor` 0.0.2-110 TypeScript recovered from its source maps
+-   Fix: Markdown Editor keeps later lines of a block quote aligned with the first line when the quote is selected
+-   Fix: Markdown Editor Arrow Down at the end of the last list item moves into a trailing blank line for editing
+-   Fix: Markdown Editor renders GFM angle-bracket and bare-URL autolinks as clickable links instead of empty list items
+-   Fix: Markdown Editor does not draw the blank line between blocks as a `↵` or as an extra block while a paragraph is selected
+-   Fix: Markdown Editor playground raw source wraps instead of scrolling horizontally
+-   Fix: Markdown Editor shows the hard-break `↵` on the paragraph-ending newline while editing, not on the earlier hard-break line
+-   Change: Markdown Editor playground lists each active block in its own panel instead of one concatenated excerpt
+-   Add: Markdown Editor playground shows the raw markdown beside the preview, with the selection and the last preview edit marked on that source
+-   Add: Markdown Editor playground raw markdown uses heading, emphasis, code, and link colors, with line numbers
+-   Fix: Markdown Editor double-click then drag extends the selection by whole words
+-   Add: Markdown Editor shows a `↵` for a hard-break newline, and trailing-space marks use the editor text color
+-   Fix: Markdown Editor scrolls to the heading when a same-page link like `#awesome-selfhosted` is clicked
+-   Add: Markdown Editor playground starts on workspace open (VS Code task opens Simple Browser at `http://localhost:5174/`)
+-   Fix: Markdown Editor Shift+Enter at the end of a line that already has trailing spaces opens a new line instead of leaving the caret after the `·` dots
+-   Add: Vite playground to run the Markdown Editor in a browser (`npm run dev:markdown-editor`)
+-   Add: Markdown Editor playground uses the VS Code user color theme from settings.json
+-   Fix: Markdown Editor playground keeps its theme on refresh and shows a scrollbar only when the document overflows
 -   Fix: Markdown Editor quote markers on lists stay in the gutter
+-   Fix: SKILL.md property list closes when you click away, properties can be removed, and metadata keys stay editable
 -   Change: Markdown Editor tab marks use a `>|` icon instead of a dot
 -   Fix: Ctrl+F / Cmd+F opens find in the Markdown Editor
 

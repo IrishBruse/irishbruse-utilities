@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { isEolWhitespaceSpan, isQuoteContinuationGap, selectionCoversRange, type WhitespaceWalkNode } from './eolWhitespace';
+import { glueWhitespaceDots, isEolWhitespaceSpan, isQuoteContinuationGap, selectionCoversRange, withNewlineIndicator, type WhitespaceWalkNode } from './eolWhitespace';
 
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
@@ -147,6 +147,28 @@ describe('isQuoteContinuationGap', () => {
 		expect(isQuoteContinuationGap('   ')).toBe(false);
 		expect(isQuoteContinuationGap('\n')).toBe(false);
 		expect(isQuoteContinuationGap('> ')).toBe(false);
+	});
+});
+
+describe('glueWhitespaceDots', () => {
+	it('uses middle dots for spaces only and defers tabs to overlay glyphs', () => {
+		expect(glueWhitespaceDots('  ')).toBe('··');
+		expect(glueWhitespaceDots('\t')).toBeNull();
+		expect(glueWhitespaceDots(' \t ')).toBeNull();
+		expect(glueWhitespaceDots('')).toBe('');
+	});
+});
+
+describe('withNewlineIndicator', () => {
+	it('replaces a paragraph-ending newline glyph source', () => {
+		expect(withNewlineIndicator('\n')).toBe('↵');
+	});
+
+	it('replaces a hard-break newline and keeps the same length', () => {
+		expect(withNewlineIndicator('  \n')).toBe('  ↵');
+		expect(withNewlineIndicator('\\\n')).toBe('\\↵');
+		expect(withNewlineIndicator('  \n').length).toBe('  \n'.length);
+		expect(withNewlineIndicator('no break')).toBe('no break');
 	});
 });
 

@@ -13,7 +13,7 @@ Place the caret at the end of each line below and press the key.
 First line of a paragraph.  
 Second line after a hard break (two trailing spaces before this line).
 
-**Expected:** Enter at end of "paragraph." starts a new paragraph. Shift+Enter at end of "paragraph." inserts a hard line break (you should see `··` dots before the newline in source).
+**Expected:** Enter at end of "paragraph." starts a new paragraph. Shift+Enter at end of "paragraph." inserts a hard line break (you should see `··↵` before the next line).
 
 ### Unordered list
 
@@ -29,7 +29,7 @@ Second line after a hard break (two trailing spaces before this line).
 2. Two
 3. Three
 
-**Expected:** Enter at end of "Three" continues with `4. `.
+**Expected:** Enter at end of "Three" continues with `4. `. Arrow Down at end of "Three" (with a blank line after the list) moves into that blank line so you can delete it or type new content.
 
 ### Block quote
 
@@ -45,7 +45,7 @@ Only **end-of-line** spaces before a newline should render as middle dots (`·`)
 | Case | Source hint | Expected |
 | :--- | :--- | :--- |
 | Mid-sentence | `word word` (single space) | No dot between words |
-| Hard break | two spaces before newline | Two `·` before the line break |
+| Hard break | two spaces before newline | Two `·` and a `↵` newline mark |
 | Paragraph end | spaces after last word on a line | `·` only at line end, not mid-line |
 | List item end | spaces after list text | `·` at end of item line only |
 

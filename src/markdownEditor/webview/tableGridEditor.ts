@@ -23,6 +23,7 @@ import { Disposable, DisposableStore } from './disposable';
 import { observableValue } from './markdownObservable';
 import { observeAll } from './observeAll';
 import { allocateColumnWidths } from './tableColumnLayout';
+import { attachWordDragSelection } from './wordDragSelection';
 import {
 	applyTableData,
 	deleteColumn,
@@ -53,6 +54,7 @@ export class TableGridController extends Disposable {
 	#cellModel: EditorModel | undefined;
 	#cellView: EditorView | undefined;
 	#cellController: EditorController | undefined;
+	#cellWordDrag: { dispose(): void } | undefined;
 	readonly #cellWidth = observableValue<number | undefined>('ibTableCellWidth', undefined);
 	#nativeTable: HTMLTableElement | undefined;
 	#hiddenNativeCell: HTMLElement | undefined;
@@ -838,6 +840,7 @@ export class TableGridController extends Disposable {
 			historyStrategy: new LocalHistoryStrategy(cellModel),
 			find: false,
 		});
+		this.#cellWordDrag = attachWordDragSelection(cellModel, cellView);
 
 		cellView.element.addEventListener('keydown', event => {
 			if (event.key === 'Tab') {
@@ -1010,6 +1013,8 @@ export class TableGridController extends Disposable {
 			this.#hiddenNativeCell.classList.remove('ib-table-grid-native-cell-editing');
 			this.#hiddenNativeCell = undefined;
 		}
+		this.#cellWordDrag?.dispose();
+		this.#cellWordDrag = undefined;
 		this.#cellController?.dispose();
 		this.#cellController = undefined;
 		this.#cellView?.dispose();

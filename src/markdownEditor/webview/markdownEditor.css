@@ -30,12 +30,13 @@ body {
 #editor {
 	height: 100%;
 	width: 100%;
-	overflow: scroll;
+	overflow: auto;
 }
 
 .md-editor {
 	min-height: 100%;
 	box-sizing: border-box;
+	--ib-md-tab-glyph-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='black' d='M1.1 2.3 6.4 6 1.1 9.7 2.3 10.7 8.2 6 2.3 1.3Z'/%3E%3Cpath fill='black' d='M9.2 1.6h1.6v8.8H9.2z'/%3E%3C/svg%3E");
 }
 
 .ib-md-virtual-spacer {
@@ -192,6 +193,37 @@ body {
 	color: var(--vscode-descriptionForeground, #5C6370);
 }
 
+/*
+ * Later lines of one quoted paragraph store `>` inside the paragraph
+ * (`blockQuoteContinuationMarker`). The library only hangs the opening
+ * marker in the gutter, so the continuation stays in the line and indents
+ * that line. Hang it the same way. `display: inline-flex` outranks
+ * `.md-marker-hidden`, so the inactive marker is hidden again here.
+ */
+.md-blockquote .md-marker-blockQuoteContinuationMarker {
+	position: absolute;
+	right: calc(100% - var(--md-blockquote-pad, 0px) - 1ch);
+	top: auto;
+	left: auto;
+	display: inline-flex;
+	align-items: center;
+	height: 1lh;
+	min-width: 2ch;
+	margin: 0;
+	font-size: inherit;
+	line-height: inherit;
+	text-align: left;
+	white-space: pre;
+	--md-blockquote-marker-shift: -0.18ch;
+	--md-blockquote-marker-scale: 0.9;
+	transform: translateX(var(--md-blockquote-marker-shift)) scale(var(--md-blockquote-marker-scale));
+	transform-origin: left center;
+}
+
+.md-blockquote .md-marker-blockQuoteContinuationMarker.md-marker-hidden {
+	display: none;
+}
+
 /* `[ ]` / `[x]` source markers must stay on one line in the marker column. */
 .md-task-list-item {
 	--md-task-marker-width: 4ch;
@@ -248,24 +280,68 @@ body {
 	content: '·';
 }
 
+/* Trailing spaces use the editor text color. Hard breaks otherwise paint blue. */
+.md-editor .md-hardbreak-src,
+.md-editor .md-ws-space.ib-md-eol-ws::before,
+.md-editor .md-hardbreak-src .md-ws-space::before {
+	color: var(--vscode-editor-foreground, #d4d4d4);
+}
+
 /*
  * Tab mark. U+21E5 (⇥) is missing from many editor fonts and falls back to a
  * dot, so draw a >| shape instead.
  */
+.md-editor .md-ws-tab.ib-md-eol-ws,
+.md-editor .md-ws-tab.ib-md-sel-ws {
+	color: transparent;
+}
+
 .md-editor .md-ws-tab.ib-md-eol-ws::before,
-.md-editor .md-ws-tab.ib-md-sel-ws::before {
+.md-editor .md-ws-tab.ib-md-sel-ws::before,
+.md-editor .ib-md-glue-ws-overlay[data-ib-glue-ws="tab"]::before {
 	content: '';
+	position: absolute;
+	left: 0;
+	right: 0;
 	top: 0;
 	bottom: 0;
 	background-color: var(--vscode-editorWhitespace-foreground, #b0b0b0);
-	-webkit-mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='black' d='M1.1 2.3 6.4 6 1.1 9.7 2.3 10.7 8.2 6 2.3 1.3Z'/%3E%3Cpath fill='black' d='M9.2 1.6h1.6v8.8H9.2z'/%3E%3C/svg%3E");
-	mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='black' d='M1.1 2.3 6.4 6 1.1 9.7 2.3 10.7 8.2 6 2.3 1.3Z'/%3E%3Cpath fill='black' d='M9.2 1.6h1.6v8.8H9.2z'/%3E%3C/svg%3E");
+	-webkit-mask-image: var(--ib-md-tab-glyph-mask);
+	mask-image: var(--ib-md-tab-glyph-mask);
 	-webkit-mask-repeat: no-repeat;
 	mask-repeat: no-repeat;
 	-webkit-mask-position: center;
 	mask-position: center;
 	-webkit-mask-size: min(0.95em, 100%) 0.8em;
 	mask-size: min(0.95em, 100%) 0.8em;
+}
+
+.md-editor .md-ws-tab.ib-md-eol-ws::before,
+.md-editor .ib-md-glue-ws-overlay.ib-md-glue-ws-eol[data-ib-glue-ws="tab"]::before {
+	background-color: var(--vscode-editor-foreground, #d4d4d4);
+}
+
+.md-editor .ib-md-glue-ws-overlay {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	width: 1ch;
+	pointer-events: none;
+}
+
+.md-editor .ib-md-glue-ws-overlay[data-ib-glue-ws="space"]::before {
+	content: '·';
+	position: absolute;
+	inset: 0;
+	text-align: center;
+}
+
+.md-editor .ib-md-glue-ws-overlay.ib-md-glue-ws-sel[data-ib-glue-ws="space"]::before {
+	color: var(--vscode-editorWhitespace-foreground, #b0b0b0);
+}
+
+.md-editor .ib-md-glue-ws-overlay.ib-md-glue-ws-eol[data-ib-glue-ws="space"]::before {
+	color: var(--vscode-editor-foreground, #d4d4d4);
 }
 
 /*
@@ -294,13 +370,25 @@ body {
 .md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots]::before,
 .md-editor .md-hardbreak.ib-md-eol-ws[data-ib-eol-dots]::before,
 .md-editor .md-glue.ib-md-sel-ws[data-ib-sel-dots]::before {
-	color: var(--vscode-editorWhitespace-foreground, #b0b0b0);
 	pointer-events: none;
+}
+
+.md-editor .md-glue.ib-md-sel-ws[data-ib-sel-dots]::before {
+	color: var(--vscode-editorWhitespace-foreground, #b0b0b0);
 }
 
 .md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots]::before,
 .md-editor .md-hardbreak.ib-md-eol-ws[data-ib-eol-dots]::before {
+	color: var(--vscode-editor-foreground, #d4d4d4);
+}
+
+.md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots]::before {
 	content: attr(data-ib-eol-dots);
+}
+
+/* Inactive hard break: dots, then the newline the hidden source would collapse. */
+.md-editor .md-hardbreak.ib-md-eol-ws[data-ib-eol-dots]::before {
+	content: attr(data-ib-eol-dots) "↵";
 }
 
 .md-editor .md-glue.ib-md-sel-ws[data-ib-sel-dots]::before {
@@ -315,11 +403,32 @@ body {
 	text-align: center;
 }
 
+.md-editor .md-glue-blockBreak:not(.md-glue-hidden) .md-ws-newline,
+.md-editor .md-glue-blockBreak:not(.md-glue-hidden) .md-ws-blockbreak-glyph {
+	color: var(--vscode-editor-foreground, #d4d4d4);
+}
+
 .md-editor .md-ws-newline-glyph,
 .md-editor .md-ws-blockbreak-glyph {
-	/* Keep the ↵ layout box. The caret at the end of a block sits on these
-	 * offsets. `font-size: 0` dropped that box so the caret did not paint. */
-	visibility: hidden;
+	/* The caret at the end of a block sits on this box; `font-size: 0`
+	 * dropped it so the caret did not paint. */
+	color: var(--vscode-editor-foreground, #d4d4d4);
+}
+
+/*
+ * The blank line between blocks is not a `↵` and not its own card. Keep a
+ * zero-width box so the caret at the end of the block still has a line to sit on.
+ */
+.md-editor .md-glue-blockBreak > .md-ws-blockbreak-glyph,
+.md-editor .md-glue-blockBreak > .md-ws-newline-glyph,
+.md-editor .md-glue-blockGap > .md-ws-newline-glyph,
+.md-editor .md-glue-blockGap > .md-ws-blockbreak-glyph {
+	display: inline-block;
+	width: 0;
+	height: 1lh;
+	overflow: hidden;
+	color: transparent;
+	vertical-align: bottom;
 }
 
 /* Confluence-style table grid editor
@@ -736,6 +845,11 @@ body {
 	overflow: visible;
 }
 
+/* The suggestion list hangs over the next block. Lift the card so those rows receive clicks. */
+.md-front-matter.ib-skill-properties-rendered:has(.ib-skill-properties-suggestions) {
+	z-index: 6;
+}
+
 .md-front-matter.ib-skill-properties-rendered > :not(.ib-skill-properties-panel) {
 	position: absolute;
 	inset: 0;
@@ -788,7 +902,7 @@ body {
 
 .ib-skill-properties-row {
 	display: grid;
-	grid-template-columns: minmax(7em, 11em) minmax(0, 1fr);
+	grid-template-columns: minmax(7em, 11em) minmax(0, 1fr) auto;
 	align-items: start;
 	gap: 8px;
 }
@@ -868,8 +982,29 @@ select.ib-skill-properties-select option {
 }
 
 .ib-skill-properties-nested {
-	grid-template-columns: minmax(7em, 11em) minmax(0, 1fr);
+	grid-template-columns: minmax(7em, 11em) minmax(0, 1fr) auto;
 	margin-left: 22px;
+}
+
+.ib-skill-properties-remove {
+	grid-column: 3;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 22px;
+	height: 22px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: 3px;
+	background: transparent;
+	color: var(--vscode-descriptionForeground, #5C6370);
+	cursor: pointer;
+}
+
+.ib-skill-properties-remove:hover {
+	color: var(--vscode-foreground);
+	background: var(--vscode-toolbar-hoverBackground, rgb(127 127 127 / 20%));
 }
 
 .ib-skill-properties-add,

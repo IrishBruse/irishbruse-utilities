@@ -17,7 +17,10 @@ import { HtmlPreviewController } from './htmlPreview';
 import { TableGridController } from './tableGridEditor';
 import { EolWhitespaceController } from './eolWhitespace';
 import { SkillFrontMatterController } from './skillFrontMatter';
+import { openDocumentAnchor } from './anchorLink';
 import { findKeyboardPlatform, isEditorFindShortcut } from './findShortcut';
+import { applyShiftEnterAtBlockEnd } from './shiftEnterHardBreak';
+import { attachWordDragSelection } from './wordDragSelection';
 import {
 	bindViewportVirtualization,
 	installDocumentViewCreateHook,
@@ -143,6 +146,10 @@ class Editor extends Disposable {
 			classNames: ['md-theme-vscode-default'],
 			syntaxHighlighter: this.#syntaxHighlighter,
 			onOpenLink: url => {
+				const editorView = this.#view;
+				if (editorView && openDocumentAnchor(host, editorView, model.document.get(), url)) {
+					return;
+				}
 				this.#postToHost({ type: 'openLink', href: url });
 			},
 			onToggleCheckbox: (item, newChecked) => {
@@ -218,6 +225,23 @@ class Editor extends Disposable {
 				redo: () => this.#postToHost({ type: 'history', command: 'redo' }),
 			},
 		}));
+		this._register(attachWordDragSelection(model, view));
+		// Shift+Enter at the end of a block only adds trailing spaces, which render
+		// as `·` and leave the caret on that line. Open a real next line instead.
+		const onShiftEnter = (event: KeyboardEvent): void => {
+			if (event.key !== 'Enter' || !event.shiftKey || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) {
+				return;
+			}
+			if (!applyShiftEnterAtBlockEnd(model)) {
+				return;
+			}
+			event.preventDefault();
+			event.stopPropagation();
+		};
+		view.element.addEventListener('keydown', onShiftEnter, true);
+		this._register({
+			dispose: () => view.element.removeEventListener('keydown', onShiftEnter, true),
+		});
 		// The webview host preventDefaults Ctrl/Cmd+F on the way up. The editor
 		// find controller only sees that chord when focus is the document root,
 		// so open find for any focus inside this host (table cells, properties).

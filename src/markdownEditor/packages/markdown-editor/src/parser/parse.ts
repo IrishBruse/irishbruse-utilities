@@ -1029,6 +1029,8 @@ class AstBuilder {
                 case 'codeText': entries.push(this._parseInlineCode()); return;
                 case 'mathText': entries.push(this._parseInlineMath()); return;
                 case 'link': entries.push(this._parseLink()); return;
+                case 'autolink': entries.push(this._parseAutolink()); return;
+                case 'literalAutolink': entries.push(this._parseLiteralAutolink()); return;
                 case 'image': entries.push(this._parseImage()); return;
                 case 'strikethrough': entries.push(this._parseStrikethrough()); return;
                 case 'hardBreakTrailing':
@@ -1234,6 +1236,53 @@ class AstBuilder {
         for (const e of inner) { cb.add(e.node, e.start); }
         const content = cb.build<StrikethroughAstNode['content'][number]>(contentEnd - contentStart);
         return { node: new StrikethroughAstNode(openMarker!, content, closeMarker!), start: enter.startOffset };
+    }
+
+    private _parseAutolink(): Entry {
+        const enter = this._consume('enter', 'autolink');
+        const content = new Content(enter.startOffset, this._source);
+        let url = '';
+        let sawOpenMarker = false;
+        while (this._notExit('autolink')) {
+            const ev = this._events[this._idx];
+            if (ev.type === 'enter' && ev.tokenType === 'autolinkMarker') {
+                content.add(new MarkerAstNode(sawOpenMarker ? 'closeMarker' : 'openMarker', this._source.substring(ev.startOffset, ev.endOffset)), ev.startOffset);
+                sawOpenMarker = true;
+                this._idx++;
+            } else if (ev.type === 'enter' && ev.tokenType === 'autolinkProtocol') {
+                url = this._source.substring(ev.startOffset, ev.endOffset);
+                content.add(new TextAstNode(url), ev.startOffset);
+                this._idx++;
+            } else {
+                this._idx++;
+            }
+        }
+        const exit = this._consume('exit', 'autolink');
+        return { node: new LinkAstNode(url, content.build<LinkAstNode['content'][number]>(exit.endOffset - enter.startOffset)), start: enter.startOffset };
+    }
+
+    private _parseLiteralAutolink(): Entry {
+        const enter = this._consume('enter', 'literalAutolink');
+        const content = new Content(enter.startOffset, this._source);
+        let text = '';
+        let tokenType: string | undefined;
+        while (this._notExit('literalAutolink')) {
+            const ev = this._events[this._idx];
+            if (
+                ev.type === 'enter'
+                && (ev.tokenType === 'literalAutolinkHttp' || ev.tokenType === 'literalAutolinkWww' || ev.tokenType === 'literalAutolinkEmail')
+            ) {
+                text = this._source.substring(ev.startOffset, ev.endOffset);
+                tokenType = ev.tokenType;
+                content.add(new TextAstNode(text), ev.startOffset);
+            }
+            this._idx++;
+        }
+        const exit = this._consume('exit', 'literalAutolink');
+        let url = text;
+        if (tokenType === 'literalAutolinkWww') { url = 'http://' + text; }
+        else if (tokenType === 'literalAutolinkEmail') { url = 'mailto:' + text; }
+        return { node: new LinkAstNode(url, content.build<LinkAstNode['content'][number]>(exit.endOffset - enter.startOffset)), start: enter.startOffset };
     }
 
     private _parseLink(): Entry {

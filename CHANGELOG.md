@@ -2,9 +2,11 @@
 
 ## Unreleased
 
+-   Change: Markdown Editor dependencies and webview build live in `src/markdownEditor/package.json` (`@ib-utilities/markdown-editor` workspace)
 -   Change: Markdown Editor uses the vendored `packages/markdown-editor` source only; drop the npm `@vscode/markdown-editor` dependency
 
 -   Fix: Markdown Editor shows one `↵` on its own line for each newline after an active code block
+-   Fix: Markdown Editor newline `↵` can be selected, and the caret can sit to its right
 -   Change: Markdown Editor virtualization, autolink, and list-end paragraph behavior live in the vendored TypeScript instead of a bundle patcher
 -   Add: Markdown Editor vendors the `@vscode/markdown-editor` 0.0.2-110 TypeScript recovered from its source maps
 -   Fix: Markdown Editor keeps later lines of a block quote aligned with the first line when the quote is selected

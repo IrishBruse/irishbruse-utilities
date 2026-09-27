@@ -988,11 +988,10 @@ pre.md-unhandled-scroll.md-code-block {
  * Inter-block glue: the run of blank lines between two top-level blocks. It is
  * mounted as the last inline child of the block that precedes it, so it sits at
  * the end of that block's last line rather than on its own lines between the
- * blocks. When a neighbouring block is active it is revealed: each blank-line
- * newline shows a real `↵` glyph character (`.md-ws-newline-glyph`) while the
- * trailing line-terminator `\n` collapses (`white-space: normal`) so the run
- * adds no line break and no height — active and inactive therefore have the
- * same height. When hidden it collapses to nothing.
+ * blocks. When a neighbouring block is active it is revealed: each newline,
+ * including the last, is a real `↵` glyph (`.md-ws-newline-glyph`) so the caret
+ * can sit on either side of it. The glyphs are not whitespace, so the run adds
+ * no extra line break. When hidden it collapses to nothing.
  */
 .md-glue-blockGap,
 .md-glue-blockQuoteSourceGap {

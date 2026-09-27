@@ -331,6 +331,24 @@ export function showParagraphEndNewlines(root: ParentNode): void {
 	}
 }
 
+/**
+ * Newlines after a code fence are real source lines.
+ * The library paints every newline but the last as a `↵` and leaves the last as a raw `\n`.
+ * Paint that last one too, still length 1, so each newline can take its own line.
+ */
+export function showCodeBlockGapNewlines(root: ParentNode): void {
+	for (const glue of root.querySelectorAll('.md-code-block .md-glue-blockGap:not(.md-glue-hidden)')) {
+		if (!(glue instanceof HTMLElement)) {
+			continue;
+		}
+		for (const node of glue.childNodes) {
+			if (node instanceof Text) {
+				paintNewlineIndicator(node);
+			}
+		}
+	}
+}
+
 function paintNewlineIndicator(text: ChildNode | null | undefined): void {
 	if (!(text instanceof Text) || !/[\n\r]/.test(text.data)) {
 		return;
@@ -464,6 +482,7 @@ export function paintEditorWhitespace(
 	markQuoteContinuationGaps(root);
 	markEolWhitespace(root);
 	showParagraphEndNewlines(root);
+	showCodeBlockGapNewlines(root);
 	markSelectedWhitespace(root, documentView, selection);
 }
 

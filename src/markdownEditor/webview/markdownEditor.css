@@ -418,6 +418,7 @@ body {
 /*
  * The blank line between blocks is not a `↵` and not its own card. Keep a
  * zero-width box so the caret at the end of the block still has a line to sit on.
+ * Code blocks are the exception: each newline after the fence is its own `↵` line.
  */
 .md-editor .md-glue-blockBreak > .md-ws-blockbreak-glyph,
 .md-editor .md-glue-blockBreak > .md-ws-newline-glyph,
@@ -429,6 +430,20 @@ body {
 	overflow: hidden;
 	color: transparent;
 	vertical-align: bottom;
+}
+
+.md-editor .md-code-block .md-glue-blockGap:not(.md-glue-hidden) {
+	display: block;
+}
+
+.md-editor .md-code-block .md-glue-blockGap:not(.md-glue-hidden) > .md-ws-newline-glyph {
+	display: block;
+	width: fit-content;
+	height: 1lh;
+	overflow: visible;
+	color: var(--vscode-editor-foreground, #d4d4d4);
+	line-height: 1lh;
+	vertical-align: baseline;
 }
 
 /* Confluence-style table grid editor

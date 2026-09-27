@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor shows one `↵` on its own line for each newline after an active code block
 -   Change: Markdown Editor virtualization, autolink, and list-end paragraph behavior live in the vendored TypeScript instead of a bundle patcher
 -   Add: Markdown Editor vendors the `@vscode/markdown-editor` 0.0.2-110 TypeScript recovered from its source maps
 -   Fix: Markdown Editor keeps later lines of a block quote aligned with the first line when the quote is selected

@@ -1,9 +1,37 @@
 import * as esbuild from "esbuild";
-import { copyFileSync, mkdirSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { copyFileSync, cpSync, mkdirSync, watch } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+
+const markdownEditorPackageRoot = join(__dirname, "src", "markdownEditor", "packages", "markdown-editor");
+
+/** Resolve the vendored editor instead of the published bundle. */
+export const markdownEditorAliases = {
+    "@vscode/markdown-editor/editor.css": join(markdownEditorPackageRoot, "src", "view", "editor.css"),
+    "@vscode/markdown-editor/themes/vscode-default.css": join(
+        markdownEditorPackageRoot,
+        "src",
+        "view",
+        "themes",
+        "vscode-default.css",
+    ),
+    "@vscode/markdown-editor": join(markdownEditorPackageRoot, "src", "index.ts"),
+    "entities/decode": join(
+        __dirname,
+        "node_modules",
+        "@vscode",
+        "markdown-editor",
+        "node_modules",
+        "entities",
+        "dist",
+        "esm",
+        "decode.js",
+    ),
+};
+
 const mermaidSource = join(__dirname, "node_modules", "mermaid", "dist", "mermaid.min.js");
 const mermaidDestDir = join(__dirname, "media", "mermaidPreview");
 const mermaidDest = join(mermaidDestDir, "mermaid.min.js");
@@ -21,30 +49,85 @@ function copyOnigWasm() {
     copyFileSync(onigWasmSource, onigWasmDest);
 }
 
-const args = process.argv.splice(2);
+const markdownEditorOutDir = join(__dirname, "media", "markdownEditor");
+const markdownEditorVscodeOutDir = join(
+    __dirname,
+    "..",
+    "vscode",
+    "extensions",
+    "markdown-language-features",
+    "markdown-editor-out",
+);
 
-const validArgs = ["--production", "--watch", "--help"];
+/** @type {import("esbuild").BuildOptions} */
+function markdownEditorWebviewConfig() {
+    return {
+        entryPoints: [join(__dirname, "src", "markdownEditor", "webview", "editor.ts")],
+        bundle: true,
+        minify: true,
+        sourcemap: false,
+        format: "esm",
+        platform: "browser",
+        target: ["es2024"],
+        outdir: markdownEditorOutDir,
+        splitting: true,
+        chunkNames: "[name]-[hash]",
+        external: ["node:fs/promises"],
+        loader: {
+            ".woff": "file",
+            ".woff2": "file",
+            ".ttf": "file",
+            ".eot": "file",
+            ".svg": "file",
+        },
+        assetNames: "[name]-[hash]",
+        logLevel: "info",
+        alias: markdownEditorAliases,
+    };
+}
+
+function syncMarkdownEditorToVscode() {
+    mkdirSync(markdownEditorVscodeOutDir, { recursive: true });
+    cpSync(markdownEditorOutDir, markdownEditorVscodeOutDir, { recursive: true, force: true });
+    console.log(`Synced markdown editor bundle to ${markdownEditorVscodeOutDir}`);
+}
+
+const args = isMain ? process.argv.slice(2) : [];
+
+const validArgs = [
+    "--production",
+    "--watch",
+    "--help",
+    "--markdown-editor",
+    "--sync-vscode",
+];
 const isProd = args.includes("--production");
 const isWatch = args.includes("--watch");
 const isHelp = args.includes("--help");
+const markdownEditorOnly = args.includes("--markdown-editor");
+const syncToVscode = args.includes("--sync-vscode");
 
-if (isHelp) {
+if (isMain && isHelp) {
     printHelp();
 }
 
-const invalidArgs = args.filter((arg) => !validArgs.includes(arg));
-if (invalidArgs.length > 0) {
-    console.error("Invalid arguments:", invalidArgs.join(", "));
-    printHelp();
+if (isMain) {
+    const invalidArgs = args.filter((arg) => !validArgs.includes(arg));
+    if (invalidArgs.length > 0) {
+        console.error("Invalid arguments:", invalidArgs.join(", "));
+        printHelp();
+    }
 }
 
 function printHelp() {
-    console.log(`Usage: node script.js [options]`);
+    console.log(`Usage: node esbuild.mjs [options]`);
     console.log();
     console.log(`Options:`);
-    console.log(`  --production  Run in production mode`);
-    console.log(`  --watch       Enable watch mode`);
-    console.log(`  --help        Show this help message`);
+    console.log(`  --production       Run in production mode`);
+    console.log(`  --watch            Enable watch mode`);
+    console.log(`  --markdown-editor  Build only the markdown editor webview`);
+    console.log(`  --sync-vscode      Copy webview output to a local vscode checkout`);
+    console.log(`  --help             Show this help message`);
     process.exit(0);
 }
 
@@ -74,20 +157,51 @@ const mermaidThemeConfig = {
     outfile: join(mermaidDestDir, "vsCodeTheme.js"),
 };
 
-async function buildAll() {
+async function buildMarkdownEditorWebview() {
+    await esbuild.build(markdownEditorWebviewConfig());
+    if (syncToVscode) {
+        syncMarkdownEditorToVscode();
+    }
+}
+
+async function buildExtensionStack() {
     copyMermaidAssets();
     copyOnigWasm();
     await Promise.all([esbuild.build(extensionConfig), esbuild.build(mermaidThemeConfig)]);
 }
 
-if (isWatch) {
-    copyMermaidAssets();
-    copyOnigWasm();
-    const [extensionCtx, themeCtx] = await Promise.all([
-        esbuild.context(extensionConfig),
-        esbuild.context(mermaidThemeConfig),
-    ]);
-    await Promise.all([extensionCtx.watch(), themeCtx.watch()]);
-} else {
-    await buildAll();
+async function buildAll() {
+    if (markdownEditorOnly) {
+        await buildMarkdownEditorWebview();
+        return;
+    }
+    await buildExtensionStack();
+    await buildMarkdownEditorWebview();
+}
+
+if (isMain) {
+    if (isWatch) {
+        if (markdownEditorOnly) {
+            const ctx = await esbuild.context(markdownEditorWebviewConfig());
+            await ctx.watch();
+            if (syncToVscode) {
+                watch(markdownEditorOutDir, { recursive: true }, () => syncMarkdownEditorToVscode());
+                console.log(`Watching ${markdownEditorOutDir}; will sync to ${markdownEditorVscodeOutDir}`);
+            }
+        } else {
+            copyMermaidAssets();
+            copyOnigWasm();
+            const [extensionCtx, themeCtx, markdownCtx] = await Promise.all([
+                esbuild.context(extensionConfig),
+                esbuild.context(mermaidThemeConfig),
+                esbuild.context(markdownEditorWebviewConfig()),
+            ]);
+            await Promise.all([extensionCtx.watch(), themeCtx.watch(), markdownCtx.watch()]);
+            if (syncToVscode) {
+                watch(markdownEditorOutDir, { recursive: true }, () => syncMarkdownEditorToVscode());
+            }
+        }
+    } else {
+        await buildAll();
+    }
 }

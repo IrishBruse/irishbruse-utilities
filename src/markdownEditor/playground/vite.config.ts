@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type HtmlTagDescriptor, type Plugin } from "vite";
-import { markdownEditorAliases } from "../markdownEditorAliases.mjs";
+import { markdownEditorAliases } from "../../../esbuild.mjs";
 import { readVscodeUserTheme } from "./vscodeUserTheme";
 
 const playgroundDir = dirname(fileURLToPath(import.meta.url));

@@ -421,7 +421,6 @@ body {
  * Code blocks are the exception: each newline after the fence is its own `↵` line.
  */
 .md-editor .md-glue-blockBreak > .md-ws-blockbreak-glyph,
-.md-editor .md-glue-blockBreak > .md-ws-newline-glyph,
 .md-editor .md-glue-blockGap > .md-ws-newline-glyph,
 .md-editor .md-glue-blockGap > .md-ws-blockbreak-glyph {
 	display: inline-block;
@@ -430,6 +429,16 @@ body {
 	overflow: hidden;
 	color: transparent;
 	vertical-align: bottom;
+}
+
+/* The paragraph-ending `↵` is a real glyph: selection covers it, and the caret can sit to its right. */
+.md-editor .md-glue-blockBreak:not(.md-glue-hidden) > .md-ws-newline-glyph {
+	display: inline;
+	width: auto;
+	height: auto;
+	overflow: visible;
+	color: var(--vscode-editor-foreground, #d4d4d4);
+	vertical-align: baseline;
 }
 
 .md-editor .md-code-block .md-glue-blockGap:not(.md-glue-hidden) {

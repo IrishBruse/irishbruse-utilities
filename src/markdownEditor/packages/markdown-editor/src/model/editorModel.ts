@@ -98,6 +98,12 @@ export class EditorModel {
 	 * (e.g. an inactive/unfocused rendering).
 	 */
 	readonly selection = observableValue<Selection | undefined>(this, undefined);
+
+	/**
+	 * When set, the caret at this offset is drawn on the right edge of a newline
+	 * glyph instead of at the start of the following line.
+	 */
+	readonly cursorAffinity = observableValue<{ readonly offset: SourceOffset } | undefined>(this, undefined);
 	readonly selectionSource = observableValue<SelectionSource>(this, 'user');
 
 	/**
@@ -160,7 +166,9 @@ export class EditorModel {
 			return CursorPosition.virtual(pending.cursorLine);
 		}
 		const offset = reader.readObservable(this.selection)?.active;
-		return offset === undefined ? undefined : CursorPosition.source(offset);
+		if (offset === undefined) { return undefined; }
+		const affinity = reader.readObservable(this.cursorAffinity);
+		return CursorPosition.source(offset, affinity?.offset === offset ? 'upstream' : undefined);
 	});
 
 	/**

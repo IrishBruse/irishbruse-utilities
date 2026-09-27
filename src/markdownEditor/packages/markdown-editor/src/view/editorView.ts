@@ -840,13 +840,34 @@ export class EditorView extends Disposable {
 		const tableCellOffset = this._resolveTableCellOffset(point, hit);
 		if (tableCellOffset !== undefined) { return tableCellOffset; }
 		if (this.geometricHitTest.get()) {
-			const map = this.measuredLayout.visualLineMap.get();
-			if (map.isEmpty) { return undefined; }
-			return map.offsetAtPoint(this.coordinateSpace.capture().toLocalPoint(point));
+			return this.resolveCursorHit(point)?.offset;
 		}
 		const pos = caretDomPositionFromPoint(point);
 		if (!pos) { return undefined; }
 		return this._document.get()?.resolveSource(pos);
+	}
+
+	/**
+	 * Client point → source offset, plus whether the caret should sit on the
+	 * right edge of a newline glyph (`upstream`) or at the next line (`downstream`).
+	 */
+	resolveCursorHit(point: Point2D): { readonly offset: SourceOffset; readonly affinity: 'upstream' | 'downstream' } | undefined {
+		const hit = document.elementFromPoint(point.x, point.y);
+		const videoOffset = this._resolveControlFreeVideoOffset(hit);
+		if (videoOffset !== undefined) { return { offset: videoOffset, affinity: 'downstream' }; }
+		const tableCellOffset = this._resolveTableCellOffset(point, hit);
+		if (tableCellOffset !== undefined) { return { offset: tableCellOffset, affinity: 'downstream' }; }
+		if (!this.geometricHitTest.get()) {
+			const offset = this.resolveOffsetFromPoint(point);
+			return offset === undefined ? undefined : { offset, affinity: 'downstream' };
+		}
+		const map = this.measuredLayout.visualLineMap.get();
+		if (map.isEmpty) { return undefined; }
+		const local = this.coordinateSpace.capture().toLocalPoint(point);
+		const lineIndex = map.lineIndexAtY(local.y);
+		const offset = map.offsetInLineAtX(lineIndex, local.x);
+		const affinity = map.lineEndsAtWideNewlineGlyph(lineIndex, offset) ? 'upstream' : 'downstream';
+		return { offset, affinity };
 	}
 
 	private _resolveControlFreeVideoOffset(hit: Element | null): SourceOffset | undefined {

@@ -558,10 +558,9 @@ function _isWhitespaceChar(ch: string): boolean {
  * a collapsing `\n`, whose selectable box ends up beside the glyph rather than
  * under it) to a real `↵` glyph character: a non-whitespace text node that
  * keeps its own width, so the selection box coincides with the glyph and every
- * newline is individually selectable. The trailing newline of the run is left
- * as a literal collapsing `\n` (no glyph) so the glyph hugs the preceding text
- * without a stray leading space, and the blank-line glyph count is one per
- * blank line. Used for the inter-block gap glue.
+ * newline is individually selectable. Every newline in the run, including the
+ * last, is a glyph so the caret can sit on either side of it. Used for the
+ * inter-block gap glue.
  *
  * `breakGlyphClass`, when set, marks the run as a structural block break: its
  * *first* newline is the break that starts the next block and is always painted
@@ -641,20 +640,16 @@ function _segmentWhitespace(content: string, ctx: WhitespaceContext): Whitespace
 	const flushPlain = (end: number) => {
 		if (plainStart >= 0) { segments.push({ text: content.slice(plainStart, end), cls: undefined }); plainStart = -1; }
 	};
-	// The structural-break newline (the gap's first) is always painted as a glyph
-	// and never collapses; the trailing newline is the line terminator and stays a
-	// collapsing `\n` so the glyph hugs the preceding text with no stray leading space.
+	// Every newline is a real `↵` glyph, including the last, so selection and the
+	// caret can land on it. The first newline of a block break uses the break class.
 	const breakNewline = ctx.breakGlyphClass ? content.indexOf('\n') : -1;
-	const lastNewline = ctx.newlineGlyph ? content.lastIndexOf('\n') : -1;
 	for (let i = 0; i < content.length; i++) {
 		const ch = content[i];
 		if (ctx.newlineGlyph && (ch === '\n' || ch === '\r')) {
+			flushPlain(i);
 			const isBreak = i === breakNewline;
-			if (i !== lastNewline || isBreak) {
-				flushPlain(i);
-				segments.push({ text: ch, cls: isBreak ? ctx.breakGlyphClass! : 'md-ws-newline-glyph', display: '↵' });
-				continue;
-			}
+			segments.push({ text: ch, cls: isBreak ? ctx.breakGlyphClass! : 'md-ws-newline-glyph', display: '↵' });
+			continue;
 		}
 		const cls = ctx.newlineGlyph && (ch === '\n' || ch === '\r') ? undefined : _whitespaceClass(content, i, ctx);
 		if (cls === undefined) { if (plainStart < 0) { plainStart = i; } continue; }

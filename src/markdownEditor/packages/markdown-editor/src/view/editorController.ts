@@ -272,8 +272,9 @@ export class EditorController extends Disposable {
             return;
         }
 
-        const offset = this._view.resolveOffsetFromPoint(point)
-            ?? this._model.sourceText.get().value.length;
+        const hit = this._view.resolveCursorHit(point);
+        const offset = hit?.offset ?? this._model.sourceText.get().value.length;
+        const glyphAffinity = hit?.affinity === 'upstream' ? { offset } : undefined;
 
         if (this._clickCount === 2) {
             const ctx = this._makeCursorContext();
@@ -310,7 +311,7 @@ export class EditorController extends Disposable {
             const sel = this._model.selection.get() ?? Selection.collapsed(offset);
             this._setUserSelection(sel.withActive(offset));
         } else {
-            this._setUserSelection(Selection.collapsed(offset));
+            this._setUserSelection(Selection.collapsed(offset), glyphAffinity);
         }
 
         // Capture the pointer so the drag keeps receiving move/up events even
@@ -374,9 +375,14 @@ export class EditorController extends Disposable {
         };
     }
 
-    private _executeCursorCommand(command: CursorCommand, extend: boolean): void {
+    private _executeCursorCommand(command: CursorCommand, extend: boolean, direction?: 'left' | 'right'): void {
         const ctx = this._makeCursorContext();
-        this._applyCursorPosition(ctx.selection, command(ctx), extend);
+        const position = command(ctx);
+        const glyphAffinity = !extend && direction === 'right' && position.kind === 'source'
+            && this._view.measuredLayout.visualLineMap.get().endsAtWideNewlineGlyph(position.offset)
+            ? { offset: position.offset }
+            : undefined;
+        this._applyCursorPosition(ctx.selection, position, extend, glyphAffinity);
         this._desiredColumn = undefined;
     }
 
@@ -432,15 +438,49 @@ export class EditorController extends Disposable {
         this._desiredColumn = result.desiredColumn;
     }
 
-    private _setUserSelection(selection: Selection | undefined): void {
+    private _setUserSelection(
+        selection: Selection | undefined,
+        glyphAffinity?: { readonly offset: number },
+    ): void {
         transaction(tx => {
             this._model.pendingParagraph.set(undefined, tx);
             this._model.selectionSource.set('user', tx);
             this._model.selection.set(selection, tx);
+            this._model.cursorAffinity.set(glyphAffinity, tx);
         });
     }
 
-    private _applyCursorPosition(selection: Selection, position: CursorPositionType, extend: boolean): void {
+    /**
+     * Arrow Right from the left of a `↵` lands on its right edge (`upstream`).
+     * Another Right moves to the next line. Arrow Left from that next line
+     * returns to the glyph's right edge before stepping onto the glyph itself.
+     */
+    private _nudgeWideNewlineGlyph(direction: 'left' | 'right'): boolean {
+        const selection = this._model.selection.get();
+        if (!selection?.isCollapsed) { return false; }
+        const offset = selection.active;
+        const map = this._view.measuredLayout.visualLineMap.get();
+        if (!map.endsAtWideNewlineGlyph(offset)) { return false; }
+        const atGlyphEnd = this._model.cursorAffinity.get()?.offset === offset;
+        if (direction === 'right' && atGlyphEnd) {
+            this._model.cursorAffinity.set(undefined, undefined);
+            this._view.revealCaretAfterKeyboardNavigation();
+            return true;
+        }
+        if (direction === 'left' && !atGlyphEnd) {
+            this._model.cursorAffinity.set({ offset }, undefined);
+            this._view.revealCaretAfterKeyboardNavigation();
+            return true;
+        }
+        return false;
+    }
+
+    private _applyCursorPosition(
+        selection: Selection,
+        position: CursorPositionType,
+        extend: boolean,
+        glyphAffinity?: { readonly offset: number },
+    ): void {
         if (position.kind === 'virtual') {
             const pending = this._model.pendingParagraph.get();
             if (pending?.cursorLine !== position.line) {
@@ -452,6 +492,7 @@ export class EditorController extends Disposable {
         }
         this._setUserSelection(
             extend ? selection.withActive(position.offset) : Selection.collapsed(position.offset),
+            extend ? undefined : glyphAffinity,
         );
         this._view.revealCaretAfterKeyboardNavigation();
     }
@@ -574,8 +615,19 @@ export class EditorController extends Disposable {
             case 'cursor': {
                 const command = action.command;
                 switch (command) {
-                    case 'left': this._executeCursorCommand(action.extend ? cursorMoveLeft : cursorLeft, action.extend); return;
-                    case 'right': this._executeCursorCommand(action.extend ? cursorMoveRight : cursorRight, action.extend); return;
+                    case 'left':
+                    case 'right': {
+                        const direction = command === 'left' ? 'left' : 'right';
+                        if (!action.extend && this._nudgeWideNewlineGlyph(direction)) { return; }
+                        this._executeCursorCommand(
+                            action.extend
+                                ? (direction === 'left' ? cursorMoveLeft : cursorMoveRight)
+                                : (direction === 'left' ? cursorLeft : cursorRight),
+                            action.extend,
+                            direction,
+                        );
+                        return;
+                    }
                     case 'up': this._executeVisualCursorCommand(cursorUp, action.extend); return;
                     case 'down': this._cursorDown(action.extend); return;
                     case 'wordLeft': this._executeCursorCommand(cursorWordLeft, action.extend); return;

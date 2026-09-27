@@ -6,31 +6,9 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
-const markdownEditorPackageRoot = join(__dirname, "src", "markdownEditor", "packages", "markdown-editor");
+import { markdownEditorAliases } from "./src/markdownEditor/resolveAliases.mjs";
 
-/** Resolve the vendored editor instead of the published bundle. */
-export const markdownEditorAliases = {
-    "@vscode/markdown-editor/editor.css": join(markdownEditorPackageRoot, "src", "view", "editor.css"),
-    "@vscode/markdown-editor/themes/vscode-default.css": join(
-        markdownEditorPackageRoot,
-        "src",
-        "view",
-        "themes",
-        "vscode-default.css",
-    ),
-    "@vscode/markdown-editor": join(markdownEditorPackageRoot, "src", "index.ts"),
-    "entities/decode": join(
-        __dirname,
-        "node_modules",
-        "@vscode",
-        "markdown-editor",
-        "node_modules",
-        "entities",
-        "dist",
-        "esm",
-        "decode.js",
-    ),
-};
+export { markdownEditorAliases };
 
 const mermaidSource = join(__dirname, "node_modules", "mermaid", "dist", "mermaid.min.js");
 const mermaidDestDir = join(__dirname, "media", "mermaidPreview");

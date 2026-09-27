@@ -79,7 +79,12 @@ export class VisualLineMap {
 	 * The first such trailing-boundary line is remembered as a fallback for the
 	 * document's very last offset, where no later line starts it.
 	 */
-	lineIndexOfOffset(offset: SourceOffset): number {
+	lineIndexOfOffset(offset: SourceOffset, affinity: 'upstream' | 'downstream' = 'downstream'): number {
+		if (affinity === 'upstream') {
+			for (let i = 0; i < this.lines.length; i++) {
+				if (this._lineEndsAtWideNewlineGlyph(this.lines[i], offset)) { return i; }
+			}
+		}
 		let endBoundaryLine = -1;
 		for (let i = 0; i < this.lines.length; i++) {
 			if (this.lines[i].virtualCursorLine) { continue; }
@@ -99,6 +104,27 @@ export class VisualLineMap {
 		return bestIdx;
 	}
 
+	/** True when `offset` is the exclusive end of a visible `↵` on some line. */
+	endsAtWideNewlineGlyph(offset: SourceOffset): boolean {
+		return this.sourceLines.some(line => this._lineEndsAtWideNewlineGlyph(line, offset));
+	}
+
+	/** True when `offset` is the exclusive end of a visible `↵` on `lineIndex`. */
+	lineEndsAtWideNewlineGlyph(lineIndex: number, offset: SourceOffset): boolean {
+		const line = this.lines[lineIndex];
+		return line !== undefined && this._lineEndsAtWideNewlineGlyph(line, offset);
+	}
+
+	private _lineEndsAtWideNewlineGlyph(line: VisualLine, offset: SourceOffset): boolean {
+		if (line.virtualCursorLine) { return false; }
+		for (const run of line.runs) {
+			if (run.sourceEndExclusive !== offset || run.rect.width <= 0.5 || !run.source) { continue; }
+			const index = run.source.textNodeStart + run.sourceLength - 1;
+			if (run.source.textNode.data[index] === '↵') { return true; }
+		}
+		return false;
+	}
+
 	/**
 	 * x of the caret position before `offset`, on the line returned by
 	 * {@link lineIndexOfOffset}. Returns `0` when the map is empty.
@@ -114,7 +140,7 @@ export class VisualLineMap {
 	 */
 	lineIndexOfPosition(position: CursorPosition): number | undefined {
 		if (position.kind === 'source') {
-			return this.lineIndexOfOffset(position.offset);
+			return this.lineIndexOfOffset(position.offset, position.affinity ?? 'downstream');
 		}
 		const index = this.lines.findIndex(line => line.virtualCursorLine === position.line);
 		return index < 0 ? undefined : index;
@@ -122,7 +148,9 @@ export class VisualLineMap {
 
 	xAtPosition(position: CursorPosition): number {
 		if (position.kind === 'source') {
-			return this.xAtOffset(position.offset);
+			if (this.lines.length === 0) { return 0; }
+			const index = this.lineIndexOfOffset(position.offset, position.affinity ?? 'downstream');
+			return this.lines[index].xAtOffset(position.offset);
 		}
 		const lineIndex = this.lineIndexOfPosition(position);
 		return lineIndex === undefined ? 0 : this.lines[lineIndex].rect.left;

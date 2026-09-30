@@ -1,5 +1,6 @@
 import "../src/editor.css";
 import { mountInlineEditor } from "../src/editor";
+import { isSkillMarkdownPath, skillFolderNameFromPath } from "../../markdownEditor/host/webviewInitialState";
 
 const DOCS_PREFIX = "../../../docs/tests/markdown/";
 const LOCAL_FIXTURE = "fixture.md";
@@ -93,6 +94,8 @@ async function main(): Promise<void> {
     window.__inlineMarkdown = mountInlineEditor(parent, {
         text,
         documentUrl: baseUrl,
+        skillFrontMatter: isSkillMarkdownPath(selected.id),
+        skillFolderName: skillFolderNameFromPath(selected.id),
         onLink(href) {
             openPlaygroundLink(href, baseUrl, fixtures);
         },

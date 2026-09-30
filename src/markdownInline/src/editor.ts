@@ -14,6 +14,8 @@ export interface MountInlineEditorOptions {
     text: string;
     documentUrl: string;
     readOnly?: boolean;
+    skillFrontMatter?: boolean;
+    skillFolderName?: string;
     onEdit?: (edit: InlineEdit) => void;
     onHistory?: (command: "undo" | "redo") => void;
     onLink?: (href: string) => void;
@@ -153,7 +155,10 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             setCursor(offset);
             editor.focus();
         },
-    });
+        onReplace(from, to, text) {
+            replace(from, to, text);
+        },
+    }, options.skillFrontMatter === true, options.skillFolderName ?? "");
 
     const refresh = (): void => {
         if (refreshing) {

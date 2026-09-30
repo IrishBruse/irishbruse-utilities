@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Fix: Inline Markdown tables grow the line to fit wrapped cells instead of scrolling inside the table
 -   Add: Inline Markdown previews a GFM table as a bordered grid and shows the pipe source when the cursor is inside
 -   Add: Inline Markdown editing runs in Monaco and keeps markdown and fenced-code syntax highlighting when markers are shown
 -   Add: Inline Markdown shows line numbers beside the text
@@ -16,6 +17,7 @@
 -   Fix: Clicking a rendered link opens it and leaves the cursor where it was
 -   Fix: Inline Markdown in VS Code shows line numbers beside the text
 -   Fix: SKILL.md front matter opens as a properties card instead of raw YAML
+-   Fix: The current-line highlight in VS Code uses the same `editor.lineHighlightBackground` as the playground
 -   Fix: Inline Markdown task items hide the list bullet and show only the checkbox
 -   Remove: Changed Files sidebar and Action Panel
 -   Add: Inline Markdown webview keeps the file as raw markdown, hides syntax until the cursor needs it, and previews images

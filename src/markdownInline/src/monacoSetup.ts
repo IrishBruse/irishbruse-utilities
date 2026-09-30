@@ -12,9 +12,23 @@ export function setHiddenAreas(editor: monaco.editor.IStandaloneCodeEditor, rang
     api.setHiddenAreas(ranges, hiddenAreaSource);
 }
 
+function cssVariable(name: string): string {
+    const root = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    if (root.length > 0) {
+        return root;
+    }
+    if (!document.body) {
+        return "";
+    }
+    return getComputedStyle(document.body).getPropertyValue(name).trim();
+}
+
 function cssColor(name: string, fallback: string): string {
-    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const value = cssVariable(name);
     if (/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value)) {
+        return value;
+    }
+    if (/^(?:rgb|hsl)a?\(/i.test(value)) {
         return value;
     }
     return fallback;
@@ -76,13 +90,14 @@ export function installMonaco(): void {
             "editorLineNumber.foreground": cssColor("--vscode-editorLineNumber-foreground", "#858585"),
             "editor.selectionBackground": cssColor("--vscode-editor-selectionBackground", "#264f78"),
             "editor.lineHighlightBackground": cssColor("--vscode-editor-lineHighlightBackground", "#2a2d2e"),
+            "editor.lineHighlightBorder": "#00000000",
             "editorCursor.foreground": cssColor("--vscode-editorCursor-foreground", "#aeafad"),
         },
     });
 }
 
 export function readEditorFontSize(): number {
-    const raw = getComputedStyle(document.documentElement).getPropertyValue("--vscode-editor-font-size").trim();
+    const raw = cssVariable("--vscode-editor-font-size");
     const size = Number.parseFloat(raw);
     if (Number.isFinite(size) && size > 0) {
         return size;

@@ -2,12 +2,14 @@ import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { resolveImageUrl } from "./imageUrl";
 import { setHiddenAreas } from "./monacoSetup";
 import { parseScopes } from "./scopes";
+import { readFrontMatter, SkillPropertiesPanel, type FrontMatterSpan } from "./skillProperties";
 import type { CursorContext, Scope, TextRange } from "./types";
 import { markerVisibility, showsFormattedContent } from "./visibility";
 
 export interface InlinePresentationHandlers {
     onToggleTask(from: number, to: number): void;
     onReveal(offset: number): void;
+    onReplace(from: number, to: number, text: string): void;
 }
 
 interface ZoneRecord {
@@ -276,6 +278,15 @@ function injected(content: string, inlineClassName: string): monaco.editor.Injec
     };
 }
 
+function tableFrameHeight(frame: HTMLElement): number {
+    const table = frame.querySelector("table");
+    const content = table instanceof HTMLElement ? table.offsetHeight : frame.scrollHeight;
+    const style = getComputedStyle(frame);
+    const padding = (Number.parseFloat(style.paddingTop) || 0) + (Number.parseFloat(style.paddingBottom) || 0);
+    const border = (Number.parseFloat(style.borderTopWidth) || 0) + (Number.parseFloat(style.borderBottomWidth) || 0);
+    return Math.ceil(content + padding + border);
+}
+
 function lineNumberNode(lineNumber: number): HTMLDivElement {
     const number = document.createElement("div");
     number.className = "inline-md-zone-number";
@@ -312,11 +323,16 @@ export class InlinePresentation {
     private headingExtras = new Map<number, number>();
     private selectionObserver: MutationObserver | undefined;
     private selectionFrame = 0;
+    private frontMatter: FrontMatterSpan | undefined;
+    private skillPanel: SkillPropertiesPanel | undefined;
+    private skillZone: monaco.editor.IViewZone | undefined;
 
     constructor(
         private readonly editor: monaco.editor.IStandaloneCodeEditor,
         private readonly documentUrl: string,
         private readonly handlers: InlinePresentationHandlers,
+        private readonly skillFrontMatter: boolean,
+        private readonly skillFolderName: string,
     ) {
         this.decorations = editor.createDecorationsCollection();
     }
@@ -327,6 +343,7 @@ export class InlinePresentation {
             return;
         }
         const text = model.getValue();
+        this.frontMatter = this.skillFrontMatter ? readFrontMatter(text) : undefined;
         const cursor = cursorContext(this.editor, model);
         const scopes = parseScopes(text);
         const decorations: monaco.editor.IModelDeltaDecoration[] = [];
@@ -366,6 +383,10 @@ export class InlinePresentation {
                     continue;
                 }
                 const line = coveredLine(model, bounds);
+                if (scope.kind === "thematicBreak" && this.frontMatter && bounds.start < this.frontMatter.end) {
+                    hiddenLines.add(line ?? model.getPositionAt(bounds.start).lineNumber);
+                    continue;
+                }
                 if ((scope.kind === "image" || scope.kind === "thematicBreak") && line !== undefined) {
                     hiddenLines.add(line);
                     zones.push(this.blockZone(scope, bounds.start, line));
@@ -471,6 +492,13 @@ export class InlinePresentation {
             });
         }
 
+        if (this.frontMatter) {
+            const endLine = model.getPositionAt(Math.max(0, this.frontMatter.end - 1)).lineNumber;
+            for (let line = 1; line <= endLine; line += 1) {
+                hiddenLines.add(line);
+            }
+            zones.push(this.ensureSkillZone());
+        }
         this.headingExtras = headingExtras;
         this.watchSelections();
         this.scheduleSelectionHeights();
@@ -478,6 +506,13 @@ export class InlinePresentation {
         this.syncTasks(tasks);
         this.syncHits(hits);
         this.syncZones(zones);
+        if (this.frontMatter && this.skillPanel) {
+            const yaml = text.includes("\r\n")
+                ? this.frontMatter.yaml.replace(/\r\n/g, "\n")
+                : this.frontMatter.yaml;
+            this.skillPanel.sync(yaml);
+            requestAnimationFrame(() => this.layoutSkillZone());
+        }
         setHiddenAreas(this.editor, [...hiddenLines].map((lineNumber) => ({
             startLineNumber: lineNumber,
             startColumn: 1,
@@ -641,11 +676,18 @@ export class InlinePresentation {
             suppressMouseDown: true,
             showInHiddenAreas: true,
             onDomNodeTop: () => {
-                const measured = Math.ceil(frame.getBoundingClientRect().height);
-                if (measured > 0 && Math.abs(measured - (zone.heightInPx ?? 0)) > 1) {
-                    zone.heightInPx = measured;
-                    this.layoutZone(key);
+                const fit = (): void => {
+                    const measured = tableFrameHeight(frame);
+                    if (measured > 0 && Math.abs(measured - (zone.heightInPx ?? 0)) > 1) {
+                        zone.heightInPx = measured;
+                        this.layoutZone(key);
+                    }
+                };
+                if (frame.style.display === "none") {
+                    requestAnimationFrame(fit);
+                    return;
                 }
+                fit();
             },
         };
         return { key, zone };
@@ -665,6 +707,46 @@ export class InlinePresentation {
             row.append(node);
         }
         return row;
+    }
+
+    private ensureSkillZone(): ZoneRecord {
+        if (!this.skillPanel || !this.skillZone) {
+            this.skillPanel = new SkillPropertiesPanel(
+                this.skillFolderName,
+                this.editor.getOption(monaco.editor.EditorOption.readOnly),
+                (yaml) => {
+                    const span = this.frontMatter;
+                    if (!span) {
+                        return;
+                    }
+                    const next = this.editor.getModel()?.getEOL() === "\r\n" ? yaml.replace(/\n/g, "\r\n") : yaml;
+                    this.handlers.onReplace(span.yamlStart, span.yamlEnd, next);
+                },
+                () => this.layoutSkillZone(),
+            );
+            this.skillZone = {
+                afterLineNumber: 0,
+                heightInPx: 180,
+                domNode: this.skillPanel.element,
+                marginDomNode: lineNumberNode(1),
+                showInHiddenAreas: true,
+                suppressMouseDown: false,
+            };
+        }
+        return { key: "skill-front-matter", zone: this.skillZone };
+    }
+
+    private layoutSkillZone(): void {
+        if (!this.skillPanel || !this.skillZone) {
+            return;
+        }
+        this.skillPanel.element.style.height = "auto";
+        const height = Math.ceil(this.skillPanel.element.scrollHeight);
+        if (height <= 0 || this.skillZone.heightInPx === height) {
+            return;
+        }
+        this.skillZone.heightInPx = height;
+        this.layoutZone("skill-front-matter");
     }
 
     private layoutZone(key: string): void {

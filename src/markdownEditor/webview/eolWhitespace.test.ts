@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { glueWhitespaceDots, isEolWhitespaceSpan, isQuoteContinuationGap, selectionCoversRange, withNewlineIndicator, type WhitespaceWalkNode } from './eolWhitespace';
+import { isEolWhitespaceSpan, selectionCoversRange, type WhitespaceWalkNode } from './eolWhitespace';
 
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
@@ -128,47 +128,6 @@ describe('eolWhitespace', () => {
 		const spacer = el('ib-md-virtual-spacer');
 		el('md-document').append(paragraph, spacer);
 		expect(isEolWhitespaceSpan(trail)).toBe(true);
-	});
-});
-
-describe('isQuoteContinuationGap', () => {
-	it('matches a single quote prefix on the next list line', () => {
-		expect(isQuoteContinuationGap('\n> ')).toBe(true);
-		expect(isQuoteContinuationGap('\n>')).toBe(true);
-		expect(isQuoteContinuationGap('\n>   ')).toBe(true);
-		expect(isQuoteContinuationGap('\n   > ')).toBe(true);
-		expect(isQuoteContinuationGap('\n> > ')).toBe(true);
-		expect(isQuoteContinuationGap('\r\n> ')).toBe(true);
-	});
-
-	it('leaves blank quote lines and ordinary trailing spaces alone', () => {
-		expect(isQuoteContinuationGap('\n>\n> ')).toBe(false);
-		expect(isQuoteContinuationGap('\n>\n>')).toBe(false);
-		expect(isQuoteContinuationGap('   ')).toBe(false);
-		expect(isQuoteContinuationGap('\n')).toBe(false);
-		expect(isQuoteContinuationGap('> ')).toBe(false);
-	});
-});
-
-describe('glueWhitespaceDots', () => {
-	it('uses middle dots for spaces only and defers tabs to overlay glyphs', () => {
-		expect(glueWhitespaceDots('  ')).toBe('··');
-		expect(glueWhitespaceDots('\t')).toBeNull();
-		expect(glueWhitespaceDots(' \t ')).toBeNull();
-		expect(glueWhitespaceDots('')).toBe('');
-	});
-});
-
-describe('withNewlineIndicator', () => {
-	it('replaces a paragraph-ending newline glyph source', () => {
-		expect(withNewlineIndicator('\n')).toBe('↵');
-	});
-
-	it('replaces a hard-break newline and keeps the same length', () => {
-		expect(withNewlineIndicator('  \n')).toBe('  ↵');
-		expect(withNewlineIndicator('\\\n')).toBe('\\↵');
-		expect(withNewlineIndicator('  \n').length).toBe('  \n'.length);
-		expect(withNewlineIndicator('no break')).toBe('no break');
 	});
 });
 

@@ -1,16 +1,5 @@
 {
     "compilerOptions": {
-        "baseUrl": ".",
-        "paths": {
-            "@vscode/markdown-editor": ["src/markdownEditor/packages/markdown-editor/src/index.ts"],
-            "@vscode/markdown-editor/editor.css": [
-                "src/markdownEditor/packages/markdown-editor/src/view/editor.css"
-            ],
-            "@vscode/markdown-editor/themes/vscode-default.css": [
-                "src/markdownEditor/packages/markdown-editor/src/view/themes/vscode-default.css"
-            ],
-            "entities/decode": ["node_modules/entities/dist/esm/decode.js"]
-        },
         "module": "ESNext",
         "moduleResolution": "Bundler",
         "target": "ES2022",
@@ -32,9 +21,7 @@
         "src/**/*.browser.ts",
         "src/test/**",
         "src/markdownEditor/webview/**",
-        "src/markdownEditor/playground/**",
         "src/markdownEditor/vendor/**",
-        "src/markdownEditor/packages/**",
         "src/markdownInline/src/**",
         "src/markdownInline/playground/**"
     ]

@@ -14,7 +14,7 @@
                 "${workspaceFolder}/docs"
             ],
             "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-            "preLaunchTask": "build: extension"
+            "preLaunchTask": "npm: build"
         }
     ]
 }

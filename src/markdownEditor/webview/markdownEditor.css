@@ -30,17 +30,12 @@ body {
 #editor {
 	height: 100%;
 	width: 100%;
-	overflow: auto;
+	overflow: scroll;
 }
 
 .md-editor {
 	min-height: 100%;
 	box-sizing: border-box;
-	/*
-	 * `editorWhitespace.foreground` is often translucent (#RRGGBBAA). Revealed
-	 * · and >| must stay readable; mix from editor text instead.
-	 */
-	--ib-md-ws-glyph-color: color-mix(in srgb, var(--vscode-editor-foreground, #d4d4d4) 88%, transparent);
 }
 
 .ib-md-virtual-spacer {
@@ -197,37 +192,6 @@ body {
 	color: var(--vscode-descriptionForeground, #5C6370);
 }
 
-/*
- * Later lines of one quoted paragraph store `>` inside the paragraph
- * (`blockQuoteContinuationMarker`). The library only hangs the opening
- * marker in the gutter, so the continuation stays in the line and indents
- * that line. Hang it the same way. `display: inline-flex` outranks
- * `.md-marker-hidden`, so the inactive marker is hidden again here.
- */
-.md-blockquote .md-marker-blockQuoteContinuationMarker {
-	position: absolute;
-	right: calc(100% - var(--md-blockquote-pad, 0px) - 1ch);
-	top: auto;
-	left: auto;
-	display: inline-flex;
-	align-items: center;
-	height: 1lh;
-	min-width: 2ch;
-	margin: 0;
-	font-size: inherit;
-	line-height: inherit;
-	text-align: left;
-	white-space: pre;
-	--md-blockquote-marker-shift: -0.18ch;
-	--md-blockquote-marker-scale: 0.9;
-	transform: translateX(var(--md-blockquote-marker-shift)) scale(var(--md-blockquote-marker-scale));
-	transform-origin: left center;
-}
-
-.md-blockquote .md-marker-blockQuoteContinuationMarker.md-marker-hidden {
-	display: none;
-}
-
 /* `[ ]` / `[x]` source markers must stay on one line in the marker column. */
 .md-task-list-item {
 	--md-task-marker-width: 4ch;
@@ -236,54 +200,6 @@ body {
 .md-task-list-item > .md-paragraph > .md-glue:first-child {
 	white-space: nowrap;
 	overflow: visible;
-}
-
-/*
- * A list inside a blockquote stores the next line's `>` as source-gap glue
- * at the end of the previous item. Hang that single continuation in the quote
- * gutter on the following line. `white-space: normal` keeps the one newline
- * from adding a blank line; the next item already starts that line.
- * Inactive gaps stay `display: none` (library `.md-glue-hidden`).
- */
-/*
- * The `>` that starts the next block's line lives in the previous block's
- * source gap. Pull it onto that next line instead of giving it a row of its own.
- */
-.md-blockquote.md-block-active .md-paragraph,
-.md-blockquote.md-block-active .md-blockquote {
-	position: relative;
-	/* The blank `>` line is the separator. The next block's `>` prefix is
-	 * placed at this edge, so a margin here would drop it onto empty space. */
-	margin-bottom: 0;
-}
-
-.md-editor .md-glue-blockQuoteSourceGap > .ib-md-quote-line-prefix {
-	position: absolute;
-	top: 100%;
-	left: 0;
-	white-space: pre;
-}
-
-.md-editor .md-glue-blockQuoteSourceGap.ib-md-quote-next-line:not(.md-glue-hidden) {
-	position: absolute;
-	top: 100%;
-	right: calc(100% + (var(--md-list-level, 1) * var(--md-list-indent-step, 2em)) - 1ch);
-	left: auto;
-	display: inline-flex;
-	align-items: center;
-	height: 1lh;
-	min-width: 2ch;
-	margin: 0;
-	white-space: normal;
-	text-align: left;
-	color: #999;
-	font-family: 'Cascadia Code', 'Fira Code', monospace;
-	font-size: inherit;
-	line-height: inherit;
-	--md-blockquote-marker-shift: -0.18ch;
-	--md-blockquote-marker-scale: 0.9;
-	transform: translateX(var(--md-blockquote-marker-shift)) scale(var(--md-blockquote-marker-scale));
-	transform-origin: left center;
 }
 
 /*
@@ -303,96 +219,9 @@ body {
 	content: '·';
 }
 
-/* Trailing spaces use the editor text color. Hard breaks otherwise paint blue. */
-.md-editor .md-hardbreak-src,
-.md-editor .md-ws-space.ib-md-eol-ws::before,
-.md-editor .md-hardbreak-src .md-ws-space::before {
-	color: var(--vscode-editor-foreground, #d4d4d4);
-}
-
-/*
- * Tab mark (>|). U+21E5 (⇥) is missing from many editor fonts and falls back
- * to a dot, so paint literal >| text like VS Code renderWhitespace.
- */
-.md-editor .md-ws-tab.ib-md-eol-ws,
-.md-editor .md-ws-tab.ib-md-sel-ws,
-.md-editor .md-block-active .md-ws-tab,
-.md-editor .md-list-item-active .md-glue-indent .md-ws-space,
-.md-editor .md-list-item-active .md-glue-indent .md-ws-tab,
-.md-editor .md-pending-paragraph .md-ws-tab {
-	color: transparent;
-}
-
 .md-editor .md-ws-tab.ib-md-eol-ws::before,
-.md-editor .md-ws-tab.ib-md-sel-ws::before,
-.md-editor .md-block-active .md-ws-tab::before,
-.md-editor .md-list-item-active .md-glue-indent .md-ws-space.ib-md-sel-ws::before,
-.md-editor .md-list-item-active .md-glue-indent .md-ws-space.ib-md-eol-ws::before,
-.md-editor .md-list-item-active .md-glue-indent:not(.md-glue-hidden) .md-ws-space::before,
-.md-editor .md-list-item-active .md-glue-indent:not(.md-glue-hidden) .md-ws-tab::before,
-.md-editor .md-list-item-active .md-glue-indent .md-ws-tab::before,
-.md-editor .md-pending-paragraph .md-ws-tab::before,
-.md-editor .ib-md-glue-ws-overlay[data-ib-glue-ws="tab"]::before {
-	content: '>|';
-	position: absolute;
-	left: 0;
-	top: 0;
-	bottom: 0;
-	right: auto;
-	width: auto;
-	display: flex;
-	align-items: center;
-	color: var(--ib-md-ws-glyph-color);
-	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-	font-size: 1.05em;
-	font-weight: 700;
-	letter-spacing: 0.04em;
-	line-height: 1;
-	z-index: 1;
-}
-
-/* Selection used to paint · on spans; active list indent uses >| on the line instead. */
-.md-editor .md-list-item-active .md-glue-indent[data-ib-sel-dots]::before,
-.md-editor .md-list-item-active .md-glue-indent[data-ib-eol-dots]::before {
-	content: none;
-}
-
-.md-editor .md-ws-tab.ib-md-eol-ws::before,
-.md-editor .ib-md-glue-ws-overlay.ib-md-glue-ws-eol[data-ib-glue-ws="tab"]::before {
-	color: var(--vscode-editor-foreground, #d4d4d4);
-}
-
-/*
- * Reveal block-indent / pending whitespace while editing. List-gutter indent
- * uses the >| rules above (spaces and tabs); do not paint · in the gutter.
- */
-.md-editor .md-block-active .md-glue-indent .md-ws-space::before,
-.md-editor .md-pending-paragraph .md-ws-space::before {
-	content: '·';
-	color: var(--ib-md-ws-glyph-color);
-}
-
-.md-editor .ib-md-glue-ws-overlay {
-	position: absolute;
-	top: 0;
-	bottom: 0;
-	width: 1ch;
-	pointer-events: none;
-}
-
-.md-editor .ib-md-glue-ws-overlay[data-ib-glue-ws="space"]::before {
-	content: '·';
-	position: absolute;
-	inset: 0;
-	text-align: center;
-}
-
-.md-editor .ib-md-glue-ws-overlay.ib-md-glue-ws-sel[data-ib-glue-ws="space"]::before {
-	color: var(--ib-md-ws-glyph-color);
-}
-
-.md-editor .ib-md-glue-ws-overlay.ib-md-glue-ws-eol[data-ib-glue-ws="space"]::before {
-	color: var(--vscode-editor-foreground, #d4d4d4);
+.md-editor .md-ws-tab.ib-md-sel-ws::before {
+	content: '⇥';
 }
 
 /*
@@ -421,23 +250,11 @@ body {
 .md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots]::before,
 .md-editor .md-hardbreak.ib-md-eol-ws[data-ib-eol-dots]::before,
 .md-editor .md-glue.ib-md-sel-ws[data-ib-sel-dots]::before {
+	color: var(--vscode-editorWhitespace-foreground, #b0b0b0);
 	pointer-events: none;
 }
 
-.md-editor .md-glue.ib-md-sel-ws[data-ib-sel-dots]::before {
-	color: var(--ib-md-ws-glyph-color);
-}
-
 .md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots]::before,
-.md-editor .md-hardbreak.ib-md-eol-ws[data-ib-eol-dots]::before {
-	color: var(--vscode-editor-foreground, #d4d4d4);
-}
-
-.md-editor .md-glue.ib-md-eol-ws[data-ib-eol-dots]::before {
-	content: attr(data-ib-eol-dots);
-}
-
-/* Inactive hard break: trailing-space dots only; the <br> still breaks the line. */
 .md-editor .md-hardbreak.ib-md-eol-ws[data-ib-eol-dots]::before {
 	content: attr(data-ib-eol-dots);
 }
@@ -454,78 +271,11 @@ body {
 	text-align: center;
 }
 
-.md-editor .md-glue-blockBreak .md-ws-newline,
-.md-editor .md-glue-blockBreak .md-ws-blockbreak-glyph {
-	color: var(--vscode-editor-foreground, #d4d4d4);
-}
-
 .md-editor .md-ws-newline-glyph,
 .md-editor .md-ws-blockbreak-glyph {
-	/* The caret at the end of a block sits on this box; `font-size: 0`
-	 * dropped it so the caret did not paint. */
-	color: var(--vscode-editor-foreground, #d4d4d4);
-}
-
-/*
- * Structural block-break box (not an empty-line icon). Extra empty source lines
- * are inline `↵` glyphs on the preceding line, not their own rows.
- */
-.md-editor .md-glue-blockBreak > .md-ws-blockbreak-glyph,
-.md-editor .md-glue-blockGap > .md-ws-blockbreak-glyph {
-	display: inline-block;
-	width: 0;
-	height: 1lh;
-	overflow: hidden;
-	color: transparent;
-	vertical-align: bottom;
-}
-
-/* Inactive glue is `visibility: hidden` globally; empty-line icons still paint. */
-.md-editor .md-glue-blockBreak.md-glue-hidden,
-.md-editor .md-glue-blockGap.md-glue-hidden {
-	visibility: visible;
-}
-
-/* The paragraph-ending `↵` is a real glyph: selection covers it, and the caret can sit to its right. */
-.md-editor .md-glue-blockBreak > .md-ws-newline-glyph {
-	display: inline;
-	width: auto;
-	height: auto;
-	overflow: visible;
-	color: var(--vscode-editor-foreground, #d4d4d4);
-	vertical-align: baseline;
-}
-
-/* Empty-line `↵` stay on the preceding line. Preview (inactive) is gray. */
-.md-editor .md-glue-blockBreak > .md-ws-newline-glyph ~ .md-ws-newline-glyph,
-.md-editor .md-glue-blockGap > .md-ws-newline-glyph {
-	display: inline;
-	width: auto;
-	height: auto;
-	overflow: visible;
-	color: var(--vscode-editorWhitespace-foreground, #808080);
-	line-height: inherit;
-	vertical-align: baseline;
-}
-
-.md-editor .md-glue-blockBreak:not(.md-glue-hidden) > .md-ws-newline-glyph ~ .md-ws-newline-glyph,
-.md-editor .md-glue-blockGap:not(.md-glue-hidden) > .md-ws-newline-glyph {
-	color: var(--vscode-editor-foreground, #d4d4d4);
-}
-
-/* Active code block: one `↵` on its own line for each newline after the fence. */
-.md-editor .md-code-block .md-glue-blockGap:not(.md-glue-hidden) {
-	display: block;
-}
-
-.md-editor .md-code-block .md-glue-blockGap:not(.md-glue-hidden) > .md-ws-newline-glyph {
-	display: block;
-	width: fit-content;
-	height: 1lh;
-	overflow: visible;
-	color: var(--vscode-editor-foreground, #d4d4d4);
-	line-height: 1lh;
-	vertical-align: baseline;
+	/* Keep the ↵ layout box. The caret at the end of a block sits on these
+	 * offsets. `font-size: 0` dropped that box so the caret did not paint. */
+	visibility: hidden;
 }
 
 /* Confluence-style table grid editor
@@ -942,11 +692,6 @@ body {
 	overflow: visible;
 }
 
-/* The suggestion list hangs over the next block. Lift the card so those rows receive clicks. */
-.md-front-matter.ib-skill-properties-rendered:has(.ib-skill-properties-suggestions) {
-	z-index: 6;
-}
-
 .md-front-matter.ib-skill-properties-rendered > :not(.ib-skill-properties-panel) {
 	position: absolute;
 	inset: 0;
@@ -999,7 +744,7 @@ body {
 
 .ib-skill-properties-row {
 	display: grid;
-	grid-template-columns: minmax(7em, 11em) minmax(0, 1fr) auto;
+	grid-template-columns: minmax(7em, 11em) minmax(0, 1fr);
 	align-items: start;
 	gap: 8px;
 }
@@ -1079,29 +824,8 @@ select.ib-skill-properties-select option {
 }
 
 .ib-skill-properties-nested {
-	grid-template-columns: minmax(7em, 11em) minmax(0, 1fr) auto;
+	grid-template-columns: minmax(7em, 11em) minmax(0, 1fr);
 	margin-left: 22px;
-}
-
-.ib-skill-properties-remove {
-	grid-column: 3;
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 22px;
-	height: 22px;
-	margin: 0;
-	padding: 0;
-	border: 0;
-	border-radius: 3px;
-	background: transparent;
-	color: var(--vscode-descriptionForeground, #5C6370);
-	cursor: pointer;
-}
-
-.ib-skill-properties-remove:hover {
-	color: var(--vscode-foreground);
-	background: var(--vscode-toolbar-hoverBackground, rgb(127 127 127 / 20%));
 }
 
 .ib-skill-properties-add,

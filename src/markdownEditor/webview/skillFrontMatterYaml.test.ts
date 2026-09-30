@@ -70,14 +70,6 @@ describe('serializeSkillFrontMatter', () => {
 		expect(parseSkillFrontMatter(yaml)).toEqual(properties);
 	});
 
-	it('round-trips an empty metadata map and filled entries', () => {
-		const empty = [ { key: 'metadata', kind: 'map' as const, entries: [] } ];
-		expect(serializeSkillFrontMatter(empty)).toBe('metadata: {}\n');
-		expect(parseSkillFrontMatter('metadata: {}\n')).toEqual(empty);
-		const filled = [ { key: 'metadata', kind: 'map' as const, entries: [ { key: 'author', value: 'ethan' } ] } ];
-		expect(parseSkillFrontMatter(serializeSkillFrontMatter(filled))).toEqual(filled);
-	});
-
 	it('serializes long descriptions as folded YAML', () => {
 		const description = 'Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when the user mentions PDFs.';
 		const yaml = serializeSkillFrontMatter([ { key: 'description', kind: 'string', value: description } ]);

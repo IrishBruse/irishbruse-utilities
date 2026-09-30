@@ -1,5 +1,4 @@
 import * as esbuild from "esbuild";
-import { execFileSync } from "node:child_process";
 import { copyFileSync, mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -76,23 +75,10 @@ const mermaidThemeConfig = {
     outfile: join(mermaidDestDir, "vsCodeTheme.js"),
 };
 
-function buildMarkdownEditorWebview(extraArgs = []) {
-    execFileSync(
-        "npm",
-        ["run", "build", "--workspace", "@ib-utilities/markdown-editor", "--", ...extraArgs],
-        { cwd: __dirname, stdio: "inherit" },
-    );
-}
-
-async function buildExtensionStack() {
+async function buildAll() {
     copyMermaidAssets();
     copyOnigWasm();
     await Promise.all([esbuild.build(extensionConfig), esbuild.build(mermaidThemeConfig)]);
-}
-
-async function buildAll() {
-    await buildExtensionStack();
-    buildMarkdownEditorWebview();
 }
 
 if (isWatch) {

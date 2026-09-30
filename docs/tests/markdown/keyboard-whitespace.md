@@ -8,15 +8,12 @@ Related: [lists-tasks.md](./lists-tasks.md), [README.md](./README.md).
 
 Place the caret at the end of each line below and press the key.
 
-
-
-
 ### Plain paragraph
 
-First line of a paragraph.
+First line of a paragraph.  
 Second line after a hard break (two trailing spaces before this line).
 
-**Expected:** Enter at end of "paragraph." starts a new paragraph. Shift+Enter at end of "paragraph." inserts a hard line break (you should see `··↵` before the next line).
+**Expected:** Enter at end of "paragraph." starts a new paragraph. Shift+Enter at end of "paragraph." inserts a hard line break (you should see `··` dots before the newline in source).
 
 ### Unordered list
 
@@ -32,7 +29,7 @@ Second line after a hard break (two trailing spaces before this line).
 2. Two
 3. Three
 
-**Expected:** Enter at end of "Three" continues with `4. `. Arrow Down at end of "Three" (with a blank line after the list) moves into that blank line so you can delete it or type new content.
+**Expected:** Enter at end of "Three" continues with `4. `.
 
 ### Block quote
 
@@ -48,7 +45,7 @@ Only **end-of-line** spaces before a newline should render as middle dots (`·`)
 | Case | Source hint | Expected |
 | :--- | :--- | :--- |
 | Mid-sentence | `word word` (single space) | No dot between words |
-| Hard break | two spaces before newline | Two `·` and a `↵` newline mark |
+| Hard break | two spaces before newline | Two `·` before the line break |
 | Paragraph end | spaces after last word on a line | `·` only at line end, not mid-line |
 | List item end | spaces after list text | `·` at end of item line only |
 
@@ -56,10 +53,10 @@ Editable samples (add or remove trailing spaces to test):
 
 Line with no trailing spaces.
 
-Line with two trailing spaces before break.
+Line with two trailing spaces before break.  
 Next line after hard break.
 
-- List item with trailing spaces at end.
+- List item with trailing spaces at end.   
 - Second item normal.
 
 ## Caret at block end
@@ -71,12 +68,3 @@ The quick brown fox jumps over the lazy dog.
 ## Empty areas
 
 Click below this paragraph in the padding or empty space at the bottom of the document. The caret should appear and you can type a new block.
-
-## Tab vs space glyphs
-
-Nested list lines in [showcase.md](./showcase.md) use **two spaces** per level; those render as middle dots (`·`).
-
-The sample below uses a **tab** before the nested marker. While the list item is active or the tab is selected, the gutter should show the `>|` tab mark instead of a dot.
-
-- Space parent
-	- Tab child

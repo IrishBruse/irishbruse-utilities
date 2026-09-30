@@ -51,11 +51,7 @@ export class SkillFrontMatterController extends Disposable {
 	#addPrefix = '';
 	#suggestionIndex = 0;
 	#writeTimer: ReturnType<typeof setTimeout> | undefined;
-	/** A field is focused, so the document edit waits until focus leaves it. */
-	#deferredWrite = false;
-	#writing = false;
-	#pendingFocus: PendingFieldFocus | undefined;
-	#pendingMapFocus: { mapKey: string; index: number } | undefined;
+	#pendingFocus: { key: string; start: number; end: number } | undefined;
 
 	constructor(model: EditorModel, view: EditorView, host: HTMLElement, folderName: string) {
 		super();
@@ -66,20 +62,15 @@ export class SkillFrontMatterController extends Disposable {
 		this.#panel = document.createElement('div');
 		this.#panel.className = PANEL_CLASS;
 		this.#panel.contentEditable = 'false';
-		this.#panel.addEventListener('pointerdown', this.#onPanelPointerDown, true);
 		this.#panel.addEventListener('pointerdown', event => event.stopPropagation());
 		this.#panel.addEventListener('pointerup', event => event.stopPropagation());
 		this.#panel.addEventListener('click', event => event.stopPropagation());
-		this.#host.addEventListener('pointerdown', this.#onHostPointerDown);
 		this.#panel.addEventListener('keydown', this.#onPanelKeyDown);
 		this.#panel.addEventListener('beforeinput', event => event.stopPropagation());
 		this.#panel.addEventListener('focusin', this.#rememberFocus);
 		this.#panel.addEventListener('input', this.#rememberFocus);
 		this.#panel.addEventListener('keyup', this.#rememberFocus);
 		this.#panel.addEventListener('focusout', this.#forgetFocus);
-		// Chromium's EditContext reclaims focus from fields inside the editor
-		// after the first key, which drops the caret out of a metadata key.
-		this._register(this.#view.suspendEditContextWhileFocused(this.#panel));
 
 		observeAll(this._store, () => {
 			this.#model.document.get();
@@ -91,7 +82,6 @@ export class SkillFrontMatterController extends Disposable {
 		this._register({
 			dispose: () => {
 				this.#flushWrite();
-				this.#host.removeEventListener('pointerdown', this.#onHostPointerDown);
 				this.#panel.remove();
 				this.#clearHost();
 			},
@@ -149,20 +139,11 @@ export class SkillFrontMatterController extends Disposable {
 
 	readonly #rememberFocus = (event: Event): void => {
 		const field = editableField(event.target);
-		if (!field) {
+		const key = field?.dataset.key;
+		if (!field || !key) {
 			return;
 		}
-		const pending = pendingFieldFocus(field);
-		if (!pending) {
-			return;
-		}
-		this.#pendingFocus = pending;
-		// A queued edit would rebuild the front matter block and drop this caret.
-		if (this.#writeTimer !== undefined) {
-			clearTimeout(this.#writeTimer);
-			this.#writeTimer = undefined;
-			this.#deferredWrite = true;
-		}
+		this.#pendingFocus = { key, start: field.selectionStart ?? 0, end: field.selectionEnd ?? 0 };
 	};
 
 	/**
@@ -171,11 +152,6 @@ export class SkillFrontMatterController extends Disposable {
 	 * back once the panel is re-attached.
 	 */
 	readonly #forgetFocus = (event: FocusEvent): void => {
-		// A document write detaches the field or moves focus to the editor.
-		// Keep the caret so it can be put back on the same key or value.
-		if (this.#writing) {
-			return;
-		}
 		const next = event.relatedTarget;
 		if (next instanceof Node && this.#panel.contains(next)) {
 			return;
@@ -184,28 +160,20 @@ export class SkillFrontMatterController extends Disposable {
 		if (field?.isConnected) {
 			this.#pendingFocus = undefined;
 		}
-		if (this.#deferredWrite) {
-			this.#flushWrite();
-		}
 	};
 
 	#restoreFocus(): void {
 		const pending = this.#pendingFocus;
-		if (!pending) {
-			return;
-		}
 		const active = document.activeElement;
-		if (active instanceof HTMLElement && active !== this.#panel && this.#panel.contains(active)) {
+		if (!pending || (active !== null && active !== document.body)) {
 			return;
 		}
-		const field = editableField(this.#panel.querySelector(pending.focusSelector));
+		const field = editableField(this.#panel.querySelector(`[data-key="${cssEscape(pending.key)}"]`));
 		if (!field) {
 			return;
 		}
 		field.focus();
-		const start = Math.min(pending.start, field.value.length);
-		const end = Math.min(pending.end, field.value.length);
-		field.setSelectionRange(start, end);
+		field.setSelectionRange(pending.start, pending.end);
 	}
 
 	#clearHost(): void {
@@ -256,9 +224,6 @@ export class SkillFrontMatterController extends Disposable {
 		body.appendChild(this.#addRow(readonly, suggestions));
 		this.#panel.appendChild(body);
 
-		if (this.#focusPendingMapEntry()) {
-			return;
-		}
 		if (this.#addOpen) {
 			const input = this.#panel.querySelector('.ib-skill-properties-add-input');
 			if (input instanceof HTMLInputElement) {
@@ -268,22 +233,6 @@ export class SkillFrontMatterController extends Disposable {
 			return;
 		}
 		this.#restoreFocus();
-	}
-
-	#focusPendingMapEntry(): boolean {
-		const pending = this.#pendingMapFocus;
-		if (!pending) {
-			return false;
-		}
-		this.#pendingMapFocus = undefined;
-		const field = this.#panel.querySelector(
-			`[data-map="${cssEscape(pending.mapKey)}"][data-index="${pending.index}"][data-part="key"]`,
-		);
-		if (!(field instanceof HTMLElement)) {
-			return false;
-		}
-		field.focus();
-		return true;
 	}
 
 	#row(property: SkillProperty, readonly: boolean): HTMLElement {
@@ -310,9 +259,6 @@ export class SkillFrontMatterController extends Disposable {
 				this.#setProperty({ key: property.key, kind: 'boolean', value: select.value === 'true' });
 			});
 			row.appendChild(select);
-			if (!readonly) {
-				row.appendChild(this.#removeButton(`Remove ${property.key}`, () => this.#removeProperty(property.key)));
-			}
 			return row;
 		}
 		if (widget === 'multiline') {
@@ -326,9 +272,6 @@ export class SkillFrontMatterController extends Disposable {
 				this.#setProperty({ key: property.key, kind: 'string', value: textarea.value });
 			});
 			row.appendChild(textarea);
-			if (!readonly) {
-				row.appendChild(this.#removeButton(`Remove ${property.key}`, () => this.#removeProperty(property.key)));
-			}
 			return row;
 		}
 		const input = document.createElement('input');
@@ -344,9 +287,6 @@ export class SkillFrontMatterController extends Disposable {
 			this.#setProperty({ key: property.key, kind: 'string', value: input.value });
 		});
 		row.appendChild(input);
-		if (!readonly) {
-			row.appendChild(this.#removeButton(`Remove ${property.key}`, () => this.#removeProperty(property.key)));
-		}
 		return row;
 	}
 
@@ -356,9 +296,6 @@ export class SkillFrontMatterController extends Disposable {
 		const header = document.createElement('div');
 		header.className = 'ib-skill-properties-row';
 		header.append(span('ib-skill-properties-key', key));
-		if (!readonly) {
-			header.appendChild(this.#removeButton(`Remove ${key}`, () => this.#removeProperty(key)));
-		}
 		block.appendChild(header);
 		entries.forEach((entry, index) => {
 			const row = document.createElement('div');
@@ -367,32 +304,19 @@ export class SkillFrontMatterController extends Disposable {
 			keyInput.type = 'text';
 			keyInput.className = 'ib-skill-properties-map-key';
 			keyInput.disabled = readonly;
-			keyInput.placeholder = 'Key';
 			keyInput.value = entry.key;
-			keyInput.dataset.map = key;
-			keyInput.dataset.index = String(index);
-			keyInput.dataset.part = 'key';
+			keyInput.addEventListener('input', () => {
+				this.#setMapEntry(key, index, { key: keyInput.value, value: entry.value });
+			});
 			const valueInput = document.createElement('input');
 			valueInput.type = 'text';
 			valueInput.className = 'ib-skill-properties-value';
 			valueInput.disabled = readonly;
-			valueInput.placeholder = 'Value';
 			valueInput.value = entry.value;
-			valueInput.dataset.map = key;
-			valueInput.dataset.index = String(index);
-			valueInput.dataset.part = 'value';
-			// Read both fields live. Closing over `entry` puts the other side
-			// back to the value from the last render, so typing a metadata key
-			// wiped the value (and the other way around).
-			const writeEntry = (): void => {
-				this.#setMapEntry(key, index, { key: keyInput.value, value: valueInput.value });
-			};
-			keyInput.addEventListener('input', writeEntry);
-			valueInput.addEventListener('input', writeEntry);
+			valueInput.addEventListener('input', () => {
+				this.#setMapEntry(key, index, { key: entry.key, value: valueInput.value });
+			});
 			row.append(keyInput, valueInput);
-			if (!readonly) {
-				row.appendChild(this.#removeButton('Remove field', () => this.#removeMapEntry(key, index)));
-			}
 			block.appendChild(row);
 		});
 		if (!readonly) {
@@ -415,7 +339,17 @@ export class SkillFrontMatterController extends Disposable {
 			return row;
 		}
 		if (!this.#addOpen) {
-			row.appendChild(this.#addButton());
+			const button = document.createElement('button');
+			button.type = 'button';
+			button.className = 'ib-skill-properties-add-button';
+			button.append(codicon('add'), textNode(' Add property'));
+			button.addEventListener('click', () => {
+				this.#addOpen = true;
+				this.#addPrefix = '';
+				this.#suggestionIndex = 0;
+				this.#render();
+			});
+			row.appendChild(button);
 			return row;
 		}
 
@@ -425,21 +359,10 @@ export class SkillFrontMatterController extends Disposable {
 		input.placeholder = 'Property name';
 		input.value = this.#addPrefix;
 		input.setAttribute('aria-autocomplete', 'list');
-		input.setAttribute('aria-expanded', 'true');
 		input.addEventListener('input', () => {
 			this.#addPrefix = input.value;
 			this.#suggestionIndex = 0;
 			this.#render();
-		});
-		input.addEventListener('focusout', event => {
-			if (!input.isConnected || !this.#addOpen) {
-				return;
-			}
-			const next = event.relatedTarget;
-			if (next instanceof Node && row.contains(next)) {
-				return;
-			}
-			this.#dismissAdd();
 		});
 		row.appendChild(input);
 
@@ -503,7 +426,9 @@ export class SkillFrontMatterController extends Disposable {
 		}
 		if (event.key === 'Escape') {
 			event.preventDefault();
-			this.#dismissAdd();
+			this.#addOpen = false;
+			this.#addPrefix = '';
+			this.#render();
 			return;
 		}
 		const options = [ ...this.#suggestions(), this.#customAddKey() ].filter((key): key is string => !!key);
@@ -532,18 +457,9 @@ export class SkillFrontMatterController extends Disposable {
 		this.#addOpen = false;
 		this.#addPrefix = '';
 		this.#suggestionIndex = 0;
-		const property = emptyProperty(key);
-		if (property.kind === 'map') {
-			this.#properties = [ ...this.#properties, { ...property, entries: [ { key: '', value: '' } ] } ];
-			this.#pendingMapFocus = { mapKey: key, index: 0 };
-		} else {
-			this.#properties = [ ...this.#properties, property ];
-		}
+		this.#properties = [ ...this.#properties, emptyProperty(key) ];
 		this.#render();
 		this.#queueWrite();
-		if (property.kind === 'map') {
-			return;
-		}
 		queueMicrotask(() => {
 			const field = this.#panel.querySelector(`[data-key="${cssEscape(key)}"]`);
 			if (field instanceof HTMLElement) {
@@ -558,7 +474,6 @@ export class SkillFrontMatterController extends Disposable {
 	}
 
 	#setMapEntry(mapKey: string, index: number, entry: SkillMapEntry): void {
-		let added = false;
 		this.#properties = this.#properties.map(property => {
 			if (property.key !== mapKey || property.kind !== 'map') {
 				return property;
@@ -566,100 +481,13 @@ export class SkillFrontMatterController extends Disposable {
 			const entries = [ ...property.entries ];
 			if (index >= entries.length) {
 				entries.push(entry);
-				added = true;
 			} else {
 				entries[index] = entry;
 			}
 			return { key: mapKey, kind: 'map', entries };
 		});
 		this.#queueWrite();
-		if (added) {
-			this.#pendingMapFocus = { mapKey, index };
-			this.#render();
-		}
 	}
-
-	#removeProperty(key: string): void {
-		this.#properties = this.#properties.filter(property => property.key !== key);
-		this.#pendingFocus = undefined;
-		this.#render();
-		this.#queueWrite();
-	}
-
-	#removeMapEntry(mapKey: string, index: number): void {
-		this.#properties = this.#properties.map(property => {
-			if (property.key !== mapKey || property.kind !== 'map') {
-				return property;
-			}
-			return { key: mapKey, kind: 'map', entries: property.entries.filter((_, entryIndex) => entryIndex !== index) };
-		});
-		this.#render();
-		this.#queueWrite();
-	}
-
-	#removeButton(label: string, onClick: () => void): HTMLButtonElement {
-		const button = document.createElement('button');
-		button.type = 'button';
-		button.className = 'ib-skill-properties-remove';
-		button.title = label;
-		button.setAttribute('aria-label', label);
-		button.append(codicon('close'));
-		button.addEventListener('click', event => {
-			event.preventDefault();
-			event.stopPropagation();
-			onClick();
-		});
-		return button;
-	}
-
-	#addButton(): HTMLButtonElement {
-		const button = document.createElement('button');
-		button.type = 'button';
-		button.className = 'ib-skill-properties-add-button';
-		button.append(codicon('add'), textNode(' Add property'));
-		button.addEventListener('click', () => {
-			this.#addOpen = true;
-			this.#addPrefix = '';
-			this.#suggestionIndex = 0;
-			this.#render();
-		});
-		return button;
-	}
-
-	/**
-	 * Close the add-property list without rebuilding the rest of the card, so
-	 * the click that dismissed it still lands on the row or field under it.
-	 */
-	#dismissAdd(): void {
-		if (!this.#addOpen) {
-			return;
-		}
-		this.#addOpen = false;
-		this.#addPrefix = '';
-		this.#suggestionIndex = 0;
-		const add = this.#panel.querySelector('.ib-skill-properties-add');
-		if (add instanceof HTMLElement) {
-			add.replaceChildren(this.#addButton());
-		}
-	}
-
-	readonly #onPanelPointerDown = (event: PointerEvent): void => {
-		if (!this.#addOpen) {
-			return;
-		}
-		const add = this.#panel.querySelector('.ib-skill-properties-add');
-		if (event.target instanceof Node && add?.contains(event.target)) {
-			return;
-		}
-		this.#dismissAdd();
-	};
-
-	readonly #onHostPointerDown = (): void => {
-		// Clicks inside the card never reach the host. A click outside is the
-		// user leaving the field, so do not put the caret back after a write.
-		this.#pendingFocus = undefined;
-		this.#dismissAdd();
-	};
 
 	/**
 	 * Coalesce a burst of keystrokes into one document edit. A timer, not
@@ -667,20 +495,7 @@ export class SkillFrontMatterController extends Disposable {
 	 * still has to reach the document.
 	 */
 	#queueWrite(): void {
-		if (this.#model.readonlyMode.get()) {
-			return;
-		}
-		// Writing now rebuilds the front matter node and Chrome drops focus
-		// after the first character. Keep the edit until the field blurs.
-		if (this.#fieldFocused()) {
-			this.#deferredWrite = true;
-			if (this.#writeTimer !== undefined) {
-				clearTimeout(this.#writeTimer);
-				this.#writeTimer = undefined;
-			}
-			return;
-		}
-		if (this.#writeTimer !== undefined) {
+		if (this.#writeTimer !== undefined || this.#model.readonlyMode.get()) {
 			return;
 		}
 		this.#writeTimer = setTimeout(() => {
@@ -689,33 +504,16 @@ export class SkillFrontMatterController extends Disposable {
 		}, 0);
 	}
 
-	#fieldFocused(): boolean {
-		return editableField(document.activeElement) !== undefined && this.#panel.contains(document.activeElement);
-	}
-
 	#flushWrite(): void {
-		const pending = this.#deferredWrite || this.#writeTimer !== undefined;
-		this.#deferredWrite = false;
-		if (this.#writeTimer !== undefined) {
-			clearTimeout(this.#writeTimer);
-			this.#writeTimer = undefined;
+		if (this.#writeTimer === undefined) {
+			return;
 		}
-		if (pending) {
-			this.#write();
-		}
+		clearTimeout(this.#writeTimer);
+		this.#writeTimer = undefined;
+		this.#write();
 	}
 
 	#write(): void {
-		this.#writing = true;
-		try {
-			this.#writeNow();
-		} finally {
-			this.#writing = false;
-		}
-		this.#restoreFocus();
-	}
-
-	#writeNow(): void {
 		const yaml = serializeSkillFrontMatter(this.#properties);
 		const doc = this.#model.document.get();
 		const block = doc.blocks.find((node): node is FrontMatterAstNode => node instanceof FrontMatterAstNode);
@@ -751,31 +549,8 @@ export class SkillFrontMatterController extends Disposable {
 	}
 }
 
-interface PendingFieldFocus {
-	readonly focusSelector: string;
-	readonly start: number;
-	readonly end: number;
-}
-
 function editableField(target: EventTarget | null): HTMLInputElement | HTMLTextAreaElement | undefined {
 	return target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement ? target : undefined;
-}
-
-function pendingFieldFocus(field: HTMLInputElement | HTMLTextAreaElement): PendingFieldFocus | undefined {
-	const start = field.selectionStart ?? 0;
-	const end = field.selectionEnd ?? 0;
-	if (field.dataset.key) {
-		return { focusSelector: `[data-key="${cssEscape(field.dataset.key)}"]`, start, end };
-	}
-	const part = field.dataset.part;
-	if (!field.dataset.map || field.dataset.index === undefined || (part !== 'key' && part !== 'value')) {
-		return undefined;
-	}
-	return {
-		focusSelector: `[data-map="${cssEscape(field.dataset.map)}"][data-index="${field.dataset.index}"][data-part="${part}"]`,
-		start,
-		end,
-	};
 }
 
 function frontMatterDom(measurements: readonly BlockMeasurement[], block: BlockAstNode): HTMLElement | undefined {

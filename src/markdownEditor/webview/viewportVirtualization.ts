@@ -74,8 +74,6 @@ interface DocumentViewDataLike {
 let viewport: ViewportBox = { scrollTop: 0, height: DEFAULT_VIEWPORT_HEIGHT_PX };
 let editorView: EditorView | undefined;
 let heightByAstId = new Map<number, number>();
-let pinnedMountAstIds = new Set<number>();
-let suspendViewportRefresh = false;
 let lastRangeKey = '';
 let lastChildCount = 0;
 let lastTops: number[] = [];
@@ -149,19 +147,11 @@ export function viewportChildRange(
 	return { start, end };
 }
 
-export function setPinnedMountAstIds(ids: readonly number[]): void {
-	pinnedMountAstIds = new Set(ids);
-}
-
-export function setSuspendViewportRefresh(suspend: boolean): void {
-	suspendViewportRefresh = suspend;
-}
-
 export function extraMountIndices(children: readonly MountChild[]): number[] {
 	const extra: number[] = [];
 	for (let i = 0; i < children.length; i++) {
 		const child = children[i];
-		if (child.isActive || child.kind === 'pendingParagraph' || pinnedMountAstIds.has(child.view.ast.id)) {
+		if (child.isActive || child.kind === 'pendingParagraph') {
 			extra.push(i);
 		}
 	}
@@ -399,7 +389,7 @@ export function bindViewportVirtualization(view: EditorView, host: HTMLElement):
 		setViewportBox(next);
 		const scrolled = Math.abs(previous.scrollTop - next.scrollTop) > 8
 			|| Math.abs(previous.height - next.height) > 8;
-		if (!suspendViewportRefresh && scrolled && mountWindowChanged()) {
+		if (scrolled && mountWindowChanged()) {
 			view.refreshEmbeddedCodeEditors();
 		}
 	};

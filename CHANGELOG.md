@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+-   Fix: Markdown Editor nested list gutter indent shows `>|` (not `·`) for active items, with readable glyph color and spacing
+-   Fix: Markdown Editor paints tab characters as `>|` in the active block (not only when selected or at end-of-line)
+-   Fix: Markdown Editor blockquote blank lines keep their `>` on the next line instead of inline after the quote text
+-   Fix: Markdown Editor heading click lands at the end of the heading text, and empty-line `↵` icons stay out of the selection
+-   Fix: Markdown Editor caret on a block's trailing `↵` keeps that block active
+-   Fix: Markdown Editor empty-line `↵` icons stay on the preceding line and are gray in the preview
+-   Fix: Markdown Editor preview shows the same paragraph-ending `↵` as editing, and a hard break stays dots only
+-   Fix: Markdown Editor Arrow Left and Arrow Right cross a newline `↵` in one press
 -   Change: Markdown Editor dependencies and webview build live in `src/markdownEditor/package.json` (`@ib-utilities/markdown-editor` workspace)
 -   Change: Markdown Editor uses the vendored `packages/markdown-editor` source only; drop the npm `@vscode/markdown-editor` dependency
 

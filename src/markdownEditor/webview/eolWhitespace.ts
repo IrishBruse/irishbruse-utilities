@@ -259,9 +259,14 @@ function clearGlueWhitespaceOverlays(glue: HTMLElement, mode?: 'eol' | 'sel'): v
 	}
 }
 
+function isListItemIndentGlue(glue: HTMLElement): boolean {
+	return glue.classList.contains('md-glue-indent') && glue.closest('.md-list-item-active') !== null;
+}
+
 function paintGlueWhitespaceOverlays(glue: HTMLElement, text: string, mode: 'eol' | 'sel'): void {
 	clearGlueWhitespaceOverlays(glue, mode);
 	const modeClass = mode === 'eol' ? 'ib-md-glue-ws-eol' : 'ib-md-glue-ws-sel';
+	const tabGlyph = isListItemIndentGlue(glue);
 	for (let i = 0; i < text.length; i++) {
 		const ch = text[i];
 		if (ch !== ' ' && ch !== '\t' && ch !== '\u00a0') {
@@ -270,7 +275,7 @@ function paintGlueWhitespaceOverlays(glue: HTMLElement, text: string, mode: 'eol
 		const overlay = document.createElement('span');
 		overlay.className = `${GLUE_WS_OVERLAY_CLASS} ${modeClass}`;
 		overlay.setAttribute('aria-hidden', 'true');
-		overlay.dataset.ibGlueWs = ch === '\t' ? 'tab' : 'space';
+		overlay.dataset.ibGlueWs = tabGlyph || ch === '\t' ? 'tab' : 'space';
 		overlay.style.left = `${i}ch`;
 		glue.appendChild(overlay);
 	}
@@ -278,8 +283,13 @@ function paintGlueWhitespaceOverlays(glue: HTMLElement, text: string, mode: 'eol
 
 function applyGlueWhitespaceDisplay(glue: HTMLElement, text: string, mode: 'eol' | 'sel'): void {
 	const attr = mode === 'eol' ? EOL_DOTS_ATTR : SEL_DOTS_ATTR;
-	const dots = glueWhitespaceDots(text);
 	clearGlueWhitespaceOverlays(glue, mode);
+	if (isListItemIndentGlue(glue)) {
+		glue.removeAttribute(attr);
+		paintGlueWhitespaceOverlays(glue, text, mode);
+		return;
+	}
+	const dots = glueWhitespaceDots(text);
 	if (dots === null) {
 		glue.removeAttribute(attr);
 		paintGlueWhitespaceOverlays(glue, text, mode);

@@ -3,6 +3,7 @@ import { Selection } from '../core/selection.js';
 import { StringEdit, StringReplacement } from '../core/stringEdit.js';
 import { findWordDeleteBoundaryLeft, findWordDeleteBoundaryRight } from '../core/wordUtils.js';
 import { hiddenCursorRanges, nextCursorPosition } from '../model/cursorNavigation.js';
+import { trailingEmptyLineGap } from '../model/emptyLineGap.js';
 import {
 	findNodeOffsetById, GlueAstNode, ListAstNode, ListItemAstNode, UnhandledBlockAstNode,
 	type AstNode, type BlockAstNode, type CodeBlockAstNode, type DocumentAstNode, type FrontMatterAstNode,
@@ -29,10 +30,7 @@ const OPEN_FENCE = /^([ \t]*)(`{3,}|~{3,})/;
 export const deleteLeft: EditCommand = (ctx) => {
 	const sel = ctx.selection;
 	if (!sel.isCollapsed) {
-		return {
-			edit: StringEdit.delete(sel.range),
-			selection: Selection.collapsed(sel.range.start),
-		};
+		return deleteSelectionKeepingEmptyLineIcons(ctx);
 	}
 	if (sel.active === 0) { return undefined; }
 	const deleteRange = new OffsetRange(nextCursorPosition(ctx.document, ctx.markerVisibleBlocks, sel.active, 'left', sel.range), sel.active);
@@ -45,10 +43,7 @@ export const deleteLeft: EditCommand = (ctx) => {
 export const deleteRight: EditCommand = (ctx) => {
 	const sel = ctx.selection;
 	if (!sel.isCollapsed) {
-		return {
-			edit: StringEdit.delete(sel.range),
-			selection: Selection.collapsed(sel.range.start),
-		};
+		return deleteSelectionKeepingEmptyLineIcons(ctx);
 	}
 	if (sel.active >= ctx.text.length) { return undefined; }
 	const deleteRange = new OffsetRange(sel.active, nextCursorPosition(ctx.document, ctx.markerVisibleBlocks, sel.active, 'right', sel.range));
@@ -61,10 +56,7 @@ export const deleteRight: EditCommand = (ctx) => {
 export const deleteWordLeft: EditCommand = (ctx) => {
 	const sel = ctx.selection;
 	if (!sel.isCollapsed) {
-		return {
-			edit: StringEdit.delete(sel.range),
-			selection: Selection.collapsed(sel.range.start),
-		};
+		return deleteSelectionKeepingEmptyLineIcons(ctx);
 	}
 	if (sel.active === 0) { return undefined; }
 	const boundary = findWordDeleteBoundaryLeft(ctx.text, sel.active, ctx.wordNavigationConfig);
@@ -80,10 +72,7 @@ export const deleteWordLeft: EditCommand = (ctx) => {
 export const deleteWordRight: EditCommand = (ctx) => {
 	const sel = ctx.selection;
 	if (!sel.isCollapsed) {
-		return {
-			edit: StringEdit.delete(sel.range),
-			selection: Selection.collapsed(sel.range.start),
-		};
+		return deleteSelectionKeepingEmptyLineIcons(ctx);
 	}
 	if (sel.active >= ctx.text.length) { return undefined; }
 	const boundary = findWordDeleteBoundaryRight(ctx.text, sel.active, ctx.wordNavigationConfig);
@@ -99,10 +88,7 @@ export const deleteWordRight: EditCommand = (ctx) => {
 export const deleteLineLeft: EditCommand = (ctx) => {
 	const sel = ctx.selection;
 	if (!sel.isCollapsed) {
-		return {
-			edit: StringEdit.delete(sel.range),
-			selection: Selection.collapsed(sel.range.start),
-		};
+		return deleteSelectionKeepingEmptyLineIcons(ctx);
 	}
 	if (sel.active === 0) { return undefined; }
 	let start = ctx.text.lastIndexOf('\n', sel.active - 1) + 1;
@@ -119,10 +105,7 @@ export const deleteLineLeft: EditCommand = (ctx) => {
 export const deleteLineRight: EditCommand = (ctx) => {
 	const sel = ctx.selection;
 	if (!sel.isCollapsed) {
-		return {
-			edit: StringEdit.delete(sel.range),
-			selection: Selection.collapsed(sel.range.start),
-		};
+		return deleteSelectionKeepingEmptyLineIcons(ctx);
 	}
 	const newline = ctx.text.indexOf('\n', sel.active);
 	const end = newline === -1
@@ -138,6 +121,45 @@ export const deleteLineRight: EditCommand = (ctx) => {
 		selection: Selection.collapsed(edit.mapOffset(sel.active)),
 	};
 };
+
+/** A selection delete leaves empty-line `↵` icons in place. The caret deletes one by sitting on it. */
+function deleteSelectionKeepingEmptyLineIcons(ctx: CursorCommandContext): { edit: StringEdit; selection: Selection } | undefined {
+	const edit = deleteKeepingEmptyLineGaps(ctx.document, ctx.selection.range);
+	if (edit.isEmpty) { return undefined; }
+	return {
+		edit,
+		selection: Selection.collapsed(ctx.selection.range.start),
+	};
+}
+
+function deleteKeepingEmptyLineGaps(doc: DocumentAstNode, range: OffsetRange): StringEdit {
+	const gaps: OffsetRange[] = [];
+	const blocks = new Set(doc.blocks);
+	let pos = 0;
+	for (const child of doc.children) {
+		if (blocks.has(child as BlockAstNode)) {
+			const gap = trailingEmptyLineGap(child as BlockAstNode, pos);
+			if (gap && gap.endExclusive > range.start && gap.start < range.endExclusive) {
+				gaps.push(gap);
+			}
+		}
+		pos += child.length;
+	}
+	const replacements: StringReplacement[] = [];
+	let start = range.start;
+	for (const gap of gaps) {
+		if (gap.endExclusive <= start) { continue; }
+		if (gap.start >= range.endExclusive) { break; }
+		if (start < gap.start) {
+			replacements.push(StringReplacement.delete(new OffsetRange(start, Math.min(gap.start, range.endExclusive))));
+		}
+		start = Math.max(start, gap.endExclusive);
+	}
+	if (start < range.endExclusive) {
+		replacements.push(StringReplacement.delete(new OffsetRange(start, range.endExclusive)));
+	}
+	return replacements.length === 0 ? StringEdit.empty : new StringEdit(replacements);
+}
 
 function deleteVisibleRange(ctx: CursorCommandContext, range: OffsetRange): StringEdit {
 	const replacements: StringReplacement[] = [];

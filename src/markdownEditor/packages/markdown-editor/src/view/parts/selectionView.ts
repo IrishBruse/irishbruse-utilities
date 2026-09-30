@@ -3,7 +3,7 @@ import { Rect2D } from '../../core/geometry.js';
 import { OffsetRange } from '../../core/offsetRange.js';
 import type { Selection } from '../../core/selection.js';
 import type { BlockAstNode } from '../../parser/ast.js';
-import type { VisualLine, VisualLineMap } from '../visualLineMap.js';
+import type { VisualLine, VisualLineMap, VisualRun } from '../visualLineMap.js';
 
 /**
  * One mounted block, as far as selection painting is concerned. The view
@@ -181,6 +181,18 @@ export function computeRangeRects(
             endX = line.rect.right + (breakSelected && hardBreak ? line.rect.height * NEWLINE_SELECTION_WIDTH_RATIO : 0);
         }
 
+        // Empty-line `↵` icons are not part of a selection. Clip the band so it
+        // stops at the text and starts again after the icons.
+        for (const run of line.runs) {
+            if (!_isEmptyLineIconRun(run)) { continue; }
+            if (selRange.endExclusive <= run.sourceStart || selRange.start >= run.sourceEndExclusive) { continue; }
+            if (selRange.start <= run.sourceStart) {
+                endX = Math.min(endX, run.rect.left);
+            } else {
+                startX = Math.max(startX, run.rect.right);
+            }
+        }
+
         // A block that scrolls horizontally (code / math / unhandled) clips its
         // content to its own viewport, but the selection layer is one overlay
         // spanning the whole editor and is not clipped — so a rect for a wide
@@ -193,8 +205,15 @@ export function computeRangeRects(
             endX = Math.min(endX, clip.right);
         }
 
-        rects.push(toRect(startX, line.rect.top, endX, line.rect.bottom));
-        lineRects.push({ left: startX, right: endX, top: line.rect.top, bottom: line.rect.top + line.rect.height });
+        if (endX > startX) {
+            rects.push(toRect(startX, line.rect.top, endX, line.rect.bottom));
+        }
+        lineRects.push({
+            left: Math.min(startX, endX),
+            right: Math.max(startX, endX),
+            top: line.rect.top,
+            bottom: line.rect.top + line.rect.height,
+        });
     }
 
     // 2a. Intra-line-pair connectors: between every consecutive pair of
@@ -482,6 +501,16 @@ function _moveFrom(from: { x: number; y: number }, to: { x: number; y: number },
     if (len === 0) { return { x: from.x, y: from.y }; }
     const t = dist / len;
     return { x: from.x + dx * t, y: from.y + dy * t };
+}
+
+function _isEmptyLineIconRun(run: VisualRun): boolean {
+    const source = run.source;
+    if (!source) { return false; }
+    if (source.textNode.data[source.textNodeStart] !== '↵') { return false; }
+    const parent = source.textNode.parentElement;
+    if (!parent?.classList.contains('md-ws-newline-glyph')) { return false; }
+    const glue = parent.parentElement;
+    return !!glue && (glue.classList.contains('md-glue-blockGap') || glue.classList.contains('md-glue-blockQuoteSourceGap'));
 }
 
 function _fmt(n: number): string {

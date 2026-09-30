@@ -833,6 +833,10 @@ pre.md-unhandled-scroll.md-code-block {
 	white-space: pre;
 }
 
+.md-ws-tab {
+	color: transparent;
+}
+
 /*
  * A decorated text leaf needs no special whitespace handling of its own: its
  * non-obvious whitespace is kept from collapsing by the `white-space: pre` on
@@ -842,19 +846,62 @@ pre.md-unhandled-scroll.md-code-block {
 .md-ws-space::before,
 .md-ws-tab::before {
 	position: absolute;
-	left: 0;
-	right: 0;
-	text-align: center;
-	color: #b0b0b0;
+	top: 0;
+	bottom: 0;
 	pointer-events: none;
 }
 
 .md-ws-space::before {
+	left: 0;
+	right: 0;
+	text-align: center;
+	color: #b0b0b0;
 	content: '·';
 }
 
 .md-ws-tab::before {
-	content: '⇥';
+	/*
+	 * VS Code-style tab mark at the leading edge of the tab stop (U+21E5 ⇥
+	 * is missing from many fonts). Literal text stays visible without masks.
+	 */
+	left: 0;
+	right: auto;
+	width: auto;
+	display: flex;
+	align-items: center;
+	content: '>|';
+	color: #b0b0b0;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 1.05em;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	z-index: 1;
+	line-height: 1;
+}
+
+/*
+ * Active list item: indent glue on the line uses >| (not ·) per source column.
+ */
+.md-list-item-active .md-glue-indent .md-ws-space,
+.md-list-item-active .md-glue-indent .md-ws-tab {
+	color: transparent;
+}
+
+.md-list-item-active .md-glue-indent .md-ws-space::before,
+.md-list-item-active .md-glue-indent .md-ws-tab::before {
+	content: '>|';
+	left: 0;
+	right: auto;
+	width: auto;
+	display: flex;
+	align-items: center;
+	color: #b0b0b0;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+	font-size: 1.05em;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	line-height: 1;
+	z-index: 1;
 }
 
 .md-ws-newline::before {

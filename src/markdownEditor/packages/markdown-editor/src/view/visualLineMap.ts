@@ -115,10 +115,29 @@ export class VisualLineMap {
 		return line !== undefined && this._lineEndsAtWideNewlineGlyph(line, offset);
 	}
 
+	/**
+	 * A wide `↵` whose upstream and downstream lines differ — the caret can
+	 * sit on the glyph's right edge (upstream) or the next line (downstream).
+	 */
+	isWideNewlineGlyphLineBoundary(offset: SourceOffset): boolean {
+		if (!this.endsAtWideNewlineGlyph(offset)) { return false; }
+		return this.lineIndexOfOffset(offset, 'upstream') !== this.lineIndexOfOffset(offset, 'downstream');
+	}
+
+	/** Pixel x just to the right of a visible `↵` ending at `offset`. */
+	xAfterWideNewlineGlyph(offset: SourceOffset): number | undefined {
+		for (const line of this.sourceLines) {
+			const edge = line.xAfterWideNewlineGlyph(offset);
+			if (edge !== undefined) { return edge; }
+		}
+		return undefined;
+	}
+
 	private _lineEndsAtWideNewlineGlyph(line: VisualLine, offset: SourceOffset): boolean {
 		if (line.virtualCursorLine) { return false; }
 		for (const run of line.runs) {
 			if (run.sourceEndExclusive !== offset || run.rect.width <= 0.5 || !run.source) { continue; }
+			if (_newlineGlyphParentBorderWidth(run) <= 0.5) { continue; }
 			const index = run.source.textNodeStart + run.sourceLength - 1;
 			if (run.source.textNode.data[index] === '↵') { return true; }
 		}
@@ -299,7 +318,23 @@ export class VisualLine {
 	 *    closest run starting at/after it. A hidden marker collapses to zero
 	 *    width, so both edges coincide at the seam.
 	 */
+	/** Right edge of a visible `↵` that ends at `offset`, if this line has one. */
+	xAfterWideNewlineGlyph(offset: SourceOffset): number | undefined {
+		let right: number | undefined;
+		for (const run of this.runs) {
+			if (run.sourceEndExclusive !== offset || run.rect.width <= 0.5 || !run.source) { continue; }
+			if (_newlineGlyphParentBorderWidth(run) <= 0.5) { continue; }
+			const index = run.source.textNodeStart + run.sourceLength - 1;
+			if (run.source.textNode.data[index] !== '↵') { continue; }
+			const edge = run.xAtOffset(offset);
+			if (right === undefined || edge > right) { right = edge; }
+		}
+		return right;
+	}
+
 	xAtOffset(offset: SourceOffset): number {
+		const glyphRight = this.xAfterWideNewlineGlyph(offset);
+		if (glyphRight !== undefined) { return glyphRight; }
 		for (const run of this.runs) {
 			if (run.isVisualLineAnchor && run.sourceStart === offset) { return run.rect.left; }
 		}
@@ -527,7 +562,11 @@ function _measure(
 			range.selectNodeContents(textNode);
 			const clientRects = range.getClientRects();
 			if (clientRects.length === 0) { return; }
-			const rects = _mergeSameLineRects(Array.from(clientRects, rect => transform.toLocalRect(rect)));
+			const rects = _clipTextLeafRectsToParent(
+				textNode,
+				_mergeSameLineRects(Array.from(clientRects, rect => transform.toLocalRect(rect))),
+				transform,
+			);
 
 			const lineBoxHeight = _lineBoxHeight(textNode.parentElement);
 			if (leaf.sourceLength === 0) {
@@ -643,6 +682,47 @@ function _appendRenderedVideoRuns(
  * one rectangle per line; treating each fragment as a line produces empty
  * source runs whose geometry belongs to the visible text.
  */
+function _newlineGlyphParentBorderWidth(run: VisualRun): number {
+	const parent = run.source?.textNode.parentElement;
+	if (!parent) { return Infinity; }
+	return run.source!.coordinateSpace.capture().toLocalRect(parent.getBoundingClientRect()).width;
+}
+
+/**
+ * `overflow: hidden` with zero layout width still yields wide text client
+ * rects for `↵`; clip to the parent box so structural block-break glyphs
+ * stay zero-width in the line map.
+ */
+function _clipTextLeafRectsToParent(
+	textNode: Text,
+	rects: readonly Rect2D[],
+	transform: EditorCoordinateTransform,
+): Rect2D[] {
+	const parent = textNode.parentElement;
+	if (!parent || rects.length === 0) { return [...rects]; }
+	const parentRect = transform.toLocalRect(parent.getBoundingClientRect());
+	const cs = getComputedStyle(parent);
+	const overflowHidden = cs.overflow === 'hidden' || cs.overflowX === 'hidden';
+	if (!overflowHidden && parentRect.width > 0.5) { return [...rects]; }
+
+	const clipped = rects.map(rect => _intersectRects(rect, parentRect));
+	const hasPaint = clipped.some(rect => rect.width > 0.5);
+	if (hasPaint) { return clipped; }
+	const anchor = clipped[0] ?? rects[0];
+	return [Rect2D.fromPointSize(parentRect.left, anchor.y, 0, anchor.height)];
+}
+
+function _intersectRects(a: Rect2D, b: Rect2D): Rect2D {
+	const left = Math.max(a.left, b.left);
+	const right = Math.min(a.right, b.right);
+	const top = Math.max(a.top, b.top);
+	const bottom = Math.min(a.bottom, b.bottom);
+	if (right <= left + 0.5 || bottom <= top) {
+		return Rect2D.fromPointSize(b.left, a.top, 0, a.height);
+	}
+	return Rect2D.fromPointPoint(left, top, right, bottom);
+}
+
 function _mergeSameLineRects(rects: readonly Rect2D[]): Rect2D[] {
 	const merged: Rect2D[] = [];
 	for (const rect of rects) {

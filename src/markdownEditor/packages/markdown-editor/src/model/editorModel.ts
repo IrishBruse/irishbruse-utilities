@@ -207,7 +207,8 @@ export class EditorModel {
 		const doc = reader.readObservable(this.document);
 		const cursor = reader.readObservable(this.cursorOffset);
 		if (cursor === undefined) { return undefined; }
-		return findBlockAtOffset(doc, cursor);
+		const affinity = reader.readObservable(this.cursorAffinity);
+		return findBlockAtOffset(doc, cursor, affinity?.offset === cursor);
 	});
 
 	/**
@@ -235,6 +236,11 @@ export class EditorModel {
 		const doc = reader.readObservable(this.document);
 		const sel = reader.readObservable(this.selection);
 		if (sel === undefined) { return new Set<BlockAstNode>(); }
+		if (sel.isCollapsed) {
+			const affinity = reader.readObservable(this.cursorAffinity);
+			const block = findBlockAtOffset(doc, sel.active, affinity?.offset === sel.active);
+			return block ? new Set<BlockAstNode>([block]) : new Set<BlockAstNode>();
+		}
 		return new Set<BlockAstNode>(blocksIntersecting(doc, sel.range.start, sel.range.endExclusive));
 	});
 
@@ -486,13 +492,22 @@ function clampOffset(offset: number, textLength: number): number {
 	return Math.max(0, Math.min(offset, textLength));
 }
 
-export function findBlockAtOffset(doc: DocumentAstNode, offset: SourceOffset): BlockAstNode | undefined {
+export function findBlockAtOffset(
+	doc: DocumentAstNode,
+	offset: SourceOffset,
+	preferBlockEndingAtOffset = false,
+): BlockAstNode | undefined {
 	const blocks = new Set(doc.blocks);
 	let pos = 0;
 	let lastBlock: BlockAstNode | undefined;
 	for (const child of doc.children) {
 		const end = pos + child.length;
 		if (blocks.has(child as BlockAstNode)) {
+			// Upstream caret on a trailing `↵`: the offset is also the next
+			// block's start, but the caret is still on this block's line.
+			if (preferBlockEndingAtOffset && end === offset) {
+				return child as BlockAstNode;
+			}
 			if (pos <= offset && offset < end) {
 				return child as BlockAstNode;
 			}

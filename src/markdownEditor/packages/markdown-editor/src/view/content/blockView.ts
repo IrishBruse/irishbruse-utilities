@@ -574,6 +574,12 @@ interface WhitespaceContext {
 	readonly decorateNewline: boolean;
 	readonly newlineGlyph?: boolean;
 	readonly breakGlyphClass?: string;
+	/**
+	 * A blockquote source gap mixes newlines with `>` prefixes. The `↵` stays
+	 * at the end of the line and a `<br>` puts the following `>` on the next
+	 * line, instead of leaving `↵>` inline.
+	 */
+	readonly breakAfterNewlineGlyph?: boolean;
 }
 
 /** A hard break's `<br>` already shows the line break, so its newline gets no `↵`. */
@@ -669,17 +675,41 @@ function _segmentWhitespace(content: string, ctx: WhitespaceContext): Whitespace
  * or glue leaf whose content this is) for identity and carries the length of
  * its own slice — the renderer never fabricates an AST node.
  */
+/**
+ * A blockquote gap like `\n>\n> ` ends with the next block's `>` prefix.
+ * That prefix belongs on the following line, not on its own row.
+ */
+function _trailingQuotePrefixStart(content: string): number {
+	// A blank `>` line, then the next block's prefix: `\n>\n> `.
+	if (!/\n[ \t]*>[ \t]*\n[ \t]*>[ \t]*$/.test(content)) { return -1; }
+	const match = /\n([ \t]*>[ \t]*)$/.exec(content);
+	return match ? content.length - match[1].length : -1;
+}
+
 function _appendDecorated(host: HTMLElement, content: string, ctx: WhitespaceContext, ast: AstNode): ViewNode[] {
 	const children: ViewNode[] = [];
+	const prefixAt = ctx.breakAfterNewlineGlyph ? _trailingQuotePrefixStart(content) : -1;
+	let prefixHost: HTMLElement | undefined;
+	let offset = 0;
 	for (const seg of _segmentWhitespace(content, ctx)) {
+		const inPrefix = prefixAt >= 0 && offset >= prefixAt;
+		const newlineEndsPrefix = prefixAt >= 0 && offset + seg.text.length === prefixAt
+			&& (seg.text === '\n' || seg.text === '\r');
+		offset += seg.text.length;
 		const text = document.createTextNode(seg.display ?? seg.text);
+		const parent = inPrefix
+			? prefixHost ?? (prefixHost = host.appendChild(Object.assign(document.createElement('span'), { className: 'ib-md-quote-line-prefix' })))
+			: host;
 		if (seg.cls) {
 			const span = document.createElement('span');
 			span.className = seg.cls;
 			span.appendChild(text);
-			host.appendChild(span);
+			if (ctx.breakAfterNewlineGlyph && (seg.text === '\n' || seg.text === '\r') && !newlineEndsPrefix) {
+				span.appendChild(document.createElement('br'));
+			}
+			parent.appendChild(span);
 		} else {
-			host.appendChild(text);
+			parent.appendChild(text);
 		}
 		// The DOM may show a glyph (`seg.display`) while the source slice is
 		// `seg.text`; both are length-1, so source ↔ DOM mapping is exact.
@@ -805,7 +835,11 @@ class GlueViewNode extends BlockViewNode<GlueViewData> {
 		// A `blockBreak` additionally paints its first newline as the blue
 		// structural-break glyph (see `breakGlyphClass`).
 		const isBreak = glue.glueKind === 'blockBreak';
-		const isBlockGap = glue.glueKind === 'blockGap' || glue.glueKind === 'blockQuoteSourceGap';
+		const isQuoteGap = glue.glueKind === 'blockQuoteSourceGap';
+		// `\n> ` alone is the next line's marker. Leave it as source text so it
+		// can hang in the gutter. A gap with a blank `>` line still uses glyphs.
+		const quoteContinuation = isQuoteGap && /^\r?\n[ \t]*(?:>[ \t]*)+$/.test(glue.content);
+		const isBlockGap = glue.glueKind === 'blockGap' || isQuoteGap;
 		// A trailing block gap shows its blank-line newlines as `↵` glyphs purely by
 		// virtue of its kind: `_attachBlockGaps` tags glue `blockGap`/`blockBreak`
 		// only when it absorbs a gap as some block's trailing trivia, so the kind
@@ -820,13 +854,17 @@ class GlueViewNode extends BlockViewNode<GlueViewData> {
 			leftBoundary: false,
 			rightBoundary: false,
 			decorateNewline: data.decorateNewline,
-			newlineGlyph: isBlockGap || isBreak,
+			newlineGlyph: (isBlockGap && !quoteContinuation) || isBreak,
 			breakGlyphClass: isBreak ? 'md-ws-blockbreak-glyph' : undefined,
+			breakAfterNewlineGlyph: isQuoteGap && !quoteContinuation,
 		};
-		const decorate = data.visible && _hasDecoratableWhitespace(glue.content, ws);
+		// Trailing `blockGap` and inter-block `blockBreak` glue always get real
+		// newline glyphs (even when hidden). A one-line quote continuation stays
+		// raw source. Other hidden glue stays raw until revealed.
+		const decorate = !quoteContinuation && (data.visible || isBlockGap || isBreak) && _hasDecoratableWhitespace(glue.content, ws);
 		if (decorate) {
 			const span = document.createElement('span');
-			span.className = base;
+			span.className = data.visible ? base : `${base} md-glue-hidden`;
 			const children = _appendDecorated(span, glue.content, ws, glue);
 			return { span, dom: span, children };
 		}

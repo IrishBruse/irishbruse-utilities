@@ -71,3 +71,12 @@ The quick brown fox jumps over the lazy dog.
 ## Empty areas
 
 Click below this paragraph in the padding or empty space at the bottom of the document. The caret should appear and you can type a new block.
+
+## Tab vs space glyphs
+
+Nested list lines in [showcase.md](./showcase.md) use **two spaces** per level; those render as middle dots (`·`).
+
+The sample below uses a **tab** before the nested marker. While the list item is active or the tab is selected, the gutter should show the `>|` tab mark instead of a dot.
+
+- Space parent
+	- Tab child

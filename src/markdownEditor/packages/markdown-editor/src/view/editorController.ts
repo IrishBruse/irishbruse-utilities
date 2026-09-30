@@ -5,6 +5,8 @@ import { StringEdit } from '../core/stringEdit.js';
 import { Selection } from '../core/selection.js';
 import { CursorPosition, type CursorPosition as CursorPositionType } from '../core/cursorPosition.js';
 import { findBlockAtOffset, type EditorModel } from '../model/editorModel.js';
+import { clampOffEmptyLineGap, emptyLineGapCovering, headingTextEndForClick, trailingEmptyLineGap } from '../model/emptyLineGap.js';
+import { nextCursorPosition } from '../model/cursorNavigation.js';
 import type { EditorCommandDefinition } from '../editorCommands.js';
 import { FindController } from '../contrib/find/findController.js';
 import type { BlockAstNode, DocumentAstNode } from '../parser/ast.js';
@@ -26,6 +28,7 @@ import {
 import { selectAll, selectWord, selectBlock } from '../commands/selectionCommands.js';
 import type { CursorCommand, EditCommand, VisualCursorCommand, CursorCommandContext, VisualCursorCommandContext } from '../commands/types.js';
 import type { EditorView } from './editorView.js';
+import type { VisualLineMap } from './visualLineMap.js';
 import { NativeClipboardStrategy, type IClipboardStrategy } from './clipboardStrategy.js';
 import type { IHistoryStrategy } from './historyStrategy.js';
 import {
@@ -309,9 +312,19 @@ export class EditorController extends Disposable {
 
         if (e.shiftKey) {
             const sel = this._model.selection.get() ?? Selection.collapsed(offset);
-            this._setUserSelection(sel.withActive(offset));
+            const active = clampOffEmptyLineGap(this._model.document.get(), sel.anchor, offset);
+            this._setUserSelection(sel.withActive(active));
         } else {
-            this._setUserSelection(Selection.collapsed(offset), glyphAffinity);
+            const textEnd = headingTextEndForClick(
+                this._model.document.get(),
+                offset,
+                hit?.affinity === 'upstream',
+            );
+            if (textEnd !== undefined) {
+                this._setUserSelection(Selection.collapsed(textEnd));
+            } else {
+                this._setUserSelection(Selection.collapsed(offset), glyphAffinity);
+            }
         }
 
         // Capture the pointer so the drag keeps receiving move/up events even
@@ -328,7 +341,8 @@ export class EditorController extends Disposable {
             const sel = this._model.selection.get() ?? Selection.collapsed(offset);
             const moveOffset = this._view.resolveOffsetFromPoint(new Point2D(me.clientX, me.clientY))
                 ?? sel.active;
-            this._setUserSelection(new Selection(sel.anchor, moveOffset));
+            const clamped = clampOffEmptyLineGap(this._model.document.get(), sel.anchor, moveOffset);
+            this._setUserSelection(new Selection(sel.anchor, clamped));
         };
         const onPointerUp = (): void => {
             this._model.isSelecting.set(false, undefined);
@@ -379,8 +393,7 @@ export class EditorController extends Disposable {
         const ctx = this._makeCursorContext();
         const position = command(ctx);
         const glyphAffinity = !extend && direction === 'right' && position.kind === 'source'
-            && this._view.measuredLayout.visualLineMap.get().endsAtWideNewlineGlyph(position.offset)
-            ? { offset: position.offset }
+            ? this._wideNewlineGlyphAffinity(position.offset)
             : undefined;
         this._applyCursorPosition(ctx.selection, position, extend, glyphAffinity);
         this._desiredColumn = undefined;
@@ -460,7 +473,7 @@ export class EditorController extends Disposable {
         if (!selection?.isCollapsed) { return false; }
         const offset = selection.active;
         const map = this._view.measuredLayout.visualLineMap.get();
-        if (!map.endsAtWideNewlineGlyph(offset)) { return false; }
+        if (!map.isWideNewlineGlyphLineBoundary(offset)) { return false; }
         const atGlyphEnd = this._model.cursorAffinity.get()?.offset === offset;
         if (direction === 'right' && atGlyphEnd) {
             this._model.cursorAffinity.set(undefined, undefined);
@@ -471,6 +484,148 @@ export class EditorController extends Disposable {
             this._model.cursorAffinity.set({ offset }, undefined);
             this._view.revealCaretAfterKeyboardNavigation();
             return true;
+        }
+        return false;
+    }
+
+    private _wideNewlineGlyphAffinity(offset: number): { readonly offset: number } | undefined {
+        const map = this._view.measuredLayout.visualLineMap.get();
+        return map.isWideNewlineGlyphLineBoundary(offset) ? { offset } : undefined;
+    }
+
+    private _caretVisual(map: VisualLineMap, position: CursorPositionType): { line: number; x: number } {
+        const line = map.lineIndexOfPosition(position) ?? 0;
+        return { line, x: map.xAtPosition(position) };
+    }
+
+    private _caretVisualAtOffset(
+        map: VisualLineMap,
+        offset: number,
+        affinity?: 'upstream' | 'downstream',
+    ): { line: number; x: number } {
+        return this._caretVisual(map, CursorPosition.source(offset, affinity));
+    }
+
+    private _caretVisualMatches(
+        a: { line: number; x: number },
+        b: { line: number; x: number },
+    ): boolean {
+        return a.line === b.line && Math.abs(a.x - b.x) <= 0.5;
+    }
+
+    private _executeHorizontalCursor(direction: 'left' | 'right', extend: boolean): void {
+        if (!extend && this._nudgeWideNewlineGlyph(direction)) { return; }
+        if (this._tryWideNewlineHorizontalSkip(direction, extend)) { return; }
+        this._executeCursorCommand(
+            extend
+                ? (direction === 'left' ? cursorMoveLeft : cursorMoveRight)
+                : (direction === 'left' ? cursorLeft : cursorRight),
+            extend,
+            direction,
+        );
+    }
+
+    /** Stop on a `↵` whose right edge is not where the caret already sits. */
+    private _rawWideNewlineStop(
+        map: VisualLineMap,
+        offset: number,
+        startVisual: { line: number; x: number },
+    ): boolean {
+        if (!map.endsAtWideNewlineGlyph(offset)) { return false; }
+        const edge = map.xAfterWideNewlineGlyph(offset);
+        return edge !== undefined && Math.abs(edge - startVisual.x) > 0.5;
+    }
+
+    /**
+     * Shift-select skips empty-line `↵` icons. A plain arrow still stops on
+     * one so it can be deleted from the caret.
+     */
+    private _skipEmptyLineGap(offset: number, direction: 'left' | 'right', selection: Selection): boolean {
+        const gap = emptyLineGapCovering(this._model.document.get(), offset);
+        if (!gap) { return false; }
+        const landed = direction === 'right' ? gap.endExclusive : gap.start;
+        this._applyCursorPosition(selection, CursorPosition.source(landed), true);
+        return true;
+    }
+
+    private _landOnWideNewlineGlyph(selection: Selection, offset: number, extend: boolean): void {
+        this._applyCursorPosition(
+            selection,
+            CursorPosition.source(offset),
+            extend,
+            extend ? undefined : { offset },
+        );
+    }
+
+    private _tryWideNewlineHorizontalSkip(direction: 'left' | 'right', extend: boolean): boolean {
+        const selection = this._model.selection.get();
+        if (!selection) { return false; }
+        const map = this._view.measuredLayout.visualLineMap.get();
+        if (map.isEmpty) { return false; }
+        const ctx = this._makeCursorContext();
+        const cursorPosition = ctx.cursorPosition;
+        if (cursorPosition.kind !== 'source') { return false; }
+
+        const startVisual = this._caretVisual(map, cursorPosition);
+        let probe = selection.active;
+
+        if (direction === 'right') {
+            for (let step = 0; step < 4; step++) {
+                // Hidden markers on the next block start at the glyph's end, so
+                // cursor motion would skip that offset. Stop on it anyway.
+                const raw = probe + 1;
+                if (this._rawWideNewlineStop(map, raw, startVisual)) {
+                    if (extend && this._skipEmptyLineGap(raw, 'right', selection)) { return true; }
+                    this._landOnWideNewlineGlyph(selection, raw, extend);
+                    return true;
+                }
+                const next = nextCursorPosition(
+                    ctx.document,
+                    ctx.markerVisibleBlocks,
+                    probe,
+                    'right',
+                    selection.range,
+                );
+                if (next <= probe) { break; }
+                if (map.isWideNewlineGlyphLineBoundary(next)) {
+                    if (extend && this._skipEmptyLineGap(next, 'right', selection)) { return true; }
+                    this._landOnWideNewlineGlyph(selection, next, extend);
+                    return true;
+                }
+                const nextVisual = this._caretVisualAtOffset(map, next);
+                if (!this._caretVisualMatches(nextVisual, startVisual)) { break; }
+                probe = next;
+            }
+            return false;
+        }
+
+        let skippedSameVisual = false;
+        for (let step = 0; step < 4; step++) {
+            const next = nextCursorPosition(
+                ctx.document,
+                ctx.markerVisibleBlocks,
+                probe,
+                'left',
+                selection.range,
+            );
+            if (next >= probe) { break; }
+            if (map.isWideNewlineGlyphLineBoundary(next)) {
+                if (extend && this._skipEmptyLineGap(next, 'left', selection)) { return true; }
+                // Left lands on the next line's start (downstream). Another Left
+                // moves onto the glyph's right edge.
+                this._applyCursorPosition(selection, CursorPosition.source(next), extend, undefined);
+                return true;
+            }
+            const nextVisual = this._caretVisualAtOffset(map, next);
+            if (!this._caretVisualMatches(nextVisual, startVisual)) {
+                if (skippedSameVisual) {
+                    this._applyCursorPosition(selection, CursorPosition.source(next), extend, undefined);
+                    return true;
+                }
+                break;
+            }
+            skippedSameVisual = true;
+            probe = next;
         }
         return false;
     }
@@ -618,14 +773,7 @@ export class EditorController extends Disposable {
                     case 'left':
                     case 'right': {
                         const direction = command === 'left' ? 'left' : 'right';
-                        if (!action.extend && this._nudgeWideNewlineGlyph(direction)) { return; }
-                        this._executeCursorCommand(
-                            action.extend
-                                ? (direction === 'left' ? cursorMoveLeft : cursorMoveRight)
-                                : (direction === 'left' ? cursorLeft : cursorRight),
-                            action.extend,
-                            direction,
-                        );
+                        this._executeHorizontalCursor(direction, action.extend);
                         return;
                     }
                     case 'up': this._executeVisualCursorCommand(cursorUp, action.extend); return;
@@ -830,6 +978,10 @@ function findBlockRangeAt(doc: DocumentAstNode, offset: number): OffsetRange | u
         if (blocks.has(child as BlockAstNode)) {
             const range = OffsetRange.ofStartAndLength(pos, child.length);
             if (range.contains(offset) || range.endExclusive === offset) {
+                const gap = trailingEmptyLineGap(child as BlockAstNode, pos);
+                if (gap && gap.start > range.start) {
+                    return new OffsetRange(range.start, gap.start);
+                }
                 return range;
             }
         }

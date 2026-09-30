@@ -4,7 +4,7 @@
 
 Does: Show the fixture as formatted inline markdown.
 Reach: none
-Activate: role=textbox
+Activate: .view-lines
 From: entry
 
 ## Heading
@@ -37,7 +37,7 @@ From: Rendered document
 
 ## Task
 
-Does: Toggle the task checkbox between open and done.
+Does: Show a task checkbox with no list bullet, and toggle it between open and done.
 Reach: none
 Activate: .inline-md-task
 From: Rendered document
@@ -47,4 +47,11 @@ From: Rendered document
 Does: Reveal the fenced code source when the code text is activated.
 Reach: none
 Activate: text="const value = 1;"
+From: Rendered document
+
+## Table
+
+Does: Reveal the raw pipe source when the table is activated.
+Reach: none
+Activate: .inline-md-table
 From: Rendered document

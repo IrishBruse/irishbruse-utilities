@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseScopes } from "./scopes";
-import type { Scope } from "./types";
+import type { Scope, TextRange } from "./types";
 
 function find(source: string, kind: Scope["kind"]): Scope {
     const scope = parseScopes(source).find((item) => item.kind === kind);
@@ -75,5 +75,22 @@ describe("parseScopes", () => {
         const block = find(fence, "codeBlock");
         expect(block.language).toBe("ts");
         expect(markerText(fence, block)[0]?.startsWith("```")).toBe(true);
+    });
+
+    it("reads a gfm table header and keeps inline code inside a cell", () => {
+        const source = [
+            "| Case | Source hint | Expected |",
+            "| :--- | :--- | :--- |",
+            "| Mid-sentence | `word word` (single space) | No dot between words |",
+            "",
+        ].join("\n");
+        const table = find(source, "table");
+        const cellText = (cell: TextRange): string => source.slice(cell.start, cell.end).trim();
+        expect(table.rows?.[0]?.map(cellText)).toEqual(["Case", "Source hint", "Expected"]);
+        expect(table.rows?.map((row) => row.length)).toEqual([3, 3]);
+        const hint = table.rows?.[1]?.[1];
+        const code = parseScopes(source).find((scope) => scope.kind === "inlineCode");
+        expect(hint && code && code.start >= hint.start && code.end <= hint.end).toBe(true);
+        expect(code && source.slice(code.contentStart, code.contentEnd)).toBe("word word");
     });
 });

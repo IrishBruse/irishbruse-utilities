@@ -1,58 +1,51 @@
 import * as esbuild from "esbuild";
-import { copyFileSync, existsSync, mkdirSync, watch } from "node:fs";
+import { mkdirSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-const repoRoot = join(__dirname, "..", "..");
-const outDir = join(repoRoot, "media", "markdownInline");
-const outFile = join(outDir, "editor.js");
-const cssSource = join(__dirname, "src", "editor.css");
-const cssOut = join(outDir, "editor.css");
-
+const packageDir = dirname(fileURLToPath(import.meta.url));
+const outDir = join(packageDir, "..", "..", "media", "markdownInline");
 const isWatch = process.argv.includes("--watch");
 
 /** @type {import("esbuild").BuildOptions} */
-const config = {
-    entryPoints: [join(__dirname, "src", "webview.ts")],
+const editorConfig = {
+    absWorkingDir: packageDir,
+    entryPoints: { editor: "src/webview.ts" },
     bundle: true,
     minify: true,
     format: "esm",
     platform: "browser",
     target: ["es2024"],
-    outfile: outFile,
+    outdir: outDir,
+    loader: {
+        ".ttf": "file",
+        ".woff": "file",
+        ".woff2": "file",
+    },
     logLevel: "info",
 };
 
-function copyEditorCss() {
-    mkdirSync(outDir, { recursive: true });
-    copyFileSync(cssSource, cssOut);
-}
-
-/** @type {import("esbuild").Plugin} */
-const copyCssPlugin = {
-    name: "copy-editor-css",
-    setup(build) {
-        build.onEnd((result) => {
-            if (result.errors.length === 0) {
-                copyEditorCss();
-            }
-        });
-    },
+/** @type {import("esbuild").BuildOptions} */
+const workerConfig = {
+    absWorkingDir: packageDir,
+    entryPoints: ["monaco-editor/esm/vs/editor/editor.worker.js"],
+    bundle: true,
+    minify: true,
+    format: "iife",
+    platform: "browser",
+    target: ["es2024"],
+    outfile: join(outDir, "editor.worker.js"),
+    logLevel: "info",
 };
 
+mkdirSync(outDir, { recursive: true });
+
 if (isWatch) {
-    const ctx = await esbuild.context({
-        ...config,
-        plugins: [copyCssPlugin],
-    });
-    await ctx.watch();
-    if (existsSync(cssSource)) {
-        watch(cssSource, () => {
-            copyEditorCss();
-        });
-    }
+    const editor = await esbuild.context(editorConfig);
+    const worker = await esbuild.context(workerConfig);
+    await editor.watch();
+    await worker.watch();
 } else {
-    await esbuild.build(config);
-    copyEditorCss();
+    await esbuild.build(editorConfig);
+    await esbuild.build(workerConfig);
 }

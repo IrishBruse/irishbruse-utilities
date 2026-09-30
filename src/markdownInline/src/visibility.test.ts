@@ -85,4 +85,22 @@ describe("markerVisibility", () => {
         expect(markerVisibility(image, image.markers[0]!, cursor(4, 0, 20))).toBe("raw");
         expect(markerVisibility(image, image.markers[0]!, cursor(18, 0, 20))).toBe("hidden");
     });
+
+    it("shows a table as source only while the cursor is inside it", () => {
+        const table: Scope = {
+            kind: "table",
+            start: 0,
+            end: 40,
+            contentStart: 2,
+            contentEnd: 6,
+            markers: [{ start: 0, end: 40 }],
+            rows: [[{ start: 2, end: 6 }]],
+        };
+        expect(markerVisibility(table, table.markers[0]!, cursor(0, 0, 20))).toBe("raw");
+        expect(markerVisibility(table, table.markers[0]!, cursor(4, 0, 20))).toBe("raw");
+        expect(showsFormattedContent(table, cursor(4, 0, 20))).toBe(false);
+        expect(markerVisibility(table, table.markers[0]!, cursor(40, 40, 60))).toBe("hidden");
+        expect(markerVisibility(table, table.markers[0]!, cursor(50, 40, 60))).toBe("hidden");
+        expect(showsFormattedContent(table, cursor(50, 40, 60))).toBe(false);
+    });
 });

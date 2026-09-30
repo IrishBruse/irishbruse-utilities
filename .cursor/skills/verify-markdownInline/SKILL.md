@@ -24,3 +24,5 @@ The app is the Inline Markdown playground at `http://127.0.0.1:5175/`.
 
 A one-line crop, "formatted markdown that starts with Hello", resolves to Rendered document.
 The command is `npm run verify-markdownInline -- open "Rendered document"`.
+A task checkbox, including one with a list bullet beside `- [ ]`, resolves to Task.
+The command is `npm run verify-markdownInline -- open "Task"`.

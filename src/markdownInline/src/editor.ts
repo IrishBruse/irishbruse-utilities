@@ -1,7 +1,6 @@
-import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
-import { EditorState, type Extension } from "@codemirror/state";
-import { EditorView, drawSelection, highlightActiveLine, keymap, type KeyBinding } from "@codemirror/view";
-import { documentUrlFacet, inlineDecorations } from "./decorations";
+import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import { InlinePresentation } from "./decorations";
+import { installMonaco, readEditorFontSize } from "./monacoSetup";
 import { parseScopes } from "./scopes";
 import type { Scope } from "./types";
 
@@ -25,40 +24,25 @@ export interface InlineEditorHandle {
     setDocument(text: string): void;
     getDocument(): string;
     focus(): void;
-    readonly view: EditorView;
+    setCursor(offset: number): void;
 }
 
-function historyBindings(onHistory: ((command: "undo" | "redo") => void) | undefined): readonly KeyBinding[] {
-    if (!onHistory) {
-        return historyKeymap;
-    }
-    const report = onHistory;
-    return [
-        {
-            key: "Mod-z",
-            preventDefault: true,
-            run: () => {
-                report("undo");
-                return true;
-            },
-        },
-        {
-            key: "Mod-y",
-            preventDefault: true,
-            run: () => {
-                report("redo");
-                return true;
-            },
-        },
-        {
-            key: "Mod-Shift-z",
-            preventDefault: true,
-            run: () => {
-                report("redo");
-                return true;
-            },
-        },
-    ];
+function historyBindings(
+    editor: monaco.editor.IStandaloneCodeEditor,
+    onHistory: (command: "undo" | "redo") => void,
+): void {
+    const undo = monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyZ;
+    const redo = monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyY;
+    const redoShift = monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyZ;
+    editor.addCommand(undo, () => {
+        onHistory("undo");
+    });
+    editor.addCommand(redo, () => {
+        onHistory("redo");
+    });
+    editor.addCommand(redoShift, () => {
+        onHistory("redo");
+    });
 }
 
 function toggledTaskMarker(source: string): string {
@@ -67,24 +51,6 @@ function toggledTaskMarker(source: string): string {
         return `${source.slice(0, index)} ${source.slice(index + 1)}`;
     }
     return source.replace("[ ]", "[x]");
-}
-
-function taskInput(target: EventTarget | null): HTMLInputElement | undefined {
-    if (target instanceof HTMLInputElement && target.classList.contains("inline-md-task")) {
-        return target;
-    }
-    return undefined;
-}
-
-function imageElement(target: EventTarget | null): HTMLElement | undefined {
-    if (!(target instanceof Element)) {
-        return undefined;
-    }
-    const found = target.closest(".inline-md-image, .inline-md-image-fallback");
-    if (found instanceof HTMLElement) {
-        return found;
-    }
-    return undefined;
 }
 
 function linkHref(source: string, position: number): string | undefined {
@@ -103,110 +69,170 @@ function linkHref(source: string, position: number): string | undefined {
     return found?.url;
 }
 
-function finiteOffset(value: string | undefined): number | undefined {
-    if (value === undefined) {
-        return undefined;
+function endOfLine(text: string): monaco.editor.EndOfLineSequence {
+    if (text.includes("\r\n")) {
+        return monaco.editor.EndOfLineSequence.CRLF;
     }
-    const offset = Number(value);
-    if (!Number.isFinite(offset)) {
-        return undefined;
-    }
-    return offset;
+    return monaco.editor.EndOfLineSequence.LF;
 }
 
 export function mountInlineEditor(parent: HTMLElement, options: MountInlineEditorOptions): InlineEditorHandle {
+    installMonaco();
     const hadRoot = parent.classList.contains("inline-md-root");
     parent.classList.add("inline-md-root");
+    const column = document.createElement("div");
+    column.className = "inline-md-column";
+    parent.append(column);
 
-    const onHistory = options.onHistory;
-    const extensions: Extension[] = [
-        EditorView.lineWrapping,
-        drawSelection(),
-        highlightActiveLine(),
-        EditorState.readOnly.of(options.readOnly === true),
-        documentUrlFacet.of(options.documentUrl),
-        inlineDecorations,
-        keymap.of([
-            ...historyBindings(onHistory),
-            ...defaultKeymap,
-            indentWithTab,
-        ]),
-    ];
-    if (!onHistory) {
-        extensions.push(history());
-    }
+    const model = monaco.editor.createModel(options.text, "markdown");
+    model.setEOL(endOfLine(options.text));
+    const editor = monaco.editor.create(column, {
+        model,
+        theme: "inline-markdown",
+        readOnly: options.readOnly === true,
+        automaticLayout: true,
+        wordWrap: "on",
+        wrappingStrategy: "advanced",
+        lineNumbers: "on",
+        glyphMargin: false,
+        folding: false,
+        lineDecorationsWidth: 16,
+        lineNumbersMinChars: 3,
+        minimap: { enabled: false },
+        scrollBeyondLastLine: false,
+        overviewRulerLanes: 0,
+        hideCursorInOverviewRuler: true,
+        overviewRulerBorder: false,
+        scrollbar: { vertical: "auto", horizontal: "hidden", useShadows: false },
+        renderLineHighlight: "line",
+        fontFamily: getComputedStyle(document.documentElement).getPropertyValue("--vscode-editor-font-family").trim()
+            || "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+        fontSize: readEditorFontSize(),
+        lineHeight: 0,
+        padding: { top: 24, bottom: 48 },
+        occurrencesHighlight: "off",
+        selectionHighlight: false,
+        renderWhitespace: "none",
+        guides: { indentation: false, bracketPairs: false },
+        stickyScroll: { enabled: false },
+        quickSuggestions: false,
+        suggestOnTriggerCharacters: false,
+        wordBasedSuggestions: "off",
+        parameterHints: { enabled: false },
+        hover: { enabled: false },
+        links: false,
+        contextmenu: false,
+        unicodeHighlight: { ambiguousCharacters: false, invisibleCharacters: false },
+        bracketPairColorization: { enabled: false },
+        matchBrackets: "never",
+        renderValidationDecorations: "off",
+        fixedOverflowWidgets: false,
+    });
+    model.updateOptions({ bracketColorizationOptions: { enabled: false } });
 
     let applyingHostUpdate = false;
-    const view = new EditorView({
-        parent,
-        state: EditorState.create({
-            doc: options.text,
-            extensions: [
-                ...extensions,
-                EditorView.updateListener.of((update) => {
-                    if (!update.docChanged || applyingHostUpdate || !options.onEdit) {
-                        return;
-                    }
-                    const edits: InlineEdit[] = [];
-                    update.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
-                        edits.push({ start: fromA, endExclusive: toA, text: inserted.toString() });
-                    });
-                    for (let index = edits.length - 1; index >= 0; index -= 1) {
-                        const edit = edits[index];
-                        if (edit) {
-                            options.onEdit(edit);
-                        }
-                    }
-                }),
-            ],
-        }),
-    });
-
-    const onMouseDown = (event: MouseEvent): void => {
-        if (event.button !== 0) {
-            return;
-        }
-        const task = taskInput(event.target);
-        if (task) {
-            event.preventDefault();
-            event.stopPropagation();
-            if (view.state.readOnly) {
+    let refreshing = false;
+    let refreshQueued = false;
+    const presentation = new InlinePresentation(editor, options.documentUrl, {
+        onToggleTask(from, to) {
+            if (editor.getOption(monaco.editor.EditorOption.readOnly)) {
                 return;
             }
-            const from = finiteOffset(task.dataset.from);
-            const to = finiteOffset(task.dataset.to);
-            if (from === undefined || to === undefined || to < from) {
+            const currentModel = editor.getModel();
+            if (!currentModel) {
                 return;
             }
-            const current = view.state.doc.sliceString(from, to);
+            const current = currentModel.getValue().slice(from, to);
             const next = toggledTaskMarker(current);
             if (next === current) {
                 return;
             }
-            view.dispatch({ changes: { from, to, insert: next } });
-            return;
-        }
+            replace(from, to, next);
+        },
+        onReveal(offset) {
+            setCursor(offset);
+            editor.focus();
+        },
+    });
 
-        const image = imageElement(event.target);
-        if (image) {
-            event.preventDefault();
-            event.stopPropagation();
-            const from = finiteOffset(image.dataset.from);
-            if (from === undefined) {
-                return;
-            }
-            view.dispatch({ selection: { anchor: from + 1 } });
+    const refresh = (): void => {
+        if (refreshing) {
+            refreshQueued = true;
             return;
         }
+        refreshing = true;
+        try {
+            presentation.update();
+        } finally {
+            refreshing = false;
+        }
+        if (refreshQueued) {
+            refreshQueued = false;
+            refresh();
+        }
+    };
 
-        if (!options.onLink || !(event.ctrlKey || event.metaKey)) {
+    const replace = (from: number, to: number, text: string): void => {
+        const currentModel = editor.getModel();
+        if (!currentModel) {
             return;
         }
-        const position = view.posAtCoords({ x: event.clientX, y: event.clientY });
-        if (position === null) {
+        const start = currentModel.getPositionAt(from);
+        const end = currentModel.getPositionAt(to);
+        editor.executeEdits("inline-md", [{
+            range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
+            text,
+        }]);
+    };
+
+    const setCursor = (offset: number): void => {
+        const currentModel = editor.getModel();
+        if (!currentModel) {
             return;
         }
-        const href = linkHref(view.state.doc.toString(), position);
+        const clamped = Math.max(0, Math.min(offset, currentModel.getValueLength()));
+        const position = currentModel.getPositionAt(clamped);
+        editor.setPosition(position);
+        editor.revealPositionInCenterIfOutsideViewport(position);
+    };
+
+    if (options.onHistory) {
+        historyBindings(editor, options.onHistory);
+    }
+
+    const contentListener = editor.onDidChangeModelContent((event) => {
+        refresh();
+        if (applyingHostUpdate || !options.onEdit) {
+            return;
+        }
+        const edits = event.changes.map((change) => ({
+            start: change.rangeOffset,
+            endExclusive: change.rangeOffset + change.rangeLength,
+            text: change.text,
+        }));
+        edits.sort((left, right) => right.start - left.start);
+        for (const edit of edits) {
+            options.onEdit(edit);
+        }
+    });
+    const cursorListener = editor.onDidChangeCursorSelection(() => {
+        refresh();
+    });
+    const openRenderedLink = (event: MouseEvent): void => {
+        if (event.button !== 0 || !options.onLink) {
+            return;
+        }
+        const target = event.target;
+        if (!(target instanceof Element) || !(target.closest(".inline-md-link") instanceof HTMLElement)) {
+            return;
+        }
+        const hit = editor.getTargetAtClientPoint(event.clientX, event.clientY);
+        const currentModel = editor.getModel();
+        const position = hit?.position;
+        if (!position || !currentModel) {
+            return;
+        }
+        const href = linkHref(currentModel.getValue(), currentModel.getOffsetAt(position));
         if (!href) {
             return;
         }
@@ -214,41 +240,66 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         event.stopPropagation();
         options.onLink(href);
     };
-    view.dom.addEventListener("mousedown", onMouseDown, true);
+    editor.getDomNode()?.addEventListener("mousedown", openRenderedLink, true);
+    const mouseListener = editor.onMouseDown((event) => {
+        const element = event.target.element;
+        if (element instanceof Element) {
+            const image = element.closest(".inline-md-image, .inline-md-image-fallback");
+            if (image instanceof HTMLElement) {
+                const from = Number(image.dataset.from);
+                if (Number.isFinite(from)) {
+                    event.event.preventDefault();
+                    event.event.stopPropagation();
+                    setCursor(from + 2);
+                    editor.focus();
+                }
+            }
+        }
+    });
+
+    refresh();
+    editor.layout();
 
     return {
         destroy() {
-            view.dom.removeEventListener("mousedown", onMouseDown, true);
-            view.destroy();
+            contentListener.dispose();
+            cursorListener.dispose();
+            mouseListener.dispose();
+            editor.getDomNode()?.removeEventListener("mousedown", openRenderedLink, true);
+            presentation.dispose();
+            editor.dispose();
+            model.dispose();
+            column.remove();
             if (!hadRoot) {
                 parent.classList.remove("inline-md-root");
             }
         },
         setDocument(text: string) {
-            if (view.state.doc.toString() === text) {
+            const current = model.getValue();
+            if (current === text) {
                 return;
             }
-            const length = text.length;
-            const main = view.state.selection.main;
+            const selection = editor.getSelection();
+            const anchor = selection ? model.getOffsetAt(selection.getSelectionStart()) : 0;
+            const head = selection ? model.getOffsetAt(selection.getPosition()) : 0;
             applyingHostUpdate = true;
             try {
-                view.dispatch({
-                    changes: { from: 0, to: view.state.doc.length, insert: text },
-                    selection: {
-                        anchor: Math.max(0, Math.min(main.anchor, length)),
-                        head: Math.max(0, Math.min(main.head, length)),
-                    },
-                });
+                model.setEOL(endOfLine(text));
+                model.setValue(text);
+                const length = text.length;
+                const start = model.getPositionAt(Math.max(0, Math.min(anchor, length)));
+                const end = model.getPositionAt(Math.max(0, Math.min(head, length)));
+                editor.setSelection(monaco.Selection.fromPositions(start, end));
             } finally {
                 applyingHostUpdate = false;
             }
         },
         getDocument() {
-            return view.state.doc.toString();
+            return model.getValue();
         },
         focus() {
-            view.focus();
+            editor.focus();
         },
-        view,
+        setCursor,
     };
 }

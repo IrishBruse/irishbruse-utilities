@@ -45,6 +45,11 @@ export function markerVisibility(scope: Scope, marker: TextRange, cursor: Cursor
     if (scope.kind === "image") {
         return selectionOverlaps(scope, cursor) ? "raw" : "hidden";
     }
+    if (scope.kind === "table") {
+        const { from, to } = selectionBounds(cursor);
+        const overlaps = from === to ? from >= scope.start && from < scope.end : from < scope.end && to > scope.start;
+        return overlaps ? "raw" : "hidden";
+    }
     if (selectionOverlaps(scope, cursor)) {
         return "raw";
     }
@@ -63,6 +68,7 @@ export function showsFormattedContent(scope: Scope, cursor: CursorContext): bool
         case "blockquote":
             return true;
         case "image":
+        case "table":
         case "thematicBreak":
         case "listMarker":
         case "blockquoteMarker":

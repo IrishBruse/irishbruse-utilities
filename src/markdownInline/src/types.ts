@@ -11,7 +11,8 @@ export type ScopeKind =
     | "blockquote"
     | "blockquoteMarker"
     | "thematicBreak"
-    | "codeBlock";
+    | "codeBlock"
+    | "table";
 
 export interface TextRange {
     readonly start: number;
@@ -30,6 +31,7 @@ export interface Scope {
     readonly url?: string;
     readonly alt?: string;
     readonly language?: string;
+    readonly rows?: readonly (readonly TextRange[])[];
 }
 
 export type MarkerVisibility = "hidden" | "ghost" | "raw";

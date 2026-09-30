@@ -1,4 +1,5 @@
 import { mountInlineEditor } from "./editor";
+import "./editor.css";
 
 interface VsCodeApi {
     postMessage(message: unknown): void;

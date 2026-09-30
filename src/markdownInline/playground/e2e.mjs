@@ -16,7 +16,7 @@ const SNAPSHOT_SCRIPT = `JSON.stringify({
         return node ? node.textContent : null;
     })(),
     content: (() => {
-        const node = document.querySelector(".cm-content");
+        const node = document.querySelector(".view-lines");
         return node ? node.innerText : null;
     })(),
     fallbacks: [...document.querySelectorAll(".inline-md-image-fallback")].map((node) => node.textContent || ""),
@@ -24,18 +24,17 @@ const SNAPSHOT_SCRIPT = `JSON.stringify({
 
 const PLACE_CARET_SCRIPT = `(() => {
     try {
-        const view = window.__inlineMarkdown && window.__inlineMarkdown.view;
+        const handle = window.__inlineMarkdown;
         const heading = document.querySelector(".inline-md-h1");
-        if (!view || !heading) {
+        if (!handle || typeof handle.setCursor !== "function" || !heading) {
             return JSON.stringify({
                 ok: false,
-                reason: !view ? "missing __inlineMarkdown.view" : "missing .inline-md-h1",
+                reason: !handle ? "missing __inlineMarkdown" : "missing .inline-md-h1",
             });
         }
-        const pos = view.posAtDOM(heading);
-        view.dispatch({ selection: { anchor: pos } });
-        view.focus();
-        return JSON.stringify({ ok: true, pos });
+        handle.setCursor(2);
+        handle.focus();
+        return JSON.stringify({ ok: true, pos: 2 });
     } catch (error) {
         return JSON.stringify({
             ok: false,
@@ -44,7 +43,7 @@ const PLACE_CARET_SCRIPT = `(() => {
     }
 })()`;
 
-const RAW_HEADING_FN = 'document.querySelector(".inline-md-h1") == null && document.querySelector(".cm-content") != null && document.querySelector(".cm-content").innerText.includes("#")';
+const RAW_HEADING_FN = 'document.querySelector(".inline-md-h1") != null && document.querySelector(".view-lines") != null && document.querySelector(".view-lines").innerText.includes("#")';
 
 function delay(ms) {
     return new Promise((resolve) => {
@@ -234,7 +233,7 @@ function headingStartsWithHash(page) {
  * @param {{ heading: string | null, content: string | null }} page
  */
 function isRawHeading(page) {
-    return page.heading === null && typeof page.content === "string" && page.content.includes("#");
+    return page.heading !== null && typeof page.content === "string" && page.content.includes("#");
 }
 
 /**
@@ -249,7 +248,7 @@ function assertRendered(page) {
         problems.push('Expected .inline-md-h1 text to include "Hello".');
     }
     if (headingStartsWithHash(page)) {
-        problems.push('Expected the heading hash to be hidden (.cm-content innerText should not include "#" at the start of the heading).');
+        problems.push('Expected the heading hash to be hidden (.view-lines innerText should not include "#" at the start of the heading).');
     }
     if (problems.length > 0) {
         fail(problems.join("\n"), page);
@@ -262,10 +261,10 @@ function assertRendered(page) {
 function assertRawHeading(page) {
     const problems = [];
     if (typeof page.content !== "string" || !page.content.includes("#")) {
-        problems.push('Expected .cm-content innerText to include "#".');
+        problems.push('Expected .view-lines innerText to include "#".');
     }
-    if (page.heading !== null) {
-        problems.push("Expected .inline-md-h1 to be gone.");
+    if (!String(page.heading ?? "").includes("Hello")) {
+        problems.push("Expected .inline-md-h1 to keep the heading color on the raw line.");
     }
     if (problems.length > 0) {
         fail(problems.join("\n"), page);

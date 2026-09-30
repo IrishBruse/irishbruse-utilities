@@ -1,6 +1,7 @@
 import { parse, postprocess, preprocess } from "micromark";
 import { gfmAutolinkLiteral } from "micromark-extension-gfm-autolink-literal";
 import { gfmStrikethrough } from "micromark-extension-gfm-strikethrough";
+import { gfmTable } from "micromark-extension-gfm-table";
 import { gfmTaskListItem } from "micromark-extension-gfm-task-list-item";
 import type { Scope, TextRange } from "./types";
 
@@ -13,7 +14,7 @@ interface MarkEvent {
 
 function tokenize(source: string): MarkEvent[] {
     const parser = parse({
-        extensions: [gfmStrikethrough(), gfmTaskListItem(), gfmAutolinkLiteral()],
+        extensions: [gfmStrikethrough(), gfmTaskListItem(), gfmAutolinkLiteral(), gfmTable()],
     });
     const chunks = preprocess()(source, undefined, true);
     const events = postprocess(parser.document().write(chunks));
@@ -87,6 +88,41 @@ function lastRange(inner: readonly MarkEvent[], tokenType: string): TextRange | 
 
 function hasEnter(inner: readonly MarkEvent[], tokenType: string): boolean {
     return inner.some((event) => event.type === "enter" && event.tokenType === tokenType);
+}
+
+function tableRows(inner: readonly MarkEvent[]): TextRange[][] {
+    const rows: TextRange[][] = [];
+    let row: TextRange[] | undefined;
+    let delimiter = 0;
+    let awaitingContent = false;
+    for (const event of inner) {
+        if (event.tokenType === "tableDelimiterRow") {
+            delimiter += event.type === "enter" ? 1 : -1;
+            continue;
+        }
+        if (delimiter > 0) {
+            continue;
+        }
+        if (event.type === "enter" && event.tokenType === "tableRow") {
+            row = [];
+            rows.push(row);
+            awaitingContent = false;
+            continue;
+        }
+        if (!row) {
+            continue;
+        }
+        if (event.type === "enter" && (event.tokenType === "tableHeader" || event.tokenType === "tableData")) {
+            row.push({ start: event.start, end: event.start });
+            awaitingContent = true;
+            continue;
+        }
+        if (event.type === "enter" && event.tokenType === "tableContent" && awaitingContent) {
+            row[row.length - 1] = { start: event.start, end: event.end };
+            awaitingContent = false;
+        }
+    }
+    return rows;
 }
 
 function cleanDestination(raw: string): string {
@@ -302,6 +338,22 @@ function buildScope(tokenType: string, start: number, end: number, inner: readon
                 markers: [],
                 language: "",
             };
+        case "table": {
+            const rows = tableRows(inner);
+            if (rows.length === 0) {
+                return undefined;
+            }
+            const firstCell = rows[0]?.[0];
+            return {
+                kind: "table",
+                start,
+                end,
+                contentStart: firstCell?.start ?? start,
+                contentEnd: end,
+                markers: [{ start, end }],
+                rows,
+            };
+        }
         default:
             return undefined;
     }

@@ -68,6 +68,7 @@ function getEditorHtml(
     const mediaRoot = Uri.joinPath(extensionUri, "media", "markdownInline");
     const scriptUri = webview.asWebviewUri(Uri.joinPath(mediaRoot, "editor.js"));
     const styleUri = webview.asWebviewUri(Uri.joinPath(mediaRoot, "editor.css"));
+    const workerUri = webview.asWebviewUri(Uri.joinPath(mediaRoot, "editor.worker.js"));
     const baseUri = webview.asWebviewUri(documentUri);
     const nonce = getNonce();
     const initialState = encodeURIComponent(JSON.stringify({
@@ -84,8 +85,9 @@ function getEditorHtml(
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy"
-        content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; img-src ${webview.cspSource} https: data:; script-src 'nonce-${nonce}';" />
+        content="default-src 'none'; style-src ${webview.cspSource} 'unsafe-inline'; font-src ${webview.cspSource}; img-src ${webview.cspSource} https: data:; script-src 'nonce-${nonce}'; worker-src ${webview.cspSource};" />
     <meta name="inline-md-message-secret" content="${messageSecret}" />
+    <meta name="inline-md-worker" content="${workerUri.toString().replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" />
     <meta id="inline-md-state" content="${initialState}" />
     <base href="${baseUri}" />
     <link rel="stylesheet" href="${styleUri}" />

@@ -9,22 +9,22 @@ const cliDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(cliDir, "..", "..", "..", "..");
 const mapPath = join(cliDir, "..", "feature-map.md");
 const statePath = join(repoRoot, ".tmp", "verify-markdownInline", "state.json");
-const readyFn = '!!document.querySelector("#editor .cm-content") && !!document.querySelector("#editor input[type=checkbox]") && !!document.querySelector("#editor img[alt]")';
+const readyFn = '!!document.querySelector("#editor .inline-md-h1") && !!document.querySelector("#editor .inline-md-strong") && !!document.querySelector("#editor input[type=checkbox]") && !!document.querySelector("#editor img[alt]") && !!document.querySelector("#editor .inline-md-code-hit") && !!document.querySelector("#editor .inline-md-table")';
 
 const evidence: Record<string, string> = {
-    "Rendered document": '(() => { const text = document.querySelector("#editor .cm-content")?.innerText ?? ""; return text.includes("Hello") && text.includes("A paragraph with"); })()',
-    "Heading": '(() => (document.querySelector("#editor .cm-content")?.innerText ?? "").includes("# Hello"))()',
-    "Bold": '(() => (document.querySelector("#editor .cm-content")?.innerText ?? "").includes("**bold**"))()',
-    "Image": '(() => (document.querySelector("#editor .cm-content")?.innerText ?? "").includes("![Dot](dot.png)"))()',
-    "Missing image": '(() => (document.querySelector("#editor .cm-content")?.innerText ?? "").includes("![Missing](does-not-exist.png)"))()',
-    "Task": '(() => document.querySelector("#editor input[type=checkbox]")?.checked === true)()',
-    "Code block": '(() => (document.querySelector("#editor .cm-content")?.innerText ?? "").includes("```ts"))()',
+    "Rendered document": '(() => { const text = document.querySelector("#editor .view-lines")?.innerText ?? ""; return text.includes("Hello") && text.includes("A paragraph with"); })()',
+    "Heading": '(() => { const text = document.querySelector("#editor .view-lines")?.innerText ?? ""; return text.includes("# Hello") && !!document.querySelector("#editor .inline-md-h1"); })()',
+    "Bold": '(() => (document.querySelector("#editor .view-lines")?.innerText ?? "").includes("**bold**"))()',
+    "Image": '(() => (document.querySelector("#editor .view-lines")?.innerText ?? "").includes("![Dot](dot.png)"))()',
+    "Missing image": '(() => (document.querySelector("#editor .view-lines")?.innerText ?? "").includes("![Missing](does-not-exist.png)"))()',
+    "Task": '(() => document.querySelector("#editor input[type=checkbox]")?.checked === true && document.querySelector("#editor .inline-md-bullet") == null)()',
+    "Code block": '(() => (document.querySelector("#editor .view-lines")?.innerText ?? "").includes("```ts"))()',
+    "Table": '(() => { const text = (document.querySelector("#editor .view-lines")?.innerText ?? "").replaceAll("\\u00a0", " "); return document.querySelector("#editor .inline-md-table") == null && text.includes("Source hint") && text.includes("|"); })()',
 };
 
 const discoverScript = `JSON.stringify((() => {
-    const content = document.querySelector("#editor .cm-content");
+    const content = document.querySelector("#editor .view-lines");
     const text = content?.innerText ?? "";
-    const role = content?.getAttribute("role");
     const reachOf = (el) => (el && el.accessKey ? el.accessKey : "none");
     const firstLine = text.split("\\n").map((line) => line.trim()).find((line) => line !== "") ?? "";
     const heading = firstLine.replace(/^#+\\s*/, "");
@@ -34,14 +34,16 @@ const discoverScript = `JSON.stringify((() => {
     const bold = [...document.querySelectorAll("#editor span")].some((el) => el.textContent === "bold");
     const missing = [...document.querySelectorAll("#editor span")].some((el) => el.textContent === "Missing");
     const code = text.includes("const value = 1;") || text.includes("const value = 1");
+    const table = document.querySelector("#editor .inline-md-table");
     return {
-        "Rendered document": { reach: reachOf(content), activate: role ? "role=" + role : (content ? ".cm-content" : "") },
+        "Rendered document": { reach: "none", activate: content ? ".view-lines" : "" },
         "Heading": { reach: "none", activate: heading ? 'text="' + heading.replaceAll('"', '\\\\"') + '"' : "" },
         "Bold": { reach: "none", activate: bold ? 'text="bold"' : "" },
         "Image": { reach: reachOf(image), activate: image?.getAttribute("alt") ? 'alt="' + image.getAttribute("alt").replaceAll('"', '\\\\"') + '"' : "" },
         "Missing image": { reach: "none", activate: missing ? 'text="Missing"' : "" },
         "Task": { reach: reachOf(box), activate: taskClass ? "." + taskClass : (box ? 'input[type="checkbox"]' : "") },
         "Code block": { reach: "none", activate: code ? 'text="const value = 1;"' : "" },
+        "Table": { reach: "none", activate: table ? ".inline-md-table" : "" },
     };
 })())`;
 
@@ -299,9 +301,7 @@ async function trace(name: string): Promise<void> {
         browser(["open", pageUrl]);
         await waitFor(readyFn);
         activate(featureNamed(name).activate);
-        if (evalJson(`JSON.stringify(${check})`) !== true) {
-            throw new Error(`${name} did not show its result`);
-        }
+        await waitFor(check);
         const path = tracePath(name);
         mkdirSync(dirname(path), { recursive: true });
         browser(["profiler", "stop", path]);

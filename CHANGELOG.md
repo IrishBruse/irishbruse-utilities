@@ -2,6 +2,19 @@
 
 ## Unreleased
 
+-   Add: Inline Markdown previews a GFM table as a bordered grid and shows the pipe source when the cursor is inside
+-   Add: Inline Markdown editing runs in Monaco and keeps markdown and fenced-code syntax highlighting when markers are shown
+-   Add: Inline Markdown shows line numbers beside the text
+-   Fix: Raw headings keep their level color and larger size, so an H2 stays red
+-   Fix: Code blocks in preview show the language in the top right
+-   Fix: Headings with a larger font get a taller line so the next line does not collide
+-   Fix: Inline Markdown leaves parentheses in the body text color
+-   Fix: The current line uses the `editor.lineHighlightBackground` from settings, including colors with alpha
+-   Fix: Rendered links stay green, and a raw link keeps a blue label with a green destination
+-   Fix: The current-line highlight on a heading matches the taller heading line
+-   Fix: A multiline selection on a heading uses that heading's taller line height
+-   Fix: Clicking a rendered link opens it and leaves the cursor where it was
+-   Fix: Inline Markdown task items hide the list bullet and show only the checkbox
 -   Remove: Changed Files sidebar and Action Panel
 -   Add: Inline Markdown webview keeps the file as raw markdown, hides syntax until the cursor needs it, and previews images
 -   Fix: Markdown Editor nested list gutter indent shows `>|` (not `·`) for active items, with readable glyph color and spacing

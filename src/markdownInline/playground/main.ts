@@ -27,6 +27,27 @@ function fixtureId(globKey: string): string {
     return globKey.startsWith(DOCS_PREFIX) ? globKey.slice(DOCS_PREFIX.length) : globKey;
 }
 
+function openPlaygroundLink(href: string, baseUrl: string, fixtures: readonly Fixture[]): void {
+    let resolved: URL;
+    try {
+        resolved = new URL(href, baseUrl);
+    } catch {
+        return;
+    }
+    if (resolved.protocol !== "http:" && resolved.protocol !== "https:") {
+        return;
+    }
+    const name = decodeURIComponent(resolved.pathname.split("/").pop() ?? "");
+    const fixture = fixtures.find((item) => item.id === name || item.id.endsWith(`/${name}`));
+    if (fixture && name.endsWith(".md")) {
+        const url = new URL(window.location.href);
+        url.searchParams.set("fixture", fixture.id);
+        window.location.assign(url);
+        return;
+    }
+    window.open(resolved.href, "_blank", "noopener");
+}
+
 function documentUrl(id: string): string {
     if (id === LOCAL_FIXTURE) {
         return new URL("./fixture.md", window.location.href).href;
@@ -68,15 +89,17 @@ async function main(): Promise<void> {
     });
 
     const text = await selected.load();
+    const baseUrl = documentUrl(selected.id);
     window.__inlineMarkdown = mountInlineEditor(parent, {
         text,
-        documentUrl: documentUrl(selected.id),
+        documentUrl: baseUrl,
+        onLink(href) {
+            openPlaygroundLink(href, baseUrl, fixtures);
+        },
     });
     if (selected.id === LOCAL_FIXTURE) {
         const blankLine = text.indexOf("\n\n");
-        window.__inlineMarkdown.view.dispatch({
-            selection: { anchor: blankLine >= 0 ? blankLine + 1 : text.length },
-        });
+        window.__inlineMarkdown.setCursor(blankLine >= 0 ? blankLine + 1 : text.length);
     }
 }
 

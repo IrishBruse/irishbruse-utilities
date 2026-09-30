@@ -12,12 +12,11 @@
         "watch": "node build.mjs --watch"
     },
     "dependencies": {
-        "@codemirror/commands": "^6.8.1",
-        "@codemirror/state": "^6.5.2",
-        "@codemirror/view": "^6.36.4",
+        "monaco-editor": "^0.52.2",
         "micromark": "^4.0.2",
         "micromark-extension-gfm-autolink-literal": "^2.1.0",
         "micromark-extension-gfm-strikethrough": "^2.1.0",
+        "micromark-extension-gfm-table": "^2.1.1",
         "micromark-extension-gfm-task-list-item": "^2.1.0"
     },
     "devDependencies": {

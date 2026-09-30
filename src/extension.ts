@@ -3,6 +3,7 @@ import { activateDiskEditorConflict } from "./diskConflict/activateDiskEditorCon
 import { activateBranchDiffRevert } from "./git/branchDiffRevert";
 import { syncBranchDiffWorkingTreeFiles } from "./git/branchDiffFiles";
 import { openMarkdownEditor } from "./commands/openMarkdownEditor";
+import { openMarkdownInline } from "./commands/openMarkdownInline";
 import { openMarkdownSource } from "./commands/openMarkdownSource";
 import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
@@ -10,6 +11,7 @@ import { relativeGoTo } from "./commands/relativeGoTo";
 import { terminalPaste } from "./commands/terminalPaste";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
 import { registerMarkdownEditor } from "./markdownEditor/host/MarkdownEditorProvider";
+import { registerMarkdownInlineEditor } from "./markdownInline/host/MarkdownInlineProvider";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { registerMarkdownMermaidFeatures } from "./mermaidEditor/registerMarkdownMermaid";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
@@ -31,6 +33,7 @@ export function activate(context: ExtensionContext) {
     registerCommandIB(Commands.RelativeGoTo, relativeGoTo, context);
     registerCommandIB(Commands.TerminalPaste, terminalPaste, context);
     registerCommandIB(Commands.OpenMarkdownEditor, openMarkdownEditor, context);
+    registerCommandIB(Commands.OpenMarkdownInline, openMarkdownInline, context);
     registerCommandIB(Commands.OpenMarkdownSource, openMarkdownSource, context);
     registerCommandIB(Commands.OpenMermaidPreview, openMermaidPreview, context);
     registerCommandIB(Commands.OpenMermaidSource, openMermaidSource, context);
@@ -40,6 +43,7 @@ export function activate(context: ExtensionContext) {
 
     registerMermaidCustomEditor(context);
     registerMarkdownEditor(context);
+    registerMarkdownInlineEditor(context);
     registerMarkdownMermaidFeatures(context);
     SnippetViewProvider.activate(context);
     activateDiskEditorConflict(context);

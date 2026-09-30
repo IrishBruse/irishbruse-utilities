@@ -26,6 +26,12 @@
         },
         {
             "type": "npm",
+            "script": "build-markdown-inline",
+            "group": "build",
+            "problemMatcher": []
+        },
+        {
+            "type": "npm",
             "script": "sync-markdown-editor",
             "group": "build",
             "problemMatcher": []
@@ -95,6 +101,50 @@
             "dependsOn": ["markdown preview: dev server", "markdown preview: open"],
             "dependsOrder": "sequence",
             "problemMatcher": []
+        },
+        {
+            "label": "inline markdown: dev server",
+            "type": "npm",
+            "script": "dev:markdown-inline",
+            "isBackground": true,
+            "problemMatcher": {
+                "owner": "vite",
+                "pattern": { "regexp": "^$" },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".",
+                    "endsPattern": "Local:\\s+http://localhost:\\d+/"
+                }
+            },
+            "presentation": {
+                "reveal": "never",
+                "group": "watchers"
+            },
+            "runOptions": { "runOn": "folderOpen" }
+        },
+        {
+            "label": "inline markdown: open",
+            "type": "shell",
+            "command": "echo ${input:openInlineMarkdown}",
+            "options": {
+                "shell": {
+                    "executable": "/bin/sh",
+                    "args": ["-c"]
+                }
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "never",
+                "echo": false,
+                "focus": false,
+                "panel": "shared"
+            }
+        },
+        {
+            "label": "inline markdown",
+            "dependsOn": ["inline markdown: dev server", "inline markdown: open"],
+            "dependsOrder": "sequence",
+            "problemMatcher": []
         }
     ],
     "inputs": [
@@ -103,6 +153,12 @@
             "type": "command",
             "command": "simpleBrowser.show",
             "args": ["http://localhost:5174/"]
+        },
+        {
+            "id": "openInlineMarkdown",
+            "type": "command",
+            "command": "simpleBrowser.show",
+            "args": ["http://localhost:5175/"]
         }
     ]
 }

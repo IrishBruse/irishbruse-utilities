@@ -1,0 +1,29 @@
+{
+    "name": "@ib-utilities/markdown-inline",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "check": "tsc --noEmit -p tsconfig.json && npm run verify-markdownInline --prefix ../.. -- map check",
+        "test": "npm test --prefix ../.. -- src/markdownInline",
+        "dev": "vite --config playground/vite.config.ts",
+        "e2e": "node playground/e2e.mjs",
+        "verify": "npm run check && npm run test && npm run e2e",
+        "build": "node build.mjs",
+        "watch": "node build.mjs --watch"
+    },
+    "dependencies": {
+        "@codemirror/commands": "^6.8.1",
+        "@codemirror/state": "^6.5.2",
+        "@codemirror/view": "^6.36.4",
+        "micromark": "^4.0.2",
+        "micromark-extension-gfm-autolink-literal": "^2.1.0",
+        "micromark-extension-gfm-strikethrough": "^2.1.0",
+        "micromark-extension-gfm-task-list-item": "^2.1.0"
+    },
+    "devDependencies": {
+        "esbuild": "0.28.1",
+        "typescript": "^6.0.3",
+        "vite": "^8.3.1",
+        "vitest": "^4.1.10"
+    }
+}

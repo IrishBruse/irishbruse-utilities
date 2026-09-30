@@ -1,0 +1,57 @@
+:root {
+    --vscode-editor-background: #1e1e1e;
+    --vscode-editor-foreground: #d4d4d4;
+    --vscode-editor-font-family: ui-sans-serif, system-ui, sans-serif;
+    --ib-md-heading-1: #D19A66;
+    --ib-md-heading-2: #E06C75;
+    --ib-md-heading-3: #61AFEF;
+    --ib-md-heading-4: #C678DD;
+    --ib-md-heading-5: #C678DD;
+    --ib-md-heading-6: #C678DD;
+    --ib-md-inline-code: #C678DD;
+    --ib-md-inline-code-background: #21252bA0;
+    color-scheme: dark;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
+    font-family: var(--vscode-editor-font-family);
+}
+
+#toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--vscode-editorWidget-border, #3a3f4b);
+    background: var(--vscode-sideBar-background, #21252b);
+    color: var(--vscode-foreground, #d7dae0);
+    font-family: var(--vscode-font-family, system-ui, sans-serif);
+    font-size: 13px;
+}
+
+#toolbar select {
+    font: inherit;
+    color: var(--vscode-dropdown-foreground, var(--vscode-editor-foreground));
+    background: var(--vscode-dropdown-background, #353b45);
+    border: 1px solid var(--vscode-dropdown-border, #21252b);
+    padding: 2px 6px;
+}
+
+body > #editor.inline-md-root,
+body > #editor {
+    height: auto;
+    flex: 1 1 auto;
+    min-height: 0;
+}

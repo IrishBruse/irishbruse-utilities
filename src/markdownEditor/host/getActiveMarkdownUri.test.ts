@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TabInputCustom, TabInputText, Uri, window } from "vscode";
+import { MARKDOWN_INLINE_VIEW_TYPE } from "../../markdownInline/host/MarkdownInlineProvider";
 import { MARKDOWN_EDITOR_VIEW_TYPE } from "./MarkdownEditorProvider";
 import { getActiveMarkdownUri, isMarkdownUri } from "./getActiveMarkdownUri";
 
@@ -23,6 +24,16 @@ describe("markdownEditor/host/getActiveMarkdownUri", () => {
         it("returns the URI from the markdown editor custom editor tab", () => {
             const uri = Uri.file("/proj/readme.md");
             const input = Object.assign(new TabInputCustom(), { viewType: MARKDOWN_EDITOR_VIEW_TYPE, uri });
+            vi.mocked(window.tabGroups).activeTabGroup = {
+                activeTab: { input },
+            } as typeof window.tabGroups.activeTabGroup;
+
+            expect(getActiveMarkdownUri()?.toString()).toBe(uri.toString());
+        });
+
+        it("returns the URI from the inline markdown custom editor tab", () => {
+            const uri = Uri.file("/proj/readme.md");
+            const input = Object.assign(new TabInputCustom(), { viewType: MARKDOWN_INLINE_VIEW_TYPE, uri });
             vi.mocked(window.tabGroups).activeTabGroup = {
                 activeTab: { input },
             } as typeof window.tabGroups.activeTabGroup;

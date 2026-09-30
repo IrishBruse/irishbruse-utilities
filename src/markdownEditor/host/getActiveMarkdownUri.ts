@@ -1,4 +1,5 @@
 import { TabInputCustom, TabInputText, Uri, window } from "vscode";
+import { MARKDOWN_INLINE_VIEW_TYPE } from "../../markdownInline/host/MarkdownInlineProvider";
 import { MARKDOWN_EDITOR_VIEW_TYPE } from "./MarkdownEditorProvider";
 
 export function isMarkdownUri(uri: Uri): boolean {
@@ -9,7 +10,10 @@ export function getActiveMarkdownUri(): Uri | undefined {
     const activeTab = window.tabGroups.activeTabGroup.activeTab;
     const input = activeTab?.input;
 
-    if (input instanceof TabInputCustom && input.viewType === MARKDOWN_EDITOR_VIEW_TYPE) {
+    if (
+        input instanceof TabInputCustom
+        && (input.viewType === MARKDOWN_EDITOR_VIEW_TYPE || input.viewType === MARKDOWN_INLINE_VIEW_TYPE)
+    ) {
         return input.uri;
     }
 

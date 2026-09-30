@@ -34,6 +34,8 @@
         "src/markdownEditor/webview/**",
         "src/markdownEditor/playground/**",
         "src/markdownEditor/vendor/**",
-        "src/markdownEditor/packages/**"
+        "src/markdownEditor/packages/**",
+        "src/markdownInline/src/**",
+        "src/markdownInline/playground/**"
     ]
 }

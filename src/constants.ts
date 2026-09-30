@@ -136,6 +136,13 @@ export enum Commands {
     OpenMarkdownEditor = `ib-utilities.openMarkdownEditor`,
 
     /**
+     * Open Inline Markdown
+     * Short Title: Inline Markdown
+     * Icon: $(preview)
+     */
+    OpenMarkdownInline = `ib-utilities.openMarkdownInline`,
+
+    /**
      * Open Text Editor
      * Short Title: Text Editor
      * Icon: $(code)

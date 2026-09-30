@@ -1,7 +1,5 @@
-import path from "path";
-import { TreeItemCollapsibleState, Uri } from "vscode";
+import { TreeItemCollapsibleState } from "vscode";
 import { Commands } from "../constants";
-import { Status, type DiffChange } from "../git/gitApi";
 import {
     formatPrFileChangeLabel,
     formatPrLineChangeDescription,
@@ -12,7 +10,6 @@ import type { PrReviewStatus } from "../git/prReviewStatus";
 import { summaryFromPrTitle } from "../jira/jiraKey";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
 import { checksTreeItem } from "./checksTreeItem";
-import { createChangesTreeCache, type ChangesTreeCache } from "./changesTree";
 import type { BranchChangesSummary } from "./loadBranchChanges";
 
 export const MOCK_REPO_ROOT = "/mock/irishbruse-utilities";
@@ -28,36 +25,13 @@ export type GitHelpersMockState = {
     checkStatus: PrCheckStatus;
     reviewStatus: PrReviewStatus;
     changesSummary: BranchChangesSummary;
-    changesCache: ChangesTreeCache;
 };
 
-const MOCK_MERGE_BASE = "abc123def456";
-
-function mockDiffChange(relativePath: string, insertions: number, deletions: number): DiffChange {
-    const absolutePath = path.join(MOCK_REPO_ROOT, relativePath);
-    const uri = Uri.file(absolutePath);
-    return {
-        uri,
-        originalUri: uri,
-        renameUri: undefined,
-        status: Status.MODIFIED,
-        insertions,
-        deletions,
-    };
-}
-
 export function getGitHelpersMockState(): GitHelpersMockState {
-    const changes = [
-        mockDiffChange("src/gitHelpers/GitHelpersView.ts", 84, 12),
-        mockDiffChange("src/gitHelpers/mockData.ts", 120, 0),
-        mockDiffChange("src/gitHelpers/debugMode.ts", 38, 0),
-        mockDiffChange("package.json", 14, 2),
-        mockDiffChange("CHANGELOG.md", 1, 0),
-    ];
     const changesSummary: BranchChangesSummary = {
         additions: 257,
         deletions: 14,
-        changedFiles: changes.length,
+        changedFiles: 5,
     };
 
     return {
@@ -89,7 +63,6 @@ export function getGitHelpersMockState(): GitHelpersMockState {
             url: "https://github.com/IrishBruse/irishbruse-utilities/pull/42/files",
         },
         changesSummary,
-        changesCache: createChangesTreeCache(MOCK_REPO_ROOT, MOCK_MERGE_BASE, changes),
     };
 }
 
@@ -141,7 +114,7 @@ export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelp
             `${repoRoot}:showChanges`,
             "showChanges",
             formatPrLineChangeDescription(changesSummary.additions, changesSummary.deletions),
-            { command: Commands.ShowBranchChanges, title: "Show changes", arguments: [repoRoot] }
+            { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] }
         )
     );
 

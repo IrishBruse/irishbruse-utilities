@@ -18,9 +18,7 @@
     ],
     "activationEvents": [
         "onStartupFinished",
-        "onView:ib-utilities.actionPanel",
         "onView:ib-utilities.gitHelpers",
-        "onView:ib-utilities.branchChanges",
         "onCustomEditor:ib-utilities.markdownEditor"
     ],
     "workspaces": [
@@ -92,73 +90,7 @@
                 "ib-utilities.gitHelpers.debugMode": {
                     "type": "boolean",
                     "default": false,
-                    "description": "Show Git Helpers with mock PR, checks, Jira, and branch changes data for UI development and testing."
-                },
-                "ib-utilities.actionPanel.actions": {
-                    "type": "array",
-                    "description": "Actions shown in the Action Panel. Cursor agent prompts use type \"agent\"; VS Code commands use type \"command\"; shell commands use type \"terminal\".",
-                    "items": {
-                        "type": "object",
-                        "required": [
-                            "id",
-                            "label",
-                            "type"
-                        ],
-                        "properties": {
-                            "id": {
-                                "type": "string",
-                                "description": "Unique action id."
-                            },
-                            "label": {
-                                "type": "string",
-                                "description": "Label shown in the panel."
-                            },
-                            "icon": {
-                                "type": "string",
-                                "description": "Codicon name without $(), e.g. github."
-                            },
-                            "type": {
-                                "type": "string",
-                                "enum": [
-                                    "agent",
-                                    "command",
-                                    "terminal"
-                                ],
-                                "description": "Action type."
-                            },
-                            "prompt": {
-                                "type": "string",
-                                "description": "Agent prompt when type is agent. Supports ${branch}, ${repoRoot}, ${baseBranch}, ${file}, and ${selection}."
-                            },
-                            "command": {
-                                "type": "string",
-                                "description": "VS Code command id when type is command, or shell command when type is terminal."
-                            },
-                            "args": {
-                                "type": "array",
-                                "description": "Optional arguments passed to the VS Code command.",
-                                "items": {}
-                            },
-                            "runInEditor": {
-                                "type": "boolean",
-                                "markdownDescription": "Deprecated. Use `terminalMode: \"editor\"` instead."
-                            },
-                            "runInBackground": {
-                                "type": "boolean",
-                                "markdownDescription": "Deprecated. Use `terminalMode: \"background\"` instead."
-                            },
-                            "terminalMode": {
-                                "type": "string",
-                                "enum": [
-                                    "panel",
-                                    "editor",
-                                    "background"
-                                ],
-                                "description": "When type is terminal, where to run the command: terminal panel, editor space, or background without focus."
-                            }
-                        }
-                    },
-                    "default": []
+                    "description": "Show Git Helpers with mock PR, checks, Jira, and change stats for UI development and testing."
                 }
             }
         },
@@ -256,18 +188,6 @@
                     "id": "snippetContainer",
                     "title": "Snippet Manager",
                     "icon": "media/snippet_icon.svg"
-                },
-                {
-                    "id": "actionPanel",
-                    "title": "Actions",
-                    "icon": "$(run-all)"
-                }
-            ],
-            "secondarySidebar": [
-                {
-                    "id": "branchChanges",
-                    "title": "Changed Files",
-                    "icon": "$(diff)"
                 }
             ]
         },
@@ -279,30 +199,12 @@
                     "icon": "media/snippet_icon.svg"
                 }
             ],
-            "actionPanel": [
-                {
-                    "id": "ib-utilities.actionPanel",
-                    "name": "Actions",
-                    "icon": "$(run-all)",
-                    "contextualTitle": "Actions",
-                    "visibility": "visible"
-                }
-            ],
             "scm": [
                 {
                     "id": "ib-utilities.gitHelpers",
                     "name": "Git Helpers",
                     "icon": "$(git-branch)",
                     "contextualTitle": "Git Helpers",
-                    "visibility": "visible"
-                }
-            ],
-            "branchChanges": [
-                {
-                    "id": "ib-utilities.branchChanges",
-                    "name": "Changed Files",
-                    "icon": "$(git-compare)",
-                    "contextualTitle": "Changed Files",
                     "visibility": "visible"
                 }
             ]
@@ -453,53 +355,6 @@
                 "icon": "$(refresh)"
             },
             {
-                "command": "ib-utilities.showActionPanel",
-                "title": "Show Action Panel",
-                "shortTitle": "Actions",
-                "icon": "$(run-all)"
-            },
-            {
-                "command": "ib-utilities.runActionPanelItem",
-                "title": "Run Action Panel Item",
-                "icon": "$(run)"
-            },
-            {
-                "command": "ib-utilities.addActionPanelAction",
-                "title": "Add Action",
-                "shortTitle": "Add action",
-                "icon": "$(add)"
-            },
-            {
-                "command": "ib-utilities.editActionPanelAction",
-                "title": "Edit Action",
-                "shortTitle": "Edit action",
-                "icon": "$(edit)"
-            },
-            {
-                "command": "ib-utilities.deleteActionPanelAction",
-                "title": "Delete Action",
-                "shortTitle": "Delete action",
-                "icon": "$(trash)"
-            },
-            {
-                "command": "ib-utilities.showBranchChanges",
-                "title": "Show Branch Changes",
-                "shortTitle": "Show changes",
-                "icon": "$(git-compare)"
-            },
-            {
-                "command": "ib-utilities.collapseBranchChangesFolders",
-                "title": "Collapse All",
-                "shortTitle": "Collapse all",
-                "icon": "$(collapse-all)"
-            },
-            {
-                "command": "ib-utilities.expandBranchChangesFolders",
-                "title": "Expand All",
-                "shortTitle": "Expand all",
-                "icon": "$(expand-all)"
-            },
-            {
                 "command": "ib-utilities.diffWithBase",
                 "title": "Diff",
                 "shortTitle": "Diff",
@@ -631,16 +486,6 @@
                     "group": "inline"
                 },
                 {
-                    "command": "ib-utilities.editActionPanelAction",
-                    "when": "view == ib-utilities.actionPanel && viewItem == action",
-                    "group": "inline@1"
-                },
-                {
-                    "command": "ib-utilities.deleteActionPanelAction",
-                    "when": "view == ib-utilities.actionPanel && viewItem == action",
-                    "group": "inline@2"
-                },
-                {
                     "command": "ib-utilities.setBaseBranch",
                     "when": "view == ib-utilities.gitHelpers && viewItem == action-diffWithBase",
                     "group": "inline"
@@ -664,11 +509,6 @@
                     "command": "ib-utilities.copyPrUrl",
                     "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr || viewItem == action-openPr-draft || viewItem == action-openPr-hasJira || viewItem == action-openPr-draft-hasJira || viewItem == action-openPr-noJira || viewItem == action-openPr-draft-noJira)",
                     "group": "inline@4"
-                },
-                {
-                    "command": "ib-utilities.copyGithubHeadFileUrl",
-                    "when": "view == ib-utilities.branchChanges && (viewItem == changes-file || viewItem == changes-folder)",
-                    "group": "2_copy@3"
                 }
             ],
             "view/title": [
@@ -691,21 +531,6 @@
                     "command": "ib-utilities.refreshGitHelpers",
                     "when": "view == ib-utilities.gitHelpers",
                     "group": "navigation@2"
-                },
-                {
-                    "command": "ib-utilities.collapseBranchChangesFolders",
-                    "when": "view == ib-utilities.branchChanges && ib-utilities.branchChanges.allFoldersExpanded",
-                    "group": "navigation@1"
-                },
-                {
-                    "command": "ib-utilities.expandBranchChangesFolders",
-                    "when": "view == ib-utilities.branchChanges && !ib-utilities.branchChanges.allFoldersExpanded",
-                    "group": "navigation@1"
-                },
-                {
-                    "command": "ib-utilities.addActionPanelAction",
-                    "when": "view == ib-utilities.actionPanel",
-                    "group": "navigation"
                 }
             ]
         }

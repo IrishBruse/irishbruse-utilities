@@ -1,7 +1,6 @@
 import { Command, ThemeIcon, TreeItem, TreeItemCollapsibleState } from "vscode";
-import type { DiffChange } from "../git/gitApi";
 
-export type GitHelperItemKind = "info" | "action" | "changesFolder" | "changesFile";
+export type GitHelperItemKind = "info" | "action";
 
 export class GitHelperTreeItem extends TreeItem {
     public prUrl?: string;
@@ -10,9 +9,6 @@ export class GitHelperTreeItem extends TreeItem {
     public jiraUrl?: string;
     public jiraKey?: string;
     public isDraftPr = false;
-    public mergeBaseRef?: string;
-    public relativePath?: string;
-    public diffChange?: DiffChange;
 
     constructor(
         public readonly kind: GitHelperItemKind,
@@ -29,18 +25,12 @@ export class GitHelperTreeItem extends TreeItem {
             | "addJiraKeyToPrTitle"
             | "showChanges",
         description?: string,
-        command?: Command,
-        mergeBaseRef?: string,
-        relativePath?: string,
-        diffChange?: DiffChange
+        command?: Command
     ) {
         super(label, collapsibleState);
         this.id = id;
         this.description = description;
         this.command = command;
-        this.mergeBaseRef = mergeBaseRef;
-        this.relativePath = relativePath;
-        this.diffChange = diffChange;
         this.contextValue = action ? `action-${action}` : kind;
         if (action === "diffWithBase") {
             this.iconPath = new ThemeIcon("git-pull-request");

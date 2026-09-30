@@ -19,25 +19,14 @@ Panel data is cached per repository so switching between local repos restores th
 
 - **Pull request** — first row, opens the GitHub PR for the current branch (draft PRs use a draft icon).
   Inline buttons copy the PR URL, open the linked Jira ticket when synced, and mark draft PRs ready
-- **Diff** — opens a multi-file diff and reveals the Branch Changes sidebar. Base branch is shown as the row description, with an inline Set base button
-- **Changes** — file count row opens the **Branch Changes** secondary sidebar, with `+additions −deletions` as the description
+- **Diff** — opens a multi-file diff. Base branch is shown as the row description, with an inline Set base button
+- **Changes** — file count with `+additions −deletions`. Click opens the same multi-file diff
 - **Checks** — GitHub Actions status row when a PR is open (check name as label, status as description). Click to open checks
 - **Create draft PR** — shown when there is no open PR and the branch is not the base branch (hidden on `main` / `master`)
 
 The Git Helpers title bar opens the GitHub repository and refreshes the panel.
 
 Right-click any file in the file explorer for **Copy GitHub Head URL** (blob link at the current branch `HEAD`). Under **Source Control → Changes**, right-click for **Copy Path**, **Copy Relative Path**, and **Copy GitHub Head URL**.
-
-### Changed Files (secondary sidebar)
-
-The **Changed Files** view in the secondary sidebar lists files changed against the merge base.
-Click **Changes** in Git Helpers to reveal it.
-The view header shows `+additions −deletions` and file counts.
-Right-click a file for **Copy GitHub Head URL**.
-
-### Action Panel
-
-An **Actions** activity bar panel for customizable shortcuts: built-in actions, Cursor agent prompts, VS Code commands, and terminal commands via `ib-utilities.actionPanel.actions`.
 
 ### Relative goto
 
@@ -94,39 +83,6 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 }
 ```
 
-Customize Action Panel entries (built-in, Cursor agent prompt, VS Code command, or terminal command):
-
-```json
-{
-  "ib-utilities.actionPanel.actions": [
-    {
-      "id": "createPR",
-      "label": "Create PR",
-      "icon": "git-pull-request-create",
-      "type": "agent",
-      "prompt": "/pr create",
-      "terminalName": "Create PR"
-    },
-    {
-      "id": "custom",
-      "label": "Run tests",
-      "icon": "beaker",
-      "type": "command",
-      "command": "workbench.action.tasks.runTask",
-      "args": ["test"]
-    },
-    {
-      "id": "runTests",
-      "label": "Run tests",
-      "icon": "beaker",
-      "type": "terminal",
-      "command": "npm test",
-      "terminalMode": "editor"
-    }
-  ]
-}
-```
-
 ## Commands
 
 | Command | Title |
@@ -141,10 +97,8 @@ Customize Action Panel entries (built-in, Cursor agent prompt, VS Code command, 
 | `ib-utilities.deleteSnippet` | Delete snippet |
 | `ib-utilities.openMermaidPreview` | Open Preview |
 | `ib-utilities.openMermaidSource` | Open Source |
-| `ib-utilities.showActionPanel` | Show Action Panel |
 | `ib-utilities.showGitHelpers` | Show Git Helpers |
 | `ib-utilities.createDraftPR` | Create Draft Pull Request |
-| `ib-utilities.runActionPanelItem` | Run Action Panel Item |
 | `ib-utilities.diffWithBase` | Diff vs Base Branch |
 | `ib-utilities.setBaseBranch` | Set base branch for diffs |
 

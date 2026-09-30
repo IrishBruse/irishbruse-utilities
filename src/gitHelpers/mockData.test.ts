@@ -6,7 +6,7 @@ describe("getGitHelpersMockState", () => {
         expect(getGitHelpersMockState().repoRoot).toBe(MOCK_REPO_ROOT);
     });
 
-    it("includes draft PR, Jira, checks, review, and branch changes fixtures", () => {
+    it("includes draft PR, Jira, checks, review, and change stats", () => {
         const state = getGitHelpersMockState();
 
         expect(state.pr.isDraft).toBe(true);
@@ -15,6 +15,8 @@ describe("getGitHelpersMockState", () => {
         expect(state.checkStatus.description).toBe("Checks failing");
         expect(state.checkStatus.isFailing).toBe(true);
         expect(state.reviewStatus.label).toBe("2 unresolved");
-        expect(state.changesCache.paths).toHaveLength(state.changesSummary.changedFiles);
+        expect(state.changesSummary.changedFiles).toBe(5);
+        expect(state.changesSummary.additions).toBe(257);
+        expect(state.changesSummary.deletions).toBe(14);
     });
 });

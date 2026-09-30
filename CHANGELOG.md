@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   Remove: Changed Files sidebar and Action Panel
 -   Fix: Markdown Editor nested list gutter indent shows `>|` (not `·`) for active items, with readable glyph color and spacing
 -   Fix: Markdown Editor paints tab characters as `>|` in the active block (not only when selected or at end-of-line)
 -   Fix: Markdown Editor blockquote blank lines keep their `>` on the next line instead of inline after the quote text

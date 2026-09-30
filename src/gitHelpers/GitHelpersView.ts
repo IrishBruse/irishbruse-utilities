@@ -43,7 +43,6 @@ import { pickJiraTicketPrTitle } from "../jira/pickJiraTicketForPrTitle";
 import { registerCommandIB } from "../utils/vscode";
 import { checksTreeItem } from "./checksTreeItem";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
-import { revealBranchChanges } from "./BranchChangesView";
 import { loadBranchChanges, type BranchChangesSummary } from "./loadBranchChanges";
 import {
     isGitHelpersDebugMode,
@@ -351,11 +350,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             return;
         }
         if (isGitHelpersDebugMode() && repoRoot === MOCK_REPO_ROOT) {
-            await revealBranchChanges(repoRoot);
             showGitHelpersDebugAction("Diff vs main (mock)");
             return;
         }
-        await Promise.all([revealBranchChanges(repoRoot), openBranchDiff(repoRoot)]);
+        await openBranchDiff(repoRoot);
     }
 
     private async runCreateDraftPr(item: GitHelperTreeItem | string | undefined): Promise<void> {
@@ -901,7 +899,7 @@ async function diffAndChangesItems(repoRoot: string, baseName: string): Promise<
     ];
     const changesData = await loadBranchChanges(repoRoot);
     if (changesData) {
-        items.push(changesItem(repoRoot, changesData.summary));
+        items.push(changesItem(repoRoot, changesData));
     }
     return items;
 }
@@ -915,7 +913,7 @@ function changesItem(repoRoot: string, summary: BranchChangesSummary): GitHelper
         `${repoRoot}:showChanges`,
         "showChanges",
         formatPrLineChangeDescription(summary.additions, summary.deletions),
-        { command: Commands.ShowBranchChanges, title: "Show changes", arguments: [repoRoot] }
+        { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] }
     );
 }
 

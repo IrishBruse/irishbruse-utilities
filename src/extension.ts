@@ -8,8 +8,6 @@ import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
 import { terminalPaste } from "./commands/terminalPaste";
-import { ActionPanelViewProvider } from "./actionPanel/ActionPanelView";
-import { BranchChangesViewProvider } from "./gitHelpers/BranchChangesView";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
 import { registerMarkdownEditor } from "./markdownEditor/host/MarkdownEditorProvider";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
@@ -47,8 +45,6 @@ export function activate(context: ExtensionContext) {
     activateDiskEditorConflict(context);
     activateBranchDiffRevert(context);
     context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));
-    ActionPanelViewProvider.activate(context);
-    BranchChangesViewProvider.activate(context);
     GitHelpersViewProvider.activate(context);
 }
 

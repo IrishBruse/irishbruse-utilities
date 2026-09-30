@@ -2,9 +2,6 @@ import { stat } from "fs/promises";
 import { env, Uri, window } from "vscode";
 import { getGithubHeadFileUrls, type GithubHeadPath } from "../git/githubUrl";
 import { gitRepositoryRootForUri, gitRepositoryRootForUriSync } from "../git/gitRepositoryRoot";
-import { GitHelperTreeItem } from "../gitHelpers/GitHelperTreeItem";
-import { isGitHelpersDebugMode, showGitHelpersDebugAction } from "../gitHelpers/debugMode";
-import { getGitHelpersMockState, MOCK_REPO_ROOT } from "../gitHelpers/mockData";
 import {
     relativePathsForScmResources,
     resolveCommandFileResources,
@@ -97,38 +94,9 @@ async function copyResourcesGithubHeadFileUrl(resources: ScmResourceContext[]): 
     window.showInformationMessage(message);
 }
 
-async function copyChangesGithubHeadFileUrl(item: GitHelperTreeItem | undefined): Promise<void> {
-    if (!item?.repoRoot || !item.relativePath) {
-        return;
-    }
-
-    const isDirectory = item.kind === "changesFolder";
-
-    if (isGitHelpersDebugMode() && item.repoRoot === MOCK_REPO_ROOT) {
-        const mock = getGitHelpersMockState();
-        const kind = isDirectory ? "tree" : "blob";
-        const url = `https://github.com/irishbruse/irishbruse-utilities/${kind}/${mock.branch}/${item.relativePath}`;
-        await env.clipboard.writeText(url);
-        showGitHelpersDebugAction(`Copy GitHub head URL: ${item.relativePath}`);
-        return;
-    }
-
-    await copyGithubHeadFileUrls(item.repoRoot, [{ relativePath: item.relativePath, isDirectory }]);
-}
-
 export async function copyGithubHeadFileUrl(
-    arg?: GitHelperTreeItem | Uri | Parameters<typeof resolveCommandFileResources>[0],
+    arg?: Uri | Parameters<typeof resolveCommandFileResources>[0],
     selectedResources?: Uri | Uri[]
 ): Promise<void> {
-    if (
-        arg &&
-        typeof arg === "object" &&
-        "kind" in arg &&
-        (arg.kind === "changesFile" || arg.kind === "changesFolder")
-    ) {
-        await copyChangesGithubHeadFileUrl(arg);
-        return;
-    }
-
     await copyResourcesGithubHeadFileUrl(resolveCommandFileResources(arg, selectedResources));
 }

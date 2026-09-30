@@ -178,62 +178,6 @@ export enum Commands {
     RefreshGitHelpers = `ib-utilities.refreshGitHelpers`,
 
     /**
-     * Show Action Panel
-     * Short Title: Actions
-     * Icon: $(run-all)
-     */
-    ShowActionPanel = `ib-utilities.showActionPanel`,
-
-    /**
-     * Run Action Panel Item
-     * Short Title: undefined
-     * Icon: $(run)
-     */
-    RunActionPanelItem = `ib-utilities.runActionPanelItem`,
-
-    /**
-     * Add Action
-     * Short Title: Add action
-     * Icon: $(add)
-     */
-    AddActionPanelAction = `ib-utilities.addActionPanelAction`,
-
-    /**
-     * Edit Action
-     * Short Title: Edit action
-     * Icon: $(edit)
-     */
-    EditActionPanelAction = `ib-utilities.editActionPanelAction`,
-
-    /**
-     * Delete Action
-     * Short Title: Delete action
-     * Icon: $(trash)
-     */
-    DeleteActionPanelAction = `ib-utilities.deleteActionPanelAction`,
-
-    /**
-     * Show Branch Changes
-     * Short Title: Show changes
-     * Icon: $(git-compare)
-     */
-    ShowBranchChanges = `ib-utilities.showBranchChanges`,
-
-    /**
-     * Collapse All
-     * Short Title: Collapse all
-     * Icon: $(collapse-all)
-     */
-    CollapseBranchChangesFolders = `ib-utilities.collapseBranchChangesFolders`,
-
-    /**
-     * Expand All
-     * Short Title: Expand all
-     * Icon: $(expand-all)
-     */
-    ExpandBranchChangesFolders = `ib-utilities.expandBranchChangesFolders`,
-
-    /**
      * Diff
      * Short Title: Diff
      * Icon: $(diff)
@@ -294,11 +238,6 @@ export enum Commands {
      */
     ViewSnippetContainer = `workbench.view.snippetContainer`,
 
-    /**
-     * Actions
-     */
-    ViewActionPanel = `workbench.view.actionPanel`,
-
 }
 
 /** View Containers */
@@ -308,12 +247,6 @@ export enum ViewContainers {
      * Icon: media/snippet_icon.svg
      */
       SnippetContainer = `snippetContainer`,
-
-    /**
-     * Actions
-     * Icon: $(run-all)
-     */
-      ActionPanel = `actionPanel`,
 
 }
 
@@ -326,22 +259,10 @@ export enum Views {
     SnippetView = `snippetView`,
 
     /**
-     * Header: Actions
-     * ContainerId: actionPanel
-     */
-    IbUtilitiesActionPanel = `ib-utilities.actionPanel`,
-
-    /**
      * Header: Git Helpers
      * ContainerId: scm
      */
     IbUtilitiesGitHelpers = `ib-utilities.gitHelpers`,
-
-    /**
-     * Header: Changed Files
-     * ContainerId: branchChanges
-     */
-    IbUtilitiesBranchChanges = `ib-utilities.branchChanges`,
 
 }
 
@@ -368,14 +289,9 @@ export enum Configuration {
     GithubGhPath = `ib-utilities.github.ghPath`,
 
     /**
-     * Show Git Helpers with mock PR, checks, Jira, and branch changes data for UI development and testing.
+     * Show Git Helpers with mock PR, checks, Jira, and change stats for UI development and testing.
      */
     GitHelpersDebugMode = `ib-utilities.gitHelpers.debugMode`,
-
-    /**
-     * Actions shown in the Action Panel. Cursor agent prompts use type "agent"; VS Code commands use type "command"; shell commands use type "terminal".
-     */
-    ActionPanelActions = `ib-utilities.actionPanel.actions`,
 
 }
 

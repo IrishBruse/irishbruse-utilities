@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+-   **Fix**: Inline Markdown list and task item text align with bullets and checkboxes again after zero-width hidden markers.
+
 -   **Change**: Inline Markdown skill front matter stays as raw YAML only; the Properties form and fence chrome are removed.
 
 -   **Fix**: Inline Markdown stays on the text editor for git, diff, and merge opens.

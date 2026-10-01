@@ -86,14 +86,14 @@ From: Rendered document
 
 ## List
 
-Does: Show a bullet beside a list item, with wrapped lines still starting under the words.
+Does: Show a bullet beside a list item, with item text vertically aligned to the marker and wrapped lines still starting under the words.
 Reach: none
 Activate: offset=49
 From: Rendered document
 
 ## Task
 
-Does: Show a task checkbox with no list bullet, and toggle it between open and done.
+Does: Show a task checkbox aligned with the task text, with no list bullet, and toggle it between open and done.
 Reach: none
 Activate: .inline-md-task
 From: Rendered document

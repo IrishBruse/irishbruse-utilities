@@ -38,6 +38,14 @@ function adjacentApproach(scope: TextRange, cursor: CursorContext): boolean {
     return gap >= 1 && gap <= 2;
 }
 
+function oneBreakBefore(scope: TextRange, cursor: CursorContext): boolean {
+    const { from, to } = selectionBounds(cursor);
+    if (from !== to) {
+        return false;
+    }
+    return scope.start - cursor.lineEnd === cursor.eolLength;
+}
+
 function blockReveal(scope: TextRange, cursor: CursorContext): boolean {
     return selectionOverlaps(scope, cursor)
         || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
@@ -71,7 +79,7 @@ export function markerVisibility(scope: Scope, marker: TextRange, cursor: Cursor
     if (scope.kind === "table") {
         const { from, to } = selectionBounds(cursor);
         const overlaps = from === to ? from >= scope.start && from < scope.end : from < scope.end && to > scope.start;
-        return overlaps || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) || adjacentApproach(scope, cursor)
+        return overlaps || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) || oneBreakBefore(scope, cursor)
             ? "raw"
             : "hidden";
     }

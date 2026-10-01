@@ -41,4 +41,5 @@ export interface CursorContext {
     readonly selectionTo: number;
     readonly lineStart: number;
     readonly lineEnd: number;
+    readonly eolLength: number;
 }

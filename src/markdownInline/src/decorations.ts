@@ -68,6 +68,7 @@ function cursorContext(editor: monaco.editor.IStandaloneCodeEditor, model: monac
         selectionTo: model.getOffsetAt(end),
         lineStart,
         lineEnd: lineStart + model.getLineLength(head.lineNumber),
+        eolLength: model.getEOL().length,
     };
 }
 

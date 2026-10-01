@@ -6,6 +6,11 @@
     color: var(--vscode-editor-foreground, #d4d4d4);
 }
 
+.inline-md-root .monaco-editor .margin {
+    contain: none !important;
+    z-index: 4;
+}
+
 .inline-md-root .monaco-editor .margin-view-overlays .inline-md-list-bullet {
     color: var(--vscode-editor-foreground, #d4d4d4);
     text-align: center;

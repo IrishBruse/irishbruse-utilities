@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import type { CursorContext, Scope } from "./types";
 import { markerVisibility, showsFormattedContent } from "./visibility";
 
-function cursor(head: number, lineStart: number, lineEnd: number, anchor = head): CursorContext {
-    return { selectionFrom: anchor, selectionTo: head, lineStart, lineEnd };
+function cursor(head: number, lineStart: number, lineEnd: number, anchor = head, eolLength = 1): CursorContext {
+    return { selectionFrom: anchor, selectionTo: head, lineStart, lineEnd, eolLength };
 }
 
 const strong: Scope = {
@@ -188,7 +188,8 @@ describe("markerVisibility", () => {
         expect(markerVisibility(table, table.markers[0]!, cursor(40, 30, 70))).toBe("raw");
         expect(markerVisibility(table, table.markers[0]!, cursor(30, 30, 70))).toBe("raw");
         expect(markerVisibility(table, table.markers[0]!, cursor(10, 0, 29))).toBe("raw");
-        expect(markerVisibility(table, table.markers[0]!, cursor(10, 0, 28))).toBe("raw");
+        expect(markerVisibility(table, table.markers[0]!, cursor(10, 0, 28))).toBe("hidden");
+        expect(markerVisibility(table, table.markers[0]!, cursor(10, 0, 28, 10, 2))).toBe("raw");
         expect(markerVisibility(table, table.markers[0]!, cursor(10, 0, 27))).toBe("hidden");
         expect(markerVisibility(table, table.markers[0]!, cursor(90, 80, 100))).toBe("hidden");
         expect(markerVisibility(table, table.markers[0]!, cursor(90, 80, 100, 0))).toBe("raw");

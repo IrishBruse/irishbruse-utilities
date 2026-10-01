@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+-   **Fix**: Inline Markdown keeps a table rendered when the caret is on the heading above the blank line before it.
+
 -   **Fix**: Inline Markdown selection highlight stays on body lines when a heading in the same selection is stretched over its descenders.
 
 -   **Change**: Inline Markdown playground fixtures live only under `docs/tests/markdown/`; default verify regression uses `playground.md`.

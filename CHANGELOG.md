@@ -2,36 +2,12 @@
 
 ## Unreleased
 
--   Fix: Inline Markdown table rows use a uniform background instead of alternating darker stripes
--   Add: Inline Markdown SKILL.md front matter autocompletes general agent properties
--   Add: SKILL.md front matter renders as a YAML code block by default, with a Properties option for the typed card
--   Add: Inline Markdown playground binds Ctrl+D/F and Ctrl+B/I/U on the keyboard-whitespace fixture for manual testing
--   Fix: Inline Markdown tables grow the line to fit wrapped cells instead of scrolling inside the table
--   Add: Inline Markdown previews a GFM table as a bordered grid and shows the pipe source when the cursor is inside
--   Add: Inline Markdown editing runs in Monaco and keeps markdown and fenced-code syntax highlighting when markers are shown
--   Add: Inline Markdown shows line numbers beside the text
--   Fix: Raw headings keep their level color and larger size, so an H2 stays red
--   Fix: Code blocks in preview show the language in the top right
--   Fix: Headings with a larger font get a taller line so the next line does not collide
--   Fix: Inline Markdown leaves parentheses in the body text color
--   Fix: The current line uses the `editor.lineHighlightBackground` from settings, including colors with alpha
--   Fix: Rendered links stay green, and a raw link keeps a blue label with a green destination
--   Fix: The current-line highlight on a heading matches the taller heading line
--   Fix: A multiline selection on a heading uses that heading's taller line height
--   Fix: Clicking a rendered link opens it and leaves the cursor where it was
--   Fix: Inline Markdown in VS Code shows line numbers beside the text
--   Fix: SKILL.md front matter opens as a properties card instead of raw YAML
--   Fix: The current-line highlight in VS Code uses the same `editor.lineHighlightBackground` as the playground
--   Fix: Inline Markdown opens only in the normal editor, and stays out of diffs, compare, and git history
--   Fix: The current-line highlight stays the faint color from settings when VS Code supplies it as `rgba`
--   Fix: Clicking a link in a table opens the link instead of switching the table to source
--   Fix: Clicking a table cell places the cursor at that spot in the source
--   Fix: The scrollbar is a smaller rounded thumb set a few pixels out from the text
--   Fix: Code blocks use the theme code-block color, lighter than the dark overlay and still visible
--   Fix: The scrollbar sits beside tables instead of covering their right edge
--   Fix: Inline Markdown task items hide the list bullet and show only the checkbox
--   Remove: Changed Files sidebar and Action Panel
--   Add: Inline Markdown webview keeps the file as raw markdown, hides syntax until the cursor needs it, and previews images
+## 0.23.0
+
+-   **Add**: **Inline Markdown (ib-utilities)** custom editor for `.md` files: formatted preview with raw syntax on focus, line numbers, images, task checkboxes, and fenced-code highlighting in the normal editor (not diffs or git views).
+-   **Add**: GFM table grid preview, idle mermaid diagrams with **Open Preview** CodeLens, and YAML front matter highlighting with a SKILL.md Properties card and property autocomplete.
+-   **Fix**: Theme-aligned current line, selection, blockquotes, headings, links, code blocks, scrollbars, and table or mermaid editing behavior in Inline Markdown.
+-   **Remove**: Changed Files sidebar and Action Panel.
 
 ## 0.22.0
 

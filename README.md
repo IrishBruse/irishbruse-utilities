@@ -46,6 +46,12 @@ Tables open as a grid. Edit a cell, add a row or column from the gap controls, a
 
 Idle `` ```mermaid `` `` fences render a themed diagram and show an **Open Preview** button that opens the same Mermaid Preview as the CodeLens in the text editor.
 
+### Inline Markdown (ib-utilities)
+
+Open `*.md` files with **Inline Markdown (ib-utilities)** from **Reopen Editor With...** or the editor title bar. The file stays raw Markdown; formatting hides until you click or select, then markers and source appear where you edit. Git diffs and compare views keep the stock text editor.
+
+The view uses your theme for headings, emphasis, links, blockquotes, and code blocks, with line numbers beside the text. Tables preview as a bordered grid; mermaid fences show an inline diagram and **Open Preview** CodeLens. YAML front matter highlights as YAML, with a Properties card for `SKILL.md` and autocomplete for agent property keys. Task lines show a checkbox without a list bullet.
+
 ### Mermaid Preview
 
 Open `.mmd` or `.mermaid` files as **source text** by default (including branch diffs and `vscode.diff`). Use **Open Preview** from the editor title bar or the `ib-utilities.openMermaidPreview` command for live diagram rendering that follows your VS Code color theme. In preview, use the toolbar to zoom, pan, fit to view, or copy the diagram as PNG. Switch back to source with **Open Source**.

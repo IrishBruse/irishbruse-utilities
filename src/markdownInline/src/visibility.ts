@@ -30,10 +30,36 @@ function cursorOnRange(range: TextRange, cursor: CursorContext): boolean {
     return from < range.end && to > range.start;
 }
 
+function adjacentApproach(scope: TextRange, cursor: CursorContext): boolean {
+    const { from, to } = selectionBounds(cursor);
+    if (from !== to) {
+        return false;
+    }
+    const gap = scope.start - cursor.lineEnd;
+    return gap >= 1 && gap <= 2;
+}
+
+function blockReveal(scope: TextRange, cursor: CursorContext): boolean {
+    return selectionOverlaps(scope, cursor)
+        || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
+        || adjacentApproach(scope, cursor);
+}
+
+function selectionCoversMarkerLine(marker: TextRange, cursor: CursorContext): boolean {
+    const { from, to } = selectionBounds(cursor);
+    if (from === to) {
+        return false;
+    }
+    return rangesOverlap(marker.start, marker.end, cursor.lineStart, cursor.lineEnd)
+        && rangesOverlap(cursor.lineStart, cursor.lineEnd, from, to);
+}
+
 /**
  * Rendered hides markers, ghost fades markers on the active line, and raw
  * shows them. Headings go raw for the whole line. List, quote, and task
- * markers stay hidden until the cursor is on the marker itself.
+ * markers stay hidden until the cursor is on the marker or a selection meets
+ * that marker's line. Images and tables go raw on their line, on the line
+ * immediately before, or when a selection covers them.
  */
 export function markerVisibility(scope: Scope, marker: TextRange, cursor: CursorContext): MarkerVisibility {
     if (scope.kind === "heading") {
@@ -44,23 +70,18 @@ export function markerVisibility(scope: Scope, marker: TextRange, cursor: Cursor
     if (scope.kind === "thematicBreak") {
         return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) ? "raw" : "hidden";
     }
-    if (scope.kind === "blockquoteMarker") {
-        const { from, to } = selectionBounds(cursor);
-        if (from !== to) {
-            return "hidden";
-        }
-        return from >= marker.start && from < marker.end ? "raw" : "hidden";
-    }
     if (STRUCTURAL.has(scope.kind)) {
-        return cursorOnRange(marker, cursor) ? "raw" : "hidden";
+        return cursorOnRange(marker, cursor) || selectionCoversMarkerLine(marker, cursor) ? "raw" : "hidden";
     }
     if (scope.kind === "image") {
-        return selectionOverlaps(scope, cursor) ? "raw" : "hidden";
+        return blockReveal(scope, cursor) ? "raw" : "hidden";
     }
     if (scope.kind === "table") {
         const { from, to } = selectionBounds(cursor);
         const overlaps = from === to ? from >= scope.start && from < scope.end : from < scope.end && to > scope.start;
-        return overlaps ? "raw" : "hidden";
+        return overlaps || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) || adjacentApproach(scope, cursor)
+            ? "raw"
+            : "hidden";
     }
     if (selectionOverlaps(scope, cursor)) {
         return "raw";

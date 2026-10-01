@@ -2,6 +2,7 @@ import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { parseMap, validateSuite, type Feature } from "./suite.ts";
 
 const session = "verify-markdownInline";
 const pageUrl = "http://127.0.0.1:5175/";
@@ -9,27 +10,50 @@ const cliDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(cliDir, "..", "..", "..", "..");
 const mapPath = join(cliDir, "..", "feature-map.md");
 const statePath = join(repoRoot, ".tmp", "verify-markdownInline", "state.json");
-const viewText = 'document.querySelector("#editor .view-lines")?.innerText ?? ""';
+const pageText = '(document.querySelector("#editor .view-lines")?.innerText ?? "").replaceAll("\\u00a0", " ")';
 const readyFn = `!!document.querySelector("#editor .inline-md-skill-switch") && !!document.querySelector("#editor .inline-md-h1") && !!document.querySelector("#editor .inline-md-strong") && !!document.querySelector("#editor input[type=checkbox]") && !!document.querySelector("#editor img[alt]") && !!document.querySelector("#editor .inline-md-code-hit") && !!document.querySelector("#editor .inline-md-table") && !!document.querySelector("#editor .inline-md-hr")`;
 
 const evidence: Record<string, string> = {
-    "Rendered document": `(() => { const text = ${viewText}; return text.includes("Hello") && text.includes("A paragraph with") && text.includes("title: Playground"); })()`,
-    "YAML front matter": `(() => { const text = ${viewText}; return text.includes("title: Playground") && !!document.querySelector("#editor .inline-md-skill-switch"); })()`,
+    "Rendered document": `(() => { const text = ${pageText}; return text.includes("Hello") && text.includes("A paragraph with") && text.includes("title: Playground"); })()`,
+    "YAML front matter": `(() => { const text = ${pageText}; return text.includes("title: Playground") && !!document.querySelector("#editor .inline-md-skill-switch"); })()`,
     "Skill properties": '!!document.querySelector("#editor .ib-skill-properties-panel")',
-    "Heading": `(() => { const text = ${viewText}; return text.includes("# Hello"); })()`,
-    "Bold": `(() => (${viewText}).includes("**bold**"))()`,
-    "Italic": `(() => (${viewText}).includes("*italic*"))()`,
-    "Strikethrough": `(() => (${viewText}).includes("~~strike~~"))()`,
-    "Inline code": `(() => (${viewText}).includes("\`inline code\`"))()`,
-    "Link": `(() => (${viewText}).includes("[Example link](https://example.com)"))()`,
-    "Blockquote": `(() => (${viewText}).includes("> Quote line."))()`,
-    "Thematic break": `(() => (${viewText}).split("\\n").some((line) => line.trim() === "---"))()`,
-    "Image": `(() => (${viewText}).includes("![Dot](dot.png)"))()`,
-    "Missing image": `(() => (${viewText}).includes("![Missing](does-not-exist.png)"))()`,
-    "Task": '(() => document.querySelector("#editor input[type=checkbox]")?.checked === true && document.querySelector("#editor .inline-md-bullet") == null)()',
-    "Code block": `(() => (${viewText}).includes("\`\`\`ts"))()`,
-    "Table": `(() => { const text = (${viewText}).replaceAll("\\u00a0", " "); return document.querySelector("#editor .inline-md-table") == null && text.includes("Source hint") && text.includes("|"); })()`,
-    "Mermaid": '(() => !!document.querySelector("#editor .inline-md-mermaid-diagram svg") && !!document.querySelector("#editor .inline-md-mermaid-open-preview"))()',
+    "Heading": `(() => (${pageText}).includes("# Hello"))()`,
+    "Bold": `(() => (${pageText}).includes("**bold**"))()`,
+    "Italic": `(() => (${pageText}).includes("*italic*"))()`,
+    "Strikethrough": `(() => (${pageText}).includes("~~strike~~"))()`,
+    "Inline code": `(() => (${pageText}).includes("\`inline code\`"))()`,
+    "Link": `(() => (${pageText}).includes("[Example link](https://example.com)"))()`,
+    "Blockquote": `(() => (${pageText}).includes("> Quote line."))()`,
+    "Thematic break": `(() => (${pageText}).split("\\n").some((line) => line.trim() === "---"))()`,
+    "Image": `(() => (${pageText}).includes("![Dot](dot.png)"))()`,
+    "Missing image": `(() => (${pageText}).includes("![Missing](does-not-exist.png)"))()`,
+    "Task": `(() => { const box = document.querySelector("#editor input[type=checkbox]"); const taskLine = [...document.querySelectorAll("#editor .view-line")].find((line) => line.textContent?.includes("Task")); return box?.checked === true && !!taskLine && !taskLine.querySelector(".inline-md-bullet"); })()`,
+    "Code block": `(() => (${pageText}).includes("\`\`\`ts"))()`,
+    "Table": `(() => { const text = ${pageText}; return document.querySelector("#editor .inline-md-table") == null && text.includes("Source hint") && text.includes("|"); })()`,
+    "Mermaid": `(() => {
+        const api = window.__inlineMarkdown;
+        if (!api?.getDocument || !api.setCursor) return false;
+        const at = api.getDocument().indexOf("flowchart");
+        if (at < 0) return false;
+        const button = document.querySelector("#editor .inline-md-mermaid-open-preview");
+        const style = button ? getComputedStyle(button) : null;
+        const underlined = !!style && style.textDecorationLine.includes("underline");
+        const svg = () => !!document.querySelector("#editor .inline-md-mermaid-diagram svg");
+        const state = window.__mermaidProof ?? "preview";
+        if (state === "preview") {
+            if (!button || !underlined || !svg()) return false;
+            window.__mermaidProof = "raw";
+            api.setCursor(at + 2);
+            return false;
+        }
+        if (state === "raw") {
+            if (svg() || button) return false;
+            window.__mermaidProof = "back";
+            api.setCursor(0);
+            return false;
+        }
+        return svg();
+    })()`,
 };
 
 const discoverScript = `JSON.stringify((() => {
@@ -64,14 +88,6 @@ const discoverScript = `JSON.stringify((() => {
         "Mermaid": { reach: "none", activate: document.querySelector("#editor .inline-md-mermaid-open-preview") ? ".inline-md-mermaid-open-preview" : "" },
     };
 })())`;
-
-interface Feature {
-    name: string;
-    does: string;
-    reach: string;
-    activate: string;
-    from: string;
-}
 
 interface State {
     owned: boolean;
@@ -190,27 +206,11 @@ function down(): void {
 }
 
 function readMap(): Feature[] {
-    const text = readFileSync(mapPath, "utf8");
-    const chunks = text.split(/^## /m).slice(1);
-    return chunks.map((chunk) => {
-        const [nameLine, ...rest] = chunk.split("\n");
-        const name = nameLine.trim();
-        const body = rest.join("\n");
-        const field = (label: string): string => {
-            const match = body.match(new RegExp(`^${label}: (.*)$`, "m"));
-            if (!match?.[1]) {
-                throw new Error(`Missing ${label} for ${name}`);
-            }
-            return match[1];
-        };
-        return {
-            name,
-            does: field("Does"),
-            reach: field("Reach"),
-            activate: field("Activate"),
-            from: field("From"),
-        };
-    });
+    return parseMap(readFileSync(mapPath, "utf8"));
+}
+
+function suiteProblems(): string[] {
+    return validateSuite(readMap(), Object.keys(evidence));
 }
 
 function featureNamed(name: string): Feature {
@@ -252,7 +252,27 @@ function quoted(spec: string, kind: string): string | undefined {
     return match?.[1];
 }
 
-function activate(spec: string): void {
+async function clickInView(spec: string): Promise<void> {
+    const deadline = Date.now() + 4_000;
+    const selector = JSON.stringify(spec);
+    while (Date.now() < deadline) {
+        const ready = evalJson(`JSON.stringify((() => {
+            const el = document.querySelector(${selector});
+            if (!el) return false;
+            el.scrollIntoView({ block: "center" });
+            const rect = el.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0 && rect.top >= 0 && rect.bottom <= window.innerHeight;
+        })())`) === true;
+        if (ready) {
+            browser(["click", spec]);
+            return;
+        }
+        await delay(50);
+    }
+    throw new Error(`Locator is not in view: ${spec}`);
+}
+
+async function activate(spec: string): Promise<void> {
     const role = spec.match(/^role=(\S+)(?: name="([^"]*)")?$/);
     if (role?.[1]) {
         const args = ["find", "role", role[1], "click"];
@@ -281,7 +301,7 @@ function activate(spec: string): void {
         return;
     }
     if (spec.startsWith(".") || spec.startsWith("#") || spec.startsWith("input[")) {
-        browser(["click", spec]);
+        await clickInView(spec);
         return;
     }
     throw new Error(`Unknown activate: ${spec}`);
@@ -300,17 +320,30 @@ async function waitFor(expression: string, timeoutMs = 8_000): Promise<void> {
         }
         await delay(200);
     }
-    throw new Error(`Timed out waiting for ${expression}`);
+    throw new Error("timed out");
+}
+
+function snapshot(): string {
+    const value = evalJson(`JSON.stringify((() => {
+        const text = ${pageText};
+        return text.slice(0, 500);
+    })())`);
+    return typeof value === "string" ? value : JSON.stringify(value);
+}
+
+async function reachFeature(feature: Feature): Promise<void> {
+    browser(["open", pageUrl]);
+    await waitFor(readyFn);
+    const steps = featureChain(feature).filter((step, index, chain) => !(step.sequence && index === chain.length - 1));
+    for (const step of steps) {
+        runReach(step);
+        await activate(step.activate);
+    }
 }
 
 async function show(feature: Feature): Promise<void> {
     await up();
-    browser(["open", pageUrl]);
-    await waitFor(readyFn);
-    for (const step of featureChain(feature)) {
-        runReach(step);
-        activate(step.activate);
-    }
+    await reachFeature(feature);
 }
 
 function tracePath(name: string): string {
@@ -346,16 +379,8 @@ async function trace(name: string): Promise<void> {
         await waitFor(readyFn);
         browser(["profiler", "start"]);
         started = true;
-        browser(["open", pageUrl]);
-        await waitFor(readyFn);
-        const steps = featureChain(featureNamed(name));
-        if (name !== "Mermaid") {
-            for (const step of steps) {
-                runReach(step);
-                activate(step.activate);
-            }
-        }
-        await waitFor(check, name === "Mermaid" ? 20_000 : 8_000);
+        await reachFeature(featureNamed(name));
+        await waitFor(check, featureNamed(name).sequence ? 20_000 : 8_000);
         const path = tracePath(name);
         mkdirSync(dirname(path), { recursive: true });
         browser(["profiler", "stop", path]);
@@ -371,6 +396,7 @@ async function trace(name: string): Promise<void> {
                 process.exitCode = 1;
             }
         }
+        console.error(snapshot());
         fail(name, error);
     }
 }
@@ -383,9 +409,43 @@ async function mapCheck(): Promise<void> {
             await waitFor(readyFn);
             for (const step of featureChain(feature)) {
                 runReach(step);
-                activate(step.activate);
+                await activate(step.activate);
             }
         } catch (error) {
+            console.error(snapshot());
+            fail(feature.name, error);
+        }
+    }
+}
+
+function validate(): void {
+    const problems = suiteProblems();
+    if (problems.length === 0) {
+        return;
+    }
+    for (const problem of problems) {
+        console.error(problem);
+    }
+    process.exit(1);
+}
+
+async function regress(): Promise<void> {
+    validate();
+    await up();
+    for (const feature of readMap()) {
+        const check = evidence[feature.name];
+        try {
+            await reachFeature(feature);
+            await waitFor(check, feature.sequence ? 20_000 : 8_000);
+            console.log(feature.name);
+        } catch (error) {
+            console.error(feature.name);
+            console.error("regression failed");
+            try {
+                console.error(snapshot());
+            } catch {
+                process.exitCode = 1;
+            }
             fail(feature.name, error);
         }
     }
@@ -441,7 +501,11 @@ if (command === "up") {
     await mapCheck();
 } else if (command === "map" && arg === "refresh" && !extra) {
     await mapRefresh();
+} else if (command === "validate" && !arg) {
+    validate();
+} else if (command === "regress" && !arg) {
+    await regress();
 } else {
-    console.error("Usage: verify-markdownInline up | down | open <feature> | trace <feature> | map check | map refresh");
+    console.error("Usage: verify-markdownInline up | down | open <feature> | trace <feature> | map check | map refresh | validate | regress");
     process.exit(1);
 }

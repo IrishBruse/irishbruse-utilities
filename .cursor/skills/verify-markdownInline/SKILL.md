@@ -1,11 +1,11 @@
 ---
 name: verify-markdownInline
-description: Run the Inline Markdown playground and collect traces, and resolve a UI report to a feature. Use when verifying a change, collecting a trace, or interpreting a screenshot or vague UI report.
+description: Run the Inline Markdown playground, its regression suite, and map validation. Use when verifying a change, collecting a trace, or interpreting a screenshot or vague UI report.
 ---
 
 # verify-markdownInline
 
-Call `npm run verify-markdownInline` for every run and every trace.
+Call `npm run verify-markdownInline` for every run, trace, regression, and validation.
 A run is that CLI command.
 A raw browser session does not count, even when its name is verify-markdownInline, and it writes no trace.
 When the CLI cannot do the check, say so.
@@ -21,14 +21,31 @@ The app is the Inline Markdown playground at `http://127.0.0.1:5175/`.
   If that URL is already up, `up` leaves the existing server running.
 - `npm run verify-markdownInline -- down` stops the process `up` started.
 - `npm run verify-markdownInline -- open "<feature>"` reaches that feature map entry.
-- `npm run verify-markdownInline -- trace "<feature>"` opens it, writes a trace file, and prints its path.
-- `npm run verify-markdownInline -- map check` drives every entry and exits non-zero when a Reach or Activate fails, naming the feature.
-- `npm run verify-markdownInline -- map refresh` rewrites Reach and Activate from the live app and leaves Does and From as written.
+- `npm run verify-markdownInline -- trace "<feature>"` opens it, asserts that feature's evidence, writes a trace file, and prints its path.
+- `npm run verify-markdownInline -- regress` runs validation, then asserts every feature's evidence. It prints each passing feature and, on failure, the feature name plus a text snapshot.
+- `npm run verify-markdownInline -- validate` checks the map and the evidence without a browser. It exits non-zero and names each problem.
+- `npm run verify-markdownInline -- map check` drives every Reach and Activate and exits non-zero when a locator fails, naming the feature.
+- `npm run verify-markdownInline -- map refresh` rewrites Reach and Activate from the live app and leaves Does, From, and Sequence as written.
 
 A one-line crop, "formatted markdown that starts with Hello", resolves to Rendered document.
 The command is `npm run verify-markdownInline -- open "Rendered document"`.
 A task checkbox, including one with a list bullet beside `- [ ]`, resolves to Task.
 The command is `npm run verify-markdownInline -- open "Task"`.
+
+## Regression
+
+`regress` is the suite.
+`map check` only proves a locator runs.
+`trace` is one feature plus a profile.
+A behavior change is finished when `regress` exits 0.
+Evidence reads view text with non-breaking spaces folded into normal spaces, and a selector click waits until that element is inside the viewport.
+
+## Validation
+
+`validate` requires every map entry to have evidence, every evidence key to name a map entry, every From to resolve without a cycle, and every Activate to be a locator the runner can perform (`offset=`, `text=`, `alt=`, `role=`, or a CSS selector).
+Run it when you add or rename a feature.
+`regress` runs it first.
+`Sequence: yes` means the evidence drives the gesture, so regression and trace skip that entry's Activate and still run its parent chain.
 
 ## Feature map
 

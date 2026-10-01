@@ -79,7 +79,7 @@ From: Rendered document
 
 ## Image
 
-Does: Reveal the raw image markdown when the picture is activated.
+Does: Reveal the raw image markdown when the picture is activated or the caret is on the image line or the line before it.
 Reach: none
 Activate: alt="Dot"
 From: Rendered document
@@ -107,14 +107,15 @@ From: Rendered document
 
 ## Table
 
-Does: Reveal the raw pipe source when the table is activated.
+Does: Reveal the raw pipe source when the table is activated or the caret is on the table or the line before it.
 Reach: none
 Activate: .inline-md-table
 From: Rendered document
 
 ## Mermaid
 
-Does: Render idle mermaid fences as SVG diagrams with **Open Preview** on each block.
+Does: Render idle mermaid fences as SVG diagrams with a green underlined **Open Preview** on each block, and paint the diagram again after leaving raw source.
 Reach: none
 Activate: .inline-md-mermaid-open-preview
 From: Rendered document
+Sequence: yes

@@ -51,13 +51,22 @@ function measureDiagramHeight(diagram: HTMLElement): number {
     return Math.max(48, height + 28);
 }
 
-function paintDiagram(diagram: HTMLElement, source: string, svg: string): number {
+function writeDiagramSvg(diagram: HTMLElement, source: string, svg: string): void {
     diagram.dataset.mermaidSource = source;
     diagram.classList.remove("inline-md-mermaid-error");
     diagram.innerHTML = svg;
     applyWorkbenchMermaidTokens(diagram);
     diagram.setAttribute("aria-busy", "false");
+}
+
+function paintDiagram(diagram: HTMLElement, source: string, svg: string): number {
+    writeDiagramSvg(diagram, source, svg);
     return measureDiagramHeight(diagram);
+}
+
+function keepPaintedSource(diagram: HTMLElement, source: string): boolean {
+    const painted = diagram.dataset.mermaidSource;
+    return painted !== undefined && painted !== source && diagram.querySelector("svg") !== null;
 }
 
 export function isMermaidCodeBlock(language: string | undefined): boolean {
@@ -70,11 +79,11 @@ export async function renderMermaidDiagram(diagram: HTMLElement, source: string)
     }
     const cached = renderedBySource.get(source);
     if (cached) {
+        writeDiagramSvg(diagram, source, cached.svg);
         if (!diagram.isConnected) {
             return cached.height;
         }
-        const height = paintDiagram(diagram, source, cached.svg);
-        return height;
+        return measureDiagramHeight(diagram);
     }
     diagram.setAttribute("aria-busy", "true");
     diagram.classList.remove("inline-md-mermaid-error");
@@ -84,15 +93,28 @@ export async function renderMermaidDiagram(diagram: HTMLElement, source: string)
         const mermaid = await loadMermaid();
         configureMermaid(mermaid);
         const { svg } = await mermaid.render(id, source);
+        if (keepPaintedSource(diagram, source)) {
+            const height = measureDiagramHeightFromSvg(svg);
+            renderedBySource.set(source, { svg, height });
+            if (diagram.isConnected) {
+                return measureDiagramHeight(diagram);
+            }
+            const shown = renderedBySource.get(diagram.dataset.mermaidSource ?? "");
+            return shown?.height ?? height;
+        }
         if (!diagram.isConnected) {
             const height = measureDiagramHeightFromSvg(svg);
             renderedBySource.set(source, { svg, height });
+            writeDiagramSvg(diagram, source, svg);
             return height;
         }
         const height = paintDiagram(diagram, source, svg);
         renderedBySource.set(source, { svg, height });
         return height;
     } catch (error) {
+        if (keepPaintedSource(diagram, source)) {
+            return diagram.isConnected ? measureDiagramHeight(diagram) : 0;
+        }
         if (!diagram.isConnected) {
             return 0;
         }

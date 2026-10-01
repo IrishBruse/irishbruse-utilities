@@ -155,7 +155,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         bracketPairColorization: { enabled: false },
         matchBrackets: "never",
         renderValidationDecorations: "off",
-        fixedOverflowWidgets: false,
+        fixedOverflowWidgets: true,
     });
     model.updateOptions({
         bracketColorizationOptions: {
@@ -184,8 +184,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             replace(from, to, next);
         },
         onReveal(offset) {
-            setCursor(offset);
-            editor.focus();
+            revealOffset(offset);
         },
         onReplace(from, to, text) {
             replace(from, to, text);
@@ -255,9 +254,15 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         revealInParent(position, true);
     };
 
+    const revealOffset = (offset: number): void => {
+        presentation.prepareReveal(offset);
+        setCursor(offset);
+        editor.focus();
+    };
+
     const revealInParent = (position: monaco.IPosition, center: boolean): void => {
         const node = editor.getDomNode();
-        if (!node) {
+        if (!node || parent.clientHeight === 0) {
             return;
         }
         const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight);
@@ -341,56 +346,77 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
                 if (Number.isFinite(from)) {
                     event.event.preventDefault();
                     event.event.stopPropagation();
-                    setCursor(from + 2);
-                    editor.focus();
+                    revealOffset(from + 2);
                 }
             }
         }
     });
 
     let fitting = false;
-    const fitContent = (): void => {
-        if (fitting) {
+    let fitFrame = 0;
+    const fitNow = (): void => {
+        if (fitting || parent.clientWidth === 0 || parent.clientHeight === 0) {
             return;
         }
         fitting = true;
         try {
-            for (let attempt = 0; attempt < 4; attempt += 1) {
-                const width = Math.max(0, column.clientWidth);
-                const height = Math.max(1, Math.ceil(editor.getContentHeight()));
-                column.style.height = `${height}px`;
-                const info = editor.getLayoutInfo();
-                if (Math.abs(info.width - width) <= 1 && Math.abs(info.height - height) <= 1) {
-                    break;
-                }
-                editor.layout({ width, height });
+            const style = getComputedStyle(column);
+            const pad = (Number.parseFloat(style.paddingLeft) || 0) + (Number.parseFloat(style.paddingRight) || 0);
+            const width = Math.max(0, column.clientWidth - pad);
+            const height = Math.max(1, Math.ceil(editor.getContentHeight()));
+            const info = editor.getLayoutInfo();
+            const heightMatches = column.style.height === `${height}px`;
+            if (Math.abs(info.width - width) <= 1 && Math.abs(info.height - height) <= 1 && heightMatches) {
+                return;
             }
+            if (!heightMatches) {
+                column.style.height = `${height}px`;
+            }
+            editor.layout({ width, height });
         } finally {
             fitting = false;
         }
     };
-    const resetHorizontalScroll = (): void => {
-        if (parent.scrollLeft !== 0) {
-            parent.scrollLeft = 0;
+    const fitContent = (): void => {
+        if (fitFrame !== 0) {
+            return;
         }
+        fitFrame = requestAnimationFrame(() => {
+            fitFrame = 0;
+            fitNow();
+        });
     };
-    parent.addEventListener("scroll", resetHorizontalScroll, { passive: true });
+    const pinFindWidget = (): void => {
+        const widget = column.querySelector(".find-widget");
+        if (!(widget instanceof HTMLElement)) {
+            return;
+        }
+        widget.style.transform = parent.scrollTop > 0 ? `translateY(${parent.scrollTop}px)` : "";
+    };
+    parent.addEventListener("scroll", pinFindWidget, { passive: true });
     const contentSizeListener = editor.onDidContentSizeChange(fitContent);
     const cursorRevealListener = editor.onDidChangeCursorPosition((event) => {
         revealInParent(event.position, false);
+        pinFindWidget();
     });
     const resizeObserver = new ResizeObserver(() => {
+        if (parent.clientWidth === 0 || parent.clientHeight === 0) {
+            return;
+        }
         fitContent();
     });
     resizeObserver.observe(parent);
 
     refresh();
-    fitContent();
+    fitNow();
 
     return {
         destroy() {
             resizeObserver.disconnect();
-            parent.removeEventListener("scroll", resetHorizontalScroll);
+            if (fitFrame !== 0) {
+                cancelAnimationFrame(fitFrame);
+            }
+            parent.removeEventListener("scroll", pinFindWidget);
             contentSizeListener.dispose();
             cursorRevealListener.dispose();
             removeKeybindings();

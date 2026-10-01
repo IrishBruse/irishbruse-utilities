@@ -7,7 +7,7 @@ const playgroundDir = dirname(fileURLToPath(import.meta.url));
 const packageDir = join(playgroundDir, "..");
 const repoRoot = join(packageDir, "..", "..");
 const shotDir = join(repoRoot, ".tmp", "markdown-inline");
-const pageUrl = "http://127.0.0.1:5175/";
+const pageUrl = "http://127.0.0.1:5175/?fixture=playground.md";
 
 const SNAPSHOT_SCRIPT = `JSON.stringify({
     images: [...document.querySelectorAll("img.inline-md-image")].map((img) => img.currentSrc || img.src || img.getAttribute("src") || ""),

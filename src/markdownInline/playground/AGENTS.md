@@ -1,5 +1,7 @@
 # Inline Markdown playground
 
+Test markdown files live in `docs/tests/markdown/` and load via `?fixture=<path>` (default `playground.md`).
+
 ## VS Code iframe theme (`vscode-iframe-injected-theme.css`)
 
 `vscode-iframe-injected-theme.css` is a **real copy** of the CSS custom properties VS Code injects on a custom-editor webview iframe (`<html style="--vscode-…">`). The playground loads it as a normal stylesheet so Monaco and task checkboxes see the same tokens as in the extension host.

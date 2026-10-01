@@ -2,9 +2,11 @@
 
 ## Unreleased
 
--   **Fix**: Inline Markdown heading rows use the editor line height scaled to the heading size.
+-   **Fix**: Inline Markdown heading lines use the normal editor line height and keep the heading font size.
+-   **Fix**: Inline Markdown task checkboxes match settings controls: checkbox tokens when unchecked, button tokens and a CSS checkmark when checked.
+-   **Fix**: Inline Markdown task checkboxes and code-block hits sit on their lines in the centered column instead of hugging the viewport edge.
 -   **Fix**: Inline Markdown reveals image and table source from a click or the line above, shows markers inside a drag selection, and paints Mermaid again after leaving raw source.
--   **Fix**: Inline Markdown Open Preview is a green underlined link, wrapped list lines hang-indent, the column stays centered while wide content can scroll, and heading rows match their type size.
+-   **Fix**: Inline Markdown Open Preview is a green underlined link, wrapped list lines hang-indent, and the column stays centered while wide content can scroll.
 -   **Fix**: Inline Markdown find reveals hidden matches and keeps the find bar in view, and returning to the editor no longer refits when the size is unchanged.
 
 ## 0.23.1

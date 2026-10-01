@@ -2,8 +2,8 @@
 
 ## Changelog
 
-Keep `CHANGELOG.md` updated with each major feature change.
-Always add to Unreleased section.
+Dont add to `CHANGELOG.md` every minor update.
+Always add to Unreleased section when editing.
 
 ## Verify
 

@@ -1,5 +1,6 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { blockquoteDepthClass, blockquoteLineDepth } from "./blockquote";
+import { LIST_ITEM_GAP_PX, listItemGapAfterLines, listItemStartLines, monacoLineModel } from "./listItemGap";
 import { listMarkerBulletClass, listMarkerIndentColumns } from "./listMarker";
 import { resolveImageUrl } from "./imageUrl";
 import { isMermaidCodeBlock, renderMermaidDiagram } from "./mermaid";
@@ -688,6 +689,22 @@ export class InlinePresentation {
                 zone: {
                     afterLineNumber: lineNumber,
                     heightInPx: extra,
+                    domNode: spacer,
+                    suppressMouseDown: true,
+                },
+            });
+        }
+
+        const tabSize = this.editor.getOption(monaco.editor.EditorOption.tabSize);
+        const lineModel = monacoLineModel(model);
+        const listStarts = listItemStartLines(lineModel, scopes, tabSize);
+        for (const lineNumber of listItemGapAfterLines(lineModel, listStarts, tabSize)) {
+            const spacer = document.createElement("div");
+            zones.push({
+                key: `list-gap:${lineNumber}:${LIST_ITEM_GAP_PX}`,
+                zone: {
+                    afterLineNumber: lineNumber,
+                    heightInPx: LIST_ITEM_GAP_PX,
                     domNode: spacer,
                     suppressMouseDown: true,
                 },

@@ -1,0 +1,56 @@
+.inline-md-root .monaco-editor,
+.inline-md-root .monaco-editor .overflow-guard {
+    outline: none;
+}
+
+.inline-md-root .monaco-scrollable-element > .scrollbar,
+.inline-md-root .monaco-scrollable-element > .invisible.scrollbar {
+    display: none !important;
+}
+
+.inline-md-root .monaco-editor .view-zones > [monaco-view-zone] {
+    width: 100% !important;
+}
+
+.inline-md-root .monaco-editor .view-overlays {
+    isolation: isolate;
+    z-index: 2;
+}
+
+.inline-md-root .monaco-editor .view-overlays > div:has(.selected-text) {
+    z-index: 2;
+}
+
+.inline-md-root .monaco-editor .view-zones {
+    z-index: 1;
+}
+
+.inline-md-root .monaco-editor .view-lines {
+    position: relative;
+    z-index: 3;
+    pointer-events: none;
+}
+
+.inline-md-root .monaco-editor .contentWidgets {
+    z-index: 4;
+}
+
+.inline-md-root .monaco-editor .cursors-layer {
+    z-index: 5;
+}
+
+.inline-md-root .monaco-editor .view-line {
+    pointer-events: auto;
+}
+
+.inline-md-block,
+.inline-md-image,
+.inline-md-image-fallback,
+.inline-md-hr,
+.inline-md-table {
+    pointer-events: auto;
+}
+
+.inline-md-root .monaco-editor .selected-text {
+    z-index: 1;
+}

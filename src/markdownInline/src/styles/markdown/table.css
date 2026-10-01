@@ -1,0 +1,32 @@
+.inline-md-table {
+    box-sizing: border-box;
+    width: fit-content;
+    max-width: 100%;
+    overflow: visible;
+    margin: 0;
+    padding: 0.35em 0 0.8em;
+    cursor: text;
+}
+
+.inline-md-table table {
+    border-collapse: collapse;
+    width: auto;
+    max-width: 100%;
+    table-layout: auto;
+}
+
+.inline-md-table th,
+.inline-md-table td {
+    padding: 5px 10px;
+    border: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
+    text-align: left;
+    vertical-align: top;
+    overflow-wrap: break-word;
+    word-break: normal;
+}
+
+.inline-md-table th {
+    font-weight: 600;
+    padding-top: 10px;
+    padding-bottom: 10px;
+}

@@ -1,0 +1,61 @@
+.inline-md-mermaid {
+    position: relative;
+    box-sizing: border-box;
+    width: calc(100% - 16px);
+    margin: 0 0 0 16px;
+    padding: 26px 10px 10px;
+    border-radius: 4px;
+    background: var(--ib-md-code-block-background);
+    overflow: hidden;
+    pointer-events: auto;
+    cursor: text;
+}
+
+.inline-md-mermaid-open-preview {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    z-index: 2;
+    margin: 0;
+    padding: 2px 4px;
+    border: 0;
+    background: transparent;
+    font-family: var(--vscode-font-family, sans-serif);
+    font-size: 12px;
+    line-height: 1.2;
+    color: var(--ib-md-link) !important;
+    text-decoration: underline;
+    cursor: pointer;
+    user-select: none;
+    pointer-events: auto;
+}
+
+.inline-md-mermaid-open-preview:hover {
+    color: var(--vscode-textLink-activeForeground, #98c379);
+    text-decoration: underline;
+}
+
+.inline-md-mermaid-diagram {
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.inline-md-mermaid-diagram svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.inline-md-mermaid-diagram.inline-md-mermaid-error {
+    color: var(--vscode-errorForeground, #f48771);
+    font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+    font-size: var(--vscode-editor-font-size, 13px);
+    white-space: pre-wrap;
+}
+
+.inline-md-mermaid-diagram .messageText,
+.inline-md-mermaid-diagram .loopText,
+.inline-md-mermaid-diagram .labelText,
+.inline-md-mermaid-diagram .sequenceNumber {
+    fill: var(--vscode-editor-foreground, #d4d4d4) !important;
+}

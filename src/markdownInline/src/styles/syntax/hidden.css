@@ -1,0 +1,11 @@
+.inline-md-hidden {
+    display: inline-block;
+    width: 0;
+    max-height: 0;
+    overflow: hidden;
+    line-height: 0;
+    vertical-align: top;
+    font-size: 0 !important;
+    letter-spacing: 0 !important;
+    visibility: hidden !important;
+}

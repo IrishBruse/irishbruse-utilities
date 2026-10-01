@@ -1,0 +1,46 @@
+.inline-md-task-spacer {
+    vertical-align: top;
+    visibility: hidden;
+}
+
+.inline-md-task {
+    appearance: none;
+    box-sizing: border-box;
+    position: relative;
+    width: 14px;
+    height: 14px;
+    margin: 0 0.15em 0 0;
+    border: 1px solid var(--vscode-editorWidget-border, var(--vscode-checkbox-border, #6b6b6b));
+    border-radius: 2px;
+    background-color: var(--vscode-checkbox-background, #3c3c3c);
+    vertical-align: -0.12em;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.inline-md-task:hover {
+    border-color: var(--vscode-inputOption-activeBorder, var(--vscode-focusBorder, #007fd4));
+}
+
+.inline-md-task:checked {
+    border-color: var(--vscode-button-background, #0e639c);
+    background-color: var(--vscode-button-background, #0e639c);
+}
+
+.inline-md-task:checked::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    box-sizing: border-box;
+    width: 4px;
+    height: 7px;
+    border: solid var(--vscode-button-foreground, #ffffff);
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+}
+
+.inline-md-task:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder, #007fd4);
+    outline-offset: 2px;
+}

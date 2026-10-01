@@ -1,0 +1,12 @@
+.inline-md-image {
+    max-width: min(100%, 480px);
+    max-height: 240px;
+    height: auto;
+    vertical-align: middle;
+}
+
+.inline-md-image-fallback {
+    color: var(--vscode-descriptionForeground, #9da5b4);
+    font-style: italic;
+    cursor: pointer;
+}

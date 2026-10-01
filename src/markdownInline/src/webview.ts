@@ -1,7 +1,7 @@
 import { mountInlineEditor } from "./editor";
 import { readFrontMatter } from "./yamlFrontMatter";
 import { installWebviewThemeSync, webviewThemeTargets } from "./webviewTheme";
-import "./editor.css";
+import "./styles/editor.css";
 
 interface VsCodeApi {
     postMessage(message: unknown): void;

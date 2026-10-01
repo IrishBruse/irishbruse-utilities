@@ -1,0 +1,56 @@
+.inline-md-quote-marker {
+    color: transparent !important;
+}
+
+.inline-md-root .monaco-editor .inline-md-quote {
+    box-sizing: border-box;
+    width: 100% !important;
+    background-color: var(--ib-md-blockquote-background);
+    color: var(--vscode-descriptionForeground, #9da5b4);
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-1 {
+    box-shadow: inset 3px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-2 {
+    box-shadow:
+        inset 3px 0 0 var(--ib-md-blockquote-border),
+        inset 14px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-3 {
+    box-shadow:
+        inset 3px 0 0 var(--ib-md-blockquote-border),
+        inset 14px 0 0 var(--ib-md-blockquote-border),
+        inset 25px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-4 {
+    box-shadow:
+        inset 3px 0 0 var(--ib-md-blockquote-border),
+        inset 14px 0 0 var(--ib-md-blockquote-border),
+        inset 25px 0 0 var(--ib-md-blockquote-border),
+        inset 36px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-5 {
+    box-shadow:
+        inset 3px 0 0 var(--ib-md-blockquote-border),
+        inset 14px 0 0 var(--ib-md-blockquote-border),
+        inset 25px 0 0 var(--ib-md-blockquote-border),
+        inset 36px 0 0 var(--ib-md-blockquote-border),
+        inset 47px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote .inline-md-strong,
+.inline-md-root .monaco-editor .inline-md-quote .inline-md-em {
+    color: inherit;
+}
+
+.inline-md-root .monaco-editor .inline-md-quote .inline-md-code {
+    color: var(--ib-md-inline-code, var(--vscode-textPreformat-foreground, #c678dd));
+    background: var(--ib-md-inline-code-background, rgb(33 37 43 / 63%));
+}

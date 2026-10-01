@@ -1,0 +1,45 @@
+.inline-md-root .monaco-editor .inline-md-code-line {
+    z-index: 0;
+    width: 100% !important;
+    background: var(--ib-md-code-block-background);
+}
+
+.inline-md-root .monaco-editor .codelens-decoration {
+    border: 0;
+    color: var(--vscode-descriptionForeground, #9da5b4);
+    font-size: 11px;
+    line-height: 16px;
+    pointer-events: auto;
+}
+
+.inline-md-root .monaco-editor .codelens-decoration > a {
+    border: 0;
+    color: var(--vscode-descriptionForeground, #9da5b4);
+    text-decoration: none;
+}
+
+.inline-md-root .monaco-editor .codelens-decoration > a:hover {
+    color: var(--vscode-descriptionForeground, #9da5b4) !important;
+    text-decoration: underline;
+}
+
+.inline-md-code-hit {
+    opacity: 0;
+    white-space: nowrap;
+    user-select: none;
+}
+
+.inline-md-root .monaco-editor .view-line:has(.inline-md-lang) {
+    container-type: inline-size;
+}
+
+.inline-md-root .monaco-editor .inline-md-lang {
+    position: absolute;
+    right: calc(16px - 100cqi);
+    top: 0;
+    color: var(--vscode-descriptionForeground, #9da5b4) !important;
+    font-size: 11px;
+    line-height: 16px;
+    user-select: none;
+    pointer-events: none;
+}

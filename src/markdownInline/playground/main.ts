@@ -1,4 +1,4 @@
-import "../src/editor.css";
+import "../src/styles/editor.css";
 import { mountInlineEditor } from "../src/editor";
 import { hasYamlFrontMatter } from "../src/yamlFrontMatter";
 import { isSkillMarkdownPath } from "../src/skillPath";

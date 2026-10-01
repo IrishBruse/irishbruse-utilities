@@ -1,0 +1,7 @@
+.inline-md-hr {
+    display: block;
+    height: 0;
+    border: 0;
+    border-top: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
+    margin: 0.8em 0;
+}

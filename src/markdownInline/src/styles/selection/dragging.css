@@ -1,0 +1,14 @@
+.inline-md-root.inline-md-dragging .monaco-editor .view-zones,
+.inline-md-root.inline-md-dragging .monaco-editor .contentWidgets,
+.inline-md-root.inline-md-dragging .inline-md-block,
+.inline-md-root.inline-md-dragging .inline-md-image,
+.inline-md-root.inline-md-dragging .inline-md-image-fallback,
+.inline-md-root.inline-md-dragging .inline-md-hr,
+.inline-md-root.inline-md-dragging .inline-md-table,
+.inline-md-root.inline-md-dragging .inline-md-mermaid,
+.inline-md-root.inline-md-dragging .inline-md-mermaid *,
+.inline-md-root.inline-md-dragging .inline-md-task,
+.inline-md-root.inline-md-dragging .inline-md-code-hit,
+.inline-md-root.inline-md-dragging .monaco-editor .codelens-decoration {
+    pointer-events: none !important;
+}

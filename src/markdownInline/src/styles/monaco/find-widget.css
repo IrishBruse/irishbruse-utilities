@@ -1,0 +1,48 @@
+.inline-md-root .monaco-editor .find-widget.visible {
+    position: fixed !important;
+    top: var(--ib-find-top, 0px) !important;
+    right: var(--ib-find-right, 0px) !important;
+    left: auto !important;
+    transform: none !important;
+}
+
+.inline-md-root .monaco-editor .find-widget {
+    transition: none;
+    color: var(--vscode-editorWidget-foreground, #cccccc);
+    background-color: var(--vscode-editorWidget-background, #252526);
+    border-color: var(--vscode-editorWidget-border, var(--vscode-widget-border, #454545));
+    box-shadow: 0 0 8px 2px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+}
+
+.inline-md-root .monaco-editor .find-widget .monaco-inputbox {
+    background-color: var(--vscode-input-background, #3c3c3c);
+    color: var(--vscode-input-foreground, #cccccc);
+}
+
+.inline-md-root .monaco-editor .find-widget .monaco-inputbox .input {
+    color: inherit;
+}
+
+.inline-md-root .monaco-editor .find-widget .monaco-inputbox.idle {
+    border-color: var(--vscode-input-border, transparent);
+}
+
+.inline-md-root .monaco-editor .find-widget .matchesCount {
+    color: var(--vscode-descriptionForeground, #9da5b4);
+}
+
+.inline-md-root .monaco-editor .find-widget .button {
+    color: var(--vscode-icon-foreground, var(--vscode-foreground, #cccccc));
+}
+
+.inline-md-root .monaco-editor .find-widget .button:not(.disabled):hover {
+    background-color: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+}
+
+.inline-md-root .monaco-editor .find-widget .codicon {
+    font-family: codicon;
+}
+
+.inline-md-root .monaco-editor .find-widget:not(.visible) {
+    pointer-events: none;
+}

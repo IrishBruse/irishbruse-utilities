@@ -5,7 +5,8 @@ import { describe, expect, it } from "vitest";
 import { dragSelectionClassName } from "./dragSelection";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const cssPath = join(here, "editor.css");
+const dragCssPath = join(here, "styles/selection/dragging.css");
+const layersCssPath = join(here, "styles/monaco/view-layers.css");
 const editorPath = join(here, "editor.ts");
 
 describe("mouse drag selection", () => {
@@ -16,7 +17,7 @@ describe("mouse drag selection", () => {
     });
 
     it("disables pointer events on rendered blocks while dragging", () => {
-        const css = readFileSync(cssPath, "utf8");
+        const css = readFileSync(dragCssPath, "utf8");
         expect(css).toContain(`.inline-md-root.${dragSelectionClassName}`);
         expect(css).toMatch(
             new RegExp(
@@ -31,7 +32,7 @@ describe("mouse drag selection", () => {
         expect(fitNow).toContain("isDragSelecting");
         const cursor = source.slice(source.indexOf("onDidChangeCursorSelection"), source.indexOf("const openRenderedLink"));
         expect(cursor).toContain("isDragSelecting");
-        const css = readFileSync(cssPath, "utf8");
+        const css = readFileSync(layersCssPath, "utf8");
         expect(css).toContain(".view-overlays > div:has(.selected-text)");
         expect(css).toMatch(/\.view-lines\s*\{[^}]*z-index:\s*3/);
     });

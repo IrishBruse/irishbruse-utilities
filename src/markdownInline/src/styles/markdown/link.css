@@ -1,0 +1,14 @@
+.inline-md-root .monaco-editor .inline-md-link,
+.inline-md-root .monaco-editor .inline-md-link-url {
+    color: var(--ib-md-link) !important;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.inline-md-root .monaco-editor .inline-md-link-label {
+    color: var(--ib-md-link-label) !important;
+}
+
+.inline-md-ghost {
+    opacity: 0.3;
+}

@@ -14,14 +14,14 @@ import {
     window,
     workspace,
 } from "vscode";
+import { Commands } from "../../constants";
 import {
     getMarkdownInlineEditorColors,
     markdownInlineEditorColorsCssVars,
-} from "../../markdownEditor/host/markdownInlineEditorColors";
-import { Commands } from "../../constants";
-import { shouldUseMarkdownCustomEditor } from "../../markdownEditor/host/shouldUseMarkdownCustomEditor";
-import { hasYamlFrontMatter } from "../../markdownEditor/host/yamlFrontMatter";
-import { isSkillMarkdownPath, prefixMarkdownForFastOpen } from "../../markdownEditor/host/webviewInitialState";
+} from "./markdownInlineEditorColors";
+import { shouldUseMarkdownCustomEditor } from "./shouldUseMarkdownCustomEditor";
+import { hasYamlFrontMatter } from "./yamlFrontMatter";
+import { isSkillMarkdownPath, prefixMarkdownForFastOpen } from "./webviewInitialState";
 
 export const MARKDOWN_INLINE_VIEW_TYPE = "ib-utilities.markdownInline";
 

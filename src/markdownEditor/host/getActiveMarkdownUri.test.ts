@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { TabInputCustom, TabInputText, Uri, window } from "vscode";
-import { MARKDOWN_INLINE_VIEW_TYPE } from "../../markdownInline/host/MarkdownInlineProvider";
+import { MARKDOWN_INLINE_VIEW_TYPE } from "./MarkdownInlineProvider";
 import { MARKDOWN_EDITOR_VIEW_TYPE } from "./MarkdownEditorProvider";
 import { getActiveMarkdownUri, isMarkdownUri } from "./getActiveMarkdownUri";
 

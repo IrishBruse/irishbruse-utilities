@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+-   **Fix**: Inline Markdown heading rows use the editor line height scaled to the heading size.
 -   **Fix**: Inline Markdown reveals image and table source from a click or the line above, shows markers inside a drag selection, and paints Mermaid again after leaving raw source.
 -   **Fix**: Inline Markdown Open Preview is a green underlined link, wrapped list lines hang-indent, the column stays centered while wide content can scroll, and heading rows match their type size.
 -   **Fix**: Inline Markdown find reveals hidden matches and keeps the find bar in view, and returning to the editor no longer refits when the size is unchanged.

@@ -127,7 +127,6 @@ function paintInline(
 }
 
 const HEADING_SCALE = [1, 1.5, 1.4, 1.25, 1.1, 1, 0.85];
-const HEADING_LINE_RATIO = 1.25;
 
 function headingLevel(scope: Scope): number {
     const raw = scope.level ?? 1;
@@ -136,9 +135,7 @@ function headingLevel(scope: Scope): number {
 
 function headingExtraHeight(level: number, fontSize: number, lineHeight: number): number {
     const scale = HEADING_SCALE[level] ?? 1;
-    const ink = fontSize * scale * HEADING_LINE_RATIO;
-    const leading = Math.max(0, lineHeight - fontSize) * scale;
-    return Math.max(0, Math.ceil(ink + leading - lineHeight));
+    return Math.max(0, Math.ceil(lineHeight * scale - lineHeight));
 }
 
 const INLINE_CELL = new Set<Scope["kind"]>(["strong", "emphasis", "strikethrough", "inlineCode", "link"]);

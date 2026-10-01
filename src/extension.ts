@@ -11,7 +11,7 @@ import { relativeGoTo } from "./commands/relativeGoTo";
 import { terminalPaste } from "./commands/terminalPaste";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
 import { registerMarkdownEditor } from "./markdownEditor/host/MarkdownEditorProvider";
-import { registerMarkdownInlineEditor } from "./markdownInline/host/MarkdownInlineProvider";
+import { registerMarkdownInlineEditor } from "./markdownEditor/host/MarkdownInlineProvider";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { registerMarkdownMermaidFeatures } from "./mermaidEditor/registerMarkdownMermaid";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";

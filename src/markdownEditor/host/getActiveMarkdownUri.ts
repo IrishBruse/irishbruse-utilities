@@ -1,5 +1,5 @@
 import { TabInputCustom, TabInputText, Uri, window } from "vscode";
-import { MARKDOWN_INLINE_VIEW_TYPE } from "../../markdownInline/host/MarkdownInlineProvider";
+import { MARKDOWN_INLINE_VIEW_TYPE } from "./MarkdownInlineProvider";
 import { MARKDOWN_EDITOR_VIEW_TYPE } from "./MarkdownEditorProvider";
 
 export function isMarkdownUri(uri: Uri): boolean {

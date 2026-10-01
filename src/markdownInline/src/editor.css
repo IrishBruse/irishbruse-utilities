@@ -191,6 +191,9 @@ body {
 }
 
 .inline-md-hidden {
+    display: inline-block;
+    width: 0;
+    overflow: hidden;
     font-size: 0 !important;
     letter-spacing: 0 !important;
     visibility: hidden !important;

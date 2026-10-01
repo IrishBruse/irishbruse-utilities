@@ -527,7 +527,7 @@ export class InlinePresentation {
                         ? { inlineClassName: "inline-md-quote-marker" }
                         : {
                             ...hideOptions(before),
-                            ...(scope.kind === "listMarker" && before
+                            ...(scope.kind === "listMarker" && !listMarkerIsTask(scopes, marker)
                                 ? { firstLineDecorationClassName: "inline-md-list-bullet" }
                                 : {}),
                         },
@@ -758,10 +758,7 @@ export class InlinePresentation {
     ): monaco.editor.InjectedTextOptions | undefined {
         switch (scope.kind) {
             case "listMarker":
-                if (listMarkerIsTask(scopes, marker)) {
-                    return undefined;
-                }
-                return injected("• ", "inline-md-bullet");
+                return undefined;
             case "task": {
                 const position = model.getPositionAt(clampOffset(marker.start, model.getValueLength()));
                 tasks.push({

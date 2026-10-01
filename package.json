@@ -42,7 +42,7 @@
         "e2e:markdown-inline": "npm run e2e --workspace @ib-utilities/markdown-inline",
         "verify:markdown-inline": "npm run verify --workspace @ib-utilities/markdown-inline",
         "package": "node esbuild.mjs --production && npm run build-markdown-editor && node src/markdownInline/build.mjs",
-        "lint": "eslint src && tsc --noEmit",
+        "lint": "eslint . && tsc --noEmit",
         "test": "vitest run",
         "verify": "npm run build && npm run test && npm run lint",
         "package:vsix": "vsce package --out ib-utilities-$(node -p \"require('./package.json').version\").vsix",

@@ -1,7 +1,4 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 import {
 	EditorView,
@@ -20,11 +17,7 @@ interface UnhandledFields {
 	readonly tokenType?: string;
 }
 
-/**
- * Soften link-reference definitions (micromark `definition` tokens) so they
- * do not look like parse errors, and paint a readable alt fallback when an
- * `<img>` fails to load.
- */
+
 export class UnhandledBlockChromeController extends Disposable {
 	readonly #view: EditorView;
 

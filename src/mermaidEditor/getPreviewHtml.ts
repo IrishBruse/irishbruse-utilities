@@ -17,7 +17,7 @@ export function getPreviewHtml(webview: Webview, context: ExtensionContext, nonc
     const scriptUri = webview.asWebviewUri(Uri.joinPath(mediaUri, "preview.js"));
     const cspSource = webview.cspSource;
 
-    return /* html */ `<!DOCTYPE html>
+    return  `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />

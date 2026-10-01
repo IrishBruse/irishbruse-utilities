@@ -13,7 +13,6 @@ function rangesOverlap(start: number, end: number, lineStart: number, lineEnd: n
     return start < lineEnd && end > lineStart;
 }
 
-/** Collapsed carets count only when strictly inside the construct. */
 export function selectionOverlaps(scope: TextRange, cursor: CursorContext): boolean {
     const { from, to } = selectionBounds(cursor);
     if (from === to) {
@@ -54,13 +53,6 @@ function selectionCoversMarkerLine(marker: TextRange, cursor: CursorContext): bo
         && rangesOverlap(cursor.lineStart, cursor.lineEnd, from, to);
 }
 
-/**
- * Rendered hides markers, ghost fades markers on the active line, and raw
- * shows them. Headings go raw for the whole line. List, quote, and task
- * markers stay hidden until the cursor is on the marker or a selection meets
- * that marker's line. Images and tables go raw on their line, on the line
- * immediately before, or when a selection covers them.
- */
 export function markerVisibility(scope: Scope, marker: TextRange, cursor: CursorContext): MarkerVisibility {
     if (scope.kind === "heading") {
         return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
@@ -92,7 +84,6 @@ export function markerVisibility(scope: Scope, marker: TextRange, cursor: Cursor
     return "hidden";
 }
 
-/** Whether the construct's content keeps its formatted style. */
 export function showsFormattedContent(scope: Scope, cursor: CursorContext): boolean {
     switch (scope.kind) {
         case "heading":

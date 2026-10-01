@@ -13,10 +13,7 @@ import {
 } from "vscode-textmate";
 import { OnigScanner, OnigString, loadWASM } from "vscode-oniguruma";
 
-/**
- * A coloured run as consumed by the markdown editor webview highlighter.
- * Tokens are dense: `sum(length)` equals the source length.
- */
+
 export interface SyntaxHighlightingToken {
     readonly length: number;
     readonly foreground: number;
@@ -235,10 +232,7 @@ export function hasScopedTokenColors(settings: readonly ThemeSetting[]): boolean
     });
 }
 
-/**
- * Map TextMate default blacks (dark themes) and the theme's editor.foreground hex
- * onto the live webview editor foreground CSS variable.
- */
+
 export function toWebviewColorMap(
     colorMap: readonly string[],
     kind: ThemeKind,
@@ -428,7 +422,7 @@ export class TextMateHighlighter {
                 settings = [...loaded.settings];
                 name = loaded.name ?? theme.label;
             } catch {
-                // Keep empty settings and use Dark+/Light+ plus fallbacks below.
+                
             }
         }
         if (!hasScopedTokenColors(settings)) {
@@ -439,7 +433,7 @@ export class TextMateHighlighter {
                     colors = { ...base.colors, ...colors };
                     settings = [...base.settings, ...settings];
                 } catch {
-                    // Keep the active theme when the Dark+/Light+ base file is missing.
+                    
                 }
             }
         }
@@ -569,7 +563,7 @@ export function parseJsonc(text: string): unknown {
     return JSON.parse(stripJsonc(text));
 }
 
-/** Strip comments and trailing commas. Keep string contents unchanged. */
+
 export function stripJsonc(text: string): string {
     let result = "";
     let i = 0;
@@ -671,7 +665,7 @@ async function loadThemeFile(
             colors = included.colors;
             settings = included.settings;
         } catch {
-            // Keep this file's colors when the include path is missing.
+            
         }
     }
     if (raw.colors && typeof raw.colors === "object") {

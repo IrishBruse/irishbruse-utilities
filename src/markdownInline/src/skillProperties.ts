@@ -5,9 +5,9 @@ import {
     widgetForKey,
     type SkillMapEntry,
     type SkillProperty,
-} from "../../markdownEditor/webview/skillFrontMatterYaml";
+} from "./skillFrontMatterYaml";
 import { completeAgentPropertyKeys } from "./skillKeys";
-import { type YamlFrontMatterSpan, readYamlFrontMatter } from "../../markdownEditor/host/yamlFrontMatter";
+import { type YamlFrontMatterSpan, readYamlFrontMatter } from "./yamlFrontMatter";
 import type { Scope } from "./types";
 
 export type FrontMatterSpan = YamlFrontMatterSpan;

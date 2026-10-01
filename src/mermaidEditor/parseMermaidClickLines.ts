@@ -1,6 +1,6 @@
 import { normalizeGblClickPair } from "./mermaidClickTarget";
 
-/** GBL call-graph style: `click NodeId href "href" "tooltip"` */
+
 const GBL_CLICK_HREF_LINE =
     /^\s*click\s+(\S+)\s+href\s+"([^"]*)"\s+"([^"]*)"\s*$/;
 
@@ -52,13 +52,13 @@ export function buildMermaidClickTargetMap(source: string): Map<string, { href: 
     return map;
 }
 
-/** Mermaid flowchart DOM id → logical node id (e.g. flowchart-Other-3 → Other). */
+
 export function resolveFlowchartNodeIdFromDomId(domId: string): string {
     const trimmed = domId.trim();
     if (!trimmed) {
         return "";
     }
-    // Mermaid 11+ prefixes diagram ids (e.g. my-svg-flowchart-Other-3, mermaid-1-flowchart-Other-3).
+    
     const flowchartMatch = /flowchart-(.+)-\d+$/i.exec(trimmed);
     if (flowchartMatch) {
         return flowchartMatch[1];

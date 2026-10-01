@@ -2,7 +2,7 @@ import { env, SourceControlResourceState, Uri, workspace } from "vscode";
 import { gitRepositoryRootForUri, gitRepositoryRootForUriSync, pathLooksRelative, relativePathFromRepoRoot } from "../git/gitRepositoryRoot";
 import { parseGitDocumentUri } from "../git/gitDocument";
 
-/** Workbench SCM items use `sourceUri`; extension API uses `resourceUri`. */
+
 type ScmResourceLike =
     | SourceControlResourceState
     | {

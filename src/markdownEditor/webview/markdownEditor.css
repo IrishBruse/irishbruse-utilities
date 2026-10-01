@@ -1,7 +1,4 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 html, body {
 	margin: 0;
@@ -42,12 +39,6 @@ body {
 	flex-shrink: 0;
 	pointer-events: none;
 }
-
-/*
- * Headings / inline code: host injects --ib-md-* on :root from
- * markdownInlineEditor.colors (see markdownInlineEditorColors.ts).
- * Links use workbench `textLink.foreground` (green `#35A854` fallback).
- */
 
 .md-theme-vscode-default h1.md-heading {
 	color: var(--ib-md-heading-1);
@@ -101,8 +92,6 @@ body {
 	word-break: normal;
 }
 
-/* Fit tables to the content column; wrap cells instead of horizontal scroll.
- * Keep min-content (longest word) so short columns are not squashed. */
 .md-theme-vscode-default .md-table-wrapper {
 	overflow-x: hidden;
 	width: fit-content;
@@ -115,7 +104,6 @@ body {
 	table-layout: auto;
 }
 
-/* Fence language badge in the top-right while the block is not being edited. */
 .md-code-block[data-ib-language]:not(.md-block-active) {
 	position: relative;
 }
@@ -134,7 +122,6 @@ body {
 	user-select: none;
 }
 
-/* Mermaid: CodeLens-style Open Preview replaces the language badge. */
 .md-code-block[data-ib-language][data-ib-mermaid-preview]:not(.md-block-active)::before,
 .md-code-block[data-ib-mermaid-preview]::before {
 	content: none;
@@ -192,7 +179,6 @@ body {
 	color: var(--vscode-descriptionForeground, #5C6370);
 }
 
-/* `[ ]` / `[x]` source markers must stay on one line in the marker column. */
 .md-task-list-item {
 	--md-task-marker-width: 4ch;
 }
@@ -202,11 +188,6 @@ body {
 	overflow: visible;
 }
 
-/*
- * Hide invented whitespace glyphs except end-of-line spaces (Markdown
- * trailing space / hard break). Soft `\n` still wraps; block gaps still use
- * paragraph spacing. Leading and in-sentence spaces stay unmarked.
- */
 .md-editor .md-ws-space::before,
 .md-editor .md-ws-tab::before,
 .md-editor .md-ws-newline::before {
@@ -224,10 +205,6 @@ body {
 	content: '⇥';
 }
 
-/*
- * Paragraph trailing spaces parse as unkinded glue. Inactive glue is
- * `visibility: hidden`; keep the width and paint `·` over the spaces.
- */
 .md-editor .md-glue.md-glue-hidden.ib-md-eol-ws,
 .md-editor .md-glue.md-glue-hidden.ib-md-sel-ws,
 .md-editor .md-glue.ib-md-eol-ws,
@@ -273,19 +250,14 @@ body {
 
 .md-editor .md-ws-newline-glyph,
 .md-editor .md-ws-blockbreak-glyph {
-	/* Keep the ↵ layout box. The caret at the end of a block sits on these
-	 * offsets. `font-size: 0` dropped that box so the caret did not paint. */
+	
 	visibility: hidden;
 }
-
-/* Confluence-style table grid editor
- * Preview table stays visible; only the focused cell is overlaid for editing.
- */
 
 .md-table-wrapper.ib-table-grid-active {
 	position: relative;
 	overflow: visible;
-	/* Room on the start/top edges for insert + / handles (compensated with margin). */
+	
 	padding: 28px 4px 8px 28px;
 	margin: -28px -4px -8px -28px;
 }
@@ -352,7 +324,6 @@ body {
 	opacity: 1;
 }
 
-/* Hide only the native cell under the editor so preview chrome stays intact */
 .md-table td.ib-table-grid-native-cell-editing,
 .ib-table-grid-mode .md-table.md-block-active td.ib-table-grid-native-cell-editing,
 .ib-table-grid-mode .md-table.md-block-active tr:nth-child(even):not(.md-table-delimiter-row) td.ib-table-grid-native-cell-editing {
@@ -414,7 +385,6 @@ body {
 	font-weight: 600;
 }
 
-/* Hide the document caret while a table cell is focused; keep the nested editor caret */
 .md-editor.ib-table-grid-mode .md-cursor {
 	visibility: hidden;
 	animation: none;
@@ -537,7 +507,6 @@ body {
 	cursor: pointer;
 }
 
-/* Force preview look even if native block briefly becomes active */
 .ib-table-grid-mode .md-table.md-block-active td {
 	border-color: var(--vscode-editorWidget-border, #d1d9e0) !important;
 }
@@ -554,8 +523,6 @@ body {
 	display: none !important;
 }
 
-/* Glue is hidden, so empty cells need a line box. Header keeps preview padding
- * because the delimiter row that used the extra space is also hidden. */
 .ib-table-grid-mode .md-table td {
 	vertical-align: top !important;
 	overflow-wrap: break-word;
@@ -570,7 +537,6 @@ body {
 	vertical-align: top;
 }
 
-/* Keep the active table inside the content column; cells wrap. */
 .md-table-wrapper.ib-table-grid-active .md-table {
 	width: auto;
 	max-width: 100%;
@@ -582,8 +548,6 @@ body {
 	outline-offset: 2px;
 }
 
-
-/* Inactive htmlFlow blocks: paint sanitized HTML; keep source <pre> for mapping. */
 .md-unhandled-block.ib-html-rendered {
 	position: relative;
 	border: none;
@@ -643,7 +607,6 @@ body {
 	padding: 4px 8px;
 }
 
-/* Link reference definitions: quiet metadata, not a parse warning. */
 .md-unhandled-block.ib-md-link-definition {
 	margin: 0.125em 0 0.35em;
 	border: none;
@@ -772,7 +735,6 @@ body {
 	font: inherit;
 }
 
-/* Property fields sit inside `.md-editor`, which hides the native caret. */
 .md-editor:has(.ib-skill-properties-panel:focus-within) .md-cursor {
 	visibility: hidden;
 	animation: none;

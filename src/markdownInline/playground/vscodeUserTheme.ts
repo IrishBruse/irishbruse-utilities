@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-/** Body class VS Code sets on a webview for the active color theme kind. */
+
 export type VscodeThemeBodyClass =
     | "vscode-dark"
     | "vscode-light"
@@ -15,6 +15,8 @@ export interface VscodeUserTheme {
 }
 
 const FALLBACK_THEME: VscodeUserTheme = { css: "", bodyClass: "vscode-dark" };
+
+const PLAYGROUND_THEME_SCOPE = ":root, .inline-md-root, .inline-md-root .monaco-editor";
 
 const MARKDOWN_COLOR_VARS: Readonly<Record<string, string>> = {
     heading1: "--ib-md-heading-1",
@@ -49,7 +51,7 @@ export interface VscodeSettingsLocation {
     readonly appData?: string;
 }
 
-/** VS Code user settings.json for this platform. */
+
 export function vscodeUserSettingsPath(location?: VscodeSettingsLocation): string {
     const home = location?.home ?? homedir();
     const platform = location?.platform ?? process.platform;
@@ -64,7 +66,7 @@ export function vscodeUserSettingsPath(location?: VscodeSettingsLocation): strin
     return join(configHome, "Code", "User", "settings.json");
 }
 
-/** Parse VS Code settings.json (comments and trailing commas allowed). */
+
 export function parseSettingsJsonc(text: string): Record<string, unknown> {
     const parsed: unknown = JSON.parse(stripJsonc(text));
     if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
@@ -73,36 +75,50 @@ export function parseSettingsJsonc(text: string): Record<string, unknown> {
     return parsed as Record<string, unknown>;
 }
 
-/**
- * CSS variables for the playground, from `workbench.colorCustomizations`,
- * `markdownInlineEditor.colors`, and the markdown preview font settings.
- * Theme-scoped customizations (`[Theme Name]`) override the unscoped ones.
- */
+
 export function vscodeUserThemeFromSettings(settings: Record<string, unknown>): VscodeUserTheme {
     const themeName = readString(settings, "workbench.colorTheme");
     const bodyClass = themeBodyClass(themeName);
     const declarations = [
-        ...colorCustomizationDeclarations(settings, themeName),
+        ...workbenchColorDeclarations(settings, themeName),
         ...markdownColorDeclarations(settings),
         ...fontDeclarations(settings),
     ];
-    if (declarations.length === 0 && !readBoolean(settings, "editor.fontLigatures")) {
-        return { css: "", bodyClass };
-    }
-    const lines = [
-        ":root {",
-        `    color-scheme: ${bodyClass === "vscode-light" || bodyClass === "vscode-high-contrast-light" ? "light" : "dark"};`,
-        ...declarations.map((declaration) => `    ${declaration}`),
-        "}",
-    ];
-    if (readBoolean(settings, "editor.fontLigatures") === true) {
-        lines.push(".md-editor {", "    font-variant-ligatures: common-ligatures;", "}");
-    }
-    return { css: lines.join("\n"), bodyClass };
+    return {
+        css: formatPlaygroundThemeCss(bodyClass, declarations, readBoolean(settings, "editor.fontLigatures") === true),
+        bodyClass,
+    };
 }
 
-/** Read user settings and build the playground theme. Missing or invalid files keep the stand-in CSS. */
-export function readVscodeUserTheme(settingsPath = vscodeUserSettingsPath()): VscodeUserTheme {
+
+export function parseIframeInjectedThemeHtml(html: string): string[] {
+    const match = html.match(/<html[^>]*\sstyle="([\s\S]*?)"\s*>/i);
+    if (!match) {
+        return [];
+    }
+    const decoded = match[1]
+        .replaceAll("&quot;", "\"")
+        .replaceAll("&amp;", "&")
+        .replaceAll("&lt;", "<")
+        .replaceAll("&gt;", ">");
+    const declarations: string[] = [];
+    for (const line of decoded.split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith("--")) {
+            continue;
+        }
+        declarations.push(trimmed.endsWith(";") ? trimmed : `${trimmed};`);
+    }
+    return declarations;
+}
+
+export interface ReadPlaygroundThemeOptions {
+    readonly settingsPath?: string;
+}
+
+
+export function readPlaygroundTheme(options: ReadPlaygroundThemeOptions = {}): VscodeUserTheme {
+    const settingsPath = options.settingsPath ?? vscodeUserSettingsPath();
     let text: string;
     try {
         text = readFileSync(settingsPath, "utf8");
@@ -116,15 +132,40 @@ export function readVscodeUserTheme(settingsPath = vscodeUserSettingsPath()): Vs
     }
 }
 
-/** `editor.background` → `--vscode-editor-background`. */
+
+export function readVscodeUserTheme(settingsPath = vscodeUserSettingsPath()): VscodeUserTheme {
+    return readPlaygroundTheme({ settingsPath });
+}
+
+function formatPlaygroundThemeCss(
+    bodyClass: VscodeThemeBodyClass,
+    declarations: string[],
+    fontLigatures: boolean,
+): string {
+    if (declarations.length === 0 && !fontLigatures) {
+        return "";
+    }
+    const lines = [
+        `${PLAYGROUND_THEME_SCOPE} {`,
+        `    color-scheme: ${bodyClass === "vscode-light" || bodyClass === "vscode-high-contrast-light" ? "light" : "dark"};`,
+        ...declarations.map((declaration) => `    ${declaration}`),
+        "}",
+    ];
+    if (fontLigatures) {
+        lines.push(".md-editor {", "    font-variant-ligatures: common-ligatures;", "}");
+    }
+    return lines.join("\n");
+}
+
+
 export function colorIdToCssVariable(colorId: string): string {
     return `--vscode-${colorId.replaceAll(".", "-")}`;
 }
 
-function colorCustomizationDeclarations(settings: Record<string, unknown>, themeName: string | undefined): string[] {
+function collectWorkbenchColors(settings: Record<string, unknown>, themeName: string | undefined): Map<string, string> {
     const raw = settings["workbench.colorCustomizations"];
     if (!isRecord(raw)) {
-        return [];
+        return new Map();
     }
     const colors = new Map<string, string>();
     for (const [key, value] of Object.entries(raw)) {
@@ -147,6 +188,31 @@ function colorCustomizationDeclarations(settings: Record<string, unknown>, theme
             }
         }
     }
+    return colors;
+}
+
+function derivePlaygroundWorkbenchColors(colors: Map<string, string>): void {
+    const dropdownBackground = colors.get("dropdown.background");
+    if (!colors.has("checkbox.background") && dropdownBackground) {
+        colors.set("checkbox.background", dropdownBackground);
+    }
+    const dropdownBorder = colors.get("dropdown.border");
+    if (!colors.has("checkbox.border") && dropdownBorder) {
+        colors.set("checkbox.border", dropdownBorder);
+    }
+    const dropdownForeground = colors.get("dropdown.foreground");
+    if (!colors.has("checkbox.foreground") && dropdownForeground) {
+        colors.set("checkbox.foreground", dropdownForeground);
+    }
+    const focusBorder = colors.get("focusBorder");
+    if (!colors.has("inputOption.activeBorder") && focusBorder) {
+        colors.set("inputOption.activeBorder", focusBorder);
+    }
+}
+
+function workbenchColorDeclarations(settings: Record<string, unknown>, themeName: string | undefined): string[] {
+    const colors = collectWorkbenchColors(settings, themeName);
+    derivePlaygroundWorkbenchColors(colors);
     return [...colors.entries()]
         .sort(([left], [right]) => left.localeCompare(right))
         .map(([colorId, color]) => `${colorIdToCssVariable(colorId)}: ${color};`);

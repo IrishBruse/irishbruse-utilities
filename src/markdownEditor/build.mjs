@@ -20,7 +20,7 @@ const vscodeOutDir = join(
 const isWatch = process.argv.includes("--watch");
 const syncToVscode = process.argv.includes("--sync-vscode");
 
-/** @type {import("esbuild").BuildOptions} */
+
 const config = {
     entryPoints: [join(srcDir, "editor.ts")],
     bundle: true,
@@ -32,9 +32,9 @@ const config = {
     outdir: outDir,
     splitting: true,
     chunkNames: "[name]-[hash]",
-    // `@vscode/diff` has a Node-only code path that dynamically imports
-    // `node:fs/promises` (guarded by a `process.versions.node` check). It is
-    // dead code in the webview, so mark it external to avoid a resolve error.
+    
+    
+    
     external: ["node:fs/promises"],
     loader: {
         ".woff": "file",

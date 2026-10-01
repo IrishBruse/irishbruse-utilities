@@ -359,7 +359,6 @@ function buildScope(tokenType: string, start: number, end: number, inner: readon
     }
 }
 
-/** Parse markdown into construct scopes. The source string is not rewritten. */
 export function parseScopes(source: string): Scope[] {
     const events = tokenize(source);
     const scopes: Scope[] = [];

@@ -1,7 +1,4 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 import {
 	EditorModel,
@@ -32,11 +29,7 @@ interface HtmlPreviewEntry {
 	offset: number;
 }
 
-/**
- * Paint sanitized HTML for inactive `htmlFlow` blocks. The native source
- * `<pre>` stays in the DOM for mapping; CSS takes it out of flow until the
- * caret enters the block.
- */
+
 export class HtmlPreviewController extends Disposable {
 	readonly #model: EditorModel;
 	readonly #view: EditorView;

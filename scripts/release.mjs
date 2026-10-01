@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+
 import { InteractiveBrowserCredential } from "@azure/identity";
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";

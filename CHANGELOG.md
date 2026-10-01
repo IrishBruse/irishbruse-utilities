@@ -2,7 +2,13 @@
 
 ## Unreleased
 
--   **Fix**: Inline Markdown heading lines use the normal editor line height and keep the heading font size.
+-   Change: Ban comments in TypeScript and JavaScript via ESLint and remove existing comments from source.
+
+-   **Fix**: Inline Markdown find uses VS Code theme tokens in the webview and matches the workbench find bar styling.
+-   **Fix**: Inline Markdown find stays pinned while scrolling without the 200ms transform animation lag.
+-   **Fix**: Inline Markdown drops the centered column's side padding once the window is too narrow to keep it.
+-   **Fix**: Inline Markdown heading lines keep the heading font size and add a little space above and below.
+-   **Fix**: Inline Markdown playground ships `vscode-iframe-injected-theme.css` (VS Code webview iframe tokens) plus settings overrides from `settings.json`.
 -   **Fix**: Inline Markdown task checkboxes match settings controls: checkbox tokens when unchecked, button tokens and a CSS checkmark when checked.
 -   **Fix**: Inline Markdown task checkboxes and code-block hits sit on their lines in the centered column instead of hugging the viewport edge.
 -   **Fix**: Inline Markdown reveals image and table source from a click or the line above, shows markers inside a drag selection, and paints Mermaid again after leaving raw source.

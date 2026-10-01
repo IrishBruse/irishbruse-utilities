@@ -6,14 +6,7 @@ export type Process = {
     status: number | null;
 };
 
-/**
- * Asynchronously spawns a child process and returns a Promise.
- *
- * @param {string} command - The command to execute.
- * @param {string[]} args - An array of command-line arguments.
- * @param {object} options - Options to pass to child_process.spawn.
- * @returns {Promise<{ stdout: string, stderr: string, code: number }>} - A Promise that resolves with the stdout, stderr, and exit code.
- */
+
 export type AsyncSpawnOptions = SpawnOptionsWithoutStdio & {
     input?: string;
 };

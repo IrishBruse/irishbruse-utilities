@@ -1,13 +1,13 @@
 import { Range } from "vscode";
 
 export interface MarkdownMermaidFence {
-    /** Zero-based line index of the opening fence. */
+    
     openLine: number;
-    /** Zero-based line index of the closing fence. */
+    
     closeLine: number;
-    /** Diagram source between fences (no trailing newline). */
+    
     source: string;
-    /** Range covering the `mermaid` language tag on the opening line. */
+    
     languageTagRange: Range;
 }
 
@@ -17,9 +17,7 @@ function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/**
- * Finds ```mermaid fenced code blocks in markdown text.
- */
+
 export function parseMarkdownMermaidFences(text: string): MarkdownMermaidFence[] {
     const lines = text.split(/\r?\n/);
     const fences: MarkdownMermaidFence[] = [];
@@ -74,7 +72,7 @@ export function findMarkdownMermaidFenceAtOpenLine(
     return parseMarkdownMermaidFences(text).find((fence) => fence.openLine === openLine);
 }
 
-/** Finds the fence that contains `line`, including the opening and closing fence lines. */
+
 export function findMarkdownMermaidFenceContainingLine(
     text: string,
     line: number,

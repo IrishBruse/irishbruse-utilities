@@ -29,7 +29,7 @@ export function encodeWebviewInitialState(state: MarkdownEditorInitialState): st
     return encodeURIComponent(JSON.stringify(state));
 }
 
-/** First source slice for a fast first paint. The host sends the rest after `ready`. */
+
 export function prefixMarkdownForFastOpen(text: string, maxChars = FAST_OPEN_MAX_CHARS): string {
     if (text.length <= maxChars) {
         return text;

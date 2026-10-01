@@ -1,7 +1,4 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 import {
 	EditorModel,
@@ -22,10 +19,7 @@ export interface ParsedTable {
 	readonly alignments: TableAlignment[];
 }
 
-/**
- * Cell AST spans include leading/trailing `|` glue. Return only the cell body
- * (inline markdown), trimmed — never the pipe characters.
- */
+
 export function getCellText(cell: TableCellAstNode, doc: DocumentAstNode, source: string): string {
 	let text = '';
 	for (const child of cell.children) {
@@ -227,9 +221,9 @@ export function applyTableData(
 	if (!range) {
 		return;
 	}
-	// The AST range often keeps the blank line(s) after the table. serializeTable
-	// has no trailing newline, so dropping that suffix would glue the next block
-	// onto the last row (e.g. `| cell |## Heading`).
+	
+	
+	
 	const source = model.sourceText.get().value;
 	const original = source.slice(range.start, range.endExclusive);
 	const trailingNewlines = original.match(/\r?\n*$/)?.[0] ?? '';

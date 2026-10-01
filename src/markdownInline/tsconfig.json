@@ -10,7 +10,8 @@
         "noUnusedParameters": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
-        "sourceMap": true
+        "sourceMap": true,
+        "types": ["vite/client"]
     },
     "include": ["src/**/*.ts", "src/**/*.d.ts", "playground/**/*.ts", "playground/**/*.d.ts"]
 }

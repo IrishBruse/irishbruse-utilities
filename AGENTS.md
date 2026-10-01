@@ -7,6 +7,8 @@ Always add to Unreleased section when editing.
 
 ## Verify
 
+Inline Markdown package boundary: `src/markdownInline/AGENTS.md`.
+
 When a change touches the Inline Markdown webview or playground, verify it with verify-markdownInline before finishing.
 Follow `.cursor/skills/verify-markdownInline/SKILL.md`.
 Call `npm run verify-markdownInline` for every run and every trace.

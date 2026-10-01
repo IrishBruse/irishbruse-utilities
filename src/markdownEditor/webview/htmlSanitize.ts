@@ -1,7 +1,4 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 const ALLOWED_TAGS = new Set([
 	'A',
@@ -153,14 +150,14 @@ const DANGEROUS_TAG_PATTERN = new RegExp(
 	'i',
 );
 
-/** True when the source contains a tag the sanitizer strips entirely. */
+
 export function isDangerousHtmlSource(html: string): boolean {
 	return DANGEROUS_TAG_PATTERN.test(html);
 }
 
 export type HtmlPreviewKind = 'html' | 'raw' | 'warning';
 
-/** Choose painted HTML, raw source, or the unhandled warning chrome. */
+
 export function htmlPreviewKind(source: string, sanitized: string): HtmlPreviewKind {
 	if (sanitized.trim().length > 0) {
 		return 'html';
@@ -168,7 +165,7 @@ export function htmlPreviewKind(source: string, sanitized: string): HtmlPreviewK
 	return isDangerousHtmlSource(source) ? 'warning' : 'raw';
 }
 
-/** Strip scripts, event handlers, and unsafe URLs. Keep a Markdown-preview tag subset. */
+
 export function sanitizeHtml(html: string): string {
 	const parsed = new DOMParser().parseFromString(html, 'text/html');
 	const out = document.createElement('div');

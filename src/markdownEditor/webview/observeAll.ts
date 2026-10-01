@@ -1,11 +1,8 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 import type { DisposableStore } from './disposable';
 
-/** Subset of `@vscode/observables` used by `@vscode/markdown-editor` model fields. */
+
 export interface ObservableLike<T> {
 	get(): T;
 	recomputeInitiallyAndOnChange(
@@ -14,7 +11,7 @@ export interface ObservableLike<T> {
 	): ObservableLike<T>;
 }
 
-/** Re-run `run` when any listed observable changes. */
+
 export function observeAll(
 	store: DisposableStore,
 	run: () => void,

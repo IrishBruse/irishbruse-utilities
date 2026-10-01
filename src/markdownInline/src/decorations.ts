@@ -127,6 +127,7 @@ function paintInline(
 }
 
 const HEADING_SCALE = [1, 1.5, 1.4, 1.25, 1.1, 1, 0.85];
+const HEADING_PAD = 2;
 
 function headingLevel(scope: Scope): number {
     const raw = scope.level ?? 1;
@@ -135,7 +136,10 @@ function headingLevel(scope: Scope): number {
 
 function headingExtraHeight(level: number, fontSize: number, lineHeight: number): number {
     const scale = HEADING_SCALE[level] ?? 1;
-    return Math.max(0, Math.ceil(lineHeight * scale - lineHeight));
+    if (scale <= 1 || fontSize <= 0) {
+        return 0;
+    }
+    return HEADING_PAD * 2;
 }
 
 const INLINE_CELL = new Set<Scope["kind"]>(["strong", "emphasis", "strikethrough", "inlineCode", "link"]);
@@ -740,15 +744,6 @@ export class InlinePresentation {
         this.writeHiddenAreas(model);
     }
 
-    private writeHiddenAreas(model: monaco.editor.ITextModel): void {
-        setHiddenAreas(this.editor, [...this.hiddenLineNumbers].map((lineNumber) => ({
-            startLineNumber: lineNumber,
-            startColumn: 1,
-            endLineNumber: lineNumber,
-            endColumn: model.getLineMaxColumn(lineNumber),
-        })));
-    }
-
     private syncHeadingLineHeights(fontSize: number, lineHeight: number): void {
         const root = this.editor.getDomNode()?.closest(".inline-md-root");
         if (!(root instanceof HTMLElement)) {
@@ -758,6 +753,15 @@ export class InlinePresentation {
             const extra = headingExtraHeight(level, fontSize, lineHeight);
             root.style.setProperty(`--ib-md-h${level}-line`, `${lineHeight + extra}px`);
         }
+    }
+
+    private writeHiddenAreas(model: monaco.editor.ITextModel): void {
+        setHiddenAreas(this.editor, [...this.hiddenLineNumbers].map((lineNumber) => ({
+            startLineNumber: lineNumber,
+            startColumn: 1,
+            endLineNumber: lineNumber,
+            endColumn: model.getLineMaxColumn(lineNumber),
+        })));
     }
 
     dispose(): void {
@@ -1241,7 +1245,7 @@ export class InlinePresentation {
             return;
         }
         const viewLines = [...dom.querySelectorAll<HTMLElement>(".view-lines .view-line")];
-        const headingSelector = ".inline-md-h1, .inline-md-h2, .inline-md-h3, .inline-md-h4, .inline-md-h5, .inline-md-h6";
+        const headingSelector = ".inline-md-h1, .inline-md-h2, .inline-md-h3, .inline-md-h4";
         for (const viewLine of viewLines) {
             if (!viewLine.querySelector(headingSelector)) {
                 continue;

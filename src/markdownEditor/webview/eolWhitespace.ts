@@ -1,16 +1,13 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 import { EditorModel, EditorView, ViewNode, type Selection } from '@vscode/markdown-editor';
 import { Disposable } from './disposable';
 import { observeAll } from './observeAll';
 
-/** Spaces / tabs that sit at the end of a source line (Markdown trailing whitespace). */
+
 export const EOL_WS_CLASS = 'ib-md-eol-ws';
 export const EOL_DOTS_ATTR = 'data-ib-eol-dots';
-/** Leading / other whitespace that is covered by the current selection. */
+
 export const SEL_WS_CLASS = 'ib-md-sel-ws';
 export const SEL_DOTS_ATTR = 'data-ib-sel-dots';
 
@@ -67,7 +64,7 @@ function isStructuralGlue(el: WhitespaceWalkNode): boolean {
 	return STRUCTURAL_GLUE_CLASSES.some(name => hasClass(el, name));
 }
 
-/** Trailing-space glue at the end of a paragraph (`glueKind` is unset). */
+
 export function isTrailingSpaceGlue(el: WhitespaceWalkNode): boolean {
 	if (el.nodeType !== ELEMENT_NODE || !hasClass(el, 'md-glue') || isStructuralGlue(el)) {
 		return false;
@@ -112,11 +109,7 @@ function nearestBlock(el: WhitespaceWalkNode): WhitespaceWalkNode | null {
 	return null;
 }
 
-/**
- * Next node after `node` in document order, skipping the subtree of `node`.
- * Stops at `root` so caret overlays and the next block are not treated as
- * following content.
- */
+
 function nextAfter(node: WhitespaceWalkNode, root: WhitespaceWalkNode | null): WhitespaceWalkNode | null {
 	if (node.nextSibling) {
 		return node.nextSibling;
@@ -173,11 +166,7 @@ function isFollowedOnlyByLineEnd(el: WhitespaceWalkNode): boolean {
 	return true;
 }
 
-/**
- * True when this space/tab is only followed by more trailing whitespace
- * or a line break. Indent glue (spaces in their own parent before content)
- * is not trailing.
- */
+
 export function isEolWhitespaceSpan(el: WhitespaceWalkNode): boolean {
 	if (!isWhitespaceSpan(el) && !isTrailingSpaceGlue(el)) {
 		return false;
@@ -185,7 +174,7 @@ export function isEolWhitespaceSpan(el: WhitespaceWalkNode): boolean {
 	return isFollowedOnlyByLineEnd(el);
 }
 
-/** True when `[start, start + length)` overlaps a non-empty selection. */
+
 export function selectionCoversRange(
 	selectionStart: number,
 	selectionEndExclusive: number,
@@ -344,12 +333,7 @@ export function paintEditorWhitespace(
 	markSelectedWhitespace(root, documentView, selection);
 }
 
-/**
- * Paint trailing spaces always, and other whitespace while it is selected
- * (the VS Code default `editor.renderWhitespace: selection` behaviour).
- * Glue rebuilds overwrite `className` and drop our mark, so paint again on
- * DOM mutations and on the next frame after layout.
- */
+
 export class EolWhitespaceController extends Disposable {
 	constructor(model: EditorModel, view: EditorView) {
 		super();

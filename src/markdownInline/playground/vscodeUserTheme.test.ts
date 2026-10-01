@@ -1,11 +1,18 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import {
     colorIdToCssVariable,
+    parseIframeInjectedThemeHtml,
     parseSettingsJsonc,
     readVscodeUserTheme,
     vscodeUserSettingsPath,
     vscodeUserThemeFromSettings,
 } from "./vscodeUserTheme";
+
+const playgroundDir = dirname(fileURLToPath(import.meta.url));
+const iframeThemeCssPath = join(playgroundDir, "vscode-iframe-injected-theme.css");
 
 describe("vscodeUserSettingsPath", () => {
     it("uses the Linux Code user settings path", () => {
@@ -60,6 +67,7 @@ describe("vscodeUserThemeFromSettings", () => {
         });
 
         expect(theme.bodyClass).toBe("vscode-dark");
+        expect(theme.css).toContain(".inline-md-root .monaco-editor {");
         expect(colorIdToCssVariable("editorWidget.border")).toBe("--vscode-editorWidget-border");
         expect(theme.css).toContain("--vscode-editor-background: #282c34;");
         expect(theme.css).not.toContain("#111111");
@@ -74,6 +82,24 @@ describe("vscodeUserThemeFromSettings", () => {
         expect(theme.css).not.toContain("evil");
     });
 
+    it("derives checkbox tokens and scopes workbench colors onto monaco", () => {
+        const theme = vscodeUserThemeFromSettings({
+            "workbench.colorTheme": "Empty Dark Theme",
+            "workbench.colorCustomizations": {
+                "dropdown.background": "#353b45",
+                "dropdown.border": "#21252B",
+                "button.background": "#35A854",
+                "button.foreground": "#ffffff",
+                "focusBorder": "#35A854",
+            },
+        });
+        expect(theme.css).toContain("--vscode-checkbox-background: #353b45;");
+        expect(theme.css).toContain("--vscode-checkbox-border: #21252B;");
+        expect(theme.css).toContain("--vscode-button-background: #35A854;");
+        expect(theme.css).toContain("--vscode-inputOption-activeBorder: #35A854;");
+        expect(theme.css).toContain(".inline-md-root .monaco-editor {");
+    });
+
     it("treats light theme names as a light color scheme", () => {
         const theme = vscodeUserThemeFromSettings({
             "workbench.colorTheme": "Quiet Light",
@@ -83,6 +109,26 @@ describe("vscodeUserThemeFromSettings", () => {
         });
         expect(theme.bodyClass).toBe("vscode-light");
         expect(theme.css).toContain("color-scheme: light;");
+    });
+});
+
+describe("parseIframeInjectedThemeHtml", () => {
+    it("reads custom properties from the iframe html style attribute", () => {
+        const declarations = parseIframeInjectedThemeHtml(`<html lang="en" style="
+        --vscode-button-background: #35a854;
+        --text-link-decoration: none;
+    ">`);
+        expect(declarations).toContain("--vscode-button-background: #35a854;");
+        expect(declarations).toContain("--text-link-decoration: none;");
+    });
+});
+
+describe("vscode-iframe-injected-theme.css", () => {
+    it("includes the webview checkbox and button tokens", () => {
+        const css = readFileSync(iframeThemeCssPath, "utf8");
+        expect(css.toLowerCase()).toContain("--vscode-button-background: #35a854");
+        expect(css.toLowerCase()).toContain("--vscode-checkbox-background: #353b45");
+        expect(css).toContain(".inline-md-root .monaco-editor");
     });
 });
 

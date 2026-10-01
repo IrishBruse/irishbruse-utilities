@@ -1,7 +1,4 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 import {
 	EditorModel,
@@ -26,7 +23,7 @@ import {
 	type SkillProperty,
 } from './skillFrontMatterYaml';
 
-/** Chords a text field handles itself, so they never reach the document editor. */
+
 const FIELD_CHORD_KEYS = new Set([
 	'a', 'c', 'v', 'x', 'z', 'y',
 	'backspace', 'delete',
@@ -146,11 +143,7 @@ export class SkillFrontMatterController extends Disposable {
 		this.#pendingFocus = { key, start: field.selectionStart ?? 0, end: field.selectionEnd ?? 0 };
 	};
 
-	/**
-	 * Forget the caret only when the user moves focus away. A rebuild of the
-	 * front matter block detaches the field instead, and that focus has to come
-	 * back once the panel is re-attached.
-	 */
+	
 	readonly #forgetFocus = (event: FocusEvent): void => {
 		const next = event.relatedTarget;
 		if (next instanceof Node && this.#panel.contains(next)) {
@@ -414,9 +407,9 @@ export class SkillFrontMatterController extends Disposable {
 	}
 
 	#onPanelKeyDown = (event: KeyboardEvent): void => {
-		// Keystrokes must not reach the document editor underneath. Chords are
-		// the exception: the field keeps the text-editing ones, and the rest
-		// (Ctrl+S and friends) have to bubble out to the workbench.
+		
+		
+		
 		const chord = event.ctrlKey || event.metaKey || event.altKey;
 		if (!chord || FIELD_CHORD_KEYS.has(event.key.toLowerCase())) {
 			event.stopPropagation();
@@ -489,11 +482,7 @@ export class SkillFrontMatterController extends Disposable {
 		this.#queueWrite();
 	}
 
-	/**
-	 * Coalesce a burst of keystrokes into one document edit. A timer, not
-	 * `requestAnimationFrame`: an occluded webview never paints, and the edit
-	 * still has to reach the document.
-	 */
+	
 	#queueWrite(): void {
 		if (this.#writeTimer !== undefined || this.#model.readonlyMode.get()) {
 			return;

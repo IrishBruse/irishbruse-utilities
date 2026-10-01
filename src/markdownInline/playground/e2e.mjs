@@ -51,11 +51,7 @@ function delay(ms) {
     });
 }
 
-/**
- * @param {string} message
- * @param {unknown} page
- * @returns {never}
- */
+
 function fail(message, page) {
     console.error(message);
     console.error("Page showed:");
@@ -65,10 +61,7 @@ function fail(message, page) {
     throw error;
 }
 
-/**
- * @param {string[]} args
- * @param {string} [input]
- */
+
 function agentBrowser(args, input) {
     const result = spawnSync("agent-browser", ["--session", "markdown-inline", ...args], {
         cwd: repoRoot,
@@ -103,9 +96,7 @@ function closeBrowser() {
     }
 }
 
-/**
- * @param {string} stdout
- */
+
 function parsePage(stdout) {
     const text = stdout.trim();
     const candidates = [text];
@@ -123,7 +114,7 @@ function parsePage(stdout) {
                 return value;
             }
         } catch {
-            // Try the next candidate.
+            
         }
     }
     return null;
@@ -149,9 +140,7 @@ function safeReadPage() {
     }
 }
 
-/**
- * @param {import("node:child_process").ChildProcess} vite
- */
+
 function stopVite(vite) {
     if (vite.exitCode !== null || vite.signalCode !== null || !vite.pid) {
         return;
@@ -162,7 +151,7 @@ function stopVite(vite) {
         try {
             vite.kill("SIGTERM");
         } catch {
-            // The process is already gone.
+            
         }
     }
 }
@@ -193,9 +182,7 @@ function startVite() {
     return { vite, ready, log: () => log };
 }
 
-/**
- * @param {{ vite: import("node:child_process").ChildProcess, ready: Promise<void>, log: () => string }} server
- */
+
 async function waitForPlayground(server) {
     await server.ready;
     const deadline = Date.now() + 20_000;
@@ -218,9 +205,7 @@ async function waitForPlayground(server) {
     throw new Error(`Playground did not return HTTP 200 within 20s (${last}).\n${server.log()}`);
 }
 
-/**
- * @param {{ content: string | null }} page
- */
+
 function headingStartsWithHash(page) {
     if (typeof page.content !== "string") {
         return true;
@@ -229,16 +214,12 @@ function headingStartsWithHash(page) {
     return firstLine.trimStart().startsWith("#");
 }
 
-/**
- * @param {{ heading: string | null, content: string | null }} page
- */
+
 function isRawHeading(page) {
     return page.heading !== null && typeof page.content === "string" && page.content.includes("#");
 }
 
-/**
- * @param {{ images: string[], heading: string | null, content: string | null }} page
- */
+
 function assertRendered(page) {
     const problems = [];
     if (!page.images.some((src) => src.includes("dot.png"))) {
@@ -255,9 +236,7 @@ function assertRendered(page) {
     }
 }
 
-/**
- * @param {{ heading: string | null, content: string | null }} page
- */
+
 function assertRawHeading(page) {
     const problems = [];
     if (typeof page.content !== "string" || !page.content.includes("#")) {
@@ -271,9 +250,7 @@ function assertRawHeading(page) {
     }
 }
 
-/**
- * @param {{ fallbacks: string[] }} page
- */
+
 function assertMissingImage(page) {
     if (!page.fallbacks.some((text) => text.includes("Missing"))) {
         fail('Expected a .inline-md-image-fallback whose text includes "Missing".', page);

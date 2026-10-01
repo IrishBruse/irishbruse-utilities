@@ -35,7 +35,7 @@ export function relativePathFromRepoRoot(fileUri: Uri, repoRoot: string): string
     return path.relative(repoRoot, fileUri.fsPath).replace(/\\/g, "/");
 }
 
-/** True when the string is a useful relative path, not the full filesystem path. */
+
 export function pathLooksRelative(relativeCandidate: string, absoluteFsPath: string): boolean {
     if (!relativeCandidate) {
         return false;

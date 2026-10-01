@@ -1,8 +1,5 @@
-#!/usr/bin/env node
-/**
- * Download large real-world Markdown files for Markdown Editor stress tests.
- * Output: docs/tests/markdown/large/ (gitignored except README.md)
- */
+
+
 
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -11,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const outDir = join(__dirname, 'large');
 
-/** @type {{ name: string; url: string; note: string }[]} */
+
 export const LARGE_FIXTURES = [
 	{
 		name: 'reltio-docs.md',

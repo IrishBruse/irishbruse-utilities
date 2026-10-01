@@ -1,7 +1,4 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 import { AsyncClipboardStrategy, EditorController, EditorModel, EditorView, GutterMarker, OffsetRange, Selection, StringValue, commands, findNodeOffsetById, CodeBlockAstNode, vscodeKeyboardProfile } from '@vscode/markdown-editor';
 import { Disposable } from './disposable';
@@ -36,11 +33,7 @@ interface VsCodeApi {
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
-/**
- * The editor's view state, persisted as webview state (`getState`/`setState`) so
- * the scroll and cursor position are restored when the webview is reloaded or the
- * custom editor is re-created (e.g. after switching sessions and back).
- */
+
 interface PersistedViewState {
 	scrollTop?: number;
 	selection?: { anchor: number; active: number };
@@ -64,7 +57,7 @@ class Editor extends Disposable {
 	#mermaidCounter = 0;
 	#controller: EditorController | undefined;
 	#view: EditorView | undefined;
-	// the message secret allows to distinguish vscode sending us a message vs a nested iframe
+	
 	readonly #messageSecret: string;
 	readonly #vscode = acquireVsCodeApi();
 	readonly #syntaxHighlighter = new WebviewSyntaxHighlighter((message) => this.#postToHost(message));
@@ -91,10 +84,10 @@ class Editor extends Disposable {
 			}
 			switch (message.type) {
 				case 'update': {
-					// `replaceSourceText` (not `sourceText.set`) applies authoritative host
-					// text: it maps the selection through the change and clears stale
-					// pending-paragraph state, so the caret stays valid after an undo shrinks
-					// the document. The guard stops this echoing back as a user edit.
+					
+					
+					
+					
 					this.isUpdatingFromExtension = true;
 					this.model.replaceSourceText(new StringValue(message.content));
 					this.isUpdatingFromExtension = false;
@@ -205,10 +198,10 @@ class Editor extends Disposable {
 			});
 		}, model.document, view.measuredLayout.measurements);
 
-		// Handle all keyboard actions in the webview. VS Code splits local vs host
-		// routing (`vscodeLocalKeyboardProfile` + `forwardedKeyboardProfile`) and
-		// registers `markdown.editor.*` commands; this extension does not, so
-		// host-routed keys (Backspace, arrows, Enter, …) must stay local.
+		
+		
+		
+		
 		this.#controller = this._register(new EditorController(model, view, {
 			clipboardStrategy: new AsyncClipboardStrategy(),
 			keyboardProfile: vscodeKeyboardProfile,
@@ -251,8 +244,8 @@ class Editor extends Disposable {
 			model.selection.set(new Selection(anchor, active), undefined);
 		}
 
-		// Persist scroll as webview state (throttled to a frame). Registered after the
-		// restore above so it never clobbers the values we are about to restore.
+		
+		
 		let scrollSaveScheduled = false;
 		const saveScroll = (): void => {
 			scrollSaveScheduled = false;
@@ -266,8 +259,8 @@ class Editor extends Disposable {
 		host.addEventListener('scroll', onScroll, { passive: true });
 		this._register({ dispose: () => host.removeEventListener('scroll', onScroll) });
 
-		// Flush the latest scroll synchronously before the webview is hidden or torn
-		// down, since the frame-throttled save above may not have run yet.
+		
+		
 		const onHide = (): void => {
 			if (document.visibilityState === 'hidden') {
 				this.#patchViewState({ scrollTop: host.scrollTop });
@@ -277,15 +270,15 @@ class Editor extends Disposable {
 		window.addEventListener('pagehide', saveScroll);
 		this._register({ dispose: () => { document.removeEventListener('visibilitychange', onHide); window.removeEventListener('pagehide', saveScroll); } });
 
-		// Persist the cursor whenever it moves.
+		
 		this.model.selection.recomputeInitiallyAndOnChange(this._store, () => {
 			const sel = this.model.selection.get();
 			this.#patchViewState({ selection: sel ? { anchor: sel.anchor, active: sel.active } : undefined });
 		});
 
-		// Persist the edit/read-only mode as the global default whenever the lock
-		// toggle flips it, so the next Markdown editor opens in the same mode. The
-		// initial (restored) value is skipped so opening an editor doesn't re-write it.
+		
+		
+		
 		let firstReadonly = true;
 		this.model.readonlyMode.recomputeInitiallyAndOnChange(this._store, () => {
 			const isReadonly = this.model.readonlyMode.get();
@@ -295,9 +288,9 @@ class Editor extends Disposable {
 			firstReadonly = false;
 		});
 
-		// Forward user edits to the extension. Edits are ignored by the model while
-		// read-only, so this is a no-op in that mode; keeping it always registered
-		// means unlocking a read-only editor immediately resumes edit forwarding.
+		
+		
+		
 		let previousText = this.model.sourceText.get().value;
 		this.model.sourceText.recomputeInitiallyAndOnChange(this._store, () => {
 			const text = this.model.sourceText.get().value;
@@ -307,8 +300,8 @@ class Editor extends Disposable {
 			previousText = text;
 		});
 
-		// Restore scroll last: content height settles over a few frames (async parse,
-		// syntax highlighting, mermaid), so re-apply until it sticks.
+		
+		
 		this.#restoreScroll(host, savedViewState.scrollTop);
 	}
 

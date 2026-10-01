@@ -221,7 +221,7 @@ export async function getFailedPrCheck(repoRoot: string, headRefOid: string): Pr
                 return failed;
             }
         } catch {
-            // fall through to combined status
+            
         }
     }
 

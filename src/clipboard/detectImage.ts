@@ -54,7 +54,7 @@ async function macClipboardHasImage(): Promise<boolean | null> {
     }
 }
 
-/** On-demand clipboard image check. No background polling. */
+
 export async function clipboardHasImage(): Promise<boolean | null> {
     const os = platform();
     if (os === "darwin") {

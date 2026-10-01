@@ -12,7 +12,7 @@ import "monaco-editor/esm/vs/editor/contrib/wordOperations/browser/wordOperation
 import { conf as markdownConf, language as markdownLanguage } from "monaco-editor/esm/vs/basic-languages/markdown/markdown.js";
 import { conf as typescriptConf, language as typescriptLanguage } from "monaco-editor/esm/vs/basic-languages/typescript/typescript.js";
 import { conf as yamlConf, language as yamlLanguage } from "monaco-editor/esm/vs/basic-languages/yaml/yaml.js";
-import { completeSkillPropertyKeys, parseSkillFrontMatter } from "../../markdownEditor/webview/skillFrontMatterYaml";
+import { completeSkillPropertyKeys, parseSkillFrontMatter } from "./skillFrontMatterYaml";
 import { completeAgentPropertyKeys } from "./skillKeys";
 import { readFrontMatter } from "./skillProperties";
 import { installMermaidCodeLens, refreshMermaidCodeLens } from "./mermaidCodeLens";

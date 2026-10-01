@@ -18,13 +18,13 @@ export interface MermaidOpenLinkRequest {
 
 const PATH_LINE_COLUMN_RE = /^(.+):(\d+):(\d+)$/;
 const PATH_LINE_ONLY_RE = /^(.+):(\d+)$/;
-/** GitHub-style line anchor: `#L12` */
+
 const HREF_GITHUB_LINE_RE = /#L(\d+)\b/i;
-/** VS Code URI fragment: `#L12,5` (see `text/uri-list` in VS Code API docs) */
+
 const HREF_VSCODE_FRAGMENT_RE = /#L(\d+),(\d+)\b/i;
 const EXTERNAL_HREF_RE = /^(https?:|mailto:)/i;
 
-/** Strip `./` so `test.txt` and `./test.txt` resolve the same beside the diagram. */
+
 export function normalizeGblRelativePath(relativePath: string): string {
     const trimmed = relativePath.trim();
     if (!trimmed) {
@@ -110,13 +110,7 @@ function parseHrefWorkspaceLocation(href: string): MermaidClickTarget | undefine
     };
 }
 
-/**
- * Parses GBL call-graph Mermaid click targets.
- *
- * Preferred (GBL tooltip): `../file.gbl:12:1` — path with `:line:column` suffix.
- * VS Code URI style (href fragment): `../file.gbl#L12,5` — `#L` + line + `,` + column.
- * GitHub/web (href fragment): `../file.gbl#L12` — line only, column defaults to 1.
- */
+
 export function parseMermaidClickTarget(
     tooltip: string | undefined,
     href: string | undefined
@@ -153,15 +147,12 @@ function parsePositiveInt(value: string, fallback: number): number {
     return parsed;
 }
 
-/** GBL call-graph location string: `relative/path.gbl:line:column` (1-based). */
+
 export function formatGblPathLocation(relativePath: string, line: number, column: number): string {
     return `${relativePath}:${line}:${column}`;
 }
 
-/**
- * Normalizes click pairs for opening: `href` is the file path only (Mermaid-safe),
- * `tooltip` is the canonical GBL `path:line:column` location string.
- */
+
 export function normalizeGblClickPair(href: string, tooltip?: string): { href: string; tooltip: string } {
     const trimmedHref = href.trim();
     const trimmedTooltip = tooltip?.trim() ?? "";

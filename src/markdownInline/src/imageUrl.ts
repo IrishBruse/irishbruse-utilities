@@ -1,4 +1,3 @@
-/** Resolve a markdown image URL against the document. Rejects script URLs. */
 export function resolveImageUrl(url: string, documentUrl: string): string | undefined {
     const trimmed = url.trim();
     if (!trimmed || /^(javascript|vbscript):/i.test(trimmed)) {

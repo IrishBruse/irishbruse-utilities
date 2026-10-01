@@ -49,7 +49,7 @@ function printHelp() {
     process.exit(0);
 }
 
-/** @type {import("esbuild").BuildOptions} */
+
 const extensionConfig = {
     entryPoints: ["src/extension.ts"],
     bundle: true,
@@ -63,7 +63,7 @@ const extensionConfig = {
     outfile: "dist/extension.js",
 };
 
-/** @type {import("esbuild").BuildOptions} */
+
 const mermaidThemeConfig = {
     entryPoints: ["src/mermaidEditor/vsCodeTheme.browser.ts"],
     bundle: true,

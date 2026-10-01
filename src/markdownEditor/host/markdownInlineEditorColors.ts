@@ -1,6 +1,6 @@
 import { workspace } from "vscode";
 
-/** Last-resort defaults matching markdownInlineEditor.colors in user settings. */
+
 export const DEFAULT_MARKDOWN_INLINE_EDITOR_COLORS = {
     heading1: "#D19A66",
     heading2: "#E06C75",
@@ -21,7 +21,7 @@ function readColor(configKey: string, fallback: string): string {
     return typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
 }
 
-/** Prefer `markdownInlineEditor.colors.*` from settings; fall back to hard-coded defaults. */
+
 export function getMarkdownInlineEditorColors(): MarkdownInlineEditorColors {
     const defaults = DEFAULT_MARKDOWN_INLINE_EDITOR_COLORS;
     return {
@@ -36,7 +36,7 @@ export function getMarkdownInlineEditorColors(): MarkdownInlineEditorColors {
     };
 }
 
-/** CSS custom properties for the markdown editor webview. */
+
 export function markdownInlineEditorColorsCssVars(colors: MarkdownInlineEditorColors): string {
     return [
         `--ib-md-heading-1: ${colors.heading1};`,

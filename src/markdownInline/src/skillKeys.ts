@@ -1,4 +1,4 @@
-import { completeSkillPropertyKeys } from "../../markdownEditor/webview/skillFrontMatterYaml";
+import { completeSkillPropertyKeys } from "./skillFrontMatterYaml";
 
 const AGENT_PROPERTY_KEYS = ["paths", "icon", "color"] as const;
 

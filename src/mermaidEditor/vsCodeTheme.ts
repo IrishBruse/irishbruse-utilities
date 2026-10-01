@@ -110,10 +110,7 @@ const GIT_PALETTE_VARS = CHART_PALETTE_VARS.slice(0, 8);
 
 const C_SCALE_LIMIT = 12;
 
-/**
- * Muted section palette for timeline, journey, mindmap, etc.
- * Avoids saturated chart colors and inverted cScaleInv highlights.
- */
+
 export function buildMutedCScaleColors(tokens: MermaidTokens): string[] {
     const { surface, surfaceAlt, sidebar, accent, chartBlue, chartPurple, muted } = tokens;
     const recipes = [
@@ -187,9 +184,7 @@ function requireColor(pickColor: ColorPicker, ...varNames: string[]): string {
     return pickColor(...varNames) ?? "#000000";
 }
 
-/**
- * Semantic VS Code → diagram tokens. Single source for themeVariables, themeCSS, and --ib-* vars.
- */
+
 export function getTokens(
     pickColor: ColorPicker,
     readCssVar: CssVarReader,
@@ -441,7 +436,6 @@ export function getThemeCSS(tokens: MermaidTokens): string {
 .node:not(:has(.divider)) path`;
 
     return `
-/* Generic typography */
 text { fill: ${fg}; }
 foreignObject, foreignObject * { color: ${fg}; font-family: ${fontFamily}; }
 .messageText, .loopText, .actor > text, .nodeLabel, .cluster-label, .titleText,
@@ -457,7 +451,6 @@ foreignObject, foreignObject * { color: ${fg}; font-family: ${fontFamily}; }
   font-family: ${fontFamily};
 }
 
-/* Nodes & actors */
 ${nodeShape} {
   fill: ${surface};
   stroke: ${border};
@@ -471,7 +464,6 @@ ${nodeShape} {
   stroke: ${border};
 }
 
-/* Clusters */
 .cluster rect, .cluster path {
   fill: ${selection};
   fill-opacity: 0.08;
@@ -480,7 +472,6 @@ ${nodeShape} {
   stroke-dasharray: 4 6;
 }
 
-/* Edges */
 .edgePath path, .flowchart-link, .messageLine0, .messageLine1, .relationshipLine {
   stroke: ${line};
   stroke-width: 1.5px;
@@ -490,12 +481,10 @@ marker polygon, marker path {
   stroke: none;
 }
 
-/* Labels */
 .edgeLabel, .edgeLabel p, .edgeLabel span, .labelBkg {
   color: ${fg};
   background-color: ${bg};
 }
-/* Gantt */
 .section0 { fill: ${sectionBkg}; }
 .section2 { fill: ${blendHex(bg, surfaceAlt, 0.35) ?? surfaceAlt}; }
 .section1, .section3 { fill: ${altSectionBkg}; }
@@ -556,19 +545,16 @@ rect.task.milestone {
   stroke: ${accent};
 }
 
-/* Sequence notes */
 .note {
   fill: ${warning};
   stroke: ${warningBorder};
 }
 
-/* ER relationship labels */
 .relationshipLabelBox {
   fill: ${surface};
   stroke: ${border};
 }
 
-/* Git */
 .commit-label-bkg, .branchLabelBkg, [class*="branchLabelBkg"] {
   fill: ${surface};
   stroke: ${border};
@@ -583,7 +569,6 @@ rect.task.milestone {
   stroke: ${chartBlue};
 }
 
-/* Timeline / journey / mindmap sections */
 .section-root rect, .section-root path, .section-root circle {
   fill: ${blendHex(surface, accent, 0.1) ?? surface};
   stroke: ${border};
@@ -610,7 +595,6 @@ rect.task.milestone {
   stroke-width: 1px !important;
 }
 
-/* Pie */
 .pieCircle, .pieOuterCircle {
   stroke: ${border};
   opacity: 1;

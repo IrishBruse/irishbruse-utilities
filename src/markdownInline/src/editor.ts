@@ -391,9 +391,20 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         if (!(widget instanceof HTMLElement)) {
             return;
         }
-        widget.style.transform = parent.scrollTop > 0 ? `translateY(${parent.scrollTop}px)` : "";
+        if (!widget.classList.contains("visible")) {
+            widget.style.transform = "";
+            return;
+        }
+        const offset = parent.scrollTop;
+        widget.style.transform = offset > 0 ? `translate3d(0, ${offset}px, 0)` : "";
     };
     parent.addEventListener("scroll", pinFindWidget, { passive: true });
+    const findController = editor.getContribution("editor.contrib.findController") as {
+        getState(): { onFindReplaceStateChange(listener: () => void): monaco.IDisposable };
+    } | null;
+    const findVisibilityListener = findController?.getState().onFindReplaceStateChange(() => {
+        pinFindWidget();
+    });
     const contentSizeListener = editor.onDidContentSizeChange(fitContent);
     const cursorRevealListener = editor.onDidChangeCursorPosition((event) => {
         revealInParent(event.position, false);
@@ -417,6 +428,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
                 cancelAnimationFrame(fitFrame);
             }
             parent.removeEventListener("scroll", pinFindWidget);
+            findVisibilityListener?.dispose();
             contentSizeListener.dispose();
             cursorRevealListener.dispose();
             removeKeybindings();

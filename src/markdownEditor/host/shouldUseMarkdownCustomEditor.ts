@@ -65,7 +65,7 @@ export function isMarkdownUriInDiffTab(uri: Uri): boolean {
     return false;
 }
 
-/** True when the Markdown Editor should own the document (not SCM/history diffs). */
+
 export function shouldUseMarkdownCustomEditor(uri: Uri): boolean {
     return isDirectMarkdownEditUri(uri) && !isMarkdownUriInDiffTab(uri);
 }

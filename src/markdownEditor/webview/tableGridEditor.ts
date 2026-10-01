@@ -1,7 +1,4 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 import {
 	AsyncClipboardStrategy,
@@ -38,10 +35,7 @@ export interface TableGridOptions {
 	readonly style: 'wrapped' | 'compact';
 }
 
-/**
- * Confluence-style table editing: keep the native preview table looking like
- * idle/preview mode, and overlay a nested markdown editor on the focused cell.
- */
+
 export class TableGridController extends Disposable {
 	readonly #model: EditorModel;
 	readonly #view: EditorView;
@@ -400,8 +394,8 @@ export class TableGridController extends Disposable {
 		if (atOffset?.kind === 'table') {
 			return atOffset;
 		}
-		// After insert/replace the caret offset can briefly sit past the table
-		// start; fall back to the measured table that still matches our offset.
+		
+		
 		const measurements = this.#view.measuredLayout.measurements.get();
 		for (const measurement of measurements) {
 			if (measurement.block.kind !== 'table') {
@@ -476,8 +470,8 @@ export class TableGridController extends Disposable {
 
 		this.#activeTableOffset = offset;
 
-		// Already editing this table: keep in-memory rows (including edits to a
-		// newly inserted empty cell) and only move the cell editor.
+		
+		
 		if (alreadyOpen) {
 			this.#focusCell(focusCell?.row ?? 0, focusCell?.col ?? 0);
 			if (point) {
@@ -511,7 +505,7 @@ export class TableGridController extends Disposable {
 			return;
 		}
 
-		// Wait for preview re-render after activeBlocksOverride before measuring cells.
+		
 		requestAnimationFrame(() => requestAnimationFrame(open));
 	}
 
@@ -520,8 +514,8 @@ export class TableGridController extends Disposable {
 	}
 
 	#exitGrid(): void {
-		// Must flush before tear-down. removeCellEditor alone only updates #rows;
-		// clearing #dirty afterwards would drop edits (common after insert row/col).
+		
+		
 		this.#flushTableEdits();
 		this.#tearDownGridDom();
 		this.#lockedColumnWidths = undefined;
@@ -536,7 +530,7 @@ export class TableGridController extends Disposable {
 		this.#view.element.classList.remove('ib-table-grid-mode');
 	}
 
-	/** Write the open cell (if any) and dirty #rows back into the document. */
+	
 	#flushTableEdits(): void {
 		this.#isRemounting = false;
 		this.#commitFocusedCell();
@@ -647,10 +641,7 @@ export class TableGridController extends Disposable {
 		this.#resizeObserver.observe(this.#host);
 	}
 
-	/**
-	 * Keep idle column widths when the grid opens so the table does not jump.
-	 * On editor resize, let CSS layout run again, then lock the new widths.
-	 */
+	
 	#syncColumnWidths(): void {
 		const table = this.#nativeTable;
 		if (!table || this.#syncingColumnWidths) {
@@ -794,8 +785,8 @@ export class TableGridController extends Disposable {
 		row = Math.max(0, Math.min(row, maxRow));
 		col = Math.max(0, Math.min(col, maxCol));
 
-		// Write the previous cell into the document before hiding the overlay.
-		// Otherwise the native preview still shows the old cell text.
+		
+		
 		if (this.#dirty && !this.#isRemounting) {
 			this.#removeCellEditor();
 			this.#focusedCell = { row, col };
@@ -886,9 +877,9 @@ export class TableGridController extends Disposable {
 		const wrapperRect = wrapper.getBoundingClientRect();
 		const cellStyle = getComputedStyle(nativeCell);
 		const width = nativeCell.clientWidth;
-		// Use the padding box (client*): with border-collapse, borderTopWidth is
-		// often 1px while clientTop is 0, and adding the border to padding shifted
-		// the edit text down by a pixel.
+		
+		
+		
 		this.#cellEditor.style.left = `${cellRect.left - wrapperRect.left + wrapper.scrollLeft + nativeCell.clientLeft}px`;
 		this.#cellEditor.style.top = `${cellRect.top - wrapperRect.top + wrapper.scrollTop + nativeCell.clientTop}px`;
 		this.#cellEditor.style.width = `${width}px`;
@@ -906,9 +897,7 @@ export class TableGridController extends Disposable {
 		this.#applyCellEditorHeight(this.#cellFitHeight);
 	}
 
-	/**
-	 * Keep one-line cells at preview height. Grow only when the paragraph wraps.
-	 */
+	
 	#fitCellEditorHeight(nativeCell: HTMLTableCellElement): void {
 		const editor = this.#cellEditor;
 		if (!editor) {
@@ -1174,8 +1163,8 @@ export class TableGridController extends Disposable {
 		const updated = this.#resolveActiveTable();
 		if (updated) {
 			this.#refreshActiveOffset(updated);
-			// Keep live cell-editor text when not remounting; reloading here could
-			// blank a newly inserted cell before exit flushes the editor.
+			
+			
 			if (!this.#cellModel) {
 				this.#loadFromTable(updated);
 			}

@@ -3,9 +3,9 @@ import { asyncSpawn } from "../utils/asyncSpawn";
 import { getBaseBranchOverride } from "./baseBranchOverride";
 
 export type ResolvedBaseBranch = {
-    /** Display name, e.g. main or origin/main */
+    
     name: string;
-    /** Ref for git operations (commit sha or branch name) */
+    
     ref: string;
 };
 
@@ -50,7 +50,7 @@ export async function resolveRefTarget(
             ref: branch.commit ?? ref,
         };
     } catch {
-        // fall through to raw ref resolution
+        
     }
 
     const result = await asyncSpawn("git", ["rev-parse", "--verify", ref], { cwd: repoRoot });
@@ -63,9 +63,7 @@ export async function resolveRefTarget(
     return { name, ref: sha };
 }
 
-/**
- * Resolves the integration branch to compare against for the current HEAD.
- */
+
 export async function resolveAutoBaseBranch(repository: Repository): Promise<ResolvedBaseBranch | undefined> {
     const head = repository.state.HEAD;
     if (!head?.name) {
@@ -81,7 +79,7 @@ export async function resolveAutoBaseBranch(repository: Repository): Promise<Res
             };
         }
     } catch {
-        // fall through to candidates
+        
     }
 
     for (const candidate of FALLBACK_CANDIDATES) {

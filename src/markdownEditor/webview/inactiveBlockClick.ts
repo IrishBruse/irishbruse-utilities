@@ -1,7 +1,4 @@
-/*---------------------------------------------------------------------------------------------
- *  Copyright (c) Microsoft Corporation. All rights reserved.
- *  Licensed under the MIT License. See License.txt in the project root for license information.
- *--------------------------------------------------------------------------------------------*/
+
 
 import {
 	CodeBlockAstNode,
@@ -13,11 +10,7 @@ import {
 import { Disposable } from './disposable';
 import { observeAll } from './observeAll';
 
-/**
- * Inactive custom code blocks (Mermaid preview), empty documents, and editor
- * padding do not map through the stock DOM hit test. Route those clicks into
- * the source model.
- */
+
 export class InactiveBlockClickController extends Disposable {
 	readonly #model: EditorModel;
 	readonly #view: EditorView;

@@ -13,7 +13,7 @@ import {
 let oldPosition: Position;
 
 export async function relativeGoTo(type: "up" | "down" | "absolute" = "down") {
-    // Get editor
+    
     const editor = window.activeTextEditor;
 
     if (!editor) {
@@ -32,7 +32,7 @@ export async function relativeGoTo(type: "up" | "down" | "absolute" = "down") {
 
     oldPosition = editor.selection.active;
 
-    // Get input from user
+    
     const input: string | undefined = await window.showInputBox({
         value: initValue,
         prompt: "Jump ('' relative down, '-' relative up, ' ' absolute)",
@@ -68,7 +68,7 @@ function peek(value: string): string | InputBoxValidationMessage | undefined | n
 
     let lineNumber = oldPosition.line;
 
-    // Absolute position
+    
     if (value.length > 1 && value.startsWith(" ")) {
         if (isNaN(inputNumber)) {
             inputNumber = oldPosition.line;

@@ -1,7 +1,7 @@
 import "../src/editor.css";
 import { mountInlineEditor } from "../src/editor";
-import { hasYamlFrontMatter } from "../../markdownEditor/host/yamlFrontMatter";
-import { isSkillMarkdownPath } from "../../markdownEditor/host/webviewInitialState";
+import { hasYamlFrontMatter } from "../src/yamlFrontMatter";
+import { isSkillMarkdownPath } from "../src/skillPath";
 
 const DOCS_PREFIX = "../../../docs/tests/markdown/";
 const LOCAL_FIXTURE = "fixture.md";

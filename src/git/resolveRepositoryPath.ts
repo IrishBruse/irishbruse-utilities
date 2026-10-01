@@ -14,9 +14,7 @@ async function gitToplevelFrom(cwd: string): Promise<string | undefined> {
     return undefined;
 }
 
-/**
- * Resolves the git repository root from SCM context, the active editor, or workspace folders.
- */
+
 export async function resolveRepositoryPath(sourceControl?: SourceControl): Promise<string | undefined> {
     if (sourceControl?.rootUri) {
         return sourceControl.rootUri.fsPath;

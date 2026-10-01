@@ -139,7 +139,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         );
         registerCommandIB(Commands.RefreshSnippetView, () => provider.refresh(), context);
 
-        // openSnippet is an arrow property — `this` is preserved when passed as a reference
+        
         registerCommandIB(Commands.OpenSnippet, provider.openSnippet, context);
 
         registerCommandIB(Commands.AddSnippet, (i) => provider.addSnippet(i), context);
@@ -205,7 +205,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             });
     }
 
-    // Arrow property so `this` is preserved when passed as a reference to registerCommandIB
+    
     openSnippet = async (key: string, snippet: Snippet): Promise<void> => {
         if (!key) {
             window.showErrorMessage("Missing key argument");
@@ -229,7 +229,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             const langIds = getLanguageIdMappings();
             await languages.setTextDocumentLanguage(editor.document, langIds[snippet.languageId] ?? snippet.languageId);
         } catch {
-            // Ignore and fall back to plaintext
+            
         }
     };
 
@@ -270,7 +270,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         try {
             await languages.setTextDocumentLanguage(editor.document, langIds[languageId] ?? languageId);
         } catch {
-            // Ignore and fall back to plaintext
+            
         }
 
         await SnippetViewProvider.saveSnippetFile(snippetPath);

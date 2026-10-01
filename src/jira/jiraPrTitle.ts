@@ -26,7 +26,7 @@ const STATUS_LABELS: Record<StatusBucket, string> = {
     done: "Done",
 };
 
-/** Flatten synced board tickets in board display order for quick pick. */
+
 export function listBoardTicketsForPick(board: SyncedJiraBoard): BoardTicketPickEntry[] {
     const rows: BoardTicketPickEntry[] = [];
     for (const sectionKey of SECTION_KEYS) {
@@ -46,7 +46,7 @@ export function listBoardTicketsForPick(board: SyncedJiraBoard): BoardTicketPick
     return rows;
 }
 
-/** Build a PR title with the Jira key at the start. */
+
 export function formatPrTitleFromTicket(key: string, summary: string): string {
     const trimmedSummary = summary.trim();
     const normalizedKey = key.trim();

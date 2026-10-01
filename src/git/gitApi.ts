@@ -1,7 +1,4 @@
-/**
- * Minimal types for the built-in vscode.git extension API.
- * @see https://github.com/microsoft/vscode/blob/main/extensions/git/src/api/git.d.ts
- */
+
 
 import type { Event, Uri } from "vscode";
 

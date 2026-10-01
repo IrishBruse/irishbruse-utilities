@@ -1,308 +1,102 @@
-// This file is auto-generated. Do not modify directly.
 
-/** Commands */
 export enum Commands {
-    /**
-     * Relative goto
-     * Short Title: Relative goto
-     * Icon: undefined
-     */
     RelativeGoTo = `ib-utilities.relativeGoTo`,
 
-    /**
-     * Open Snippet
-     * Short Title: Open
-     * Icon: undefined
-     */
     OpenSnippet = `ib-utilities.openSnippet`,
 
-    /**
-     * Show Snippet View
-     * Short Title: Show Snippet View
-     * Icon: undefined
-     */
     ShowSnippetView = `ib-utilities.showSnippetView`,
 
-    /**
-     * Open Pull Request
-     * Short Title: Open PR
-     * Icon: $(github)
-     */
     OpenPR = `ib-utilities.openPR`,
 
-    /**
-     * Open Repository
-     * Short Title: Open repo
-     * Icon: $(github)
-     */
     OpenRepo = `ib-utilities.openRepo`,
 
-    /**
-     * Create Draft Pull Request
-     * Short Title: Create draft PR
-     * Icon: $(git-pull-request-create)
-     */
     CreateDraftPR = `ib-utilities.createDraftPR`,
 
-    /**
-     * Mark Pull Request Ready
-     * Short Title: Mark ready
-     * Icon: $(check)
-     */
     MarkPrReady = `ib-utilities.markPrReady`,
 
-    /**
-     * Copy Pull Request URL
-     * Short Title: Copy PR URL
-     * Icon: $(copy)
-     */
     CopyPrUrl = `ib-utilities.copyPrUrl`,
 
-    /**
-     * Open Pull Request Checks
-     * Short Title: Open checks
-     * Icon: $(run-all)
-     */
     OpenPrChecks = `ib-utilities.openPrChecks`,
 
-    /**
-     * Open Changed File Diff
-     * Short Title: Open file diff
-     * Icon: undefined
-     */
     OpenChangesFile = `ib-utilities.openChangesFile`,
 
-    /**
-     * Open Pull Request Review
-     * Short Title: Open PR review
-     * Icon: $(comment-discussion)
-     */
     OpenPrReview = `ib-utilities.openPrReview`,
 
-    /**
-     * Open Jira Ticket
-     * Short Title: Open Jira
-     * Icon: $(issue-opened)
-     */
     OpenJiraTicket = `ib-utilities.openJiraTicket`,
 
-    /**
-     * Add Jira Key to PR Title
-     * Short Title: Add Jira key
-     * Icon: $(edit)
-     */
     AddJiraKeyToPrTitle = `ib-utilities.addJiraKeyToPrTitle`,
 
-    /**
-     * Refresh Snippets
-     * Short Title: Refresh
-     * Icon: $(refresh)
-     */
     RefreshSnippetView = `ib-utilities.refreshSnippetView`,
 
-    /**
-     * Add new snippet
-     * Short Title: Add snippet
-     * Icon: $(add)
-     */
     AddSnippet = `ib-utilities.addSnippet`,
 
-    /**
-     * Edit snippet
-     * Short Title: Edit snippet
-     * Icon: $(edit)
-     */
     EditSnippet = `ib-utilities.editSnippet`,
 
-    /**
-     * Delete snippet
-     * Short Title: Delete snippet
-     * Icon: $(trash)
-     */
     DeleteSnippet = `ib-utilities.deleteSnippet`,
 
-    /**
-     * Terminal paste (text or image)
-     * Short Title: Terminal paste
-     * Icon: undefined
-     */
     TerminalPaste = `ib-utilities.terminalPaste`,
 
-    /**
-     * Open Markdown Editor
-     * Short Title: Markdown Editor
-     * Icon: $(markdown)
-     */
     OpenMarkdownEditor = `ib-utilities.openMarkdownEditor`,
 
-    /**
-     * Open Inline Markdown
-     * Short Title: Inline Markdown
-     * Icon: $(preview)
-     */
     OpenMarkdownInline = `ib-utilities.openMarkdownInline`,
 
-    /**
-     * Open Text Editor
-     * Short Title: Text Editor
-     * Icon: $(code)
-     */
     OpenMarkdownSource = `ib-utilities.openMarkdownSource`,
 
-    /**
-     * Open Preview
-     * Short Title: Open Preview
-     * Icon: $(open-preview)
-     */
     OpenMermaidPreview = `ib-utilities.openMermaidPreview`,
 
-    /**
-     * Open Source
-     * Short Title: Open Source
-     * Icon: $(code)
-     */
     OpenMermaidSource = `ib-utilities.openMermaidSource`,
 
-    /**
-     * Open Mermaid Preview
-     * Short Title: Open Preview
-     * Icon: undefined
-     */
     OpenMermaidMarkdownPreview = `ib-utilities.openMermaidMarkdownPreview`,
 
-    /**
-     * Show Git Helpers
-     * Short Title: Git Helpers
-     * Icon: $(git-branch)
-     */
     ShowGitHelpers = `ib-utilities.showGitHelpers`,
 
-    /**
-     * Refresh Git Helpers
-     * Short Title: Refresh
-     * Icon: $(refresh)
-     */
     RefreshGitHelpers = `ib-utilities.refreshGitHelpers`,
 
-    /**
-     * Diff
-     * Short Title: Diff
-     * Icon: $(diff)
-     */
     DiffWithBase = `ib-utilities.diffWithBase`,
 
-    /**
-     * Set Base Branch
-     * Short Title: Set base
-     * Icon: $(gear)
-     */
     SetBaseBranch = `ib-utilities.setBaseBranch`,
 
-    /**
-     * Revert Hunk to Base
-     * Short Title: Revert hunk
-     * Icon: $(discard)
-     */
     RevertBranchDiffHunk = `ib-utilities.revertBranchDiffHunk`,
 
-    /**
-     * Revert Selection to Base
-     * Short Title: Revert selection
-     * Icon: $(discard)
-     */
     RevertBranchDiffSelection = `ib-utilities.revertBranchDiffSelection`,
 
-    /**
-     * Copy Path
-     * Short Title: Copy path
-     * Icon: undefined
-     */
     CopyScmResourcePath = `ib-utilities.copyScmResourcePath`,
 
-    /**
-     * Copy Relative Path
-     * Short Title: Copy relative path
-     * Icon: undefined
-     */
     CopyScmResourceRelativePath = `ib-utilities.copyScmResourceRelativePath`,
 
-    /**
-     * Copy GitHub Head URL
-     * Short Title: Copy head URL
-     * Icon: $(copy)
-     */
     CopyGithubHeadFileUrl = `ib-utilities.copyGithubHeadFileUrl`,
 
-    /**
-     * Discard Editor Changes
-     * Short Title: Discard
-     * Icon: $(discard)
-     */
     RevertToDisk = `ib-utilities.revertToDisk`,
 
-    /**
-     * Snippet Manager
-     */
     ViewSnippetContainer = `workbench.view.snippetContainer`,
 
 }
 
-/** View Containers */
 export enum ViewContainers {
-    /**
-     * Snippet Manager
-     * Icon: media/snippet_icon.svg
-     */
       SnippetContainer = `snippetContainer`,
 
 }
 
-/** Views */
 export enum Views {
-    /**
-     * Header: Groups
-     * ContainerId: snippetContainer
-     */
     SnippetView = `snippetView`,
 
-    /**
-     * Header: Git Helpers
-     * ContainerId: scm
-     */
     IbUtilitiesGitHelpers = `ib-utilities.gitHelpers`,
 
 }
 
-/** Configuration Properties */
 export enum Configuration {
-    /**
-     * Map snippet files to known language ID.
-     */
     LanguageIdMappings = `ib-utilities.languageIdMappings`,
 
-    /**
-     * On the left is the languageId for the snippet to auto generate on the right is the comma delimited array of languages to build it from.
-     */
     GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
 
-    /**
-     * Regular expression used to match Jira issue keys in PR titles and branch names. Defaults to the pattern used by the jira CLI.
-     */
     JiraKeyPattern = `ib-utilities.jira.keyPattern`,
 
-    /**
-     * Absolute path to the GitHub CLI (gh) executable. Leave empty to use gh from PATH.
-     */
     GithubGhPath = `ib-utilities.github.ghPath`,
 
-    /**
-     * Show Git Helpers with mock PR, checks, Jira, and change stats for UI development and testing.
-     */
     GitHelpersDebugMode = `ib-utilities.gitHelpers.debugMode`,
 
 }
 
-/** Primary file extension per language id from this extension contributes.languages */
 export const contributedLanguageIdToExtension: Record<string, string> = {
     "mermaid": ".mmd",
     "gherkin": ".feature",

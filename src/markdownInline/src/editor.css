@@ -56,12 +56,53 @@ body {
     width: min(900px, 100%);
     height: auto;
     margin-inline: auto;
-    padding: 0 48px;
+    padding-inline: clamp(0px, calc((100% - 804px) / 2), 48px);
 }
 
 .inline-md-root .monaco-editor,
 .inline-md-root .monaco-editor .overflow-guard {
     outline: none;
+}
+
+.inline-md-root .monaco-editor .find-widget {
+    transition: none;
+    color: var(--vscode-editorWidget-foreground, #cccccc);
+    background-color: var(--vscode-editorWidget-background, #252526);
+    border-color: var(--vscode-editorWidget-border, var(--vscode-widget-border, #454545));
+    box-shadow: 0 0 8px 2px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.36));
+}
+
+.inline-md-root .monaco-editor .find-widget .monaco-inputbox {
+    background-color: var(--vscode-input-background, #3c3c3c);
+    color: var(--vscode-input-foreground, #cccccc);
+}
+
+.inline-md-root .monaco-editor .find-widget .monaco-inputbox .input {
+    color: inherit;
+}
+
+.inline-md-root .monaco-editor .find-widget .monaco-inputbox.idle {
+    border-color: var(--vscode-input-border, transparent);
+}
+
+.inline-md-root .monaco-editor .find-widget .matchesCount {
+    color: var(--vscode-descriptionForeground, #9da5b4);
+}
+
+.inline-md-root .monaco-editor .find-widget .button {
+    color: var(--vscode-icon-foreground, var(--vscode-foreground, #cccccc));
+}
+
+.inline-md-root .monaco-editor .find-widget .button:not(.disabled):hover {
+    background-color: var(--vscode-toolbar-hoverBackground, rgba(90, 93, 94, 0.31));
+}
+
+.inline-md-root .monaco-editor .find-widget .codicon {
+    font-family: codicon;
+}
+
+.inline-md-root .monaco-editor .find-widget:not(.visible) {
+    pointer-events: none;
 }
 
 .inline-md-root .monaco-scrollable-element > .scrollbar,
@@ -122,27 +163,19 @@ body {
 }
 
 .inline-md-root .monaco-editor .view-line:has(.inline-md-h1) {
-    height: var(--ib-md-h1-line, 1.5em) !important;
+    height: var(--ib-md-h1-line) !important;
 }
 
 .inline-md-root .monaco-editor .view-line:has(.inline-md-h2) {
-    height: var(--ib-md-h2-line, 1.4em) !important;
+    height: var(--ib-md-h2-line) !important;
 }
 
 .inline-md-root .monaco-editor .view-line:has(.inline-md-h3) {
-    height: var(--ib-md-h3-line, 1.25em) !important;
+    height: var(--ib-md-h3-line) !important;
 }
 
 .inline-md-root .monaco-editor .view-line:has(.inline-md-h4) {
-    height: var(--ib-md-h4-line, 1.1em) !important;
-}
-
-.inline-md-root .monaco-editor .view-line:has(.inline-md-h5) {
-    height: var(--ib-md-h5-line, 1em) !important;
-}
-
-.inline-md-root .monaco-editor .view-line:has(.inline-md-h6) {
-    height: var(--ib-md-h6-line, 0.85em) !important;
+    height: var(--ib-md-h4-line) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h1,
@@ -156,37 +189,35 @@ body {
 
 .inline-md-root .monaco-editor .inline-md-h1 {
     font-size: 1.5em !important;
-    line-height: var(--ib-md-h1-line, 1.5em) !important;
+    line-height: var(--ib-md-h1-line, inherit) !important;
     color: var(--ib-md-heading-1, #D19A66) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h2 {
     font-size: 1.4em !important;
-    line-height: var(--ib-md-h2-line, 1.4em) !important;
+    line-height: var(--ib-md-h2-line, inherit) !important;
     color: var(--ib-md-heading-2, #E06C75) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h3 {
     font-size: 1.25em !important;
-    line-height: var(--ib-md-h3-line, 1.25em) !important;
+    line-height: var(--ib-md-h3-line, inherit) !important;
     color: var(--ib-md-heading-3, #61AFEF) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h4 {
     font-size: 1.1em !important;
-    line-height: var(--ib-md-h4-line, 1.1em) !important;
+    line-height: var(--ib-md-h4-line, inherit) !important;
     color: var(--ib-md-heading-4, #C678DD) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h5 {
     font-size: 1em !important;
-    line-height: var(--ib-md-h5-line, 1em) !important;
     color: var(--ib-md-heading-5, #C678DD) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h6 {
     font-size: 0.85em !important;
-    line-height: var(--ib-md-h6-line, 0.85em) !important;
     color: var(--ib-md-heading-6, #C678DD) !important;
 }
 
@@ -247,8 +278,45 @@ body {
 }
 
 .inline-md-task {
-    vertical-align: middle;
-    margin: 0 0.35em 0 0.15em;
+    appearance: none;
+    box-sizing: border-box;
+    position: relative;
+    width: 14px;
+    height: 14px;
+    margin: 0 0.15em 0 0;
+    border: 1px solid var(--vscode-editorWidget-border, var(--vscode-checkbox-border, #6b6b6b));
+    border-radius: 2px;
+    background-color: var(--vscode-checkbox-background, #3c3c3c);
+    vertical-align: -0.12em;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+
+.inline-md-task:hover {
+    border-color: var(--vscode-inputOption-activeBorder, var(--vscode-focusBorder, #007fd4));
+}
+
+.inline-md-task:checked {
+    border-color: var(--vscode-button-background, #0e639c);
+    background-color: var(--vscode-button-background, #0e639c);
+}
+
+.inline-md-task:checked::after {
+    content: "";
+    position: absolute;
+    left: 4px;
+    top: 1px;
+    box-sizing: border-box;
+    width: 4px;
+    height: 7px;
+    border: solid var(--vscode-button-foreground, #ffffff);
+    border-width: 0 1.5px 1.5px 0;
+    transform: rotate(45deg);
+}
+
+.inline-md-task:focus-visible {
+    outline: 1px solid var(--vscode-focusBorder, #007fd4);
+    outline-offset: 2px;
 }
 
 .inline-md-hr {

@@ -7,7 +7,7 @@ const packageDir = dirname(fileURLToPath(import.meta.url));
 const outDir = join(packageDir, "..", "..", "media", "markdownInline");
 const isWatch = process.argv.includes("--watch");
 
-/** @type {import("esbuild").BuildOptions} */
+
 const editorConfig = {
     absWorkingDir: packageDir,
     entryPoints: { editor: "src/webview.ts" },
@@ -25,7 +25,7 @@ const editorConfig = {
     logLevel: "info",
 };
 
-/** @type {import("esbuild").BuildOptions} */
+
 const workerConfig = {
     absWorkingDir: packageDir,
     entryPoints: ["monaco-editor/esm/vs/editor/editor.worker.js"],

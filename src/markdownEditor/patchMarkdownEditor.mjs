@@ -1,8 +1,4 @@
-/**
- * @vscode/markdown-editor 0.0.2-110 always mounts every document child.
- * Wrap DocumentViewNode.create so the webview can virtualize via
- * globalThis.__ibMdDocumentViewCreate.
- */
+
 
 const DOCUMENT_CREATE_NEEDLE = `  static create(e, t, s) {
     const i = s?.contentDomNode ?? document.createElement("div");
@@ -70,10 +66,7 @@ const DOCUMENT_CREATE_REPLACEMENT = `  static create(e, t, s) {
     return typeof hook == "function" ? hook(e, t, s, { originalCreate, createViewNode: J, patchDomNodes: Z, pairNodes: Cn, emptyNodes: Jc, PendingParagraph: ws, DocumentViewNode: Sn }) : originalCreate(e, t, s);
   }`;
 
-/**
- * @param {string} source
- * @returns {string}
- */
+
 export function patchMarkdownEditorDocumentVirtualization(source) {
 	if (!source.includes(DOCUMENT_CREATE_NEEDLE)) {
 		throw new Error('markdown-editor document virtualization patch: create needle not found');
@@ -81,10 +74,7 @@ export function patchMarkdownEditorDocumentVirtualization(source) {
 	return source.replace(DOCUMENT_CREATE_NEEDLE, DOCUMENT_CREATE_REPLACEMENT);
 }
 
-/**
- * @param {string} source
- * @returns {string}
- */
+
 export function patchMarkdownEditor(source) {
 	return patchMarkdownEditorDocumentVirtualization(source);
 }

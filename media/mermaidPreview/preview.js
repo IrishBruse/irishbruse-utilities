@@ -1,28 +1,28 @@
-// @ts-check
+
 (function () {
     const vscode = acquireVsCodeApi();
 
-    /** @type {HTMLElement} */
+    
     const viewport = document.getElementById("viewport");
-    /** @type {HTMLElement} */
+    
     const canvas = document.getElementById("canvas");
-    /** @type {HTMLElement} */
+    
     const diagram = document.getElementById("diagram");
-    /** @type {HTMLElement} */
+    
     const errorEl = document.getElementById("error");
-    /** @type {HTMLElement} */
+    
     const errorMessageEl = document.getElementById("error-message");
-    /** @type {HTMLButtonElement} */
+    
     const errorDismissBtn = document.getElementById("error-dismiss");
-    /** @type {HTMLButtonElement} */
+    
     const zoomOutBtn = document.getElementById("zoom-out");
-    /** @type {HTMLButtonElement} */
+    
     const zoomFitBtn = document.getElementById("zoom-fit");
-    /** @type {HTMLButtonElement} */
+    
     const zoomInBtn = document.getElementById("zoom-in");
-    /** @type {HTMLButtonElement} */
+    
     const copyPngBtn = document.getElementById("copy-png");
-    /** @type {HTMLElement} */
+    
     const linkTooltipEl = document.getElementById("link-tooltip");
 
     let scale = 1;
@@ -36,9 +36,9 @@
     let currentSource = "";
     let hasRenderedDiagram = false;
     let renderId = 0;
-    /** @type {Map<string, { href: string, tooltip: string }>} */
+    
     let clickTargetMap = new Map();
-    /** @type {{ openBeside: boolean }} */
+    
     let lastLinkClick = { openBeside: false };
     let windowOpenHookInstalled = false;
 
@@ -46,11 +46,7 @@
     const PNG_EXPORT_MIN_SCALE = 2;
     const PNG_EXPORT_MAX_DIMENSION = 8192;
 
-    /**
-     * @param {number} width
-     * @param {number} height
-     * @returns {number}
-     */
+    
     function getPngExportScale(width, height) {
         const baseScale = Math.max(window.devicePixelRatio || 1, PNG_EXPORT_MIN_SCALE);
         const maxDimension = Math.max(width, height);
@@ -81,12 +77,9 @@
         applyTransform();
     }
 
-    /**
-     * @param {SVGSVGElement} svg
-     * @returns {Promise<Uint8Array>}
-     */
+    
     function svgToPngBytes(svg) {
-        const clone = /** @type {SVGSVGElement} */ (svg.cloneNode(true));
+        const clone =  (svg.cloneNode(true));
         const viewBox = clone.viewBox?.baseVal;
         const width = viewBox?.width || clone.width.baseVal.value || svg.getBoundingClientRect().width;
         const height = viewBox?.height || clone.height.baseVal.value || svg.getBoundingClientRect().height;
@@ -146,11 +139,7 @@
         }
     }
 
-    /**
-     * Mermaid emits width="100%" which makes layout depend on the parent and
-     * breaks fit-to-view measurements after live source updates.
-     * @param {SVGSVGElement} svg
-     */
+    
     function stabilizeSvgSize(svg) {
         const viewBox = svg.viewBox?.baseVal;
         const width = viewBox?.width || svg.width?.baseVal?.value;
@@ -213,11 +202,7 @@
         };
     }
 
-    /**
-     * @param {string} href
-     * @param {string | undefined} tooltip
-     * @param {boolean} openBeside
-     */
+    
     function postOpenLink(href, tooltip, openBeside) {
         vscode.postMessage({
             type: "openLink",
@@ -234,10 +219,7 @@
     const EXTERNAL_HREF_RE = /^(https?:|mailto:)/i;
     const LINK_TOOLTIP_OFFSET_PX = 14;
 
-    /**
-     * @param {Node | null | undefined} node
-     * @returns {Element | null}
-     */
+    
     function parentElementNode(node) {
         const parent = node?.parentNode ?? null;
         return parent instanceof Element ? parent : null;
@@ -251,10 +233,7 @@
         return trimmed.replace(/^\.\//, "");
     }
 
-    /**
-     * @param {string} value
-     * @returns {{ relativePath: string, line: number, column: number } | null}
-     */
+    
     function parseGblLocationString(value) {
         const trimmed = value.trim();
         if (!trimmed || EXTERNAL_HREF_RE.test(trimmed)) {
@@ -293,10 +272,7 @@
         return { href: trimmedHref, tooltip: trimmedTooltip || trimmedHref };
     }
 
-    /**
-     * @param {string} href
-     * @returns {{ relativePath: string, line: number, column: number } | null}
-     */
+    
     function resolveHrefWorkspaceLocation(href) {
         const trimmedHref = href.trim();
         if (!trimmedHref || EXTERNAL_HREF_RE.test(trimmedHref)) {
@@ -336,9 +312,7 @@
         return { relativePath: normalizeGblRelativePath(pathPart), line: 1, column: 1 };
     }
 
-    /**
-     * @param {string} source
-     */
+    
     function rebuildClickTargetMap(source) {
         clickTargetMap = new Map();
         for (const line of source.split(/\r?\n/)) {
@@ -351,10 +325,7 @@
         }
     }
 
-    /**
-     * @param {string} nodeId
-     * @returns {{ href: string, tooltip: string } | undefined}
-     */
+    
     function getClickTargetEntry(nodeId) {
         const direct = clickTargetMap.get(nodeId);
         if (direct) {
@@ -419,7 +390,7 @@
         }
     }
 
-    /** @type {Array<() => void>} */
+    
     let linkedNodeHandlerDisposers = [];
 
     function attachLinkedNodeClickHandlers() {
@@ -439,9 +410,7 @@
             }
 
             for (const el of nodesToWire) {
-            /**
-             * @param {MouseEvent | PointerEvent} event
-             */
+            
             const openFromNode = (event) => {
                 if ("button" in event && event.button !== 0) {
                     return;
@@ -466,8 +435,8 @@
 
     function unwrapMermaidNodeAnchors() {
         for (const nodeGroup of diagram.querySelectorAll("g.ib-diagram-link")) {
-            // Mermaid wraps nodes in <a transform="translate(...)">; do not hoist the node out of
-            // that anchor or the diagram loses positioning. Only unwrap nested <a> inside the node.
+            
+            
             for (const anchor of [...nodeGroup.querySelectorAll("a")]) {
                 const parent = anchor.parentNode;
                 if (!parent) {
@@ -481,10 +450,7 @@
         }
     }
 
-    /**
-     * @param {PointerEvent} event
-     * @returns {SVGElement | Element | null}
-     */
+    
     function pointerHitLinkedNode(event) {
         const hit = document.elementFromPoint(event.clientX, event.clientY);
         if (!(hit instanceof Element)) {
@@ -504,10 +470,7 @@
         return null;
     }
 
-    /**
-     * @param {PointerEvent} event
-     * @returns {EventTarget | null}
-     */
+    
     function pointerEventDiagramTarget(event) {
         const raw = event.target;
         if (raw instanceof Element && raw !== viewport && raw !== canvas && diagram.contains(raw)) {
@@ -520,10 +483,7 @@
         return raw;
     }
 
-    /**
-     * @param {string} domId
-     * @returns {string}
-     */
+    
     function resolveFlowchartNodeIdFromDomId(domId) {
         const trimmed = domId.trim();
         if (!trimmed) {
@@ -536,10 +496,7 @@
         return trimmed;
     }
 
-    /**
-     * @param {EventTarget | null} target
-     * @returns {Element | null}
-     */
+    
     function findFlowchartNodeGroup(target) {
         let el = target instanceof Element ? target : parentElementNode(target instanceof Node ? target : null);
         while (el && el !== diagram) {
@@ -551,10 +508,7 @@
         return null;
     }
 
-    /**
-     * @param {string} href
-     * @returns {boolean}
-     */
+    
     function isUsableDiagramHref(href) {
         const trimmed = href.trim();
         if (!trimmed || trimmed === "#") {
@@ -563,10 +517,7 @@
         return !/^javascript:/i.test(trimmed);
     }
 
-    /**
-     * @param {Element} nodeGroup
-     * @returns {{ href: string, tooltip: string | undefined } | null}
-     */
+    
     function lookupNodeClickTarget(nodeGroup) {
         const ibNodeId = nodeGroup.getAttribute("data-ib-node-id");
         if (ibNodeId) {
@@ -589,10 +540,7 @@
         return { href: entry.href, tooltip: entry.tooltip };
     }
 
-    /**
-     * @param {EventTarget | null} target
-     * @returns {{ href: string, tooltip: string | undefined } | null}
-     */
+    
     function resolveClickLinkFromTarget(target) {
         const nodeGroup = findFlowchartNodeGroup(target);
         if (nodeGroup) {
@@ -610,18 +558,12 @@
         return null;
     }
 
-    /**
-     * @param {EventTarget | null} target
-     * @returns {boolean}
-     */
+    
     function isInteractiveDiagramTarget(target) {
         return resolveClickLinkFromTarget(target) !== null;
     }
 
-    /**
-     * @param {EventTarget | null} target
-     * @returns {Element | null}
-     */
+    
     function findClickableLinkElement(target) {
         let el = target instanceof Element ? target : parentElementNode(target instanceof Node ? target : null);
         while (el && el !== diagram) {
@@ -637,10 +579,7 @@
         return null;
     }
 
-    /**
-     * @param {Element} anchor
-     * @returns {{ href: string, tooltip: string | undefined }}
-     */
+    
     function getAnchorLink(anchor) {
         const href = anchor.getAttribute("href") ?? anchor.getAttributeNS(XLINK_NS, "href") ?? "";
         const tooltip =
@@ -648,11 +587,7 @@
         return { href, tooltip };
     }
 
-    /**
-     * @param {string | undefined} tooltip
-     * @param {string | undefined} href
-     * @returns {string}
-     */
+    
     function formatLinkHoverText(tooltip, href) {
         const trimmedTooltip = tooltip?.trim();
         if (trimmedTooltip) {
@@ -689,9 +624,7 @@
         return "";
     }
 
-    /**
-     * @param {ParentNode} root
-     */
+    
     function stripNativeDiagramTitles(root) {
         const titled = root.querySelectorAll("[title]");
         for (const el of titled) {
@@ -711,11 +644,7 @@
         linkTooltipEl.hidden = true;
     }
 
-    /**
-     * @param {string} text
-     * @param {number} clientX
-     * @param {number} clientY
-     */
+    
     function showLinkTooltip(text, clientX, clientY) {
         if (!linkTooltipEl || !text) {
             hideLinkTooltip();
@@ -775,9 +704,9 @@
         );
     }
 
-  /** @type {{ link: { href: string, tooltip: string | undefined }, x: number, y: number } | null} */
+  
     let pendingDiagramLink = null;
-    /** @type {{ link: { href: string, tooltip: string | undefined }, x: number, y: number } | null} */
+    
     let activeLinkPress = null;
     const DIAGRAM_LINK_DRAG_THRESHOLD_PX = 6;
 
@@ -918,10 +847,7 @@
     setupDiagramClickDelegation();
     setupLinkTooltipHover();
 
-    /**
-     * @param {SVGSVGElement | null | undefined} svg
-     * @returns {boolean}
-     */
+    
     function isMermaidErrorSvg(svg) {
         if (!svg) {
             return false;
@@ -929,10 +855,7 @@
         return svg.querySelector(".error-icon, .error-text") !== null;
     }
 
-    /**
-     * @param {string} message
-     * @returns {string}
-     */
+    
     function formatErrorMessage(message) {
         const trimmed = message.trim();
         const withoutVersion = trimmed.replace(/\s*mermaid version\s+[\d.]+/gi, "").trim();
@@ -1079,10 +1002,7 @@
         event.preventDefault();
     });
 
-    /**
-     * @param {EventTarget | null} target
-     * @returns {boolean}
-     */
+    
     function isOverSelectableText(target) {
         if (!(target instanceof Element)) {
             return false;
@@ -1096,11 +1016,7 @@
         return target.closest("text, foreignObject") !== null;
     }
 
-    /**
-     * @param {number} button
-     * @param {EventTarget | null} target
-     * @returns {boolean}
-     */
+    
     function shouldStartPan(button, target) {
         if (button === 1) {
             return true;

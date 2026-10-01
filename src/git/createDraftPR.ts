@@ -12,9 +12,7 @@ export async function pushBranchToOrigin(repoRoot: string, branch: string): Prom
     return true;
 }
 
-/**
- * Create a blank draft PR for the current branch (no title prompt, empty body).
- */
+
 export async function createBlankDraftPullRequest(
     repoRoot: string,
     branch: string,

@@ -27,7 +27,6 @@ export function toTitleCase(str: string) {
         .join(" ");
 }
 
-// Helper to strip the package prefix (everything before the first dot) from a command string.
 export function stripPackagePrefix(command: string): string {
     return command.replace(prefix + ".", "");
 }
@@ -48,15 +47,10 @@ export function l(input?: string, condition?: unknown) {
         line += " ";
     }
 
-    if (isDocComment) {
-        line += " * ";
-    }
-
     line += input;
     outputLines.push(line);
 }
 
-let isDocComment = false;
 let indention = 0;
 
 export function indent() {
@@ -65,20 +59,6 @@ export function indent() {
 
 export function dedent() {
     indention--;
-}
-
-export function startDoc(): void {
-    l(`/**`);
-    isDocComment = true;
-}
-
-export function endDoc(): void {
-    isDocComment = false;
-    l(` */`);
-}
-
-export function inlineDoc(input: string): void {
-    l(`/** ${input} */`);
 }
 
 export function outputFile(file: string) {

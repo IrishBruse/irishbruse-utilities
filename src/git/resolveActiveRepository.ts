@@ -2,9 +2,7 @@ import { window } from "vscode";
 import type { API, Repository } from "./gitApi";
 import { getGitApi, getGitApiAsync } from "./getGitApi";
 
-/**
- * Resolves the SCM-active repository: selected in Source Control, then active editor, then sole repo.
- */
+
 export function resolveActiveRepository(api: API): Repository | undefined {
     const selected = api.repositories.filter((repo) => repo.ui.selected);
     if (selected.length >= 1) {

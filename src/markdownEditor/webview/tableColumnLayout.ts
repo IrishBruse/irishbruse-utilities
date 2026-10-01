@@ -1,6 +1,4 @@
-/**
- * Shrink wide columns first so short columns keep their longest-word width.
- */
+
 export function allocateColumnWidths(mins: number[], prefs: number[], available: number): number[] {
 	const count = Math.min(mins.length, prefs.length);
 	const widths = Array.from({ length: count }, (_, i) => Math.max(mins[i] ?? 0, prefs[i] ?? 0));

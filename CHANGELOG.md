@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.23.1
+
+-   **Fix**: Inline Markdown resets VS Code webview body padding so the editor and vertical scrollbar align with the tab edge; horizontal scroll is suppressed without clipping wrapped lines
+
 ## 0.23.0
 
 -   **Add**: **Inline Markdown (ib-utilities)** custom editor for `.md` files: formatted preview with raw syntax on focus, line numbers, images, task checkboxes, and fenced-code highlighting in the normal editor (not diffs or git views).

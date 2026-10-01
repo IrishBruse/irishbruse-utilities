@@ -28,10 +28,41 @@ const evidence: Record<string, string> = {
     "Thematic break": `(() => (${pageText}).split("\\n").some((line) => line.trim() === "---"))()`,
     "Image": `(() => (${pageText}).includes("![Dot](https://www.w3.org/Icons/valid-xhtml10)"))()`,
     "Missing image": `(() => (${pageText}).includes("![Missing](does-not-exist.png)"))()`,
-    "List": `(() => { const fold = (value) => (value ?? "").replaceAll("\\u00a0", " "); const lines = [...document.querySelectorAll("#editor .view-line")]; const line = lines.find((el) => fold(el.textContent).includes("Wrapped list item")); const wrap = lines.find((el) => fold(el.textContent).trim() === "marker."); const lane = document.querySelector("#editor .inline-md-list-bullet"); const word = line ? [...line.querySelectorAll("span")].find((span) => fold(span.textContent).startsWith("Wrapped")) : undefined; const hidden = line?.querySelector(".inline-md-hidden"); if (!line || !wrap || !lane || !word || !hidden) return false; const margin = document.querySelector("#editor .margin")?.getBoundingClientRect(); const laneBox = lane.getBoundingClientRect(); const mark = getComputedStyle(lane, "::before").content; if (!margin || !mark.includes("•")) return false; const aligned = Math.abs(word.getBoundingClientRect().left - wrap.getBoundingClientRect().left) <= 1; const inGutter = laneBox.width > 8 && laneBox.height > 8 && laneBox.left >= margin.left - 1 && laneBox.right <= margin.right + 1 && laneBox.right <= word.getBoundingClientRect().left + 1; const vertical = Math.abs(word.getBoundingClientRect().top - hidden.getBoundingClientRect().top) <= 2; return aligned && inGutter && vertical; })()`,
+    "List": `(() => { const fold = (value) => (value ?? "").replaceAll("\\u00a0", " "); const lines = [...document.querySelectorAll("#editor .view-line")]; const line = lines.find((el) => fold(el.textContent).includes("Wrapped list item")); const wrap = lines.find((el) => fold(el.textContent).trim() === "marker."); const lane = document.querySelector("#editor .inline-md-list-bullet"); const word = line ? [...line.querySelectorAll("span")].find((span) => fold(span.textContent).startsWith("Wrapped")) : undefined; const hidden = line?.querySelector(".inline-md-hidden"); const parentLine = lines.find((el) => fold(el.textContent).includes("Parent item")); const nestedLine = lines.find((el) => fold(el.textContent).includes("Nested item")); const laneAt = (row) => row ? [...document.querySelectorAll("#editor .margin-view-overlays .inline-md-list-bullet")].find((entry) => Math.abs(entry.getBoundingClientRect().top - row.getBoundingClientRect().top) <= 2) : undefined; const markerOffset = (row, bullet) => { const marker = row?.querySelector(".inline-md-hidden")?.getBoundingClientRect().left; const gutter = bullet?.getBoundingClientRect().left; return marker !== undefined && gutter !== undefined ? marker - gutter : undefined; }; const parentLane = laneAt(parentLine); const nestedLane = laneAt(nestedLine); if (!line || !wrap || !lane || !word || !hidden || !parentLine || !nestedLine || !parentLane || !nestedLane) return false; const margin = document.querySelector("#editor .margin")?.getBoundingClientRect(); const laneBox = lane.getBoundingClientRect(); const mark = getComputedStyle(lane, "::before").content; if (!margin || !mark.includes("•")) return false; const aligned = Math.abs(word.getBoundingClientRect().left - wrap.getBoundingClientRect().left) <= 1; const inGutter = laneBox.width > 8 && laneBox.height > 8 && laneBox.left >= margin.left - 1 && laneBox.right <= margin.right + 1 && laneBox.right <= word.getBoundingClientRect().left + 1; const vertical = Math.abs(word.getBoundingClientRect().top - hidden.getBoundingClientRect().top) <= 2; const parentOffset = markerOffset(parentLine, parentLane); const nestedOffset = markerOffset(nestedLine, nestedLane); const nestedBullet = nestedLane.getBoundingClientRect().left > parentLane.getBoundingClientRect().left + 1 && parentOffset !== undefined && nestedOffset !== undefined && Math.abs(parentOffset - nestedOffset) <= 3; return aligned && inGutter && vertical && nestedBullet; })()`,
     "Task": `(() => { const fold = (value) => (value ?? "").replaceAll("\\u00a0", " "); const box = document.querySelector("#editor input[type=checkbox]"); const taskLine = [...document.querySelectorAll("#editor .view-line")].find((line) => fold(line.textContent).includes("Task")); const spacer = taskLine?.querySelector(".inline-md-task-spacer"); const taskText = taskLine ? [...taskLine.querySelectorAll("span")].find((span) => fold(span.textContent).trim() === "Task") : undefined; const boxRect = box?.getBoundingClientRect(); const spacerRect = spacer?.getBoundingClientRect(); const textRect = taskText?.getBoundingClientRect(); const aligned = !!(boxRect && spacerRect && textRect && Math.abs(boxRect.left - spacerRect.left) <= 2 && Math.abs(boxRect.top - textRect.top) <= 2); return box?.checked === true && !!taskLine && !taskLine.querySelector(".inline-md-bullet") && aligned; })()`,
     "Code block": `(() => (${pageText}).includes("\`\`\`ts"))()`,
     "Table": `(() => { const text = ${pageText}; return document.querySelector("#editor .inline-md-table") == null && text.includes("Source hint") && text.includes("|"); })()`,
+    "Selection highlight": `(() => {
+        const api = window.__inlineMarkdown;
+        if (!api?.select || !api.getDocument || !api.focus) return false;
+        const text = api.getDocument();
+        const heading = text.indexOf("# Hello");
+        const paragraph = text.indexOf("A paragraph");
+        const end = text.indexOf("and");
+        if (heading < 0 || paragraph < 0 || end < 0) return false;
+        if (window.__selectionProof !== "check") {
+            window.__selectionProof = "check";
+            api.focus();
+            api.select(heading, end);
+            return false;
+        }
+        const pieces = [...document.querySelectorAll("#editor .selected-text")];
+        const lines = [...document.querySelectorAll("#editor .view-lines .view-line")];
+        const fold = (value) => (value ?? "").replaceAll("\\u00a0", " ");
+        const headingLine = lines.find((line) => line.querySelector(".inline-md-h1"));
+        const paragraphLine = lines.find((line) => fold(line.textContent).includes("paragraph"));
+        if (!headingLine || !paragraphLine || pieces.length === 0) return false;
+        const covers = (line) => {
+            const box = line.getBoundingClientRect();
+            if (box.height < 8) return false;
+            return pieces.some((piece) => {
+                const paint = piece.getBoundingClientRect();
+                const overlap = Math.min(paint.bottom, box.bottom) - Math.max(paint.top, box.top);
+                return paint.width > 8 && overlap >= Math.min(box.height, 12) * 0.6;
+            });
+        };
+        return covers(headingLine) && covers(paragraphLine);
+    })()`,
     "Mermaid": `(() => {
         const api = window.__inlineMarkdown;
         if (!api?.getDocument || !api.setCursor) return false;
@@ -86,6 +117,7 @@ const discoverScript = `JSON.stringify((() => {
         "Task": { reach: reachOf(box), activate: taskClass ? "." + taskClass : (box ? 'input[type="checkbox"]' : "") },
         "Code block": { reach: "none", activate: "offset=275" },
         "Table": { reach: "none", activate: "offset=360" },
+        "Selection highlight": { reach: "none", activate: "offset=49" },
         "Mermaid": { reach: "none", activate: document.querySelector("#editor .inline-md-mermaid-open-preview") ? ".inline-md-mermaid-open-preview" : "" },
     };
 })())`;

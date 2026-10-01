@@ -32,6 +32,7 @@ export interface InlineEditorHandle {
     getDocument(): string;
     focus(): void;
     setCursor(offset: number): void;
+    select(from: number, to: number): void;
 }
 
 function historyBindings(
@@ -467,5 +468,16 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             editor.focus();
         },
         setCursor,
+        select(from: number, to: number) {
+            const currentModel = editor.getModel();
+            if (!currentModel) {
+                return;
+            }
+            const length = currentModel.getValueLength();
+            const start = currentModel.getPositionAt(Math.max(0, Math.min(from, length)));
+            const end = currentModel.getPositionAt(Math.max(0, Math.min(to, length)));
+            editor.focus();
+            editor.setSelection(monaco.Selection.fromPositions(start, end));
+        },
     };
 }

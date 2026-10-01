@@ -2,7 +2,11 @@
 
 ## Unreleased
 
+-   **Fix**: Inline Markdown selection highlight stays on body lines when a heading in the same selection is stretched over its descenders.
+
 -   **Change**: Inline Markdown playground fixtures live only under `docs/tests/markdown/`; default verify regression uses `playground.md`.
+
+-   **Fix**: Inline Markdown indents gutter bullets for nested unordered list items.
 
 -   **Fix**: Inline Markdown list and task item text align with bullets and checkboxes again after zero-width hidden markers.
 

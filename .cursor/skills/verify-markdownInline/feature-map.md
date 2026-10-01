@@ -86,7 +86,7 @@ From: Rendered document
 
 ## List
 
-Does: Show a bullet beside a list item, with item text vertically aligned to the marker and wrapped lines still starting under the words.
+Does: Show a bullet beside a list item, with item text vertically aligned to the marker, nested bullets indented in the gutter, and wrapped lines still starting under the words.
 Reach: none
 Activate: offset=49
 From: Rendered document
@@ -111,6 +111,14 @@ Does: Reveal the raw pipe source when the table is activated or the caret is on 
 Reach: none
 Activate: offset=360
 From: Rendered document
+
+## Selection highlight
+
+Does: Paint the selection highlight on every selected line, including body text, and keep a heading in that selection covered down to its descenders.
+Reach: none
+Activate: offset=49
+From: Rendered document
+Sequence: yes
 
 ## Mermaid
 

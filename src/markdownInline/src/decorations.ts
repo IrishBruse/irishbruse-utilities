@@ -1,8 +1,10 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { blockquoteDepthClass, blockquoteLineDepth } from "./blockquote";
+import { listMarkerBulletClass, listMarkerIndentColumns } from "./listMarker";
 import { resolveImageUrl } from "./imageUrl";
 import { isMermaidCodeBlock, renderMermaidDiagram } from "./mermaid";
 import { refreshMermaidCodeLens, setHiddenAreas } from "./monacoSetup";
+import { layoutSelectionPieces } from "./selectionPaint";
 import { parseScopes } from "./scopes";
 import { readFrontMatter, type FrontMatterSpan } from "./yamlFrontMatter";
 import type { CursorContext, Scope, TextRange } from "./types";
@@ -528,7 +530,15 @@ export class InlinePresentation {
                         : {
                             ...hideOptions(before),
                             ...(scope.kind === "listMarker" && !listMarkerIsTask(scopes, marker)
-                                ? { firstLineDecorationClassName: "inline-md-list-bullet" }
+                                ? {
+                                    firstLineDecorationClassName: listMarkerBulletClass(
+                                        listMarkerIndentColumns(
+                                            model.getLineContent(model.getPositionAt(marker.start).lineNumber),
+                                            model.getPositionAt(marker.start).column,
+                                            this.editor.getOption(monaco.editor.EditorOption.tabSize),
+                                        ),
+                                    ),
+                                }
                                 : {}),
                         },
                 });
@@ -1141,33 +1151,42 @@ export class InlinePresentation {
             return;
         }
         const pieces = [...dom.querySelectorAll<HTMLElement>(".selected-text")];
-        for (const piece of pieces) {
-            piece.style.bottom = "";
-            piece.style.height = "";
-        }
-        if (pieces.length === 0 || this.headingExtras.size === 0) {
-            return;
-        }
         const viewLines = [...dom.querySelectorAll<HTMLElement>(".view-lines .view-line")];
         const headingSelector = ".inline-md-h1, .inline-md-h2, .inline-md-h3, .inline-md-h4";
-        for (const viewLine of viewLines) {
-            if (!viewLine.querySelector(headingSelector)) {
-                continue;
+        const boxes = pieces.map((piece) => {
+            const rect = piece.getBoundingClientRect();
+            return {
+                top: rect.top,
+                height: rect.height,
+                styleTop: piece.style.top,
+                styleBottom: piece.style.bottom,
+                styleHeight: piece.style.height,
+            };
+        });
+        const lines = viewLines.map((viewLine) => {
+            const rect = viewLine.getBoundingClientRect();
+            return {
+                top: rect.top,
+                height: rect.height,
+                heading: viewLine.querySelector(headingSelector) !== null,
+            };
+        });
+        layoutSelectionPieces(boxes, lines);
+        pieces.forEach((piece, index) => {
+            const box = boxes[index];
+            if (!box) {
+                return;
             }
-            const lineBox = viewLine.getBoundingClientRect();
-            for (const piece of pieces) {
-                const pieceBox = piece.getBoundingClientRect();
-                if (Math.abs(pieceBox.top - lineBox.top) >= 2) {
-                    continue;
-                }
-                if (lineBox.height <= pieceBox.height + 0.5) {
-                    continue;
-                }
-                piece.style.top = "0px";
-                piece.style.bottom = "auto";
-                piece.style.height = `${lineBox.height}px`;
+            if (piece.style.top !== box.styleTop) {
+                piece.style.top = box.styleTop;
             }
-        }
+            if (piece.style.bottom !== box.styleBottom) {
+                piece.style.bottom = box.styleBottom;
+            }
+            if (piece.style.height !== box.styleHeight) {
+                piece.style.height = box.styleHeight;
+            }
+        });
     }
 
     private syncCurrentLine(headingLines: ReadonlyMap<number, number>, fontSize: number, lineHeight: number): void {

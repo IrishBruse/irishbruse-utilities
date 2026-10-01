@@ -19,7 +19,7 @@ import {
     getMarkdownInlineEditorColors,
     markdownInlineEditorColorsCssVars,
 } from "./markdownInlineEditorColors";
-import { shouldUseMarkdownCustomEditor } from "./shouldUseMarkdownCustomEditor";
+import { openMarkdownWithRawEditor, shouldUseMarkdownCustomEditor } from "./shouldUseMarkdownCustomEditor";
 import { hasYamlFrontMatter } from "./yamlFrontMatter";
 import { isSkillMarkdownPath, prefixMarkdownForFastOpen } from "./webviewInitialState";
 
@@ -153,9 +153,7 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
                 return false;
             }
             released = true;
-            await commands.executeCommand("vscode.openWith", document.uri, "default", {
-                viewColumn: webviewPanel.viewColumn,
-            });
+            await openMarkdownWithRawEditor(document.uri, webviewPanel.viewColumn);
             webviewPanel.dispose();
             return true;
         };

@@ -13,7 +13,7 @@ A paragraph with **bold**, *italic*, ~~strike~~, and `inline code`.
 
 ---
 
-![Dot](dot.png)
+![Dot](https://www.w3.org/Icons/valid-xhtml10)
 
 ![Missing](does-not-exist.png)
 

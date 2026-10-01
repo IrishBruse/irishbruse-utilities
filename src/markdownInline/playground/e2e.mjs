@@ -222,8 +222,8 @@ function isRawHeading(page) {
 
 function assertRendered(page) {
     const problems = [];
-    if (!page.images.some((src) => src.includes("dot.png"))) {
-        problems.push('Expected an img.inline-md-image whose src includes "dot.png".');
+    if (!page.images.some((src) => src.includes("w3.org/Icons/valid-xhtml10"))) {
+        problems.push('Expected an img.inline-md-image whose src includes "w3.org/Icons/valid-xhtml10".');
     }
     if (!String(page.heading ?? "").includes("Hello")) {
         problems.push('Expected .inline-md-h1 text to include "Hello".');

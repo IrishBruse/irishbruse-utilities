@@ -11,12 +11,11 @@ const repoRoot = join(cliDir, "..", "..", "..", "..");
 const mapPath = join(cliDir, "..", "feature-map.md");
 const statePath = join(repoRoot, ".tmp", "verify-markdownInline", "state.json");
 const pageText = '(document.querySelector("#editor .view-lines")?.innerText ?? "").replaceAll("\\u00a0", " ")';
-const readyFn = `!!document.querySelector("#editor .inline-md-skill-switch") && !!document.querySelector("#editor .inline-md-h1") && !!document.querySelector("#editor .inline-md-strong") && !!document.querySelector("#editor input[type=checkbox]") && !!document.querySelector("#editor img[alt]") && !!document.querySelector("#editor .inline-md-code-hit") && !!document.querySelector("#editor .inline-md-table") && !!document.querySelector("#editor .inline-md-hr")`;
+const readyFn = `!!document.querySelector("#editor .inline-md-h1") && !!document.querySelector("#editor .inline-md-strong") && !!document.querySelector("#editor input[type=checkbox]") && !!document.querySelector("#editor img[alt]") && !!document.querySelector("#editor .inline-md-code-hit") && !!document.querySelector("#editor .inline-md-table") && !!document.querySelector("#editor .inline-md-hr")`;
 
 const evidence: Record<string, string> = {
     "Rendered document": `(() => { const text = ${pageText}; return text.includes("Hello") && text.includes("A paragraph with") && text.includes("title: Playground"); })()`,
-    "YAML front matter": `(() => { const text = ${pageText}; return text.includes("title: Playground") && !!document.querySelector("#editor .inline-md-skill-switch"); })()`,
-    "Skill properties": '!!document.querySelector("#editor .ib-skill-properties-panel")',
+    "YAML front matter": `(() => { const text = ${pageText}; return text.includes("title: Playground") && text.includes("draft: false"); })()`,
     "Heading": `(() => (${pageText}).includes("# Hello"))()`,
     "Bold": `(() => (${pageText}).includes("**bold**"))()`,
     "Italic": `(() => (${pageText}).includes("*italic*"))()`,
@@ -25,9 +24,9 @@ const evidence: Record<string, string> = {
     "Link": `(() => (${pageText}).includes("[Example link](https://example.com)"))()`,
     "Blockquote": `(() => (${pageText}).includes("> Quote line."))()`,
     "Thematic break": `(() => (${pageText}).split("\\n").some((line) => line.trim() === "---"))()`,
-    "Image": `(() => (${pageText}).includes("![Dot](dot.png)"))()`,
+    "Image": `(() => (${pageText}).includes("![Dot](https://www.w3.org/Icons/valid-xhtml10)"))()`,
     "Missing image": `(() => (${pageText}).includes("![Missing](does-not-exist.png)"))()`,
-    "Task": `(() => { const box = document.querySelector("#editor input[type=checkbox]"); const taskLine = [...document.querySelectorAll("#editor .view-line")].find((line) => line.textContent?.includes("Task")); return box?.checked === true && !!taskLine && !taskLine.querySelector(".inline-md-bullet"); })()`,
+    "Task": `(() => { const box = document.querySelector("#editor input[type=checkbox]"); const taskLine = [...document.querySelectorAll("#editor .view-line")].find((line) => line.textContent?.includes("Task")); const spacer = taskLine?.querySelector(".inline-md-task-spacer"); const boxRect = box?.getBoundingClientRect(); const spacerRect = spacer?.getBoundingClientRect(); const aligned = !!(boxRect && spacerRect && Math.abs(boxRect.left - spacerRect.left) <= 2 && Math.abs(boxRect.top - spacerRect.top) <= 6); return box?.checked === true && !!taskLine && !taskLine.querySelector(".inline-md-bullet") && aligned; })()`,
     "Code block": `(() => (${pageText}).includes("\`\`\`ts"))()`,
     "Table": `(() => { const text = ${pageText}; return document.querySelector("#editor .inline-md-table") == null && text.includes("Source hint") && text.includes("|"); })()`,
     "Mermaid": `(() => {
@@ -71,7 +70,6 @@ const discoverScript = `JSON.stringify((() => {
     return {
         "Rendered document": { reach: "none", activate: "offset=49" },
         "YAML front matter": { reach: "none", activate: "offset=49" },
-        "Skill properties": { reach: "none", activate: document.querySelector("#editor .inline-md-skill-switch") ? 'text="Properties"' : "" },
         "Heading": { reach: "none", activate: "offset=42" },
         "Bold": { reach: "none", activate: "offset=67" },
         "Italic": { reach: "none", activate: "offset=77" },
@@ -83,8 +81,8 @@ const discoverScript = `JSON.stringify((() => {
         "Image": { reach: reachOf(image), activate: image?.getAttribute("alt") ? 'alt="' + image.getAttribute("alt").replaceAll('"', '\\\\"') + '"' : "" },
         "Missing image": { reach: "none", activate: spanText("Missing") ? 'text="Missing"' : "" },
         "Task": { reach: reachOf(box), activate: taskClass ? "." + taskClass : (box ? 'input[type="checkbox"]' : "") },
-        "Code block": { reach: "none", activate: "offset=242" },
-        "Table": { reach: "none", activate: table ? ".inline-md-table" : "" },
+        "Code block": { reach: "none", activate: "offset=275" },
+        "Table": { reach: "none", activate: "offset=360" },
         "Mermaid": { reach: "none", activate: document.querySelector("#editor .inline-md-mermaid-open-preview") ? ".inline-md-mermaid-open-preview" : "" },
     };
 })())`;

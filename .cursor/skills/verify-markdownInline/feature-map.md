@@ -9,16 +9,9 @@ From: entry
 
 ## YAML front matter
 
-Does: Paint the opening `---` block as YAML with a Properties switch on the fence.
+Does: Keep the opening `---` block as visible YAML source at the top of the document.
 Reach: none
 Activate: offset=49
-From: Rendered document
-
-## Skill properties
-
-Does: Open the typed PROPERTIES card for front matter fields and hide the raw YAML block.
-Reach: none
-Activate: text="Properties"
 From: Rendered document
 
 ## Heading
@@ -102,14 +95,14 @@ From: Rendered document
 
 Does: Reveal the fenced code source when the code text is activated.
 Reach: none
-Activate: offset=242
+Activate: offset=275
 From: Rendered document
 
 ## Table
 
 Does: Reveal the raw pipe source when the table is activated or the caret is on the table or the line before it.
 Reach: none
-Activate: .inline-md-table
+Activate: offset=360
 From: Rendered document
 
 ## Mermaid

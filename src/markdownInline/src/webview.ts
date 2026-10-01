@@ -1,6 +1,6 @@
 import { mountInlineEditor } from "./editor";
-import { readFrontMatter } from "./skillProperties";
-import { installWebviewThemeSync } from "./webviewTheme";
+import { readFrontMatter } from "./yamlFrontMatter";
+import { installWebviewThemeSync, webviewThemeTargets } from "./webviewTheme";
 import "./editor.css";
 
 interface VsCodeApi {
@@ -93,15 +93,7 @@ const editor = mountInlineEditor(parent, {
     },
 });
 
-const stopWebviewThemeSync = installWebviewThemeSync(() => {
-    const root = parent.querySelector(".inline-md-root");
-    const targets = root instanceof HTMLElement ? [root] : [];
-    const monacoRoot = root?.querySelector(".monaco-editor");
-    if (monacoRoot instanceof HTMLElement) {
-        targets.push(monacoRoot);
-    }
-    return targets;
-});
+const stopWebviewThemeSync = installWebviewThemeSync(() => webviewThemeTargets(parent));
 
 vscode.postMessage({
     type: "ready",

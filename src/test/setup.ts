@@ -8,6 +8,7 @@ vi.mock("vscode", () => ({
         asRelativePath: vi.fn((uri: { fsPath: string }) => uri.fsPath),
         getWorkspaceFolder: vi.fn(),
         openTextDocument: vi.fn(),
+        textDocuments: [],
         fs: {
             writeFile: vi.fn().mockResolvedValue(undefined),
             readFile: vi.fn().mockResolvedValue(Buffer.from("")),

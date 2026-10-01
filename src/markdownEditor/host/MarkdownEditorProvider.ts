@@ -15,7 +15,7 @@ import {
     workspace,
 } from "vscode";
 import { Commands } from "../../constants";
-import { shouldUseMarkdownCustomEditor } from "./shouldUseMarkdownCustomEditor";
+import { openMarkdownWithRawEditor, shouldUseMarkdownCustomEditor } from "./shouldUseMarkdownCustomEditor";
 import {
     getMarkdownInlineEditorColors,
     markdownInlineEditorColorsCssVars,
@@ -159,7 +159,8 @@ export class MarkdownEditorProvider implements CustomTextEditorProvider {
         _token: CancellationToken,
     ): Promise<void> {
         if (!shouldUseMarkdownCustomEditor(document.uri)) {
-            await commands.executeCommand("vscode.openWith", document.uri, "default");
+            await openMarkdownWithRawEditor(document.uri, webviewPanel.viewColumn);
+            webviewPanel.dispose();
             return;
         }
 

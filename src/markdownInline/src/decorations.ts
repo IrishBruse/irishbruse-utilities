@@ -4,7 +4,7 @@ import { resolveImageUrl } from "./imageUrl";
 import { isMermaidCodeBlock, renderMermaidDiagram } from "./mermaid";
 import { refreshMermaidCodeLens, setHiddenAreas } from "./monacoSetup";
 import { parseScopes } from "./scopes";
-import { readFrontMatter, SkillPropertiesPanel, yamlFrontMatterScope, type FrontMatterSpan } from "./skillProperties";
+import { readFrontMatter, type FrontMatterSpan } from "./yamlFrontMatter";
 import type { CursorContext, Scope, TextRange } from "./types";
 import { markerVisibility, selectionOverlaps, showsFormattedContent } from "./visibility";
 
@@ -23,7 +23,7 @@ interface ZoneRecord {
 }
 
 class TaskWidget implements monaco.editor.IContentWidget {
-    readonly allowEditorOverflow = true;
+    readonly allowEditorOverflow = false;
 
     constructor(
         private readonly id: string,
@@ -410,10 +410,6 @@ export class InlinePresentation {
     private selectionObserver: MutationObserver | undefined;
     private selectionFrame = 0;
     private frontMatter: FrontMatterSpan | undefined;
-    private skillPanel: SkillPropertiesPanel | undefined;
-    private skillZone: monaco.editor.IViewZone | undefined;
-    private skillView: "yaml" | "properties" = "yaml";
-    private readonly skillSwitchListener: monaco.IDisposable;
     private readonly mermaidZones = new Map<string, ZoneRecord>();
     private mermaidLensKey = "";
     private hiddenLineNumbers = new Set<number>();
@@ -426,19 +422,8 @@ export class InlinePresentation {
         private readonly documentUrl: string,
         private readonly handlers: InlinePresentationHandlers,
         private readonly skillFrontMatter: boolean,
-        private readonly skillFolderName: string,
     ) {
         this.decorations = editor.createDecorationsCollection();
-        this.skillSwitchListener = editor.onMouseDown((event) => {
-            const element = event.target.element;
-            if (!(element instanceof Element) || !element.closest(".inline-md-skill-switch")) {
-                return;
-            }
-            event.event.preventDefault();
-            event.event.stopPropagation();
-            this.skillView = "properties";
-            this.update();
-        });
         const controller = editor.getContribution("editor.contrib.findController") as {
             getState(): { onFindReplaceStateChange(listener: () => void): monaco.IDisposable };
         } | null;
@@ -690,34 +675,6 @@ export class InlinePresentation {
             });
         }
 
-        if (this.frontMatter && this.skillView === "yaml") {
-            const fence = yamlFrontMatterScope(this.frontMatter);
-            this.addLineDecorations(model, fence, decorations);
-            if (!selectionOverlaps(fence, cursor)) {
-                fence.markers.forEach((marker, index) => {
-                    const bounds = withoutTrailingLineBreak(text, marker.start, marker.end);
-                    if (bounds.end <= bounds.start) {
-                        return;
-                    }
-                    decorations.push({
-                        range: rangeFromOffsets(model, bounds.start, bounds.end),
-                        options: index === 0
-                            ? {
-                                ...hideOptions(injected("Properties", "inline-md-skill-switch")),
-                                after: injected("yaml", "inline-md-lang"),
-                            }
-                            : hideOptions(),
-                    });
-                });
-            }
-        }
-        if (this.frontMatter && this.skillView === "properties") {
-            const endLine = model.getPositionAt(Math.max(0, this.frontMatter.end - 1)).lineNumber;
-            for (let line = 1; line <= endLine; line += 1) {
-                hiddenLines.add(line);
-            }
-            zones.push(this.ensureSkillZone());
-        }
         this.headingExtras = headingExtras;
         this.watchSelections();
         this.scheduleSelectionHeights();
@@ -732,13 +689,6 @@ export class InlinePresentation {
         if (mermaidLensKey !== this.mermaidLensKey) {
             this.mermaidLensKey = mermaidLensKey;
             refreshMermaidCodeLens();
-        }
-        if (this.frontMatter && this.skillPanel && this.skillView === "properties") {
-            const yaml = text.includes("\r\n")
-                ? this.frontMatter.yaml.replace(/\r\n/g, "\n")
-                : this.frontMatter.yaml;
-            this.skillPanel.sync(yaml);
-            requestAnimationFrame(() => this.layoutSkillZone());
         }
         this.hiddenLineNumbers = hiddenLines;
         this.writeHiddenAreas(model);
@@ -777,7 +727,6 @@ export class InlinePresentation {
             }
         });
         this.zones = [];
-        this.skillSwitchListener.dispose();
         this.mermaidZones.clear();
         this.mermaidLensKey = "";
         setHiddenAreas(this.editor, []);
@@ -1040,56 +989,6 @@ export class InlinePresentation {
         return row;
     }
 
-    private ensureSkillZone(): ZoneRecord {
-        if (!this.skillPanel || !this.skillZone) {
-            this.skillPanel = new SkillPropertiesPanel(
-                this.skillFolderName,
-                this.editor.getOption(monaco.editor.EditorOption.readOnly),
-                (yaml) => {
-                    const span = this.frontMatter;
-                    if (!span) {
-                        return;
-                    }
-                    const next = this.editor.getModel()?.getEOL() === "\r\n" ? yaml.replace(/\n/g, "\r\n") : yaml;
-                    this.handlers.onReplace(span.yamlStart, span.yamlEnd, next);
-                },
-                () => this.layoutSkillZone(),
-                () => {
-                    this.skillView = "yaml";
-                    const span = this.frontMatter;
-                    const model = this.editor.getModel();
-                    if (span && model && selectionOverlaps(yamlFrontMatterScope(span), cursorContext(this.editor, model))) {
-                        const position = model.getPositionAt(Math.min(span.end, model.getValueLength()));
-                        this.editor.setPosition(position);
-                    }
-                    this.update();
-                },
-            );
-            this.skillZone = {
-                afterLineNumber: 0,
-                heightInPx: 180,
-                domNode: this.skillPanel.element,
-                marginDomNode: lineNumberNode(1),
-                showInHiddenAreas: true,
-                suppressMouseDown: false,
-            };
-        }
-        return { key: "skill-front-matter", zone: this.skillZone };
-    }
-
-    private layoutSkillZone(): void {
-        if (!this.skillPanel || !this.skillZone) {
-            return;
-        }
-        this.skillPanel.element.style.height = "auto";
-        const height = Math.ceil(this.skillPanel.element.scrollHeight);
-        if (height <= 0 || this.skillZone.heightInPx === height) {
-            return;
-        }
-        this.skillZone.heightInPx = height;
-        this.layoutZone("skill-front-matter");
-    }
-
     private layoutZone(key: string): void {
         const record = this.zones.find((zone) => zone.key === key);
         if (!record?.id) {
@@ -1238,7 +1137,7 @@ export class InlinePresentation {
         }
         const pieces = [...dom.querySelectorAll<HTMLElement>(".selected-text")];
         for (const piece of pieces) {
-            piece.style.bottom = "0px";
+            piece.style.bottom = "";
             piece.style.height = "";
         }
         if (pieces.length === 0 || this.headingExtras.size === 0) {
@@ -1251,18 +1150,17 @@ export class InlinePresentation {
                 continue;
             }
             const lineBox = viewLine.getBoundingClientRect();
-            const next = viewLines[viewLines.indexOf(viewLine) + 1];
-            const nextTop = next?.getBoundingClientRect().top;
-            const height = nextTop === undefined ? lineBox.height : nextTop - lineBox.top;
-            if (height <= lineBox.height + 0.5) {
-                continue;
-            }
             for (const piece of pieces) {
-                if (Math.abs(piece.getBoundingClientRect().top - lineBox.top) >= 2) {
+                const pieceBox = piece.getBoundingClientRect();
+                if (Math.abs(pieceBox.top - lineBox.top) >= 2) {
                     continue;
                 }
+                if (lineBox.height <= pieceBox.height + 0.5) {
+                    continue;
+                }
+                piece.style.top = "0px";
                 piece.style.bottom = "auto";
-                piece.style.height = `${height}px`;
+                piece.style.height = `${lineBox.height}px`;
             }
         }
     }

@@ -2,12 +2,19 @@
 
 ## Unreleased
 
+-   **Change**: Inline Markdown skill front matter stays as raw YAML only; the Properties form and fence chrome are removed.
+
+-   **Fix**: Inline Markdown stays on the text editor for git, diff, and merge opens.
+    A normal file view is the only place it renders.
+
 -   Change: Ban comments in TypeScript and JavaScript via ESLint and remove existing comments from source.
 
 -   **Fix**: Inline Markdown find uses VS Code theme tokens in the webview and matches the workbench find bar styling.
--   **Fix**: Inline Markdown find stays pinned while scrolling without the 200ms transform animation lag.
+-   **Fix**: Inline Markdown find in VS Code copies the host theme onto the editor so the find bar uses those colors.
+-   **Fix**: Inline Markdown find stays fixed to the editor viewport while scrolling, without following the scroll a frame late.
 -   **Fix**: Inline Markdown drops the centered column's side padding once the window is too narrow to keep it.
 -   **Fix**: Inline Markdown heading lines keep the heading font size and add a little space above and below.
+-   **Fix**: Inline Markdown heading selection extends down to cover the descenders.
 -   **Fix**: Inline Markdown playground ships `vscode-iframe-injected-theme.css` (VS Code webview iframe tokens) plus settings overrides from `settings.json`.
 -   **Fix**: Inline Markdown task checkboxes match settings controls: checkbox tokens when unchecked, button tokens and a CSS checkmark when checked.
 -   **Fix**: Inline Markdown task checkboxes and code-block hits sit on their lines in the centered column instead of hugging the viewport edge.

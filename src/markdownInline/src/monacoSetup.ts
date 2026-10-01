@@ -14,7 +14,7 @@ import { conf as typescriptConf, language as typescriptLanguage } from "monaco-e
 import { conf as yamlConf, language as yamlLanguage } from "monaco-editor/esm/vs/basic-languages/yaml/yaml.js";
 import { completeSkillPropertyKeys, parseSkillFrontMatter } from "./skillFrontMatterYaml";
 import { completeAgentPropertyKeys } from "./skillKeys";
-import { readFrontMatter } from "./skillProperties";
+import { readFrontMatter } from "./yamlFrontMatter";
 import { installMermaidCodeLens, refreshMermaidCodeLens } from "./mermaidCodeLens";
 
 export { refreshMermaidCodeLens };

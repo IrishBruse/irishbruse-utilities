@@ -64,6 +64,14 @@ body {
     outline: none;
 }
 
+.inline-md-root .monaco-editor .find-widget.visible {
+    position: fixed !important;
+    top: var(--ib-find-top, 0px) !important;
+    right: var(--ib-find-right, 0px) !important;
+    left: auto !important;
+    transform: none !important;
+}
+
 .inline-md-root .monaco-editor .find-widget {
     transition: none;
     color: var(--vscode-editorWidget-foreground, #cccccc);
@@ -423,52 +431,6 @@ body {
     z-index: 1;
 }
 
-.ib-skill-properties-panel {
-    box-sizing: border-box;
-    width: 100%;
-    margin: 0 0 12px;
-    padding: 8px 10px;
-    border: 1px solid var(--vscode-editorWidget-border, #454545);
-    border-radius: 6px;
-    color: var(--vscode-foreground, #d4d4d4);
-    font-family: var(--vscode-font-family, sans-serif);
-    font-size: 13px;
-    pointer-events: auto;
-}
-
-.ib-skill-properties-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.ib-skill-properties-toggle {
-    display: block;
-    flex: 1;
-    width: auto;
-    margin: 0;
-    padding: 2px 0 8px;
-    border: 0;
-    background: transparent;
-    color: var(--vscode-descriptionForeground, #9da5b4);
-    font: inherit;
-    font-weight: 600;
-    letter-spacing: 0.04em;
-    text-align: left;
-    cursor: pointer;
-}
-
-.ib-skill-properties-yaml {
-    margin: 0;
-    padding: 2px 0 8px;
-    border: 0;
-    background: transparent;
-    color: var(--vscode-textLink-foreground, #3794ff);
-    font: inherit;
-    font-size: 12px;
-    cursor: pointer;
-}
-
 .inline-md-root {
     --vscode-editorCodeLens-foreground: var(--vscode-descriptionForeground, #9da5b4);
 }
@@ -490,96 +452,6 @@ body {
 .inline-md-root .monaco-editor .codelens-decoration > a:hover {
     color: var(--vscode-descriptionForeground, #9da5b4) !important;
     text-decoration: underline;
-}
-
-.ib-skill-properties-body {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.ib-skill-properties-row {
-    display: grid;
-    grid-template-columns: minmax(7em, 11em) minmax(0, 1fr);
-    align-items: start;
-    gap: 8px;
-}
-
-.ib-skill-properties-key {
-    padding-top: 3px;
-    color: var(--vscode-descriptionForeground, #9da5b4);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.ib-skill-properties-value,
-.ib-skill-properties-map-key,
-.ib-skill-properties-add-input {
-    box-sizing: border-box;
-    width: 100%;
-    margin: 0;
-    padding: 3px 6px;
-    border: 1px solid transparent;
-    border-radius: 3px;
-    background: transparent;
-    color: var(--vscode-input-foreground, var(--vscode-foreground, #d4d4d4));
-    caret-color: var(--vscode-editorCursor-foreground, #35a854);
-    font: inherit;
-}
-
-.ib-skill-properties-value:focus,
-.ib-skill-properties-map-key:focus,
-.ib-skill-properties-add-input:focus {
-    outline: 1px solid var(--vscode-focusBorder, #007fd4);
-    border-color: var(--vscode-focusBorder, #007fd4);
-}
-
-.ib-skill-properties-multiline {
-    resize: vertical;
-    min-height: 3.5em;
-    line-height: 1.35;
-}
-
-.ib-skill-properties-nested {
-    margin-left: 22px;
-}
-
-.ib-skill-properties-add {
-    position: relative;
-}
-
-.ib-skill-properties-add-button {
-    margin: 2px 0 0;
-    padding: 2px 4px;
-    border: 0;
-    background: transparent;
-    color: var(--vscode-descriptionForeground, #9da5b4);
-    font: inherit;
-    cursor: pointer;
-}
-
-.ib-skill-properties-suggestions {
-    position: absolute;
-    left: 0;
-    right: 0;
-    z-index: 4;
-    margin: 2px 0 0;
-    padding: 4px 0;
-    list-style: none;
-    border: 1px solid var(--vscode-editorWidget-border, #454545);
-    border-radius: 4px;
-    background: var(--vscode-editorSuggestWidget-background, #252526);
-}
-
-.ib-skill-properties-suggestion {
-    padding: 4px 8px;
-    cursor: pointer;
-}
-
-.ib-skill-properties-suggestion-active,
-.ib-skill-properties-suggestion:hover {
-    background: var(--vscode-list-hoverBackground, rgb(127 127 127 / 20%));
 }
 
 .inline-md-code-hit {
@@ -652,19 +524,6 @@ body {
 
 .inline-md-root .monaco-editor .view-line:has(.inline-md-lang) {
     container-type: inline-size;
-}
-
-.inline-md-root .monaco-editor .inline-md-skill-switch {
-    position: absolute;
-    top: 0;
-    right: calc(52px - 100cqi);
-    z-index: 2;
-    color: var(--vscode-textLink-foreground, #35A854) !important;
-    font-size: 11px;
-    line-height: 16px;
-    cursor: pointer;
-    pointer-events: auto;
-    user-select: none;
 }
 
 .inline-md-root .monaco-editor .inline-md-lang {

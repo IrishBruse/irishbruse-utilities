@@ -4,7 +4,7 @@ import { installInlineKeybindings } from "./keybindings";
 import { bindMermaidCodeLens } from "./mermaidCodeLens";
 import { installMonaco, readEditorFontSize } from "./monacoSetup";
 import { parseScopes } from "./scopes";
-import { readFrontMatter } from "./skillProperties";
+import { readFrontMatter } from "./yamlFrontMatter";
 import { skillMarkdownLanguageId } from "./skillYaml";
 import type { Scope } from "./types";
 
@@ -31,15 +31,6 @@ export interface InlineEditorHandle {
     getDocument(): string;
     focus(): void;
     setCursor(offset: number): void;
-}
-
-function skillFolderName(documentUrl: string): string {
-    const path = documentUrl.split(/[?#]/)[0] ?? "";
-    const parts = path.split("/").filter((part) => part.length > 0);
-    if (parts[parts.length - 1] !== "SKILL.md") {
-        return "";
-    }
-    return parts[parts.length - 2] ?? "";
 }
 
 function historyBindings(
@@ -195,7 +186,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         onOpenMermaidPreview(openLine) {
             options.onOpenMermaidPreview?.(openLine);
         },
-    }, options.skillFrontMatter === true, skillFolderName(options.documentUrl));
+    }, options.skillFrontMatter === true);
     const mermaidLens = bindMermaidCodeLens(model, (openLine) => {
         options.onOpenMermaidPreview?.(openLine);
     });
@@ -386,40 +377,35 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             fitNow();
         });
     };
-    const pinFindWidget = (): void => {
-        const widget = column.querySelector(".find-widget");
-        if (!(widget instanceof HTMLElement)) {
-            return;
-        }
-        if (!widget.classList.contains("visible")) {
-            widget.style.transform = "";
-            return;
-        }
-        const offset = parent.scrollTop;
-        widget.style.transform = offset > 0 ? `translate3d(0, ${offset}px, 0)` : "";
+    const placeFindWidget = (): void => {
+        const rootRect = parent.getBoundingClientRect();
+        const columnRect = column.getBoundingClientRect();
+        parent.style.setProperty("--ib-find-top", `${rootRect.top}px`);
+        parent.style.setProperty("--ib-find-right", `${Math.max(0, window.innerWidth - columnRect.right)}px`);
     };
-    parent.addEventListener("scroll", pinFindWidget, { passive: true });
     const findController = editor.getContribution("editor.contrib.findController") as {
         getState(): { onFindReplaceStateChange(listener: () => void): monaco.IDisposable };
     } | null;
     const findVisibilityListener = findController?.getState().onFindReplaceStateChange(() => {
-        pinFindWidget();
+        placeFindWidget();
     });
     const contentSizeListener = editor.onDidContentSizeChange(fitContent);
     const cursorRevealListener = editor.onDidChangeCursorPosition((event) => {
         revealInParent(event.position, false);
-        pinFindWidget();
     });
+    window.addEventListener("resize", placeFindWidget, { passive: true });
     const resizeObserver = new ResizeObserver(() => {
         if (parent.clientWidth === 0 || parent.clientHeight === 0) {
             return;
         }
         fitContent();
+        placeFindWidget();
     });
     resizeObserver.observe(parent);
 
     refresh();
     fitNow();
+    placeFindWidget();
 
     return {
         destroy() {
@@ -427,7 +413,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             if (fitFrame !== 0) {
                 cancelAnimationFrame(fitFrame);
             }
-            parent.removeEventListener("scroll", pinFindWidget);
+            window.removeEventListener("resize", placeFindWidget);
             findVisibilityListener?.dispose();
             contentSizeListener.dispose();
             cursorRevealListener.dispose();

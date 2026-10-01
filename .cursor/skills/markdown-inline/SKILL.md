@@ -1,7 +1,6 @@
 ---
 name: markdown-inline
 description: markdown-inline
-disable-model-invocation: true
 ---
 
 Scope work to `src/markdownInline`, not `src/markdownEditor`. Read `src/markdownInline/AGENTS.md` for the package boundary (`src/` must not import extension or sibling packages).

@@ -20,7 +20,8 @@
 -   **Fix**: Inline Markdown task checkboxes and code-block hits sit on their lines in the centered column instead of hugging the viewport edge.
 -   **Fix**: Inline Markdown reveals image and table source from a click or the line above, shows markers inside a drag selection, and paints Mermaid again after leaving raw source.
 -   **Fix**: Inline Markdown Open Preview is a green underlined link, wrapped list lines hang-indent, and the column stays centered while wide content can scroll.
--   **Fix**: Inline Markdown mouse drag selection keeps extending over rendered blocks and tables, with the highlight painted above those overlays.
+-   **Fix**: Inline Markdown mouse drag keeps extending across rules, images, and tables, and the selection highlight paints above line backgrounds.
+-   **Fix**: Inline Markdown list bullets stay in the text line instead of sitting under the line numbers.
 
 ## 0.23.1
 

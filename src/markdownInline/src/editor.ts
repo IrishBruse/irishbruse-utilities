@@ -1,6 +1,6 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { InlinePresentation } from "./decorations";
-import { bindDragSelection } from "./dragSelection";
+import { bindDragSelection, isDragSelecting } from "./dragSelection";
 import { installInlineKeybindings } from "./keybindings";
 import { bindMermaidCodeLens } from "./mermaidCodeLens";
 import { installMonaco, readEditorFontSize } from "./monacoSetup";
@@ -87,7 +87,10 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     installMonaco();
     const hadRoot = parent.classList.contains("inline-md-root");
     parent.classList.add("inline-md-root");
-    const unbindDragSelection = bindDragSelection(parent);
+    const unbindDragSelection = bindDragSelection(parent, () => {
+        refresh();
+        fitContent();
+    });
     const column = document.createElement("div");
     column.className = "inline-md-column";
     parent.append(column);
@@ -296,6 +299,9 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         }
     });
     const cursorListener = editor.onDidChangeCursorSelection(() => {
+        if (isDragSelecting()) {
+            return;
+        }
         refresh();
     });
     const openRenderedLink = (event: MouseEvent): void => {
@@ -348,7 +354,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     let fitting = false;
     let fitFrame = 0;
     const fitNow = (): void => {
-        if (fitting || parent.clientWidth === 0 || parent.clientHeight === 0) {
+        if (isDragSelecting() || fitting || parent.clientWidth === 0 || parent.clientHeight === 0) {
             return;
         }
         fitting = true;

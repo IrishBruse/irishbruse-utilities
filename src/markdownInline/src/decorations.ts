@@ -518,11 +518,19 @@ export class InlinePresentation {
                     zones.push(this.blockZone(scope, bounds.start, line));
                     continue;
                 }
+                const before = scope.kind === "blockquoteMarker"
+                    ? undefined
+                    : this.replacement(scope, marker, index, scopes, tasks, model);
                 decorations.push({
                     range: rangeFromOffsets(model, bounds.start, bounds.end),
                     options: scope.kind === "blockquoteMarker"
                         ? { inlineClassName: "inline-md-quote-marker" }
-                        : hideOptions(this.replacement(scope, marker, index, scopes, tasks, model)),
+                        : {
+                            ...hideOptions(before),
+                            ...(scope.kind === "listMarker" && before
+                                ? { firstLineDecorationClassName: "inline-md-list-bullet" }
+                                : {}),
+                        },
                 });
             }
         };

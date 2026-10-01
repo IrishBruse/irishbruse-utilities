@@ -20,8 +20,19 @@ describe("mouse drag selection", () => {
         expect(css).toContain(`.inline-md-root.${dragSelectionClassName}`);
         expect(css).toMatch(
             new RegExp(
-                `\\.inline-md-root\\.${dragSelectionClassName}[\\s\\S]*\\.inline-md-table[\\s\\S]*pointer-events:\\s*none`,
+                `\\.inline-md-root\\.${dragSelectionClassName}[\\s\\S]*\\.view-zones[\\s\\S]*pointer-events:\\s*none`,
             ),
         );
+    });
+
+    it("keeps the editor height stable and paints selection above line decorations", () => {
+        const source = readFileSync(editorPath, "utf8");
+        const fitNow = source.slice(source.indexOf("const fitNow"), source.indexOf("const fitContent"));
+        expect(fitNow).toContain("isDragSelecting");
+        const cursor = source.slice(source.indexOf("onDidChangeCursorSelection"), source.indexOf("const openRenderedLink"));
+        expect(cursor).toContain("isDragSelecting");
+        const css = readFileSync(cssPath, "utf8");
+        expect(css).toContain(".view-overlays > div:has(.selected-text)");
+        expect(css).toMatch(/\.view-lines\s*\{[^}]*z-index:\s*3/);
     });
 });

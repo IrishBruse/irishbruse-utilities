@@ -124,10 +124,29 @@ body {
 
 .inline-md-root .monaco-editor .view-overlays {
     isolation: isolate;
+    z-index: 2;
+}
+
+.inline-md-root .monaco-editor .view-overlays > div:has(.selected-text) {
+    z-index: 2;
+}
+
+.inline-md-root .monaco-editor .view-zones {
+    z-index: 1;
 }
 
 .inline-md-root .monaco-editor .view-lines {
+    position: relative;
+    z-index: 3;
     pointer-events: none;
+}
+
+.inline-md-root .monaco-editor .contentWidgets {
+    z-index: 4;
+}
+
+.inline-md-root .monaco-editor .cursors-layer {
+    z-index: 5;
 }
 
 .inline-md-root .monaco-editor .view-line {
@@ -146,10 +165,8 @@ body {
     pointer-events: auto;
 }
 
-.inline-md-root.inline-md-dragging .monaco-editor .view-overlays {
-    z-index: 2;
-}
-
+.inline-md-root.inline-md-dragging .monaco-editor .view-zones,
+.inline-md-root.inline-md-dragging .monaco-editor .contentWidgets,
 .inline-md-root.inline-md-dragging .inline-md-block,
 .inline-md-root.inline-md-dragging .inline-md-image,
 .inline-md-root.inline-md-dragging .inline-md-image-fallback,
@@ -300,6 +317,15 @@ body {
     margin-left: -1.1em;
     text-align: center;
     color: var(--vscode-editor-foreground, #d4d4d4);
+}
+
+.inline-md-root .monaco-editor .margin-view-overlays .inline-md-list-bullet {
+    color: var(--vscode-editor-foreground, #d4d4d4);
+    text-align: center;
+}
+
+.inline-md-root .monaco-editor .margin-view-overlays .inline-md-list-bullet::before {
+    content: "•";
 }
 
 .inline-md-task {

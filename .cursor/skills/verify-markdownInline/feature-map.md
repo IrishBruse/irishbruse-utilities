@@ -84,6 +84,13 @@ Reach: none
 Activate: text="Missing"
 From: Rendered document
 
+## List
+
+Does: Show a bullet beside a list item, with wrapped lines still starting under the words.
+Reach: none
+Activate: offset=49
+From: Rendered document
+
 ## Task
 
 Does: Show a task checkbox with no list bullet, and toggle it between open and done.

@@ -111,6 +111,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         automaticLayout: false,
         wordWrap: "on",
         wrappingStrategy: "advanced",
+        scrollBeyondLastColumn: 0,
         lineNumbers: "on",
         glyphMargin: false,
         folding: false,
@@ -368,6 +369,12 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             fitting = false;
         }
     };
+    const resetHorizontalScroll = (): void => {
+        if (parent.scrollLeft !== 0) {
+            parent.scrollLeft = 0;
+        }
+    };
+    parent.addEventListener("scroll", resetHorizontalScroll, { passive: true });
     const contentSizeListener = editor.onDidContentSizeChange(fitContent);
     const cursorRevealListener = editor.onDidChangeCursorPosition((event) => {
         revealInParent(event.position, false);
@@ -383,6 +390,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     return {
         destroy() {
             resizeObserver.disconnect();
+            parent.removeEventListener("scroll", resetHorizontalScroll);
             contentSizeListener.dispose();
             cursorRevealListener.dispose();
             removeKeybindings();

@@ -4,9 +4,9 @@ Open with **Markdown Editor (ib-utilities)**. Edit the blocks below and confirm 
 
 Related: [lists-tasks.md](./lists-tasks.md), [README.md](./README.md).
 
-## Playground shortcuts
+## Inline Markdown shortcuts
 
-Open this file with `npm run dev:markdown-inline` and `?fixture=keyboard-whitespace.md`. These keys apply only in that Inline Markdown playground, not in the full Markdown Editor custom editor.
+These keys apply in the Inline Markdown editor in VS Code and in the playground.
 
 | Shortcut | Action |
 | :--- | :--- |

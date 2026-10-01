@@ -1,14 +1,18 @@
 html,
 body,
 #editor {
+    width: 100%;
     height: 100%;
     margin: 0;
 }
 
 .inline-md-root {
-    display: flex;
-    justify-content: center;
+    overflow-x: hidden;
+    overflow-y: auto;
+    box-sizing: border-box;
+    width: 100%;
     height: 100%;
+    scrollbar-color: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4)) transparent;
     background: var(--vscode-editor-background, #1e1e1e);
     color: var(--vscode-editor-foreground, #d4d4d4);
     font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
@@ -16,12 +20,34 @@ body,
     --ib-md-link: var(--vscode-textLink-foreground, #35A854);
     --ib-md-link-label: #61afef;
     --ib-md-code-block-background: var(--vscode-textCodeBlock-background, #21252b);
+    --ib-md-blockquote-background: var(
+        --vscode-textBlockQuote-background,
+        color-mix(in srgb, var(--vscode-editor-foreground, #d4d4d4) 7%, var(--vscode-editor-background, #1e1e1e))
+    );
+    --ib-md-blockquote-border: var(--vscode-textBlockQuote-border, #4b5163);
+}
+
+.inline-md-root::-webkit-scrollbar {
+    width: 10px;
+}
+
+.inline-md-root::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.inline-md-root::-webkit-scrollbar-thumb {
+    background-color: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+    border-radius: 10px;
+    border: 3px solid transparent;
+    border-right-width: 0;
+    background-clip: padding-box;
 }
 
 .inline-md-column {
     box-sizing: border-box;
     width: min(900px, 100%);
-    height: 100%;
+    height: auto;
+    margin-inline: auto;
     padding: 0 48px;
 }
 
@@ -30,12 +56,17 @@ body,
     outline: none;
 }
 
-.inline-md-root .monaco-scrollable-element > .scrollbar > .slider {
-    border-radius: 10px;
+.inline-md-root .monaco-scrollable-element > .scrollbar,
+.inline-md-root .monaco-scrollable-element > .invisible.scrollbar {
+    display: none !important;
 }
 
 .inline-md-root .monaco-editor .view-zones > [monaco-view-zone] {
-    width: calc(100% - 16px) !important;
+    width: 100% !important;
+}
+
+.inline-md-root .monaco-editor .view-overlays {
+    isolation: isolate;
 }
 
 .inline-md-root .monaco-editor .view-lines {
@@ -72,6 +103,10 @@ body,
     font-size: 0 !important;
     letter-spacing: 0 !important;
     visibility: hidden !important;
+}
+
+.inline-md-quote-marker {
+    color: transparent !important;
 }
 
 .inline-md-task-spacer {
@@ -219,12 +254,66 @@ body,
 }
 
 .inline-md-root .monaco-editor .inline-md-quote {
-    box-shadow: inset 3px 0 0 var(--vscode-textBlockQuote-border, #4b5163);
+    box-sizing: border-box;
+    width: 100% !important;
+    background-color: var(--ib-md-blockquote-background);
+    color: var(--vscode-descriptionForeground, #9da5b4);
+    padding-left: 10px;
+    padding-right: 10px;
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-1 {
+    box-shadow: inset 3px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-2 {
+    box-shadow:
+        inset 3px 0 0 var(--ib-md-blockquote-border),
+        inset 14px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-3 {
+    box-shadow:
+        inset 3px 0 0 var(--ib-md-blockquote-border),
+        inset 14px 0 0 var(--ib-md-blockquote-border),
+        inset 25px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-4 {
+    box-shadow:
+        inset 3px 0 0 var(--ib-md-blockquote-border),
+        inset 14px 0 0 var(--ib-md-blockquote-border),
+        inset 25px 0 0 var(--ib-md-blockquote-border),
+        inset 36px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote-depth-5 {
+    box-shadow:
+        inset 3px 0 0 var(--ib-md-blockquote-border),
+        inset 14px 0 0 var(--ib-md-blockquote-border),
+        inset 25px 0 0 var(--ib-md-blockquote-border),
+        inset 36px 0 0 var(--ib-md-blockquote-border),
+        inset 47px 0 0 var(--ib-md-blockquote-border);
+}
+
+.inline-md-root .monaco-editor .inline-md-quote .inline-md-strong,
+.inline-md-root .monaco-editor .inline-md-quote .inline-md-em {
+    color: inherit;
+}
+
+.inline-md-root .monaco-editor .inline-md-quote .inline-md-code {
+    color: var(--ib-md-inline-code, var(--vscode-textPreformat-foreground, #c678dd));
+    background: var(--ib-md-inline-code-background, rgb(33 37 43 / 63%));
 }
 
 .inline-md-root .monaco-editor .inline-md-code-line {
-    width: calc(100% - 16px) !important;
+    z-index: 0;
+    width: 100% !important;
     background: var(--ib-md-code-block-background);
+}
+
+.inline-md-root .monaco-editor .selected-text {
+    z-index: 1;
 }
 
 .ib-skill-properties-panel {
@@ -242,7 +331,7 @@ body,
 
 .ib-skill-properties-header {
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 8px;
 }
 
@@ -262,26 +351,38 @@ body,
     cursor: pointer;
 }
 
-.ib-skill-properties-mode {
+.ib-skill-properties-yaml {
     margin: 0;
-    padding: 2px 0;
+    padding: 2px 0 8px;
     border: 0;
     background: transparent;
-    color: var(--vscode-textLink-foreground, #35A854);
+    color: var(--vscode-textLink-foreground, #3794ff);
     font: inherit;
-    font-size: 11px;
-    line-height: 16px;
+    font-size: 12px;
     cursor: pointer;
 }
 
-.inline-md-root .monaco-editor .inline-md-skill-switch {
-    margin-right: 12px;
-    color: var(--vscode-textLink-foreground, #35A854) !important;
+.inline-md-root {
+    --vscode-editorCodeLens-foreground: var(--vscode-descriptionForeground, #9da5b4);
+}
+
+.inline-md-root .monaco-editor .codelens-decoration {
+    border: 0;
+    color: var(--vscode-descriptionForeground, #9da5b4);
     font-size: 11px;
     line-height: 16px;
-    cursor: pointer;
     pointer-events: auto;
-    user-select: none;
+}
+
+.inline-md-root .monaco-editor .codelens-decoration > a {
+    border: 0;
+    color: var(--vscode-descriptionForeground, #9da5b4);
+    text-decoration: none;
+}
+
+.inline-md-root .monaco-editor .codelens-decoration > a:hover {
+    color: var(--vscode-descriptionForeground, #9da5b4) !important;
+    text-decoration: underline;
 }
 
 .ib-skill-properties-body {
@@ -380,14 +481,88 @@ body,
     user-select: none;
 }
 
-.inline-md-root .monaco-editor .view-line:has(.inline-md-lang) > span {
-    left: 0;
-    right: 12px;
-    width: auto;
-    text-align: right;
+.inline-md-mermaid {
+    position: relative;
+    box-sizing: border-box;
+    width: calc(100% - 16px);
+    margin: 0 0 0 16px;
+    padding: 26px 10px 10px;
+    border-radius: 4px;
+    background: var(--ib-md-code-block-background);
+    overflow: hidden;
+    pointer-events: auto;
+    cursor: text;
+}
+
+.inline-md-mermaid-open-preview {
+    position: absolute;
+    top: 4px;
+    right: 8px;
+    z-index: 2;
+    margin: 0;
+    padding: 2px 4px;
+    border: 0;
+    background: transparent;
+    font-family: var(--vscode-font-family, sans-serif);
+    font-size: 12px;
+    line-height: 1.2;
+    color: var(--vscode-textLink-foreground, #35a854);
+    cursor: pointer;
+    user-select: none;
+    pointer-events: auto;
+}
+
+.inline-md-mermaid-open-preview:hover {
+    color: var(--vscode-textLink-activeForeground, #98c379);
+    text-decoration: underline;
+}
+
+.inline-md-mermaid-diagram {
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.inline-md-mermaid-diagram svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.inline-md-mermaid-diagram.inline-md-mermaid-error {
+    color: var(--vscode-errorForeground, #f48771);
+    font-family: var(--vscode-editor-font-family, ui-monospace, monospace);
+    font-size: var(--vscode-editor-font-size, 13px);
+    white-space: pre-wrap;
+}
+
+.inline-md-mermaid-diagram .messageText,
+.inline-md-mermaid-diagram .loopText,
+.inline-md-mermaid-diagram .labelText,
+.inline-md-mermaid-diagram .sequenceNumber {
+    fill: var(--vscode-editor-foreground, #d4d4d4) !important;
+}
+
+.inline-md-root .monaco-editor .view-line:has(.inline-md-lang) {
+    container-type: inline-size;
+}
+
+.inline-md-root .monaco-editor .inline-md-skill-switch {
+    position: absolute;
+    top: 0;
+    right: calc(52px - 100cqi);
+    z-index: 2;
+    color: var(--vscode-textLink-foreground, #35A854) !important;
+    font-size: 11px;
+    line-height: 16px;
+    cursor: pointer;
+    pointer-events: auto;
+    user-select: none;
 }
 
 .inline-md-root .monaco-editor .inline-md-lang {
+    position: absolute;
+    right: calc(16px - 100cqi);
+    top: 0;
     color: var(--vscode-descriptionForeground, #9da5b4) !important;
     font-size: 11px;
     line-height: 16px;

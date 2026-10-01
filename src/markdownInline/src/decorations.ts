@@ -1,6 +1,8 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import { blockquoteDepthClass, blockquoteLineDepth } from "./blockquote";
 import { resolveImageUrl } from "./imageUrl";
-import { setHiddenAreas } from "./monacoSetup";
+import { isMermaidCodeBlock, renderMermaidDiagram } from "./mermaid";
+import { refreshMermaidCodeLens, setHiddenAreas } from "./monacoSetup";
 import { parseScopes } from "./scopes";
 import { readFrontMatter, SkillPropertiesPanel, yamlFrontMatterScope, type FrontMatterSpan } from "./skillProperties";
 import type { CursorContext, Scope, TextRange } from "./types";
@@ -11,6 +13,7 @@ export interface InlinePresentationHandlers {
     onReveal(offset: number): void;
     onReplace(from: number, to: number, text: string): void;
     onLink?(href: string): void;
+    onOpenMermaidPreview?(openLine: number): void;
 }
 
 interface ZoneRecord {
@@ -269,9 +272,6 @@ function listMarkerIsTask(scopes: readonly Scope[], marker: TextRange): boolean 
 }
 
 function lineClass(scope: Scope): string | undefined {
-    if (scope.kind === "blockquote") {
-        return "inline-md-quote";
-    }
     if (scope.kind === "codeBlock") {
         return "inline-md-code-line";
     }
@@ -378,6 +378,8 @@ export class InlinePresentation {
     private skillZone: monaco.editor.IViewZone | undefined;
     private skillView: "yaml" | "properties" = "yaml";
     private readonly skillSwitchListener: monaco.IDisposable;
+    private readonly mermaidZones = new Map<string, ZoneRecord>();
+    private mermaidLensKey = "";
 
     constructor(
         private readonly editor: monaco.editor.IStandaloneCodeEditor,
@@ -446,9 +448,6 @@ export class InlinePresentation {
                 }
                 const line = coveredLine(model, bounds);
                 if (scope.kind === "thematicBreak" && this.frontMatter && bounds.start < this.frontMatter.end) {
-                    if (this.skillView === "properties") {
-                        hiddenLines.add(line ?? model.getPositionAt(bounds.start).lineNumber);
-                    }
                     continue;
                 }
                 if ((scope.kind === "image" || scope.kind === "thematicBreak") && line !== undefined) {
@@ -458,7 +457,9 @@ export class InlinePresentation {
                 }
                 decorations.push({
                     range: rangeFromOffsets(model, bounds.start, bounds.end),
-                    options: hideOptions(this.replacement(scope, marker, index, scopes, tasks, model)),
+                    options: scope.kind === "blockquoteMarker"
+                        ? { inlineClassName: "inline-md-quote-marker" }
+                        : hideOptions(this.replacement(scope, marker, index, scopes, tasks, model)),
                 });
             }
         };
@@ -471,6 +472,31 @@ export class InlinePresentation {
         for (const scope of scopes) {
             if (scope.kind !== "image" && scope.kind !== "thematicBreak") {
                 addHidden(scope);
+            }
+        }
+
+        for (const scope of scopes) {
+            if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
+                continue;
+            }
+            if (selectionOverlaps(scope, cursor)) {
+                continue;
+            }
+            const lines = lineNumbersCovering(model, text, { start: scope.start, end: scope.end });
+            for (const line of lines) {
+                hiddenLines.add(line);
+            }
+            const first = lines[0];
+            if (first !== undefined) {
+                zones.push(this.ensureMermaidZone(scope, text, first));
+            }
+        }
+        const activeMermaidKeys = new Set(
+            zones.filter((zone) => zone.key.startsWith("mermaid:")).map((zone) => zone.key),
+        );
+        for (const key of this.mermaidZones.keys()) {
+            if (!activeMermaidKeys.has(key)) {
+                this.mermaidZones.delete(key);
             }
         }
 
@@ -521,7 +547,11 @@ export class InlinePresentation {
                 }
             }
             this.addLineDecorations(model, scope, decorations);
-            if (scope.kind === "codeBlock" && scope.markers.some((marker) => markerVisibility(scope, marker, cursor) === "hidden")) {
+            if (
+                scope.kind === "codeBlock"
+                && scope.markers.some((marker) => markerVisibility(scope, marker, cursor) === "hidden")
+                && !(isMermaidCodeBlock(scope.language) && !selectionOverlaps(scope, cursor))
+            ) {
                 const codeText = text.slice(scope.contentStart, scope.contentEnd).trim();
                 if (codeText.length > 0) {
                     hits.push({
@@ -537,6 +567,31 @@ export class InlinePresentation {
         const fontSize = this.editor.getOption(monaco.editor.EditorOption.fontSize);
         const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
         this.syncCurrentLine(headingLines, fontSize, lineHeight);
+        const quoteDepths = new Map<number, number>();
+        for (const scope of scopes) {
+            if (scope.kind !== "blockquote") {
+                continue;
+            }
+            const quoteStart = model.getPositionAt(clampOffset(scope.start, text.length));
+            const quoteEnd = model.getPositionAt(clampOffset(Math.max(scope.start, scope.end - 1), text.length));
+            for (let line = quoteStart.lineNumber; line <= quoteEnd.lineNumber; line += 1) {
+                const depth = blockquoteLineDepth(model.getLineContent(line));
+                if (depth <= 0) {
+                    continue;
+                }
+                quoteDepths.set(line, Math.max(quoteDepths.get(line) ?? 0, depth));
+            }
+        }
+        for (const [lineNumber, depth] of quoteDepths) {
+            decorations.push({
+                range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+                options: {
+                    isWholeLine: true,
+                    className: `inline-md-quote ${blockquoteDepthClass(depth)}`,
+                },
+            });
+        }
+
         const headingExtras = new Map<number, number>();
         for (const [lineNumber, level] of headingLines) {
             const extra = headingExtraHeight(level, fontSize, lineHeight);
@@ -591,6 +646,14 @@ export class InlinePresentation {
         this.syncTasks(tasks);
         this.syncHits(hits);
         this.syncZones(zones);
+        const mermaidLensKey = scopes
+            .filter((scope) => scope.kind === "codeBlock" && isMermaidCodeBlock(scope.language))
+            .map((scope) => `${scope.start}:${scope.end}:${text.slice(scope.contentStart, scope.contentEnd).trim()}`)
+            .join("|");
+        if (mermaidLensKey !== this.mermaidLensKey) {
+            this.mermaidLensKey = mermaidLensKey;
+            refreshMermaidCodeLens();
+        }
         if (this.frontMatter && this.skillPanel && this.skillView === "properties") {
             const yaml = text.includes("\r\n")
                 ? this.frontMatter.yaml.replace(/\r\n/g, "\n")
@@ -620,6 +683,8 @@ export class InlinePresentation {
         });
         this.zones = [];
         this.skillSwitchListener.dispose();
+        this.mermaidZones.clear();
+        this.mermaidLensKey = "";
         setHiddenAreas(this.editor, []);
         this.selectionObserver?.disconnect();
         this.selectionObserver = undefined;
@@ -720,6 +785,72 @@ export class InlinePresentation {
         image.src = src;
         frame.append(image);
         return { key: `image:${from}:${src}`, zone };
+    }
+
+    private ensureMermaidZone(scope: Scope, source: string, lineNumber: number): ZoneRecord {
+        const content = source.slice(scope.contentStart, scope.contentEnd).trim();
+        const key = `mermaid:${scope.start}:${scope.end}:${content}`;
+        const existing = this.mermaidZones.get(key);
+        if (existing) {
+            return existing;
+        }
+        const record = this.createMermaidZone(scope, content, key, lineNumber);
+        this.mermaidZones.set(key, record);
+        return record;
+    }
+
+    private createMermaidZone(scope: Scope, content: string, key: string, lineNumber: number): ZoneRecord {
+        const openLine = lineNumber - 1;
+        const frame = document.createElement("div");
+        frame.className = "inline-md-mermaid";
+        const openPreview = document.createElement("button");
+        openPreview.type = "button";
+        openPreview.className = "inline-md-mermaid-open-preview";
+        openPreview.textContent = "Open Preview";
+        openPreview.title = "Open Mermaid preview";
+        openPreview.addEventListener("mousedown", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.handlers.onOpenMermaidPreview?.(openLine);
+        });
+        frame.append(openPreview);
+        frame.addEventListener("mousedown", (event) => {
+            if (event.target instanceof HTMLElement && event.target.closest(".inline-md-mermaid-open-preview")) {
+                return;
+            }
+            event.preventDefault();
+            event.stopPropagation();
+            this.handlers.onReveal(scope.contentStart + 1);
+        });
+        const diagram = document.createElement("div");
+        diagram.className = "inline-md-mermaid-diagram";
+        frame.append(diagram);
+        const zone: monaco.editor.IViewZone = {
+            afterLineNumber: lineNumber - 1,
+            heightInPx: 120,
+            domNode: frame,
+            marginDomNode: lineNumberNode(lineNumber),
+            suppressMouseDown: true,
+            showInHiddenAreas: true,
+        };
+        const fitZoneHeight = (): void => {
+            if (!frame.isConnected) {
+                return;
+            }
+            const measured = Math.ceil(frame.scrollHeight);
+            if (measured > 0 && Math.abs(measured - (zone.heightInPx ?? 0)) > 1) {
+                zone.heightInPx = measured;
+                this.layoutZone(key);
+            }
+        };
+        void renderMermaidDiagram(diagram, content).then((height) => {
+            if (!frame.isConnected || height <= 0) {
+                return;
+            }
+            zone.heightInPx = height;
+            requestAnimationFrame(fitZoneHeight);
+        });
+        return { key, zone };
     }
 
     private tableZone(
@@ -1005,31 +1136,37 @@ export class InlinePresentation {
 
     private applySelectionHeights(): void {
         const dom = this.editor.getDomNode();
-        if (!dom || this.headingExtras.size === 0) {
+        if (!dom) {
             return;
         }
-        const pieces = dom.querySelectorAll<HTMLElement>(".selected-text");
-        if (pieces.length === 0) {
-            return;
-        }
-        const editorTop = dom.getBoundingClientRect().top;
-        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
-        const targets: { top: number; height: number }[] = [];
-        for (const [lineNumber, extra] of this.headingExtras) {
-            const visible = this.editor.getScrolledVisiblePosition({ lineNumber, column: 1 });
-            if (!visible) {
-                continue;
-            }
-            targets.push({ top: visible.top, height: lineHeight + extra });
-        }
+        const pieces = [...dom.querySelectorAll<HTMLElement>(".selected-text")];
         for (const piece of pieces) {
-            const top = piece.getBoundingClientRect().top - editorTop;
-            const match = targets.find((target) => Math.abs(target.top - top) < 2);
-            if (!match) {
+            piece.style.bottom = "0px";
+            piece.style.height = "";
+        }
+        if (pieces.length === 0 || this.headingExtras.size === 0) {
+            return;
+        }
+        const viewLines = [...dom.querySelectorAll<HTMLElement>(".view-lines .view-line")];
+        const headingSelector = ".inline-md-h1, .inline-md-h2, .inline-md-h3, .inline-md-h4, .inline-md-h5, .inline-md-h6";
+        for (const viewLine of viewLines) {
+            if (!viewLine.querySelector(headingSelector)) {
                 continue;
             }
-            piece.style.bottom = "auto";
-            piece.style.height = `${match.height}px`;
+            const lineBox = viewLine.getBoundingClientRect();
+            const next = viewLines[viewLines.indexOf(viewLine) + 1];
+            const nextTop = next?.getBoundingClientRect().top;
+            const height = nextTop === undefined ? lineBox.height : nextTop - lineBox.top;
+            if (height <= lineBox.height + 0.5) {
+                continue;
+            }
+            for (const piece of pieces) {
+                if (Math.abs(piece.getBoundingClientRect().top - lineBox.top) >= 2) {
+                    continue;
+                }
+                piece.style.bottom = "auto";
+                piece.style.height = `${height}px`;
+            }
         }
     }
 

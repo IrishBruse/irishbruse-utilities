@@ -86,3 +86,5 @@ export function paintYamlFrontMatter(text: string, from: number, to: number): Ya
     }
     return paints;
 }
+
+export const skillMarkdownLanguageId = "skill-markdown";

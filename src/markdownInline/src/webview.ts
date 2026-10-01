@@ -1,4 +1,5 @@
 import { mountInlineEditor } from "./editor";
+import { readFrontMatter } from "./skillProperties";
 import "./editor.css";
 
 interface VsCodeApi {
@@ -13,7 +14,6 @@ interface BootState {
     documentUrl: string;
     "readonly": boolean;
     skillFrontMatter?: boolean;
-    skillFolderName?: string;
 }
 
 function isBootState(value: unknown): value is BootState {
@@ -59,8 +59,7 @@ const editor = mountInlineEditor(parent, {
     text: boot.content,
     documentUrl: boot.documentUrl,
     readOnly: boot.readonly,
-    skillFrontMatter: boot.skillFrontMatter === true,
-    skillFolderName: boot.skillFolderName ?? "",
+    skillFrontMatter: boot.skillFrontMatter === true || readFrontMatter(boot.content) !== undefined,
     onEdit(edit) {
         vscode.postMessage({
             type: "edit",
@@ -82,6 +81,13 @@ const editor = mountInlineEditor(parent, {
             type: "openLink",
             messageSecret,
             href,
+        });
+    },
+    onOpenMermaidPreview(openLine) {
+        vscode.postMessage({
+            type: "openMermaidPreview",
+            messageSecret,
+            openLine,
         });
     },
 });

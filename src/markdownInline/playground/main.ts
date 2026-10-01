@@ -1,7 +1,7 @@
 import "../src/editor.css";
 import { mountInlineEditor } from "../src/editor";
-import { isSkillMarkdownPath, skillFolderNameFromPath } from "../../markdownEditor/host/webviewInitialState";
-import { installKeyboardWhitespaceTestKeybindings } from "./testKeybindings";
+import { hasYamlFrontMatter } from "../../markdownEditor/host/yamlFrontMatter";
+import { isSkillMarkdownPath } from "../../markdownEditor/host/webviewInitialState";
 
 const DOCS_PREFIX = "../../../docs/tests/markdown/";
 const LOCAL_FIXTURE = "fixture.md";
@@ -95,15 +95,10 @@ async function main(): Promise<void> {
     window.__inlineMarkdown = mountInlineEditor(parent, {
         text,
         documentUrl: baseUrl,
-        skillFrontMatter: isSkillMarkdownPath(selected.id),
-        skillFolderName: skillFolderNameFromPath(selected.id),
+        skillFrontMatter: isSkillMarkdownPath(selected.id) || hasYamlFrontMatter(text),
         onLink(href) {
             openPlaygroundLink(href, baseUrl, fixtures);
         },
-        onEditorReady:
-            selected.id === "keyboard-whitespace.md"
-                ? installKeyboardWhitespaceTestKeybindings
-                : undefined,
     });
     if (selected.id === LOCAL_FIXTURE) {
         const blankLine = text.indexOf("\n\n");

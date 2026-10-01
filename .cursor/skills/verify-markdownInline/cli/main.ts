@@ -9,41 +9,59 @@ const cliDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(cliDir, "..", "..", "..", "..");
 const mapPath = join(cliDir, "..", "feature-map.md");
 const statePath = join(repoRoot, ".tmp", "verify-markdownInline", "state.json");
-const readyFn = '!!document.querySelector("#editor .inline-md-h1") && !!document.querySelector("#editor .inline-md-strong") && !!document.querySelector("#editor input[type=checkbox]") && !!document.querySelector("#editor img[alt]") && !!document.querySelector("#editor .inline-md-code-hit") && !!document.querySelector("#editor .inline-md-table")';
+const viewText = 'document.querySelector("#editor .view-lines")?.innerText ?? ""';
+const readyFn = `!!document.querySelector("#editor .inline-md-skill-switch") && !!document.querySelector("#editor .inline-md-h1") && !!document.querySelector("#editor .inline-md-strong") && !!document.querySelector("#editor input[type=checkbox]") && !!document.querySelector("#editor img[alt]") && !!document.querySelector("#editor .inline-md-code-hit") && !!document.querySelector("#editor .inline-md-table") && !!document.querySelector("#editor .inline-md-hr")`;
 
 const evidence: Record<string, string> = {
-    "Rendered document": '(() => { const text = document.querySelector("#editor .view-lines")?.innerText ?? ""; return text.includes("Hello") && text.includes("A paragraph with"); })()',
-    "Heading": '(() => { const text = document.querySelector("#editor .view-lines")?.innerText ?? ""; return text.includes("# Hello") && !!document.querySelector("#editor .inline-md-h1"); })()',
-    "Bold": '(() => (document.querySelector("#editor .view-lines")?.innerText ?? "").includes("**bold**"))()',
-    "Image": '(() => (document.querySelector("#editor .view-lines")?.innerText ?? "").includes("![Dot](dot.png)"))()',
-    "Missing image": '(() => (document.querySelector("#editor .view-lines")?.innerText ?? "").includes("![Missing](does-not-exist.png)"))()',
+    "Rendered document": `(() => { const text = ${viewText}; return text.includes("Hello") && text.includes("A paragraph with") && text.includes("title: Playground"); })()`,
+    "YAML front matter": `(() => { const text = ${viewText}; return text.includes("title: Playground") && !!document.querySelector("#editor .inline-md-skill-switch"); })()`,
+    "Skill properties": '!!document.querySelector("#editor .ib-skill-properties-panel")',
+    "Heading": `(() => { const text = ${viewText}; return text.includes("# Hello"); })()`,
+    "Bold": `(() => (${viewText}).includes("**bold**"))()`,
+    "Italic": `(() => (${viewText}).includes("*italic*"))()`,
+    "Strikethrough": `(() => (${viewText}).includes("~~strike~~"))()`,
+    "Inline code": `(() => (${viewText}).includes("\`inline code\`"))()`,
+    "Link": `(() => (${viewText}).includes("[Example link](https://example.com)"))()`,
+    "Blockquote": `(() => (${viewText}).includes("> Quote line."))()`,
+    "Thematic break": `(() => (${viewText}).split("\\n").some((line) => line.trim() === "---"))()`,
+    "Image": `(() => (${viewText}).includes("![Dot](dot.png)"))()`,
+    "Missing image": `(() => (${viewText}).includes("![Missing](does-not-exist.png)"))()`,
     "Task": '(() => document.querySelector("#editor input[type=checkbox]")?.checked === true && document.querySelector("#editor .inline-md-bullet") == null)()',
-    "Code block": '(() => (document.querySelector("#editor .view-lines")?.innerText ?? "").includes("```ts"))()',
-    "Table": '(() => { const text = (document.querySelector("#editor .view-lines")?.innerText ?? "").replaceAll("\\u00a0", " "); return document.querySelector("#editor .inline-md-table") == null && text.includes("Source hint") && text.includes("|"); })()',
+    "Code block": `(() => (${viewText}).includes("\`\`\`ts"))()`,
+    "Table": `(() => { const text = (${viewText}).replaceAll("\\u00a0", " "); return document.querySelector("#editor .inline-md-table") == null && text.includes("Source hint") && text.includes("|"); })()`,
+    "Mermaid": '(() => !!document.querySelector("#editor .inline-md-mermaid-diagram svg") && !!document.querySelector("#editor .inline-md-mermaid-open-preview"))()',
 };
 
 const discoverScript = `JSON.stringify((() => {
     const content = document.querySelector("#editor .view-lines");
     const text = content?.innerText ?? "";
     const reachOf = (el) => (el && el.accessKey ? el.accessKey : "none");
-    const firstLine = text.split("\\n").map((line) => line.trim()).find((line) => line !== "") ?? "";
-    const heading = firstLine.replace(/^#+\\s*/, "");
+    const headingLine = text.split("\\n").find((line) => /^#\\s/.test(line.trim())) ?? "";
+    const heading = headingLine.replace(/^#+\\s*/, "").trim();
     const image = document.querySelector("#editor img[alt]");
     const box = document.querySelector("#editor input[type=checkbox]");
     const taskClass = box?.className.trim().split(/\\s+/).find((name) => name !== "") ?? "";
-    const bold = [...document.querySelectorAll("#editor span")].some((el) => el.textContent === "bold");
-    const missing = [...document.querySelectorAll("#editor span")].some((el) => el.textContent === "Missing");
-    const code = text.includes("const value = 1;") || text.includes("const value = 1");
+    const spanText = (value) => [...document.querySelectorAll("#editor span")].some((el) => el.textContent === value);
     const table = document.querySelector("#editor .inline-md-table");
+    const hr = document.querySelector("#editor .inline-md-hr");
     return {
-        "Rendered document": { reach: "none", activate: content ? ".view-lines" : "" },
-        "Heading": { reach: "none", activate: heading ? 'text="' + heading.replaceAll('"', '\\\\"') + '"' : "" },
-        "Bold": { reach: "none", activate: bold ? 'text="bold"' : "" },
+        "Rendered document": { reach: "none", activate: "offset=49" },
+        "YAML front matter": { reach: "none", activate: "offset=49" },
+        "Skill properties": { reach: "none", activate: document.querySelector("#editor .inline-md-skill-switch") ? 'text="Properties"' : "" },
+        "Heading": { reach: "none", activate: "offset=42" },
+        "Bold": { reach: "none", activate: "offset=67" },
+        "Italic": { reach: "none", activate: "offset=77" },
+        "Strikethrough": { reach: "none", activate: "offset=87" },
+        "Inline code": { reach: "none", activate: "offset=103" },
+        "Link": { reach: "none", activate: "offset=119" },
+        "Blockquote": { reach: "none", activate: "offset=157" },
+        "Thematic break": { reach: "none", activate: "offset=171" },
         "Image": { reach: reachOf(image), activate: image?.getAttribute("alt") ? 'alt="' + image.getAttribute("alt").replaceAll('"', '\\\\"') + '"' : "" },
-        "Missing image": { reach: "none", activate: missing ? 'text="Missing"' : "" },
+        "Missing image": { reach: "none", activate: spanText("Missing") ? 'text="Missing"' : "" },
         "Task": { reach: reachOf(box), activate: taskClass ? "." + taskClass : (box ? 'input[type="checkbox"]' : "") },
-        "Code block": { reach: "none", activate: code ? 'text="const value = 1;"' : "" },
+        "Code block": { reach: "none", activate: "offset=242" },
         "Table": { reach: "none", activate: table ? ".inline-md-table" : "" },
+        "Mermaid": { reach: "none", activate: document.querySelector("#editor .inline-md-mermaid-open-preview") ? ".inline-md-mermaid-open-preview" : "" },
     };
 })())`;
 
@@ -203,6 +221,32 @@ function featureNamed(name: string): Feature {
     return found;
 }
 
+function featureChain(target: Feature): Feature[] {
+    const byName = new Map(readMap().map((feature) => [feature.name, feature]));
+    const chain: Feature[] = [];
+    let current: Feature | undefined = target;
+    while (current && current.from !== "entry") {
+        const parent = byName.get(current.from);
+        if (!parent) {
+            throw new Error(`Unknown parent feature: ${current.from}`);
+        }
+        chain.unshift(parent);
+        current = parent;
+    }
+    chain.push(target);
+    return chain;
+}
+
+function runReach(feature: Feature): void {
+    if (feature.reach === "none") {
+        return;
+    }
+    const inside = evalJson('JSON.stringify(document.activeElement?.getAttribute("role") === "textbox" || document.activeElement?.isContentEditable === true)') === true;
+    if (!inside) {
+        browser(["press", feature.reach]);
+    }
+}
+
 function quoted(spec: string, kind: string): string | undefined {
     const match = spec.match(new RegExp(`^${kind}="([^"]*)"$`));
     return match?.[1];
@@ -228,6 +272,14 @@ function activate(spec: string): void {
         browser(["find", "alt", alt, "click"]);
         return;
     }
+    if (spec.startsWith("offset=")) {
+        const offset = Number.parseInt(spec.slice("offset=".length), 10);
+        if (!Number.isFinite(offset)) {
+            throw new Error(`Unknown activate: ${spec}`);
+        }
+        evalJson(`(() => { window.__inlineMarkdown?.setCursor(${offset}); return true; })()`);
+        return;
+    }
     if (spec.startsWith(".") || spec.startsWith("#") || spec.startsWith("input[")) {
         browser(["click", spec]);
         return;
@@ -235,8 +287,8 @@ function activate(spec: string): void {
     throw new Error(`Unknown activate: ${spec}`);
 }
 
-async function waitFor(expression: string): Promise<void> {
-    const deadline = Date.now() + 8_000;
+async function waitFor(expression: string, timeoutMs = 8_000): Promise<void> {
+    const deadline = Date.now() + timeoutMs;
     while (Date.now() < deadline) {
         try {
             if (evalJson(`JSON.stringify(!!(${expression}))`) === true) {
@@ -255,14 +307,10 @@ async function show(feature: Feature): Promise<void> {
     await up();
     browser(["open", pageUrl]);
     await waitFor(readyFn);
-    if (feature.reach !== "none") {
-        const inside = evalJson('JSON.stringify(document.activeElement?.getAttribute("role") === "textbox" || document.activeElement?.isContentEditable === true)') === true;
-        if (!inside) {
-            browser(["press", feature.reach]);
-            return;
-        }
+    for (const step of featureChain(feature)) {
+        runReach(step);
+        activate(step.activate);
     }
-    activate(feature.activate);
 }
 
 function tracePath(name: string): string {
@@ -300,8 +348,14 @@ async function trace(name: string): Promise<void> {
         started = true;
         browser(["open", pageUrl]);
         await waitFor(readyFn);
-        activate(featureNamed(name).activate);
-        await waitFor(check);
+        const steps = featureChain(featureNamed(name));
+        if (name !== "Mermaid") {
+            for (const step of steps) {
+                runReach(step);
+                activate(step.activate);
+            }
+        }
+        await waitFor(check, name === "Mermaid" ? 20_000 : 8_000);
         const path = tracePath(name);
         mkdirSync(dirname(path), { recursive: true });
         browser(["profiler", "stop", path]);
@@ -327,10 +381,10 @@ async function mapCheck(): Promise<void> {
         try {
             browser(["open", pageUrl]);
             await waitFor(readyFn);
-            if (feature.reach !== "none") {
-                browser(["press", feature.reach]);
+            for (const step of featureChain(feature)) {
+                runReach(step);
+                activate(step.activate);
             }
-            activate(feature.activate);
         } catch (error) {
             fail(feature.name, error);
         }

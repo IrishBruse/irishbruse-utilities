@@ -32,6 +32,19 @@ describe("markerVisibility", () => {
         expect(showsFormattedContent(strong, cursor(3, 0, 10))).toBe(false);
     });
 
+    it("shows a rule as source when a selection covers it", () => {
+        const rule: Scope = {
+            kind: "thematicBreak",
+            start: 10,
+            end: 14,
+            contentStart: 10,
+            contentEnd: 13,
+            markers: [{ start: 10, end: 14 }],
+        };
+        expect(markerVisibility(rule, rule.markers[0]!, cursor(20, 16, 30, 0))).toBe("raw");
+        expect(markerVisibility(rule, rule.markers[0]!, cursor(40, 30, 50))).toBe("hidden");
+    });
+
     it("drops heading style and shows hashes when the cursor line overlaps", () => {
         const heading: Scope = {
             kind: "heading",
@@ -46,6 +59,21 @@ describe("markerVisibility", () => {
         expect(showsFormattedContent(heading, cursor(4, 0, 7))).toBe(false);
         expect(markerVisibility(heading, heading.markers[0]!, cursor(20, 10, 30))).toBe("hidden");
         expect(showsFormattedContent(heading, cursor(20, 10, 30))).toBe(true);
+    });
+
+    it("shows heading hashes when a multi-line selection covers the heading", () => {
+        const heading: Scope = {
+            kind: "heading",
+            start: 10,
+            end: 30,
+            contentStart: 12,
+            contentEnd: 30,
+            markers: [{ start: 10, end: 12 }],
+            level: 1,
+        };
+        const drag = cursor(500, 400, 450, 0);
+        expect(markerVisibility(heading, heading.markers[0]!, drag)).toBe("raw");
+        expect(showsFormattedContent(heading, drag)).toBe(false);
     });
 
     it("keeps list and quote markers rendered unless the cursor is on them", () => {
@@ -69,6 +97,7 @@ describe("markerVisibility", () => {
         expect(markerVisibility(list, list.markers[0]!, cursor(0, 0, 12))).toBe("raw");
         expect(markerVisibility(quote, quote.markers[0]!, cursor(4, 0, 10))).toBe("hidden");
         expect(markerVisibility(quote, quote.markers[0]!, cursor(1, 0, 10))).toBe("raw");
+        expect(markerVisibility(quote, quote.markers[0]!, cursor(10, 0, 12, 0))).toBe("hidden");
     });
 
     it("shows an image as source only while the cursor is inside it", () => {

@@ -1,6 +1,17 @@
+---
+title: Playground
+draft: false
+---
+
 # Hello
 
-A paragraph with **bold**.
+A paragraph with **bold**, *italic*, ~~strike~~, and `inline code`.
+
+[Example link](https://example.com)
+
+> Quote line.
+
+---
 
 ![Dot](dot.png)
 
@@ -10,6 +21,11 @@ A paragraph with **bold**.
 
 ```ts
 const value = 1;
+```
+
+```mermaid
+flowchart LR
+  A[Edit] --> B[Preview]
 ```
 
 | Case | Source hint | Expected |

@@ -2,23 +2,79 @@
 
 ## Rendered document
 
-Does: Show the fixture as formatted inline markdown.
+Does: Show the fixture as formatted inline markdown with YAML front matter above the body.
 Reach: none
-Activate: .view-lines
+Activate: offset=49
 From: entry
+
+## YAML front matter
+
+Does: Paint the opening `---` block as YAML with a Properties switch on the fence.
+Reach: none
+Activate: offset=49
+From: Rendered document
+
+## Skill properties
+
+Does: Open the typed PROPERTIES card for front matter fields and hide the raw YAML block.
+Reach: none
+Activate: text="Properties"
+From: Rendered document
 
 ## Heading
 
-Does: Reveal the raw heading marker when the title is activated.
+Does: Reveal the raw `#` marker when the title is activated or included in a drag selection.
 Reach: none
-Activate: text="Hello"
+Activate: offset=42
 From: Rendered document
 
 ## Bold
 
 Does: Reveal the raw strong markers when the bold word is activated.
 Reach: none
-Activate: text="bold"
+Activate: offset=67
+From: Rendered document
+
+## Italic
+
+Does: Reveal the raw emphasis markers when the italic word is activated.
+Reach: none
+Activate: offset=77
+From: Rendered document
+
+## Strikethrough
+
+Does: Reveal the raw strike markers when the struck word is activated.
+Reach: none
+Activate: offset=87
+From: Rendered document
+
+## Inline code
+
+Does: Reveal the raw backticks when the inline code span is activated.
+Reach: none
+Activate: offset=103
+From: Rendered document
+
+## Link
+
+Does: Reveal the raw link markdown when the link label is activated.
+Reach: none
+Activate: offset=119
+From: Rendered document
+
+## Blockquote
+
+Does: Reveal the raw `>` marker when the quote line is activated.
+Reach: none
+Activate: offset=157
+From: Rendered document
+
+## Thematic break
+
+Does: Reveal the raw `---` rule when the horizontal rule line is activated.
+Reach: none
+Activate: offset=171
 From: Rendered document
 
 ## Image
@@ -46,7 +102,7 @@ From: Rendered document
 
 Does: Reveal the fenced code source when the code text is activated.
 Reach: none
-Activate: text="const value = 1;"
+Activate: offset=242
 From: Rendered document
 
 ## Table
@@ -54,4 +110,11 @@ From: Rendered document
 Does: Reveal the raw pipe source when the table is activated.
 Reach: none
 Activate: .inline-md-table
+From: Rendered document
+
+## Mermaid
+
+Does: Render idle mermaid fences as SVG diagrams with **Open Preview** on each block.
+Reach: none
+Activate: .inline-md-mermaid-open-preview
 From: Rendered document

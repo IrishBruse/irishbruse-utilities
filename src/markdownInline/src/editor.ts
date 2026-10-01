@@ -1,8 +1,11 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { InlinePresentation } from "./decorations";
+import { installInlineKeybindings } from "./keybindings";
+import { bindMermaidCodeLens } from "./mermaidCodeLens";
 import { installMonaco, readEditorFontSize } from "./monacoSetup";
-import { registerSkillFrontMatterCompletion } from "./skillCompletion";
 import { parseScopes } from "./scopes";
+import { readFrontMatter } from "./skillProperties";
+import { skillMarkdownLanguageId } from "./skillYaml";
 import type { Scope } from "./types";
 
 export interface InlineEdit {
@@ -16,11 +19,10 @@ export interface MountInlineEditorOptions {
     documentUrl: string;
     readOnly?: boolean;
     skillFrontMatter?: boolean;
-    skillFolderName?: string;
     onEdit?: (edit: InlineEdit) => void;
     onHistory?: (command: "undo" | "redo") => void;
     onLink?: (href: string) => void;
-    onEditorReady?: (editor: monaco.editor.IStandaloneCodeEditor) => void;
+    onOpenMermaidPreview?: (openLine: number) => void;
 }
 
 export interface InlineEditorHandle {
@@ -29,6 +31,15 @@ export interface InlineEditorHandle {
     getDocument(): string;
     focus(): void;
     setCursor(offset: number): void;
+}
+
+function skillFolderName(documentUrl: string): string {
+    const path = documentUrl.split(/[?#]/)[0] ?? "";
+    const parts = path.split("/").filter((part) => part.length > 0);
+    if (parts[parts.length - 1] !== "SKILL.md") {
+        return "";
+    }
+    return parts[parts.length - 2] ?? "";
 }
 
 function historyBindings(
@@ -88,14 +99,16 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     column.className = "inline-md-column";
     parent.append(column);
 
-    const languageId = options.skillFrontMatter === true ? skillMarkdownLanguageId : "markdown";
+    const usesSkillMarkdown = (text: string): boolean =>
+        options.skillFrontMatter === true || readFrontMatter(text) !== undefined;
+    const languageId = usesSkillMarkdown(options.text) ? skillMarkdownLanguageId : "markdown";
     const model = monaco.editor.createModel(options.text, languageId);
     model.setEOL(endOfLine(options.text));
     const editor = monaco.editor.create(column, {
         model,
         theme: "inline-markdown",
         readOnly: options.readOnly === true,
-        automaticLayout: true,
+        automaticLayout: false,
         wordWrap: "on",
         wrappingStrategy: "advanced",
         lineNumbers: "on",
@@ -109,25 +122,29 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         hideCursorInOverviewRuler: true,
         overviewRulerBorder: false,
         scrollbar: {
-            vertical: "auto",
+            vertical: "hidden",
             horizontal: "hidden",
             useShadows: false,
-            verticalScrollbarSize: 12,
-            verticalSliderSize: 6,
+            verticalScrollbarSize: 0,
+            horizontalScrollbarSize: 0,
+            handleMouseWheel: false,
+            alwaysConsumeMouseWheel: false,
         },
         renderLineHighlight: "line",
         fontFamily: getComputedStyle(document.documentElement).getPropertyValue("--vscode-editor-font-family").trim()
             || "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         fontSize: readEditorFontSize(),
         lineHeight: 0,
-        padding: { top: 24, bottom: 48 },
+        padding: { top: 0, bottom: 48 },
         occurrencesHighlight: "off",
         selectionHighlight: false,
         renderWhitespace: "none",
         guides: { indentation: false, bracketPairs: false },
         stickyScroll: { enabled: false },
-        quickSuggestions: options.skillFrontMatter === true ? { other: true, comments: false, strings: false } : false,
-        suggestOnTriggerCharacters: options.skillFrontMatter === true,
+        codeLens: true,
+        codeLensFontSize: 11,
+        quickSuggestions: usesSkillMarkdown(options.text) ? { other: true, comments: false, strings: true } : false,
+        suggestOnTriggerCharacters: usesSkillMarkdown(options.text),
         wordBasedSuggestions: "off",
         parameterHints: { enabled: false },
         hover: { enabled: false },
@@ -139,7 +156,12 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         renderValidationDecorations: "off",
         fixedOverflowWidgets: false,
     });
-    model.updateOptions({ bracketColorizationOptions: { enabled: false } });
+    model.updateOptions({
+        bracketColorizationOptions: {
+            enabled: false,
+            independentColorPoolPerBracketType: false,
+        },
+    });
 
     let applyingHostUpdate = false;
     let refreshing = false;
@@ -170,7 +192,13 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         onLink(href) {
             options.onLink?.(href);
         },
-    }, options.skillFrontMatter === true, options.skillFolderName ?? "");
+        onOpenMermaidPreview(openLine) {
+            options.onOpenMermaidPreview?.(openLine);
+        },
+    }, options.skillFrontMatter === true, skillFolderName(options.documentUrl));
+    const mermaidLens = bindMermaidCodeLens(model, (openLine) => {
+        options.onOpenMermaidPreview?.(openLine);
+    });
 
     const refresh = (): void => {
         if (refreshing) {
@@ -179,6 +207,19 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         }
         refreshing = true;
         try {
+            const currentModel = editor.getModel();
+            if (currentModel) {
+                const text = currentModel.getValue();
+                const nextLanguage = usesSkillMarkdown(text) ? skillMarkdownLanguageId : "markdown";
+                if (currentModel.getLanguageId() !== nextLanguage) {
+                    monaco.editor.setModelLanguage(currentModel, nextLanguage);
+                    const suggestions = usesSkillMarkdown(text);
+                    editor.updateOptions({
+                        quickSuggestions: suggestions ? { other: true, comments: false, strings: true } : false,
+                        suggestOnTriggerCharacters: suggestions,
+                    });
+                }
+            }
             presentation.update();
         } finally {
             refreshing = false;
@@ -210,14 +251,35 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         const clamped = Math.max(0, Math.min(offset, currentModel.getValueLength()));
         const position = currentModel.getPositionAt(clamped);
         editor.setPosition(position);
-        editor.revealPositionInCenterIfOutsideViewport(position);
+        revealInParent(position, true);
+    };
+
+    const revealInParent = (position: monaco.IPosition, center: boolean): void => {
+        const node = editor.getDomNode();
+        if (!node) {
+            return;
+        }
+        const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight);
+        const top = editor.getTopForPosition(position.lineNumber, position.column) - editor.getScrollTop();
+        const lineTop = node.getBoundingClientRect().top - parent.getBoundingClientRect().top + parent.scrollTop + top;
+        const viewTop = parent.scrollTop;
+        const viewBottom = viewTop + parent.clientHeight;
+        if (center) {
+            parent.scrollTop = Math.max(0, lineTop - parent.clientHeight / 2);
+            return;
+        }
+        const margin = lineHeight;
+        if (lineTop < viewTop + margin) {
+            parent.scrollTop = Math.max(0, lineTop - margin);
+        } else if (lineTop + lineHeight > viewBottom - margin) {
+            parent.scrollTop = lineTop + lineHeight - parent.clientHeight + margin;
+        }
     };
 
     if (options.onHistory) {
         historyBindings(editor, options.onHistory);
     }
-    const skillCompletion = options.skillFrontMatter === true ? registerSkillFrontMatterCompletion(editor) : undefined;
-    options.onEditorReady?.(editor);
+    const removeKeybindings = installInlineKeybindings(editor, column);
 
     const contentListener = editor.onDidChangeModelContent((event) => {
         refresh();
@@ -285,16 +347,50 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         }
     });
 
+    let fitting = false;
+    const fitContent = (): void => {
+        if (fitting) {
+            return;
+        }
+        fitting = true;
+        try {
+            for (let attempt = 0; attempt < 4; attempt += 1) {
+                const width = Math.max(0, column.clientWidth);
+                const height = Math.max(1, Math.ceil(editor.getContentHeight()));
+                column.style.height = `${height}px`;
+                const info = editor.getLayoutInfo();
+                if (Math.abs(info.width - width) <= 1 && Math.abs(info.height - height) <= 1) {
+                    break;
+                }
+                editor.layout({ width, height });
+            }
+        } finally {
+            fitting = false;
+        }
+    };
+    const contentSizeListener = editor.onDidContentSizeChange(fitContent);
+    const cursorRevealListener = editor.onDidChangeCursorPosition((event) => {
+        revealInParent(event.position, false);
+    });
+    const resizeObserver = new ResizeObserver(() => {
+        fitContent();
+    });
+    resizeObserver.observe(parent);
+
     refresh();
-    editor.layout();
+    fitContent();
 
     return {
         destroy() {
+            resizeObserver.disconnect();
+            contentSizeListener.dispose();
+            cursorRevealListener.dispose();
+            removeKeybindings();
             contentListener.dispose();
             cursorListener.dispose();
             mouseListener.dispose();
-            skillCompletion?.dispose();
             editor.getDomNode()?.removeEventListener("mousedown", openRenderedLink, true);
+            mermaidLens.dispose();
             presentation.dispose();
             editor.dispose();
             model.dispose();

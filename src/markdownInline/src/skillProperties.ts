@@ -7,47 +7,13 @@ import {
     type SkillProperty,
 } from "../../markdownEditor/webview/skillFrontMatterYaml";
 import { completeAgentPropertyKeys } from "./skillKeys";
+import { type YamlFrontMatterSpan, readYamlFrontMatter } from "../../markdownEditor/host/yamlFrontMatter";
 import type { Scope } from "./types";
 
-export interface FrontMatterSpan {
-    readonly yamlStart: number;
-    readonly yamlEnd: number;
-    readonly end: number;
-    readonly yaml: string;
-}
+export type FrontMatterSpan = YamlFrontMatterSpan;
 
 export function readFrontMatter(text: string): FrontMatterSpan | undefined {
-    if (!text.startsWith("---")) {
-        return undefined;
-    }
-    const firstBreak = text.indexOf("\n");
-    if (firstBreak < 0) {
-        return undefined;
-    }
-    const opener = text.slice(0, firstBreak).replace(/\r$/, "");
-    if (opener !== "---") {
-        return undefined;
-    }
-    let index = firstBreak + 1;
-    while (index <= text.length) {
-        const next = text.indexOf("\n", index);
-        const lineEnd = next === -1 ? text.length : next;
-        const line = text.slice(index, lineEnd).replace(/\r$/, "");
-        if (line === "---") {
-            const end = next === -1 ? lineEnd : next + 1;
-            return {
-                yamlStart: firstBreak + 1,
-                yamlEnd: index,
-                end,
-                yaml: text.slice(firstBreak + 1, index),
-            };
-        }
-        if (next === -1) {
-            return undefined;
-        }
-        index = next + 1;
-    }
-    return undefined;
+    return readYamlFrontMatter(text);
 }
 
 export function yamlFrontMatterScope(span: FrontMatterSpan): Scope {
@@ -125,7 +91,7 @@ export class SkillPropertiesPanel {
         header.className = "ib-skill-properties-header";
         const yamlButton = document.createElement("button");
         yamlButton.type = "button";
-        yamlButton.className = "ib-skill-properties-mode";
+        yamlButton.className = "ib-skill-properties-yaml";
         yamlButton.textContent = "YAML";
         yamlButton.addEventListener("click", () => {
             this.onShowYaml();

@@ -36,8 +36,20 @@ function cursorOnRange(range: TextRange, cursor: CursorContext): boolean {
  * markers stay hidden until the cursor is on the marker itself.
  */
 export function markerVisibility(scope: Scope, marker: TextRange, cursor: CursorContext): MarkerVisibility {
-    if (scope.kind === "heading" || scope.kind === "thematicBreak") {
-        return rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) ? "raw" : "hidden";
+    if (scope.kind === "heading") {
+        return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
+            ? "raw"
+            : "hidden";
+    }
+    if (scope.kind === "thematicBreak") {
+        return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) ? "raw" : "hidden";
+    }
+    if (scope.kind === "blockquoteMarker") {
+        const { from, to } = selectionBounds(cursor);
+        if (from !== to) {
+            return "hidden";
+        }
+        return from >= marker.start && from < marker.end ? "raw" : "hidden";
     }
     if (STRUCTURAL.has(scope.kind)) {
         return cursorOnRange(marker, cursor) ? "raw" : "hidden";
@@ -63,7 +75,10 @@ export function markerVisibility(scope: Scope, marker: TextRange, cursor: Cursor
 export function showsFormattedContent(scope: Scope, cursor: CursorContext): boolean {
     switch (scope.kind) {
         case "heading":
-            return !rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd);
+            return !(
+                selectionOverlaps(scope, cursor)
+                || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
+            );
         case "codeBlock":
         case "blockquote":
             return true;

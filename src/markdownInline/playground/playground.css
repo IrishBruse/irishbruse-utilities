@@ -10,6 +10,9 @@
     --ib-md-heading-6: #C678DD;
     --ib-md-inline-code: #C678DD;
     --ib-md-inline-code-background: #21252bA0;
+    --vscode-textBlockQuote-background: #7f7f7f1a;
+    --vscode-textBlockQuote-border: #4b5163;
+    --vscode-descriptionForeground: #9da5b4;
     color-scheme: dark;
 }
 

@@ -18,8 +18,10 @@ import {
     getMarkdownInlineEditorColors,
     markdownInlineEditorColorsCssVars,
 } from "../../markdownEditor/host/markdownInlineEditorColors";
+import { Commands } from "../../constants";
 import { shouldUseMarkdownCustomEditor } from "../../markdownEditor/host/shouldUseMarkdownCustomEditor";
-import { isSkillMarkdownPath, prefixMarkdownForFastOpen, skillFolderNameFromPath } from "../../markdownEditor/host/webviewInitialState";
+import { hasYamlFrontMatter } from "../../markdownEditor/host/yamlFrontMatter";
+import { isSkillMarkdownPath, prefixMarkdownForFastOpen } from "../../markdownEditor/host/webviewInitialState";
 
 export const MARKDOWN_INLINE_VIEW_TYPE = "ib-utilities.markdownInline";
 
@@ -76,8 +78,7 @@ function getEditorHtml(
         documentVersion,
         readonly: false,
         documentUrl: baseUri.toString(),
-        skillFrontMatter: isSkillMarkdownPath(documentUri.path),
-        skillFolderName: skillFolderNameFromPath(documentUri.path),
+        skillFrontMatter: isSkillMarkdownPath(documentUri.path) || hasYamlFrontMatter(content),
     }));
     const colorVars = markdownInlineEditorColorsCssVars(getMarkdownInlineEditorColors());
 
@@ -233,6 +234,17 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
                         if (typeof message.href === "string") {
                             await openMarkdownLink(message.href, document.uri);
                         }
+                        break;
+                    }
+                    case "openMermaidPreview": {
+                        if (typeof message.openLine !== "number" || !Number.isFinite(message.openLine)) {
+                            break;
+                        }
+                        await commands.executeCommand(
+                            Commands.OpenMermaidMarkdownPreview,
+                            document.uri.toString(),
+                            message.openLine,
+                        );
                         break;
                     }
                     case "edit": {

@@ -1,5 +1,6 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { InlinePresentation } from "./decorations";
+import { bindDragSelection } from "./dragSelection";
 import { installInlineKeybindings } from "./keybindings";
 import { bindMermaidCodeLens } from "./mermaidCodeLens";
 import { installMonaco, readEditorFontSize } from "./monacoSetup";
@@ -86,6 +87,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     installMonaco();
     const hadRoot = parent.classList.contains("inline-md-root");
     parent.classList.add("inline-md-root");
+    const unbindDragSelection = bindDragSelection(parent);
     const column = document.createElement("div");
     column.className = "inline-md-column";
     parent.append(column);
@@ -409,6 +411,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
 
     return {
         destroy() {
+            unbindDragSelection();
             resizeObserver.disconnect();
             if (fitFrame !== 0) {
                 cancelAnimationFrame(fitFrame);

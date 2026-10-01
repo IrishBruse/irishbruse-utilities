@@ -5,7 +5,9 @@ import { fileURLToPath } from "node:url";
 import { parseMap, validateSuite, type Feature } from "./suite.ts";
 
 const session = "verify-markdownInline";
-const pageUrl = "http://127.0.0.1:5175/";
+const defaultFixture = "playground.md";
+const playgroundOrigin = "http://127.0.0.1:5175";
+const pageUrl = `${playgroundOrigin}/?fixture=${defaultFixture}`;
 const cliDir = dirname(fileURLToPath(import.meta.url));
 const repoRoot = join(cliDir, "..", "..", "..", "..");
 const mapPath = join(cliDir, "..", "feature-map.md");

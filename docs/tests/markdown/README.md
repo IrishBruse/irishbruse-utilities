@@ -4,6 +4,11 @@ Sample `.md` files for hands-on checks of **Markdown Editor (ib-utilities)**. Op
 
 For Mermaid-only samples see [../mermaid/](../mermaid/).
 
+## Playground and verify
+
+[playground.md](./playground.md) is the default Inline Markdown playground fixture (`?fixture=playground.md`).
+`npm run verify-markdownInline -- regress` loads that file.
+
 ## Suggested order
 
 1. [showcase.md](./showcase.md) — broad feature tour (headings, tables, code, mermaid, HTML, math, links).
@@ -28,6 +33,7 @@ Run `npm run fetch-markdown-large-fixtures` to download into [large/](./large/).
 
 | File | What to verify |
 | :--- | :--- |
+| [playground.md](./playground.md) | Default verify regression: YAML, formatting, task, table, mermaid, wrapped list |
 | [showcase.md](./showcase.md) | YAML front matter, theme colors, grid tables, code language badges, mermaid preview, HTML sanitization, images, math |
 | [table-columns.md](./table-columns.md) | Short columns stay one word wide; long `Notes` / `Description` columns wrap first |
 | [lists-tasks.md](./lists-tasks.md) | List marker color, Enter continues lists, task `[ ]` / `[x]` toggles on one line |

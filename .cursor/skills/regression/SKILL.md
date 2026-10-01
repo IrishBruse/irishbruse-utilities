@@ -30,6 +30,22 @@ When the failure is only visible in the Inline Markdown webview or playground, t
 Follow `.cursor/skills/verify-markdownInline/SKILL.md`.
 Red is `npm run verify-markdownInline -- trace "<feature>"` exiting non-zero on that evidence before the fix.
 
+## Inline Markdown fixtures
+
+All playground and manual test markdown lives under `docs/tests/markdown/` only.
+Do not add `.md` fixtures under `src/markdownInline/playground/`.
+
+The playground loads a file with `?fixture=<id>`, where `<id>` is the path relative to that folder (for example `playground.md` or `lists-tasks.md`).
+
+| URL | Use |
+| --- | --- |
+| `http://127.0.0.1:5175/?fixture=playground.md` | Default verify regression map (`npm run verify-markdownInline -- regress`). Compact coverage for headings, links, tasks, tables, mermaid, wrapped lists. |
+| `http://127.0.0.1:5175/?fixture=lists-tasks.md` | List markers, nesting, task toggles, quotes, Enter-continues-task scenarios. |
+| Other `docs/tests/markdown/**/*.md` | Same `?fixture=` pattern; see `docs/tests/markdown/README.md`. |
+
+When a bug only appears on a non-default fixture, extend the right file under `docs/tests/markdown/`, point evidence at that content, and open the matching `?fixture=` URL in the verify CLI (or add a dedicated map entry whose Reach opens that fixture).
+Prefer adding cases to `playground.md` when they fit the default regression suite.
+
 ## Green
 
 Change production code.

@@ -15,6 +15,13 @@ The trace command prints the trace path.
 The app is the Inline Markdown playground at `http://127.0.0.1:5175/`.
 `npm run dev:markdown-inline` is the start command when nothing is listening there.
 
+## Fixtures
+
+All test markdown files live in `docs/tests/markdown/` (not under the playground package).
+Load one with `?fixture=<relative-path>`, for example `http://127.0.0.1:5175/?fixture=playground.md` or `http://127.0.0.1:5175/?fixture=lists-tasks.md`.
+The verify CLI opens `playground.md` by default; the feature map and evidence assume that file unless you change the CLI URL for a dedicated check.
+See `docs/tests/markdown/README.md` for the full catalog.
+
 ## Commands
 
 - `npm run verify-markdownInline -- up` starts the playground and waits until `http://127.0.0.1:5175/` returns HTTP 200.

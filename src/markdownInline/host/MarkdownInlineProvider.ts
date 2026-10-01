@@ -146,8 +146,19 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
         webviewPanel: WebviewPanel,
         _token: CancellationToken,
     ): Promise<void> {
-        if (!shouldUseMarkdownCustomEditor(document.uri)) {
-            await commands.executeCommand("vscode.openWith", document.uri, "default");
+        let released = false;
+        const releaseIfNotEditor = async () => {
+            if (released || shouldUseMarkdownCustomEditor(document.uri)) {
+                return false;
+            }
+            released = true;
+            await commands.executeCommand("vscode.openWith", document.uri, "default", {
+                viewColumn: webviewPanel.viewColumn,
+            });
+            webviewPanel.dispose();
+            return true;
+        };
+        if (await releaseIfNotEditor()) {
             return;
         }
 
@@ -187,7 +198,15 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
 
         renderHtml();
 
+        const releaseTimers = [0, 50].map((delay) => setTimeout(() => {
+            void releaseIfNotEditor();
+        }, delay));
         const disposables = [
+            { dispose: () => {
+                for (const timer of releaseTimers) {
+                    clearTimeout(timer);
+                }
+            } },
             editorWebview.webview.onDidReceiveMessage(async (message) => {
                 if (!message || typeof message !== "object" || message.messageSecret !== editorWebview.messageSecret) {
                     return;

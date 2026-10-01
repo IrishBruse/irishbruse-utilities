@@ -1,6 +1,7 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { InlinePresentation } from "./decorations";
 import { installMonaco, readEditorFontSize } from "./monacoSetup";
+import { registerSkillFrontMatterCompletion } from "./skillCompletion";
 import { parseScopes } from "./scopes";
 import type { Scope } from "./types";
 
@@ -19,6 +20,7 @@ export interface MountInlineEditorOptions {
     onEdit?: (edit: InlineEdit) => void;
     onHistory?: (command: "undo" | "redo") => void;
     onLink?: (href: string) => void;
+    onEditorReady?: (editor: monaco.editor.IStandaloneCodeEditor) => void;
 }
 
 export interface InlineEditorHandle {
@@ -86,7 +88,8 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     column.className = "inline-md-column";
     parent.append(column);
 
-    const model = monaco.editor.createModel(options.text, "markdown");
+    const languageId = options.skillFrontMatter === true ? skillMarkdownLanguageId : "markdown";
+    const model = monaco.editor.createModel(options.text, languageId);
     model.setEOL(endOfLine(options.text));
     const editor = monaco.editor.create(column, {
         model,
@@ -105,7 +108,13 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         overviewRulerLanes: 0,
         hideCursorInOverviewRuler: true,
         overviewRulerBorder: false,
-        scrollbar: { vertical: "auto", horizontal: "hidden", useShadows: false },
+        scrollbar: {
+            vertical: "auto",
+            horizontal: "hidden",
+            useShadows: false,
+            verticalScrollbarSize: 12,
+            verticalSliderSize: 6,
+        },
         renderLineHighlight: "line",
         fontFamily: getComputedStyle(document.documentElement).getPropertyValue("--vscode-editor-font-family").trim()
             || "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
@@ -117,8 +126,8 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         renderWhitespace: "none",
         guides: { indentation: false, bracketPairs: false },
         stickyScroll: { enabled: false },
-        quickSuggestions: false,
-        suggestOnTriggerCharacters: false,
+        quickSuggestions: options.skillFrontMatter === true ? { other: true, comments: false, strings: false } : false,
+        suggestOnTriggerCharacters: options.skillFrontMatter === true,
         wordBasedSuggestions: "off",
         parameterHints: { enabled: false },
         hover: { enabled: false },
@@ -157,6 +166,9 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         },
         onReplace(from, to, text) {
             replace(from, to, text);
+        },
+        onLink(href) {
+            options.onLink?.(href);
         },
     }, options.skillFrontMatter === true, options.skillFolderName ?? "");
 
@@ -204,6 +216,8 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     if (options.onHistory) {
         historyBindings(editor, options.onHistory);
     }
+    const skillCompletion = options.skillFrontMatter === true ? registerSkillFrontMatterCompletion(editor) : undefined;
+    options.onEditorReady?.(editor);
 
     const contentListener = editor.onDidChangeModelContent((event) => {
         refresh();
@@ -228,16 +242,25 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             return;
         }
         const target = event.target;
-        if (!(target instanceof Element) || !(target.closest(".inline-md-link") instanceof HTMLElement)) {
+        const element = target instanceof Element
+            ? target
+            : target instanceof Node
+                ? target.parentElement
+                : null;
+        const link = element?.closest(".inline-md-link");
+        if (!(link instanceof HTMLElement)) {
             return;
         }
-        const hit = editor.getTargetAtClientPoint(event.clientX, event.clientY);
-        const currentModel = editor.getModel();
-        const position = hit?.position;
-        if (!position || !currentModel) {
-            return;
+        let href = link.dataset.href;
+        if (!href) {
+            const hit = editor.getTargetAtClientPoint(event.clientX, event.clientY);
+            const currentModel = editor.getModel();
+            const position = hit?.position;
+            if (!position || !currentModel) {
+                return;
+            }
+            href = linkHref(currentModel.getValue(), currentModel.getOffsetAt(position));
         }
-        const href = linkHref(currentModel.getValue(), currentModel.getOffsetAt(position));
         if (!href) {
             return;
         }
@@ -270,6 +293,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             contentListener.dispose();
             cursorListener.dispose();
             mouseListener.dispose();
+            skillCompletion?.dispose();
             editor.getDomNode()?.removeEventListener("mousedown", openRenderedLink, true);
             presentation.dispose();
             editor.dispose();

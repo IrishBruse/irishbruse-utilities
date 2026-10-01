@@ -15,6 +15,7 @@ body,
     font-size: var(--vscode-editor-font-size, 14px);
     --ib-md-link: var(--vscode-textLink-foreground, #35A854);
     --ib-md-link-label: #61afef;
+    --ib-md-code-block-background: var(--vscode-textCodeBlock-background, #21252b);
 }
 
 .inline-md-column {
@@ -27,6 +28,14 @@ body,
 .inline-md-root .monaco-editor,
 .inline-md-root .monaco-editor .overflow-guard {
     outline: none;
+}
+
+.inline-md-root .monaco-scrollable-element > .scrollbar > .slider {
+    border-radius: 10px;
+}
+
+.inline-md-root .monaco-editor .view-zones > [monaco-view-zone] {
+    width: calc(100% - 16px) !important;
 }
 
 .inline-md-root .monaco-editor .view-lines {
@@ -209,16 +218,13 @@ body,
     padding-bottom: 10px;
 }
 
-.inline-md-table tbody tr:nth-child(even) td {
-    background: var(--vscode-textCodeBlock-background, #21252b);
-}
-
 .inline-md-root .monaco-editor .inline-md-quote {
     box-shadow: inset 3px 0 0 var(--vscode-textBlockQuote-border, #4b5163);
 }
 
 .inline-md-root .monaco-editor .inline-md-code-line {
-    background: var(--vscode-textCodeBlock-background, #21252bA0);
+    width: calc(100% - 16px) !important;
+    background: var(--ib-md-code-block-background);
 }
 
 .ib-skill-properties-panel {
@@ -234,9 +240,16 @@ body,
     pointer-events: auto;
 }
 
+.ib-skill-properties-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
 .ib-skill-properties-toggle {
     display: block;
-    width: 100%;
+    flex: 1;
+    width: auto;
     margin: 0;
     padding: 2px 0 8px;
     border: 0;
@@ -247,6 +260,28 @@ body,
     letter-spacing: 0.04em;
     text-align: left;
     cursor: pointer;
+}
+
+.ib-skill-properties-mode {
+    margin: 0;
+    padding: 2px 0;
+    border: 0;
+    background: transparent;
+    color: var(--vscode-textLink-foreground, #35A854);
+    font: inherit;
+    font-size: 11px;
+    line-height: 16px;
+    cursor: pointer;
+}
+
+.inline-md-root .monaco-editor .inline-md-skill-switch {
+    margin-right: 12px;
+    color: var(--vscode-textLink-foreground, #35A854) !important;
+    font-size: 11px;
+    line-height: 16px;
+    cursor: pointer;
+    pointer-events: auto;
+    user-select: none;
 }
 
 .ib-skill-properties-body {

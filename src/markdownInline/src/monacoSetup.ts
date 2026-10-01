@@ -1,7 +1,11 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import { toMonacoColor } from "./monacoColor";
 import "monaco-editor/min/vs/editor/editor.main.css";
+import "monaco-editor/esm/vs/editor/contrib/codelens/browser/codelensController.js";
+import "monaco-editor/esm/vs/editor/contrib/suggest/browser/suggestController.js";
 import { conf as markdownConf, language as markdownLanguage } from "monaco-editor/esm/vs/basic-languages/markdown/markdown.js";
 import { conf as typescriptConf, language as typescriptLanguage } from "monaco-editor/esm/vs/basic-languages/typescript/typescript.js";
+import { installSkillYaml } from "./skillYaml";
 
 const hiddenAreaSource = {};
 
@@ -24,14 +28,7 @@ function cssVariable(name: string): string {
 }
 
 function cssColor(name: string, fallback: string): string {
-    const value = cssVariable(name);
-    if (/^#(?:[0-9a-fA-F]{3,4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value)) {
-        return value;
-    }
-    if (/^(?:rgb|hsl)a?\(/i.test(value)) {
-        return value;
-    }
-    return fallback;
+    return toMonacoColor(cssVariable(name)) ?? fallback;
 }
 
 function editorWorkerUrl(): string {
@@ -65,6 +62,7 @@ export function installMonaco(): void {
     };
 
     register("markdown", markdownLanguage as monaco.languages.IMonarchLanguage, markdownConf as monaco.languages.LanguageConfiguration);
+    installSkillYaml();
     const typescript = typescriptLanguage as monaco.languages.IMonarchLanguage;
     const typescriptConfiguration = typescriptConf as monaco.languages.LanguageConfiguration;
     register("typescript", typescript, typescriptConfiguration);
@@ -83,6 +81,11 @@ export function installMonaco(): void {
             { token: "string.link.md", foreground: "35A854" },
             { token: "comment.md", foreground: "9DA5B4" },
             { token: "string.md", foreground: "CE9178" },
+            { token: "type.yaml", foreground: "9CDCFE" },
+            { token: "string.yaml", foreground: "CE9178" },
+            { token: "keyword.yaml", foreground: "569CD6" },
+            { token: "number.yaml", foreground: "B5CEA8" },
+            { token: "comment.yaml", foreground: "6A9955" },
         ],
         colors: {
             "editor.background": cssColor("--vscode-editor-background", "#1e1e1e"),

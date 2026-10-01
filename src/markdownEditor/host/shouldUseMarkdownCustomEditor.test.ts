@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { TabInputTextDiff, Uri, window } from "vscode";
+import { Uri, window } from "vscode";
 import {
     isDirectMarkdownEditUri,
     shouldUseMarkdownCustomEditor,
@@ -29,11 +29,23 @@ describe("shouldUseMarkdownCustomEditor", () => {
         const modified = Uri.file("/proj/readme.md");
         vi.mocked(window.tabGroups).all = [
             {
-                tabs: [{ input: Object.assign(new TabInputTextDiff(), { original, modified }) }],
+                tabs: [{ input: { original, modified } }],
             },
         ] as typeof window.tabGroups.all;
 
         expect(shouldUseMarkdownCustomEditor(modified)).toBe(false);
+        expect(shouldUseMarkdownCustomEditor(original)).toBe(false);
         expect(shouldUseMarkdownCustomEditor(Uri.file("/proj/other.md"))).toBe(true);
+    });
+
+    it("rejects a file URI opened in a multi-file compare", () => {
+        const modified = Uri.file("/proj/readme.md");
+        vi.mocked(window.tabGroups).all = [
+            {
+                tabs: [{ input: { resources: [{ original: Uri.file("/proj/old.md"), modified }] } }],
+            },
+        ] as typeof window.tabGroups.all;
+
+        expect(shouldUseMarkdownCustomEditor(modified)).toBe(false);
     });
 });

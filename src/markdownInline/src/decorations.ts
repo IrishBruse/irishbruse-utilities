@@ -2,14 +2,15 @@ import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { resolveImageUrl } from "./imageUrl";
 import { setHiddenAreas } from "./monacoSetup";
 import { parseScopes } from "./scopes";
-import { readFrontMatter, SkillPropertiesPanel, type FrontMatterSpan } from "./skillProperties";
+import { readFrontMatter, SkillPropertiesPanel, yamlFrontMatterScope, type FrontMatterSpan } from "./skillProperties";
 import type { CursorContext, Scope, TextRange } from "./types";
-import { markerVisibility, showsFormattedContent } from "./visibility";
+import { markerVisibility, selectionOverlaps, showsFormattedContent } from "./visibility";
 
 export interface InlinePresentationHandlers {
     onToggleTask(from: number, to: number): void;
     onReveal(offset: number): void;
     onReplace(from: number, to: number, text: string): void;
+    onLink?(href: string): void;
 }
 
 interface ZoneRecord {
@@ -151,6 +152,49 @@ function trimmedTextRange(source: string, range: TextRange): TextRange {
     return { start, end };
 }
 
+function caretIn(x: number, y: number): { node: Node; offset: number } | undefined {
+    const doc = document as Document & {
+        caretPositionFromPoint?(x: number, y: number): { offsetNode: Node; offset: number } | null;
+        caretRangeFromPoint?(x: number, y: number): Range | null;
+    };
+    const position = doc.caretPositionFromPoint?.(x, y);
+    if (position) {
+        return { node: position.offsetNode, offset: position.offset };
+    }
+    const range = doc.caretRangeFromPoint?.(x, y);
+    if (!range) {
+        return undefined;
+    }
+    return { node: range.startContainer, offset: range.startOffset };
+}
+
+function sourceOffsetAt(node: Node, offset: number): number | undefined {
+    const element = node instanceof Element ? node : node.parentElement;
+    const marked = element?.closest("[data-from]");
+    if (!(marked instanceof HTMLElement)) {
+        return undefined;
+    }
+    const from = Number(marked.dataset.from);
+    if (!Number.isFinite(from)) {
+        return undefined;
+    }
+    return from + offset;
+}
+
+function tableCellOffset(event: MouseEvent, cell: HTMLElement, fallback: number): number {
+    const start = Number(cell.dataset.start);
+    const end = Number(cell.dataset.end);
+    const caret = caretIn(event.clientX, event.clientY);
+    const fromCaret = caret && cell.contains(caret.node) ? sourceOffsetAt(caret.node, caret.offset) : undefined;
+    if (fromCaret !== undefined && Number.isFinite(start) && Number.isFinite(end) && fromCaret >= start && fromCaret <= end) {
+        return fromCaret;
+    }
+    if (Number.isFinite(start)) {
+        return start;
+    }
+    return fallback;
+}
+
 function appendFormatted(parent: HTMLElement, source: string, start: number, end: number, scopes: readonly Scope[]): void {
     const relevant = scopes
         .filter((scope) => INLINE_CELL.has(scope.kind) && scope.start >= start && scope.end <= end)
@@ -160,7 +204,10 @@ function appendFormatted(parent: HTMLElement, source: string, start: number, end
         const next = relevant.find((scope) => scope.start >= cursor);
         const plainEnd = next && next.start < end ? next.start : end;
         if (plainEnd > cursor) {
-            parent.append(document.createTextNode(source.slice(cursor, plainEnd)));
+            const text = document.createElement("span");
+            text.dataset.from = String(cursor);
+            text.textContent = source.slice(cursor, plainEnd);
+            parent.append(text);
             cursor = plainEnd;
         }
         if (!next || next.start >= end) {
@@ -170,6 +217,9 @@ function appendFormatted(parent: HTMLElement, source: string, start: number, end
         const className = contentClass(next);
         if (className) {
             node.className = className;
+        }
+        if (next.kind === "link" && next.url) {
+            node.dataset.href = next.url;
         }
         appendFormatted(node, source, next.contentStart, next.contentEnd, scopes);
         parent.append(node);
@@ -326,6 +376,8 @@ export class InlinePresentation {
     private frontMatter: FrontMatterSpan | undefined;
     private skillPanel: SkillPropertiesPanel | undefined;
     private skillZone: monaco.editor.IViewZone | undefined;
+    private skillView: "yaml" | "properties" = "yaml";
+    private readonly skillSwitchListener: monaco.IDisposable;
 
     constructor(
         private readonly editor: monaco.editor.IStandaloneCodeEditor,
@@ -335,6 +387,16 @@ export class InlinePresentation {
         private readonly skillFolderName: string,
     ) {
         this.decorations = editor.createDecorationsCollection();
+        this.skillSwitchListener = editor.onMouseDown((event) => {
+            const element = event.target.element;
+            if (!(element instanceof Element) || !element.closest(".inline-md-skill-switch")) {
+                return;
+            }
+            event.event.preventDefault();
+            event.event.stopPropagation();
+            this.skillView = "properties";
+            this.update();
+        });
     }
 
     update(): void {
@@ -384,7 +446,9 @@ export class InlinePresentation {
                 }
                 const line = coveredLine(model, bounds);
                 if (scope.kind === "thematicBreak" && this.frontMatter && bounds.start < this.frontMatter.end) {
-                    hiddenLines.add(line ?? model.getPositionAt(bounds.start).lineNumber);
+                    if (this.skillView === "properties") {
+                        hiddenLines.add(line ?? model.getPositionAt(bounds.start).lineNumber);
+                    }
                     continue;
                 }
                 if ((scope.kind === "image" || scope.kind === "thematicBreak") && line !== undefined) {
@@ -492,7 +556,28 @@ export class InlinePresentation {
             });
         }
 
-        if (this.frontMatter) {
+        if (this.frontMatter && this.skillView === "yaml") {
+            const fence = yamlFrontMatterScope(this.frontMatter);
+            this.addLineDecorations(model, fence, decorations);
+            if (!selectionOverlaps(fence, cursor)) {
+                fence.markers.forEach((marker, index) => {
+                    const bounds = withoutTrailingLineBreak(text, marker.start, marker.end);
+                    if (bounds.end <= bounds.start) {
+                        return;
+                    }
+                    decorations.push({
+                        range: rangeFromOffsets(model, bounds.start, bounds.end),
+                        options: index === 0
+                            ? {
+                                ...hideOptions(injected("Properties", "inline-md-skill-switch")),
+                                after: injected("yaml", "inline-md-lang"),
+                            }
+                            : hideOptions(),
+                    });
+                });
+            }
+        }
+        if (this.frontMatter && this.skillView === "properties") {
             const endLine = model.getPositionAt(Math.max(0, this.frontMatter.end - 1)).lineNumber;
             for (let line = 1; line <= endLine; line += 1) {
                 hiddenLines.add(line);
@@ -506,7 +591,7 @@ export class InlinePresentation {
         this.syncTasks(tasks);
         this.syncHits(hits);
         this.syncZones(zones);
-        if (this.frontMatter && this.skillPanel) {
+        if (this.frontMatter && this.skillPanel && this.skillView === "properties") {
             const yaml = text.includes("\r\n")
                 ? this.frontMatter.yaml.replace(/\r\n/g, "\n")
                 : this.frontMatter.yaml;
@@ -534,6 +619,7 @@ export class InlinePresentation {
             }
         });
         this.zones = [];
+        this.skillSwitchListener.dispose();
         setHiddenAreas(this.editor, []);
         this.selectionObserver?.disconnect();
         this.selectionObserver = undefined;
@@ -646,9 +732,24 @@ export class InlinePresentation {
         const frame = document.createElement("div");
         frame.className = "inline-md-table";
         frame.addEventListener("mousedown", (event) => {
+            const element = event.target instanceof Element
+                ? event.target
+                : event.target instanceof Node
+                    ? event.target.parentElement
+                    : null;
+            const link = element?.closest(".inline-md-link");
+            const href = link instanceof HTMLElement ? link.dataset.href : undefined;
             event.preventDefault();
             event.stopPropagation();
-            this.handlers.onReveal(from + 1);
+            if (href && this.handlers.onLink) {
+                this.handlers.onLink(href);
+                return;
+            }
+            const cell = element?.closest("td, th");
+            const offset = cell instanceof HTMLElement
+                ? tableCellOffset(event, cell, from + 1)
+                : from + 1;
+            this.handlers.onReveal(offset);
         });
         const table = document.createElement("table");
         const rows = scope.rows ?? [];
@@ -703,6 +804,8 @@ export class InlinePresentation {
         for (const cell of cells) {
             const node = document.createElement(cellTag);
             const trimmed = trimmedTextRange(source, cell);
+            node.dataset.start = String(trimmed.start);
+            node.dataset.end = String(trimmed.end);
             appendFormatted(node, source, trimmed.start, trimmed.end, scopes);
             row.append(node);
         }
@@ -723,6 +826,16 @@ export class InlinePresentation {
                     this.handlers.onReplace(span.yamlStart, span.yamlEnd, next);
                 },
                 () => this.layoutSkillZone(),
+                () => {
+                    this.skillView = "yaml";
+                    const span = this.frontMatter;
+                    const model = this.editor.getModel();
+                    if (span && model && selectionOverlaps(yamlFrontMatterScope(span), cursorContext(this.editor, model))) {
+                        const position = model.getPositionAt(Math.min(span.end, model.getValueLength()));
+                        this.editor.setPosition(position);
+                    }
+                    this.update();
+                },
             );
             this.skillZone = {
                 afterLineNumber: 0,

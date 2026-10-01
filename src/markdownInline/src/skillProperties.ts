@@ -1,5 +1,4 @@
 import {
-    completeSkillPropertyKeys,
     emptyProperty,
     parseSkillFrontMatter,
     serializeSkillFrontMatter,
@@ -7,6 +6,8 @@ import {
     type SkillMapEntry,
     type SkillProperty,
 } from "../../markdownEditor/webview/skillFrontMatterYaml";
+import { completeAgentPropertyKeys } from "./skillKeys";
+import type { Scope } from "./types";
 
 export interface FrontMatterSpan {
     readonly yamlStart: number;
@@ -49,6 +50,21 @@ export function readFrontMatter(text: string): FrontMatterSpan | undefined {
     return undefined;
 }
 
+export function yamlFrontMatterScope(span: FrontMatterSpan): Scope {
+    return {
+        kind: "codeBlock",
+        start: 0,
+        end: span.end,
+        contentStart: span.yamlStart,
+        contentEnd: span.yamlEnd,
+        markers: [
+            { start: 0, end: span.yamlStart },
+            { start: span.yamlEnd, end: span.end },
+        ],
+        language: "yaml",
+    };
+}
+
 export class SkillPropertiesPanel {
     readonly element: HTMLElement;
     private properties: SkillProperty[] = [];
@@ -63,6 +79,7 @@ export class SkillPropertiesPanel {
         private readonly readOnly: boolean,
         private readonly onYaml: (yaml: string) => void,
         private readonly onLayout: () => void,
+        private readonly onShowYaml: () => void,
     ) {
         this.element = document.createElement("div");
         this.element.className = "ib-skill-properties-panel";
@@ -104,7 +121,17 @@ export class SkillPropertiesPanel {
             this.addOpen = false;
             this.render();
         });
-        this.element.append(toggle);
+        const header = document.createElement("div");
+        header.className = "ib-skill-properties-header";
+        const yamlButton = document.createElement("button");
+        yamlButton.type = "button";
+        yamlButton.className = "ib-skill-properties-mode";
+        yamlButton.textContent = "YAML";
+        yamlButton.addEventListener("click", () => {
+            this.onShowYaml();
+        });
+        header.append(toggle, yamlButton);
+        this.element.append(header);
         if (this.collapsed) {
             this.onLayout();
             return;
@@ -269,7 +296,7 @@ export class SkillPropertiesPanel {
     }
 
     private suggestions(): string[] {
-        return completeSkillPropertyKeys(this.properties.map((property) => property.key), this.addPrefix);
+        return completeAgentPropertyKeys(this.properties.map((property) => property.key), this.addPrefix);
     }
 
     private onKeyDown(event: KeyboardEvent): void {

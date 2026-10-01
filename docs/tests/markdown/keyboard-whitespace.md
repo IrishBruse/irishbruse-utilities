@@ -4,6 +4,20 @@ Open with **Markdown Editor (ib-utilities)**. Edit the blocks below and confirm 
 
 Related: [lists-tasks.md](./lists-tasks.md), [README.md](./README.md).
 
+## Playground shortcuts
+
+Open this file with `npm run dev:markdown-inline` and `?fixture=keyboard-whitespace.md`. These keys apply only in that Inline Markdown playground, not in the full Markdown Editor custom editor.
+
+| Shortcut | Action |
+| :--- | :--- |
+| Ctrl+D | Add the next matching word to the selection (multi-cursor) |
+| Ctrl+F | Open the editor find widget |
+| Ctrl+B | Wrap the selection with `**` bold markers (toggle unwrap) |
+| Ctrl+I | Wrap the selection with `*` emphasis markers (toggle unwrap) |
+| Ctrl+U | Wrap the selection with `<u>` / `</u>` (raw HTML in source) |
+
+Select text before B, I, or U. With multiple cursors, exercise inline preview and marker hiding on the active line.
+
 ## Enter vs Shift+Enter
 
 Place the caret at the end of each line below and press the key.

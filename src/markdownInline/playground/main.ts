@@ -1,6 +1,7 @@
 import "../src/editor.css";
 import { mountInlineEditor } from "../src/editor";
 import { isSkillMarkdownPath, skillFolderNameFromPath } from "../../markdownEditor/host/webviewInitialState";
+import { installKeyboardWhitespaceTestKeybindings } from "./testKeybindings";
 
 const DOCS_PREFIX = "../../../docs/tests/markdown/";
 const LOCAL_FIXTURE = "fixture.md";
@@ -99,6 +100,10 @@ async function main(): Promise<void> {
         onLink(href) {
             openPlaygroundLink(href, baseUrl, fixtures);
         },
+        onEditorReady:
+            selected.id === "keyboard-whitespace.md"
+                ? installKeyboardWhitespaceTestKeybindings
+                : undefined,
     });
     if (selected.id === LOCAL_FIXTURE) {
         const blankLine = text.indexOf("\n\n");

@@ -1,4 +1,6 @@
 .inline-md-task-spacer {
+    display: inline-block;
+    min-width: calc(14px + 0.35em);
     vertical-align: top;
     visibility: hidden;
 }

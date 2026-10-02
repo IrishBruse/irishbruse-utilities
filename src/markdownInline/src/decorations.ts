@@ -54,6 +54,13 @@ class TaskWidget implements monaco.editor.IContentWidget {
     }
 }
 
+function markerLineAt(model: monaco.editor.ITextModel, offset: number): { lineStart: number; lineEnd: number } {
+    const length = model.getValueLength();
+    const position = model.getPositionAt(clampOffset(offset, length));
+    const lineStart = model.getOffsetAt({ lineNumber: position.lineNumber, column: 1 });
+    return { lineStart, lineEnd: lineStart + model.getLineLength(position.lineNumber) };
+}
+
 function cursorContext(editor: monaco.editor.IStandaloneCodeEditor, model: monaco.editor.ITextModel): CursorContext {
     const selection = editor.getSelection();
     const head = selection?.getPosition() ?? { lineNumber: 1, column: 1 };
@@ -494,7 +501,7 @@ export class InlinePresentation {
                 if (!marker || marker.end <= marker.start) {
                     continue;
                 }
-                if (findHits(scope, finds) || markerVisibility(scope, marker, cursor) !== "hidden") {
+                if (findHits(scope, finds) || markerVisibility(scope, marker, cursor, markerLineAt(model, marker.start)) !== "hidden") {
                     continue;
                 }
                 const bounds = withoutTrailingLineBreak(text, marker.start, marker.end);
@@ -622,7 +629,7 @@ export class InlinePresentation {
                 }
             }
             for (const marker of scope.markers) {
-                if (markerVisibility(scope, marker, cursor) !== "ghost") {
+                if (markerVisibility(scope, marker, cursor, markerLineAt(model, marker.start)) !== "ghost") {
                     continue;
                 }
                 for (const segment of subtractRanges(marker.start, marker.end, replaced)) {
@@ -635,7 +642,7 @@ export class InlinePresentation {
             this.addLineDecorations(model, scope, decorations);
             if (
                 scope.kind === "codeBlock"
-                && scope.markers.some((marker) => markerVisibility(scope, marker, cursor) === "hidden")
+                && scope.markers.some((marker) => markerVisibility(scope, marker, cursor, markerLineAt(model, marker.start)) === "hidden")
                 && !(isMermaidCodeBlock(scope.language) && !selectionOverlaps(scope, cursor))
             ) {
                 const codeText = text.slice(scope.contentStart, scope.contentEnd).trim();
@@ -874,12 +881,22 @@ export class InlinePresentation {
             zone.heightInPx = 28;
             this.layoutZone(`image:${from}:${src}`);
         });
-        image.addEventListener("load", () => {
-            const height = image.getBoundingClientRect().height;
-            if (height > 0) {
-                zone.heightInPx = Math.min(height, 240);
-                this.layoutZone(`image:${from}:${src}`);
+        const fitImage = (): void => {
+            const displayed = image.getBoundingClientRect().height;
+            const height = displayed > 0 ? displayed : image.naturalHeight;
+            if (height <= 0) {
+                return;
             }
+            const next = Math.min(Math.ceil(height), 240);
+            if (Math.abs(next - (zone.heightInPx ?? 0)) <= 1) {
+                return;
+            }
+            zone.heightInPx = next;
+            this.layoutZone(`image:${from}:${src}`);
+        };
+        image.addEventListener("load", () => {
+            fitImage();
+            requestAnimationFrame(fitImage);
         });
         image.src = src;
         frame.append(image);

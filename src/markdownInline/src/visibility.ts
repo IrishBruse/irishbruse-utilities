@@ -52,16 +52,26 @@ function blockReveal(scope: TextRange, cursor: CursorContext): boolean {
         || adjacentApproach(scope, cursor);
 }
 
-function selectionCoversMarkerLine(marker: TextRange, cursor: CursorContext): boolean {
+export interface MarkerLineContext {
+    readonly lineStart: number;
+    readonly lineEnd: number;
+}
+
+function selectionCoversMarkerLine(marker: TextRange, cursor: CursorContext, markerLine: MarkerLineContext): boolean {
     const { from, to } = selectionBounds(cursor);
     if (from === to) {
         return false;
     }
-    return rangesOverlap(marker.start, marker.end, cursor.lineStart, cursor.lineEnd)
-        && rangesOverlap(cursor.lineStart, cursor.lineEnd, from, to);
+    return rangesOverlap(marker.start, marker.end, markerLine.lineStart, markerLine.lineEnd)
+        && rangesOverlap(markerLine.lineStart, markerLine.lineEnd, from, to);
 }
 
-export function markerVisibility(scope: Scope, marker: TextRange, cursor: CursorContext): MarkerVisibility {
+export function markerVisibility(
+    scope: Scope,
+    marker: TextRange,
+    cursor: CursorContext,
+    markerLine: MarkerLineContext,
+): MarkerVisibility {
     if (scope.kind === "heading") {
         return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
             ? "raw"
@@ -71,7 +81,7 @@ export function markerVisibility(scope: Scope, marker: TextRange, cursor: Cursor
         return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) ? "raw" : "hidden";
     }
     if (STRUCTURAL.has(scope.kind)) {
-        return cursorOnRange(marker, cursor) || selectionCoversMarkerLine(marker, cursor) ? "raw" : "hidden";
+        return cursorOnRange(marker, cursor) || selectionCoversMarkerLine(marker, cursor, markerLine) ? "raw" : "hidden";
     }
     if (scope.kind === "image") {
         return blockReveal(scope, cursor) ? "raw" : "hidden";

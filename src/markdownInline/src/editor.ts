@@ -300,9 +300,6 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         }
     });
     const cursorListener = editor.onDidChangeCursorSelection(() => {
-        if (isDragSelecting()) {
-            return;
-        }
         refresh();
     });
     const openRenderedLink = (event: MouseEvent): void => {

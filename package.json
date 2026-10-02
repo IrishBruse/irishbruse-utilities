@@ -49,9 +49,7 @@
         "install:local": "npm run package:vsix && node scripts/install-local.mjs",
         "release": "node scripts/release.mjs",
         "fetch-markdown-large-fixtures": "node docs/tests/markdown/fetch-large-fixtures.mjs",
-        "test:watch": "vitest watch",
-        "generate:contributes": "node generators/contributes.generator.ts",
-        "generate:contributes:watch": "node --watch generators/contributes.generator.ts"
+        "test:watch": "vitest watch"
     },
     "main": "./dist/extension.js",
     "contributes": {

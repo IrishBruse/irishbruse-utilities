@@ -31,7 +31,7 @@ describe("mouse drag selection", () => {
         const fitNow = source.slice(source.indexOf("const fitNow"), source.indexOf("const fitContent"));
         expect(fitNow).toContain("isDragSelecting");
         const cursor = source.slice(source.indexOf("onDidChangeCursorSelection"), source.indexOf("const openRenderedLink"));
-        expect(cursor).toContain("isDragSelecting");
+        expect(cursor).not.toContain("isDragSelecting");
         const css = readFileSync(layersCssPath, "utf8");
         expect(css).toContain(".view-overlays > div:has(.selected-text)");
         expect(css).toMatch(/\.view-lines\s*\{[^}]*z-index:\s*3/);

@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+-   **Change**: Remove the `generators/` package and `generate:contributes` scripts; maintain `src/constants.ts` by hand.
+
+-   **Fix**: Inline Markdown updates inline marks while the mouse is held during a drag selection, not only after release.
+
+-   **Fix**: Inline Markdown reveals list and task markers when a multi-line selection crosses their line, so the selection highlight stays continuous.
+
+-   **Fix**: Inline Markdown sizes an image view zone from the picture so a missing image below it does not paint on the picture.
+
 -   **Fix**: Inline Markdown skill front matter uses the code block background and a yaml label.
 
 -   **Fix**: Inline Markdown keeps a table rendered when the caret is on the heading above the blank line before it.

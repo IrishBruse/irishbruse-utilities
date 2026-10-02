@@ -1,6 +1,7 @@
 # Inline Markdown playground
 
 Test markdown files live in `docs/tests/markdown/` and load via `?fixture=<path>` (default `playground.md`).
+Feature samples live in `src/markdownInline/tests/<feature>/test-N.md` and load the same way, for example `?fixture=list/test-1.md`.
 
 ## VS Code iframe theme (`vscode-iframe-injected-theme.css`)
 

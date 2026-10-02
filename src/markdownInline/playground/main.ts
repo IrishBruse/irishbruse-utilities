@@ -4,9 +4,15 @@ import { hasYamlFrontMatter } from "../src/yamlFrontMatter";
 import { isSkillMarkdownPath } from "../src/skillPath";
 
 const DOCS_PREFIX = "../../../docs/tests/markdown/";
+const TESTS_PREFIX = "../tests/";
 const DEFAULT_FIXTURE = "playground.md";
 
-const fixtureLoaders = import.meta.glob("../../../docs/tests/markdown/**/*.md", {
+const docsLoaders = import.meta.glob("../../../docs/tests/markdown/**/*.md", {
+    query: "?raw",
+    import: "default",
+});
+
+const testLoaders = import.meta.glob("../tests/**/test-*.md", {
     query: "?raw",
     import: "default",
 });
@@ -20,10 +26,19 @@ declare global {
 interface Fixture {
     id: string;
     load: () => Promise<string>;
+    directory: "docs" | "tests";
 }
 
-function fixtureId(globKey: string): string {
-    return globKey.startsWith(DOCS_PREFIX) ? globKey.slice(DOCS_PREFIX.length) : globKey;
+function collectFixtures(
+    loaders: Record<string, unknown>,
+    prefix: string,
+    directory: Fixture["directory"],
+): Fixture[] {
+    return Object.entries(loaders).map(([key, load]) => ({
+        id: key.startsWith(prefix) ? key.slice(prefix.length) : key,
+        load: load as () => Promise<string>,
+        directory,
+    }));
 }
 
 function openPlaygroundLink(href: string, baseUrl: string, fixtures: readonly Fixture[]): void {
@@ -47,14 +62,16 @@ function openPlaygroundLink(href: string, baseUrl: string, fixtures: readonly Fi
     window.open(resolved.href, "_blank", "noopener");
 }
 
-function documentUrl(id: string): string {
-    return new URL(`/@fs${__DOCS_MARKDOWN_FS__}/${id}`, window.location.origin).href;
+function documentUrl(fixture: Fixture): string {
+    const root = fixture.directory === "docs" ? __DOCS_MARKDOWN_FS__ : __INLINE_TESTS_FS__;
+    return new URL(`/@fs${root}/${fixture.id}`, window.location.origin).href;
 }
 
 async function main(): Promise<void> {
-    const fixtures: Fixture[] = Object.entries(fixtureLoaders)
-        .map(([key, load]) => ({ id: fixtureId(key), load: load as () => Promise<string> }))
-        .sort((left, right) => {
+    const fixtures: Fixture[] = [
+        ...collectFixtures(docsLoaders, DOCS_PREFIX, "docs"),
+        ...collectFixtures(testLoaders, TESTS_PREFIX, "tests"),
+    ].sort((left, right) => {
             if (left.id === DEFAULT_FIXTURE) {
                 return -1;
             }
@@ -85,7 +102,7 @@ async function main(): Promise<void> {
     });
 
     const text = await selected.load();
-    const baseUrl = documentUrl(selected.id);
+    const baseUrl = documentUrl(selected);
     window.__inlineMarkdown = mountInlineEditor(parent, {
         text,
         documentUrl: baseUrl,

@@ -32,7 +32,8 @@ Red is `npm run verify-markdownInline -- trace "<feature>"` exiting non-zero on 
 
 ## Inline Markdown fixtures
 
-All playground and manual test markdown lives under `docs/tests/markdown/` only.
+Manual playground markdown lives under `docs/tests/markdown/`.
+Feature samples live under `src/markdownInline/tests/<feature>/test-N.md`.
 Do not add `.md` fixtures under `src/markdownInline/playground/`.
 
 The playground loads a file with `?fixture=<id>`, where `<id>` is the path relative to that folder (for example `playground.md` or `lists-tasks.md`).
@@ -41,6 +42,7 @@ The playground loads a file with `?fixture=<id>`, where `<id>` is the path relat
 | --- | --- |
 | `http://127.0.0.1:5175/?fixture=playground.md` | Default verify regression map (`npm run verify-markdownInline -- regress`). Compact coverage for headings, links, tasks, tables, mermaid, wrapped lists. |
 | `http://127.0.0.1:5175/?fixture=lists-tasks.md` | List markers, nesting, task toggles, quotes, Enter-continues-task scenarios. |
+| `http://127.0.0.1:5175/?fixture=list/test-1.md` | List feature sample used by the Vitest browser tests. |
 | Other `docs/tests/markdown/**/*.md` | Same `?fixture=` pattern; see `docs/tests/markdown/README.md`. |
 
 When a bug only appears on a non-default fixture, extend the right file under `docs/tests/markdown/`, point evidence at that content, and open the matching `?fixture=` URL in the verify CLI (or add a dedicated map entry whose Reach opens that fixture).

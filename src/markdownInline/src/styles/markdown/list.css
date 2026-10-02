@@ -1,3 +1,7 @@
+.inline-md-root .monaco-editor .view-overlays > div.inline-md-list-gap-after:has(.selected-text) .selected-text {
+    bottom: calc(-1 * var(--ib-md-list-item-gap, 4px)) !important;
+}
+
 .inline-md-bullet {
     display: inline-block;
     width: 1.1em;

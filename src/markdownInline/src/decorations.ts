@@ -411,7 +411,7 @@ export class InlinePresentation {
     private zones: ZoneRecord[] = [];
     private zoneKey = "";
     private headingExtras = new Map<number, number>();
-    private selectionObserver: MutationObserver | undefined;
+    private selectionListener: monaco.IDisposable | undefined;
     private selectionFrame = 0;
     private frontMatter: FrontMatterSpan | undefined;
     private readonly mermaidZones = new Map<string, ZoneRecord>();
@@ -433,6 +433,9 @@ export class InlinePresentation {
         } | null;
         this.findListener = controller?.getState().onFindReplaceStateChange(() => {
             this.update();
+        });
+        this.selectionListener = editor.onDidChangeCursorSelection(() => {
+            this.scheduleSelectionHeights();
         });
     }
 
@@ -698,7 +701,15 @@ export class InlinePresentation {
         const tabSize = this.editor.getOption(monaco.editor.EditorOption.tabSize);
         const lineModel = monacoLineModel(model);
         const listStarts = listItemStartLines(lineModel, scopes, tabSize);
-        for (const lineNumber of listItemGapAfterLines(lineModel, listStarts, tabSize)) {
+        const listGapLines = listItemGapAfterLines(lineModel, listStarts, tabSize);
+        for (const lineNumber of listGapLines) {
+            decorations.push({
+                range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+                options: {
+                    isWholeLine: true,
+                    className: "inline-md-list-gap-after",
+                },
+            });
             const spacer = document.createElement("div");
             zones.push({
                 key: `list-gap:${lineNumber}:${LIST_ITEM_GAP_PX}`,
@@ -712,12 +723,11 @@ export class InlinePresentation {
         }
 
         this.headingExtras = headingExtras;
-        this.watchSelections();
-        this.scheduleSelectionHeights();
         this.decorations.set(decorations);
         this.syncTasks(tasks);
         this.syncHits(hits);
         this.syncZones(zones);
+        this.scheduleSelectionHeights();
         const mermaidLensKey = scopes
             .filter((scope) => scope.kind === "codeBlock" && isMermaidCodeBlock(scope.language))
             .map((scope) => `${scope.start}:${scope.end}:${text.slice(scope.contentStart, scope.contentEnd).trim()}`)
@@ -768,8 +778,8 @@ export class InlinePresentation {
         setHiddenAreas(this.editor, []);
         this.findListener?.dispose();
         this.findListener = undefined;
-        this.selectionObserver?.disconnect();
-        this.selectionObserver = undefined;
+        this.selectionListener?.dispose();
+        this.selectionListener = undefined;
         if (this.selectionFrame !== 0) {
             cancelAnimationFrame(this.selectionFrame);
             this.selectionFrame = 0;
@@ -1139,28 +1149,32 @@ export class InlinePresentation {
         }
     }
 
-    private watchSelections(): void {
-        if (this.selectionObserver) {
-            return;
-        }
-        const overlays = this.editor.getDomNode()?.querySelector(".view-overlays");
-        if (!overlays) {
-            return;
-        }
-        this.selectionObserver = new MutationObserver(() => {
-            this.scheduleSelectionHeights();
-        });
-        this.selectionObserver.observe(overlays, { childList: true, subtree: true });
-    }
-
     private scheduleSelectionHeights(): void {
         if (this.selectionFrame !== 0) {
             return;
         }
         this.selectionFrame = requestAnimationFrame(() => {
             this.selectionFrame = 0;
+            this.syncListGapOverlayClasses();
             this.applySelectionHeights();
         });
+    }
+
+    private syncListGapOverlayClasses(): void {
+        const dom = this.editor.getDomNode();
+        if (!dom) {
+            return;
+        }
+        const viewLines = dom.querySelectorAll<HTMLElement>(".view-lines .view-line");
+        const overlays = dom.querySelectorAll<HTMLElement>(".view-overlays > div");
+        for (let index = 0; index < viewLines.length; index += 1) {
+            const line = viewLines[index];
+            const overlay = overlays[index];
+            if (!line || !overlay) {
+                continue;
+            }
+            overlay.classList.toggle("inline-md-list-gap-after", line.classList.contains("inline-md-list-gap-after"));
+        }
     }
 
     private applySelectionHeights(): void {

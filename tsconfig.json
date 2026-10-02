@@ -23,6 +23,7 @@
         "src/markdownEditor/webview/**",
         "src/markdownEditor/vendor/**",
         "src/markdownInline/src/**",
-        "src/markdownInline/playground/**"
+        "src/markdownInline/playground/**",
+        "src/markdownInline/tests/**"
     ]
 }

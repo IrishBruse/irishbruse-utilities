@@ -17,8 +17,9 @@ The app is the Inline Markdown playground at `http://127.0.0.1:5175/`.
 
 ## Fixtures
 
-All test markdown files live in `docs/tests/markdown/` (not under the playground package).
-Load one with `?fixture=<relative-path>`, for example `http://127.0.0.1:5175/?fixture=playground.md` or `http://127.0.0.1:5175/?fixture=lists-tasks.md`.
+Manual fixtures live in `docs/tests/markdown/` (not under the playground package).
+Feature samples live in `src/markdownInline/tests/<feature>/test-N.md`.
+Load either with `?fixture=<relative-path>`, for example `http://127.0.0.1:5175/?fixture=playground.md` or `http://127.0.0.1:5175/?fixture=list/test-1.md`.
 The verify CLI opens `playground.md` by default; the feature map and evidence assume that file unless you change the CLI URL for a dedicated check.
 See `docs/tests/markdown/README.md` for the full catalog.
 

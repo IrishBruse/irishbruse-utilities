@@ -9,7 +9,11 @@
 </head>
 <body class="vscode-dark">
     <nav id="toolbar">
-        <label for="fixture">Test file</label>
+        <div id="source" role="group" aria-label="File source">
+            <button type="button" data-source="docs" aria-pressed="false">Docs</button>
+            <button type="button" data-source="tests" aria-pressed="false">Tests</button>
+        </div>
+        <label for="fixture">File</label>
         <select id="fixture"></select>
     </nav>
     <div id="editor"></div>

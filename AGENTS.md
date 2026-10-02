@@ -11,12 +11,11 @@ Inline Markdown package boundary: `src/markdownInline/AGENTS.md`.
 
 When a change touches the Inline Markdown webview or playground, verify it with verify-markdownInline before finishing.
 Follow `.cursor/skills/verify-markdownInline/SKILL.md`.
-Call `npm run verify-markdownInline` for every run and every trace.
 If the playground is already running, leave that server running.
-
-When you finish a new Inline Markdown feature, update `.cursor/skills/verify-markdownInline/feature-map.md` with a map entry (Does, Reach, Activate, From) and add its evidence in the verify CLI.
-Extend `docs/tests/markdown/playground.md` (or another file in `docs/tests/markdown/`) when the feature needs playground coverage.
-Run `npm run verify-markdownInline -- validate` and `npm run verify-markdownInline -- regress` before finishing.
+A new test case follows `.cursor/skills/markdown-inline-case/SKILL.md`.
+A new feature gets `src/markdownInline/tests/<feature-name>/` with `README.md`, `test-N.md`, `integration.test.ts`, and `regression.test.ts`.
+A paint or layout bug also keeps its picture in that folder's `screenshots/`.
+Finish with `npm run test:markdown-inline-browser` exiting 0.
 
 ## Regression
 

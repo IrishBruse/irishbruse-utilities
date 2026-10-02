@@ -19,11 +19,13 @@ Shared logic that the extension also needs (YAML front matter, skill front matte
 | Path | Role |
 | --- | --- |
 | `src/` | Editor webview implementation (Monaco, decorations, themes, mermaid, skill YAML) |
-| `playground/` | Local Vite harness and verify fixtures; may import `../src` only |
+| `playground/` | Local Vite harness; may import `../src` only |
+| `tests/<feature>/` | Feature samples, integration tests, regressions, and saved pictures |
+| `support/` | Shared playground browser setup for those tests |
 | `build.mjs` | Produces `media/markdownInline` |
 
 Playground theme notes: `playground/AGENTS.md`.
 
 ## Verify
 
-After changing `src/` or `playground/`, run `npm run verify-markdownInline` from the repo root (see `.cursor/skills/verify-markdownInline/SKILL.md`).
+After changing `src/` or `playground/`, run `npm run test:markdown-inline-browser` from the repo root (see `.cursor/skills/verify-markdownInline/SKILL.md`).

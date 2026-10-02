@@ -36,7 +36,6 @@
         "build-markdown-inline": "npm run build --workspace @ib-utilities/markdown-inline",
         "watch-markdown-inline": "npm run watch --workspace @ib-utilities/markdown-inline",
         "dev:markdown-inline": "npm run dev --workspace @ib-utilities/markdown-inline",
-        "verify-markdownInline": "node .cursor/skills/verify-markdownInline/cli/main.ts",
         "check:markdown-inline": "npm run check --workspace @ib-utilities/markdown-inline",
         "test:markdown-inline": "npm run test --workspace @ib-utilities/markdown-inline",
         "test:markdown-inline-browser": "vitest run --config vitest.markdownInline.config.mts",

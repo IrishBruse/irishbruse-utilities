@@ -724,6 +724,7 @@ export class InlinePresentation {
         }
 
         this.headingExtras = headingExtras;
+        this.paintFrontMatter(model, decorations);
         this.decorations.set(decorations);
         this.syncTasks(tasks);
         this.syncHits(hits);
@@ -1050,6 +1051,32 @@ export class InlinePresentation {
             if (record.id) {
                 accessor.layoutZone(record.id);
             }
+        });
+    }
+
+    private paintFrontMatter(
+        model: monaco.editor.ITextModel,
+        decorations: monaco.editor.IModelDeltaDecoration[],
+    ): void {
+        const span = this.frontMatter;
+        if (!span) {
+            return;
+        }
+        const length = model.getValueLength();
+        const start = model.getPositionAt(0);
+        const end = model.getPositionAt(clampOffset(Math.max(0, span.end - 1), length));
+        for (let line = start.lineNumber; line <= end.lineNumber; line += 1) {
+            decorations.push({
+                range: new monaco.Range(line, 1, line, 1),
+                options: { isWholeLine: true, className: "inline-md-code-line" },
+            });
+        }
+        const column = Math.min(2, model.getLineMaxColumn(start.lineNumber));
+        decorations.push({
+            range: new monaco.Range(start.lineNumber, 1, start.lineNumber, column),
+            options: {
+                before: injected("yaml", "inline-md-lang"),
+            },
         });
     }
 

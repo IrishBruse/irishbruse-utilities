@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "check": "tsc --noEmit -p tsconfig.json && npm run verify-markdownInline --prefix ../.. -- map check",
+        "check": "tsc --noEmit -p tsconfig.json && npm run test:markdown-inline-browser --prefix ../..",
         "test": "npm test --prefix ../.. -- src/markdownInline",
         "dev": "vite --config playground/vite.config.ts",
         "e2e": "node playground/e2e.mjs",

@@ -14,7 +14,19 @@ Quote the red failure to the user before editing production code.
 
 Write one check that asserts the correct behavior.
 
-Prefer a vitest test beside the module, in the existing `*.test.ts` style.
+When the bug is visible in the Inline Markdown editor or playground, add it to that feature's folder.
+Follow `.cursor/skills/markdown-inline-case/SKILL.md`, then `.cursor/skills/verify-markdownInline/SKILL.md`.
+The check is `src/markdownInline/tests/<feature-name>/regression.test.ts`.
+The sample is the next `test-N.md` in that folder.
+A paint or layout bug also saves a picture under `screenshots/`.
+
+Run only that file:
+
+```bash
+npm run test:markdown-inline-browser -- src/markdownInline/tests/<feature-name>/regression.test.ts
+```
+
+When a unit test can see the bug, put the check in the existing `*.test.ts` beside the module.
 Run only that test:
 
 ```bash
@@ -26,28 +38,6 @@ A load error means the test is unfinished: repair the test and rerun this step.
 A command that already exits 0 means the check does not catch the bug: tighten the assertion and rerun until it goes red.
 When the reported bug cannot be reproduced, stop and say so.
 
-When the failure is only visible in the Inline Markdown webview or playground, the check is verify-markdownInline evidence.
-Follow `.cursor/skills/verify-markdownInline/SKILL.md`.
-Red is `npm run verify-markdownInline -- trace "<feature>"` exiting non-zero on that evidence before the fix.
-
-## Inline Markdown fixtures
-
-Manual playground markdown lives under `docs/tests/markdown/`.
-Feature samples live under `src/markdownInline/tests/<feature>/test-N.md`.
-Do not add `.md` fixtures under `src/markdownInline/playground/`.
-
-The playground loads a file with `?fixture=<id>`, where `<id>` is the path relative to that folder (for example `playground.md` or `lists-tasks.md`).
-
-| URL | Use |
-| --- | --- |
-| `http://127.0.0.1:5175/?fixture=playground.md` | Default verify regression map (`npm run verify-markdownInline -- regress`). Compact coverage for headings, links, tasks, tables, mermaid, wrapped lists. |
-| `http://127.0.0.1:5175/?fixture=lists-tasks.md` | List markers, nesting, task toggles, quotes, Enter-continues-task scenarios. |
-| `http://127.0.0.1:5175/?fixture=list/test-1.md` | List feature sample used by the Vitest browser tests. |
-| Other `docs/tests/markdown/**/*.md` | Same `?fixture=` pattern; see `docs/tests/markdown/README.md`. |
-
-When a bug only appears on a non-default fixture, extend the right file under `docs/tests/markdown/`, point evidence at that content, and open the matching `?fixture=` URL in the verify CLI (or add a dedicated map entry whose Reach opens that fixture).
-Prefer adding cases to `playground.md` when they fit the default regression suite.
-
 ## Green
 
 Change production code.
@@ -55,9 +45,8 @@ Rerun the same command from Red.
 Green means that command exits 0.
 
 Then run the wider suite for the area you changed.
-`npm test` covers the repo.
-`npm run test:markdown-inline` covers `src/markdownInline`.
-A webview or playground change also finishes with `npm run verify-markdownInline -- regress` exiting 0.
+`npm test` covers the repo unit tests.
+An Inline Markdown editor or playground change also finishes with `npm run test:markdown-inline-browser` exiting 0.
 
 ## Report
 

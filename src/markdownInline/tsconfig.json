@@ -13,5 +13,5 @@
         "sourceMap": true,
         "types": ["vite/client", "node"]
     },
-    "include": ["src/**/*.ts", "src/**/*.d.ts", "playground/**/*.ts", "playground/**/*.d.ts", "tests/**/*.ts"]
+    "include": ["src/**/*.ts", "src/**/*.d.ts", "playground/**/*.ts", "playground/**/*.d.ts", "tests/**/*.ts", "support/**/*.ts", "support/**/*.d.ts"]
 }

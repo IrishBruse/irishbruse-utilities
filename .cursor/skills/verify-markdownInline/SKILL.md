@@ -1,71 +1,42 @@
 ---
 name: verify-markdownInline
-description: Run the Inline Markdown playground, its regression suite, and map validation. Use when verifying a change, collecting a trace, or interpreting a screenshot or vague UI report.
+description: Prove an Inline Markdown editor or playground change with the feature tests under src/markdownInline/tests. Use when verifying the editor, the playground, or a visual change.
 ---
 
 # verify-markdownInline
 
-Call `npm run verify-markdownInline` for every run, trace, regression, and validation.
-A run is that CLI command.
-A raw browser session does not count, even when its name is verify-markdownInline, and it writes no trace.
-When the CLI cannot do the check, say so.
-Read `feature-map.md` before choosing which feature a report means.
-The trace command prints the trace path.
+The playground is `http://127.0.0.1:5175/`.
+`npm run dev:markdown-inline` starts it when nothing is listening there.
+When that URL is already up, leave the server running.
 
-The app is the Inline Markdown playground at `http://127.0.0.1:5175/`.
-`npm run dev:markdown-inline` is the start command when nothing is listening there.
+A change to the editor or playground is finished when `npm run test:markdown-inline-browser` exits 0.
+That command is the run.
+`npm test` does not open the playground.
 
-## Fixtures
+## Feature folder
 
-Manual fixtures live in `docs/tests/markdown/` (not under the playground package).
-Feature samples live in `src/markdownInline/tests/<feature>/test-N.md`.
-Load either with `?fixture=<relative-path>`, for example `http://127.0.0.1:5175/?fixture=playground.md` or `http://127.0.0.1:5175/?fixture=list/test-1.md`.
-The verify CLI opens `playground.md` by default; the feature map and evidence assume that file unless you change the CLI URL for a dedicated check.
-See `docs/tests/markdown/README.md` for the full catalog.
+Each feature lives in `src/markdownInline/tests/<feature-name>/`.
 
-## Commands
+| File | Role |
+| --- | --- |
+| `README.md` | What the feature does, in plain English. |
+| `test-N.md` | One sample document. The playground opens it as `?fixture=<feature-name>/test-N.md`. |
+| `integration.test.ts` | The feature working as a whole. |
+| `regression.test.ts` | A bug that already happened. |
+| `screenshots/` | The saved picture a visual check compares. |
 
-- `npm run verify-markdownInline -- up` starts the playground and waits until `http://127.0.0.1:5175/` returns HTTP 200.
-  If that URL is already up, `up` leaves the existing server running.
-- `npm run verify-markdownInline -- down` stops the process `up` started.
-- `npm run verify-markdownInline -- open "<feature>"` reaches that feature map entry.
-- `npm run verify-markdownInline -- trace "<feature>"` opens it, asserts that feature's evidence, writes a trace file, and prints its path.
-- `npm run verify-markdownInline -- regress` runs validation, then asserts every feature's evidence. It prints each passing feature and, on failure, the feature name plus a text snapshot.
-- `npm run verify-markdownInline -- validate` checks the map and the evidence without a browser. It exits non-zero and names each problem.
-- `npm run verify-markdownInline -- map check` drives every Reach and Activate and exits non-zero when a locator fails, naming the feature.
-- `npm run verify-markdownInline -- map refresh` rewrites Reach and Activate from the live app and leaves Does, From, and Sequence as written.
+Shared browser setup for those tests lives in `src/markdownInline/support/browser.ts`.
+A new feature is finished when that folder exists and the browser command exits 0.
+The sample for a new case is the next `test-N.md` in that folder.
 
-A one-line crop, "formatted markdown that starts with Hello", resolves to Rendered document.
-The command is `npm run verify-markdownInline -- open "Rendered document"`.
-A task checkbox, including one with a list bullet beside `- [ ]`, resolves to Task.
-The command is `npm run verify-markdownInline -- open "Task"`.
+Manual documents that a person opens in VS Code stay in `docs/tests/markdown/`.
 
-## Regression
+## Visual check
 
-`regress` is the suite.
-`map check` only proves a locator runs.
-`trace` is one feature plus a profile.
-A behavior change is finished when `regress` exits 0.
-Evidence reads view text with non-breaking spaces folded into normal spaces, and a selector click waits until that element is inside the viewport.
-
-## Validation
-
-`validate` requires every map entry to have evidence, every evidence key to name a map entry, every From to resolve without a cycle, and every Activate to be a locator the runner can perform (`offset=`, `text=`, `alt=`, `role=`, or a CSS selector).
-Run it when you add or rename a feature.
-`regress` runs it first.
-`Sequence: yes` means the evidence drives the gesture, so regression and trace skip that entry's Activate and still run its parent chain.
-
-## Feature map
-
-When a locator cannot hit rendered text, change that entry's Activate.
-Prefer `window.__inlineMarkdown` and `?fixture=`.
-Leave the product markup as the feature wrote it.
-A checker or feature-map edit that changes whether a check passes is its own step, and it is reported to the user.
-
-## Reports
-
-A color or theme report starts from the VS Code user settings the playground theme loader already reads, and from a sample of the reference screenshot.
-When a quoted setting does not name the thing in the complaint, measure the rendered pixel against the reference, or ask, before applying the number.
+A paint or layout bug saves a picture from `#editor` beside the regression test.
+The first run writes `screenshots/<name>.png` and exits non-zero.
+The next run compares that picture.
+Done when the compare exits 0.
 
 ## Playground is not the host
 

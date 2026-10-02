@@ -4,7 +4,7 @@ export default defineConfig({
     test: {
         globals: true,
         environment: "node",
-        include: ["src/**/*.test.ts", ".cursor/skills/verify-markdownInline/cli/**/*.test.ts"],
+        include: ["src/**/*.test.ts"],
         exclude: [...configDefaults.exclude, "src/markdownInline/tests/**"],
         setupFiles: ["src/test/setup.ts"],
     },

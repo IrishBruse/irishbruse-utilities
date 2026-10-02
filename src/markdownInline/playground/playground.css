@@ -44,6 +44,29 @@ body {
     font-size: 13px;
 }
 
+#source {
+    display: flex;
+}
+
+#source button {
+    font: inherit;
+    color: var(--vscode-foreground, #d7dae0);
+    background: transparent;
+    border: 1px solid var(--vscode-dropdown-border, #21252b);
+    padding: 2px 10px;
+    cursor: pointer;
+}
+
+#source button + button {
+    margin-left: -1px;
+}
+
+#source button[aria-pressed="true"] {
+    color: var(--vscode-button-foreground, #ffffff);
+    background: var(--vscode-button-background, #35A854);
+    border-color: var(--vscode-button-background, #35A854);
+}
+
 #toolbar select {
     font: inherit;
     color: var(--vscode-dropdown-foreground, var(--vscode-editor-foreground));

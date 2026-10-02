@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { bulletLines, openPlayground, type BulletLine } from "../support/browser";
+import { bulletLines, openPlayground, type BulletLine } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 describe("lists", () => {
@@ -36,7 +36,7 @@ describe("lists", () => {
     });
 
     it("keeps numbers visible on a numbered list", async () => {
-        const text = await page.locator("#editor .view-lines").innerText();
+        const text = (await page.locator("#editor .view-lines").innerText()).replaceAll("\u00a0", " ");
         expect(text).toContain("1. Ordered one");
         expect(text).toContain("1. Nested ordered");
     });

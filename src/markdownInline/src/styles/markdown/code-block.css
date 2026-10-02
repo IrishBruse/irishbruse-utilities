@@ -35,8 +35,10 @@
 
 .inline-md-root .monaco-editor .inline-md-lang {
     position: absolute;
-    right: calc(16px - 100cqi);
+    left: calc(100cqi - 16px);
+    right: auto;
     top: 0;
+    transform: translateX(-100%);
     color: var(--vscode-descriptionForeground, #9da5b4) !important;
     font-size: 11px;
     line-height: 16px;

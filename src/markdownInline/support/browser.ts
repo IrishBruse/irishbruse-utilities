@@ -15,19 +15,30 @@ export interface BulletLine {
     readonly insideMargin: boolean;
 }
 
-export async function openPlayground(fixture: string): Promise<{ browser: Browser; page: Page }> {
+export async function openPlayground(fixture: string, marker?: string): Promise<{ browser: Browser; page: Page }> {
     const ready = await fetch(playground).then((response) => response.ok).catch(() => false);
     if (!ready) {
         throw new Error(`Playground is not running at ${playground}/`);
     }
     const browser = await chromium.launch({ channel: "chrome", headless: true });
     const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
-    await page.goto(`${playground}/?fixture=${encodeURIComponent(fixture)}`);
-    await page.waitForFunction(
-        (id) => (document.querySelector("#editor .view-lines")?.textContent ?? "").includes(id),
-        fixture.includes("list/") ? "Nested bullet" : "Hello",
-        { timeout: 15_000 },
-    );
+    await page.goto(`${playground}/?fixture=${fixture}`, { waitUntil: "networkidle" });
+    const readyMarker = marker
+        ?? (fixture.includes("list/")
+            ? "Nested bullet"
+            : fixture.includes("skill/")
+                ? "markdown-skill-fixture"
+                : "Hello");
+    try {
+        await page.waitForFunction(
+            (id) => (document.querySelector("#editor .view-lines")?.textContent ?? "").replaceAll("\u00a0", " ").includes(id),
+            readyMarker,
+            { timeout: 15_000 },
+        );
+    } catch (error) {
+        const body = await page.locator("body").innerText().catch(() => "");
+        throw new Error(`${error instanceof Error ? error.message : String(error)}\n${body.slice(0, 500)}`);
+    }
     await page.evaluate(() => document.fonts.ready);
     await page.addStyleTag({
         content: ".monaco-editor .cursors-layer { opacity: 0 !important; }",

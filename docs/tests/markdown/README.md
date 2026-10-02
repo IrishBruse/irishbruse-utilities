@@ -7,7 +7,7 @@ For Mermaid-only samples see [../mermaid/](../mermaid/).
 ## Playground and verify
 
 [playground.md](./playground.md) is the default Inline Markdown playground fixture (`?fixture=playground.md`).
-`npm run verify-markdownInline -- regress` loads that file.
+Feature checks live in `src/markdownInline/tests/<feature>/` and run with `npm run test:markdown-inline-browser`.
 
 ## Suggested order
 

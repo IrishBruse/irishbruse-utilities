@@ -20,14 +20,15 @@ Each feature lives in `src/markdownInline/tests/<feature-name>/`.
 | File | Role |
 | --- | --- |
 | `README.md` | What the feature does, in plain English. |
-| `test-N.md` | One sample document. The playground opens it as `?fixture=<feature-name>/test-N.md`. |
+| `fixtures/` | The sample documents. The playground opens one as `?fixture=<feature-name>/fixtures/<path>`. |
 | `integration.test.ts` | The feature working as a whole. |
 | `regression.test.ts` | A bug that already happened. |
 | `screenshots/` | The saved picture a visual check compares. |
 
 Shared browser setup for those tests lives in `src/markdownInline/support/browser.ts`.
 A new feature is finished when that folder exists and the browser command exits 0.
-The sample for a new case is the next `test-N.md` in that folder.
+A numbered case may be `fixtures/case-N.md`.
+A skill sample is `fixtures/<name>/SKILL.md`, and `<name>` is the `name` value in that file.
 
 Manual documents that a person opens in VS Code stay in `docs/tests/markdown/`.
 

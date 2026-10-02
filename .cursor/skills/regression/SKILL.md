@@ -17,7 +17,9 @@ Write one check that asserts the correct behavior.
 When the bug is visible in the Inline Markdown editor or playground, add it to that feature's folder.
 Follow `.cursor/skills/markdown-inline-case/SKILL.md`, then `.cursor/skills/verify-markdownInline/SKILL.md`.
 The check is `src/markdownInline/tests/<feature-name>/regression.test.ts`.
-The sample is the next `test-N.md` in that folder.
+The sample goes in that folder's `fixtures/`.
+A numbered case may be the next `case-N.md`.
+A skill sample is `<name>/SKILL.md`, and the folder name is the `name` value.
 A paint or layout bug also saves a picture under `screenshots/`.
 
 Run only that file:

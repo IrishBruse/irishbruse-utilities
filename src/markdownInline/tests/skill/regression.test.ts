@@ -11,7 +11,7 @@ describe("skill front matter looks like a code block", () => {
     let page: Page;
 
     beforeAll(async () => {
-        const opened = await openPlayground("skill/test-1.md");
+        const opened = await openPlayground("skill/fixtures/markdown-skill-fixture/SKILL.md");
         browser = opened.browser;
         page = opened.page;
     });

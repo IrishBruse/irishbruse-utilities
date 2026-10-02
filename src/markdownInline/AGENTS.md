@@ -20,7 +20,7 @@ Shared logic that the extension also needs (YAML front matter, skill front matte
 | --- | --- |
 | `src/` | Editor webview implementation (Monaco, decorations, themes, mermaid, skill YAML) |
 | `playground/` | Local Vite harness; may import `../src` only |
-| `tests/<feature>/` | Feature samples, integration tests, regressions, and saved pictures |
+| `tests/<feature>/` | Samples under `fixtures/`, integration tests, regressions, and saved pictures |
 | `support/` | Shared playground browser setup for those tests |
 | `build.mjs` | Produces `media/markdownInline` |
 

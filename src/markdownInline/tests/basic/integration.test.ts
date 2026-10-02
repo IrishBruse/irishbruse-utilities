@@ -87,7 +87,7 @@ async function readMark(page: Page, word: string, className: string): Promise<Ma
     return mark.jsonValue() as Promise<Mark>;
 }
 
-describeFixture("basic/test-1.md headings", "basic/test-1.md", "Main heading", (page) => {
+describeFixture("basic/fixtures/case-1.md headings", "basic/fixtures/case-1.md", "Main heading", (page) => {
     it("paints each heading larger than the one under it and hides the hash marks", async () => {
         const main = await readMark(page(), "Main heading", "inline-md-h1");
         const section = await readMark(page(), "Section heading", "inline-md-h2");
@@ -107,7 +107,7 @@ describeFixture("basic/test-1.md headings", "basic/test-1.md", "Main heading", (
     });
 });
 
-describeFixture("basic/test-2.md bold", "basic/test-2.md", "bold", (page) => {
+describeFixture("basic/fixtures/case-2.md bold", "basic/fixtures/case-2.md", "bold", (page) => {
     it("makes the word heavier than the words beside it and hides the asterisks", async () => {
         const mark = await readMark(page(), "bold", "inline-md-strong");
         expect(mark.editorText).toBe("A bold word in a sentence.");
@@ -117,7 +117,7 @@ describeFixture("basic/test-2.md bold", "basic/test-2.md", "bold", (page) => {
     });
 });
 
-describeFixture("basic/test-3.md italic", "basic/test-3.md", "italic", (page) => {
+describeFixture("basic/fixtures/case-3.md italic", "basic/fixtures/case-3.md", "italic", (page) => {
     it("slants the word and hides the asterisk", async () => {
         const mark = await readMark(page(), "italic", "inline-md-em");
         expect(mark.editorText).toBe("An italic word in a sentence.");
@@ -128,7 +128,7 @@ describeFixture("basic/test-3.md italic", "basic/test-3.md", "italic", (page) =>
     });
 });
 
-describeFixture("basic/test-4.md strikethrough", "basic/test-4.md", "struck", (page) => {
+describeFixture("basic/fixtures/case-4.md strikethrough", "basic/fixtures/case-4.md", "struck", (page) => {
     it("crosses out the word and hides the tildes", async () => {
         const mark = await readMark(page(), "struck", "inline-md-strike");
         expect(mark.editorText).toBe("A struck word in a sentence.");
@@ -139,7 +139,7 @@ describeFixture("basic/test-4.md strikethrough", "basic/test-4.md", "struck", (p
     });
 });
 
-describeFixture("basic/test-5.md inline code", "basic/test-5.md", "coded", (page) => {
+describeFixture("basic/fixtures/case-5.md inline code", "basic/fixtures/case-5.md", "coded", (page) => {
     it("paints the word in a code face and hides the backticks", async () => {
         const mark = await readMark(page(), "coded", "inline-md-code");
         expect(mark.editorText).toBe("A coded word in a sentence.");
@@ -150,7 +150,7 @@ describeFixture("basic/test-5.md inline code", "basic/test-5.md", "coded", (page
     });
 });
 
-describeFixture("basic/test-6.md link", "basic/test-6.md", "link label", (page) => {
+describeFixture("basic/fixtures/case-6.md link", "basic/fixtures/case-6.md", "link label", (page) => {
     it("colors the label, hides the address, and lines the label up with the link", async () => {
         const mark = await readMark(page(), "link label", "inline-md-link");
         expect(mark.editorText).toBe("A link label in a sentence.");

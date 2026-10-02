@@ -11,7 +11,7 @@ describe("nested list bullets stay visible", () => {
     let page: Page;
 
     beforeAll(async () => {
-        const opened = await openPlayground("list/test-1.md");
+        const opened = await openPlayground("list/fixtures/case-1.md");
         browser = opened.browser;
         page = opened.page;
     });

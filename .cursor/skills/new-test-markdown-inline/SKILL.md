@@ -24,21 +24,23 @@ Write nothing until the sample is accepted.
    Ask whether the failure is something you see (spacing, color, clipping, a missing mark) or something the text and controls do.
    Done when `integration.test.ts`, `regression.test.ts`, or both are chosen, and whether a picture is required.
 
-4. Show a draft of `test-N.md` from their words.
-   Use the next number in that folder.
+4. Show a draft of the sample from their words.
+   Put it under `fixtures/`.
+   A numbered case may be the next `case-N.md`.
+   A skill sample is `<name>/SKILL.md`, and the folder name is the `name` value.
    Done when they accept the sample.
 
 ## Write
 
 Add the accepted sentences to `README.md`.
-Save the sample as `test-N.md`.
+Save the accepted sample under `fixtures/`.
 Point `integration.test.ts` at the whole scenario.
 Point `regression.test.ts` at the bug, and leave production code unchanged until that file fails.
 A visible failure also gets a picture under `screenshots/`, taken only after the page looks right.
 
 ## Explore
 
-Open `http://127.0.0.1:5175/?fixture=<feature-name>/test-N.md`.
+Open `http://127.0.0.1:5175/?fixture=<feature-name>/fixtures/<path>`.
 `npm run dev:markdown-inline` starts the playground when nothing is listening.
 When it is already up, leave that server running.
 

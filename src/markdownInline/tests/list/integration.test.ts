@@ -8,7 +8,7 @@ describe("lists", () => {
     let lines: BulletLine[];
 
     beforeAll(async () => {
-        const opened = await openPlayground("list/test-1.md");
+        const opened = await openPlayground("list/fixtures/case-1.md");
         browser = opened.browser;
         page = opened.page;
         lines = await bulletLines(page, ["Bullet A", "Nested bullet", "Another nested"]);

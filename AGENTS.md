@@ -13,7 +13,7 @@ When a change touches the Inline Markdown webview or playground, verify it with 
 Follow `.cursor/skills/verify-markdownInline/SKILL.md`.
 If the playground is already running, leave that server running.
 A new test case follows `.cursor/skills/markdown-inline-case/SKILL.md`.
-A new feature gets `src/markdownInline/tests/<feature-name>/` with `README.md`, `test-N.md`, `integration.test.ts`, and `regression.test.ts`.
+A new feature gets `src/markdownInline/tests/<feature-name>/` with `README.md`, `fixtures/`, `integration.test.ts`, and `regression.test.ts`.
 A paint or layout bug also keeps its picture in that folder's `screenshots/`.
 Finish with `npm run test:markdown-inline-browser` exiting 0.
 

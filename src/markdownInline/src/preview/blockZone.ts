@@ -146,6 +146,22 @@ function lineNumberNode(lineNumber: number): HTMLDivElement {
     return number;
 }
 
+const IMAGE_MAX_WIDTH = 480;
+const IMAGE_MAX_HEIGHT = 240;
+
+export function imageZoneKey(url: string | undefined, from: number, documentUrl: string): string {
+    const src = url ? resolveImageUrl(url, documentUrl) : undefined;
+    return src ? `image:${from}:${src}` : `image:${from}:missing`;
+}
+
+function fittedImageHeight(width: number, height: number): number {
+    if (width <= 0 || height <= 0) {
+        return 0;
+    }
+    const scale = Math.min(1, IMAGE_MAX_WIDTH / width, IMAGE_MAX_HEIGHT / height);
+    return Math.min(IMAGE_MAX_HEIGHT, Math.ceil(height * scale));
+}
+
 function imageLabel(alt: string): string {
     if (alt.length > 0) {
         return alt;
@@ -194,9 +210,10 @@ export function blockZone(scope: Scope, from: number, lineNumber: number, host: 
     const src = scope.url ? resolveImageUrl(scope.url, host.documentUrl) : undefined;
     const frame = document.createElement("div");
     frame.className = "inline-md-block";
+    const key = imageZoneKey(scope.url, from, host.documentUrl);
     const zone: monaco.editor.IViewZone = {
         afterLineNumber: lineNumber - 1,
-        heightInPx: src ? 48 : 28,
+        heightInPx: host.lineHeight,
         domNode: frame,
         marginDomNode: lineNumberNode(lineNumber),
         suppressMouseDown: true,
@@ -204,42 +221,52 @@ export function blockZone(scope: Scope, from: number, lineNumber: number, host: 
     };
     if (!src) {
         frame.append(fallbackElement(alt, from, host.onReveal));
-        return { key: `image:${from}:missing`, zone };
+        return { key, zone };
     }
-    const image = document.createElement("img");
-    image.className = "inline-md-image";
-    image.alt = alt;
-    image.dataset.from = String(from);
-    image.addEventListener("mousedown", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        host.onReveal(from + 1);
-    });
-    image.addEventListener("error", () => {
-        image.replaceWith(fallbackElement(alt, from, host.onReveal));
-        zone.heightInPx = 28;
-        host.onLayout(`image:${from}:${src}`);
-    });
-    const fitImage = (): void => {
-        const displayed = image.getBoundingClientRect().height;
-        const height = displayed > 0 ? displayed : image.naturalHeight;
-        if (height <= 0) {
+    let settled = false;
+    const showFallback = (): void => {
+        if (settled) {
             return;
         }
-        const next = Math.min(Math.ceil(height), 240);
+        settled = true;
+        frame.replaceChildren(fallbackElement(alt, from, host.onReveal));
+    };
+    const showImage = (width: number, height: number): void => {
+        if (settled) {
+            return;
+        }
+        const next = fittedImageHeight(width, height);
+        if (next <= 0) {
+            showFallback();
+            return;
+        }
+        settled = true;
+        const image = document.createElement("img");
+        image.className = "inline-md-image";
+        image.alt = alt;
+        image.dataset.from = String(from);
+        image.addEventListener("mousedown", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            host.onReveal(from + 1);
+        });
+        image.src = src;
+        frame.replaceChildren(image);
         if (Math.abs(next - (zone.heightInPx ?? 0)) <= 1) {
             return;
         }
         zone.heightInPx = next;
-        host.onLayout(`image:${from}:${src}`);
+        host.onLayout(key);
     };
-    image.addEventListener("load", () => {
-        fitImage();
-        requestAnimationFrame(fitImage);
+    const probe = new Image();
+    probe.addEventListener("load", () => {
+        showImage(probe.naturalWidth, probe.naturalHeight);
     });
-    image.src = src;
-    frame.append(image);
-    return { key: `image:${from}:${src}`, zone };
+    probe.addEventListener("error", () => {
+        showFallback();
+    });
+    probe.src = src;
+    return { key, zone };
 }
 
 export function createMermaidZone(

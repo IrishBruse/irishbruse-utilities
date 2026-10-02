@@ -1,7 +1,7 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
 import { applyListLineHeight, listGapPaints, listMarkerBulletClass, listMarkerIndentColumns, monacoLineModel } from "./preview/listItemGap";
-import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
+import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
 import { isMermaidCodeBlock } from "./preview/mermaid";
 import { previewContentClass, previewContentRange } from "./preview/paint";
 import { refreshMermaidCodeLens, setHiddenAreas } from "./monaco";
@@ -24,6 +24,8 @@ interface ZoneRecord {
     readonly key: string;
     readonly zone: monaco.editor.IViewZone;
     id?: string;
+    placedAfter?: number;
+    placedHeight?: number;
 }
 
 class TaskWidget implements monaco.editor.IContentWidget {
@@ -270,6 +272,7 @@ export class InlinePresentation {
     private selectionFrame = 0;
     private frontMatter: FrontMatterSpan | undefined;
     private readonly mermaidZones = new Map<string, ZoneRecord>();
+    private readonly imageZones = new Map<string, ZoneRecord>();
     private mermaidLensKey = "";
     private hiddenLineNumbers = new Set<number>();
     private findListener: monaco.IDisposable | undefined;
@@ -404,7 +407,11 @@ export class InlinePresentation {
                     const line = coveredLine(model, bounds);
                     if (line !== undefined) {
                         hiddenLines.add(line);
-                        zones.push(this.blockZone(scope, bounds.start, line));
+                        zones.push(
+                            scope.kind === "image"
+                                ? this.ensureImageZone(scope, bounds.start, line)
+                                : this.blockZone(scope, bounds.start, line),
+                        );
                     }
                     continue;
                 }
@@ -460,6 +467,24 @@ export class InlinePresentation {
                 zones.push(this.ensureMermaidZone(scope, text, first));
             }
         }
+        const liveImageKeys = new Set<string>();
+        for (const scope of scopes) {
+            if (scope.kind !== "image") {
+                continue;
+            }
+            const marker = scope.markers[0];
+            if (!marker) {
+                continue;
+            }
+            const bounds = withoutTrailingLineBreak(text, marker.start, marker.end);
+            liveImageKeys.add(imageZoneKey(scope.url, bounds.start, this.documentUrl));
+        }
+        for (const key of this.imageZones.keys()) {
+            if (!liveImageKeys.has(key)) {
+                this.imageZones.delete(key);
+            }
+        }
+
         const activeMermaidKeys = new Set(
             zones.filter((zone) => zone.key.startsWith("mermaid:")).map((zone) => zone.key),
         );
@@ -681,6 +706,7 @@ export class InlinePresentation {
             }
         });
         this.zones = [];
+        this.imageZones.clear();
         this.mermaidZones.clear();
         this.mermaidLensKey = "";
         setHiddenAreas(this.editor, []);
@@ -755,6 +781,18 @@ export class InlinePresentation {
         return buildBlockZone(scope, from, lineNumber, this.zoneHost());
     }
 
+    private ensureImageZone(scope: Scope, from: number, lineNumber: number): ZoneRecord {
+        const key = imageZoneKey(scope.url, from, this.documentUrl);
+        const existing = this.imageZones.get(key);
+        if (existing) {
+            existing.zone.afterLineNumber = lineNumber - 1;
+            return existing;
+        }
+        const record = this.blockZone(scope, from, lineNumber);
+        this.imageZones.set(record.key, record);
+        return record;
+    }
+
     private ensureMermaidZone(scope: Scope, source: string, lineNumber: number): ZoneRecord {
         const content = source.slice(scope.contentStart, scope.contentEnd).trim();
         const key = `mermaid:${scope.start}:${scope.end}:${content}`;
@@ -786,6 +824,8 @@ export class InlinePresentation {
         if (!record?.id) {
             return;
         }
+        record.placedAfter = record.zone.afterLineNumber;
+        record.placedHeight = record.zone.heightInPx;
         this.editor.changeViewZones((accessor) => {
             if (record.id) {
                 accessor.layoutZone(record.id);
@@ -1000,15 +1040,43 @@ export class InlinePresentation {
             return;
         }
         this.zoneKey = key;
+        const nextKeys = new Set(zones.map((zone) => zone.key));
         this.editor.changeViewZones((accessor) => {
+            const previous = new Map(this.zones.map((zone) => [zone.key, zone]));
             for (const zone of this.zones) {
-                if (zone.id) {
+                if (!nextKeys.has(zone.key) && zone.id) {
                     accessor.removeZone(zone.id);
                 }
             }
             this.zones = zones.map((zone) => {
+                const existing = previous.get(zone.key);
+                if (existing?.id && existing.zone.domNode === zone.zone.domNode) {
+                    const line = zone.zone.afterLineNumber;
+                    const height = zone.zone.heightInPx;
+                    const moved = existing.placedAfter !== line || (
+                        existing.placedHeight !== undefined && existing.placedHeight !== height
+                    );
+                    existing.zone.afterLineNumber = line;
+                    if (height !== undefined) {
+                        existing.zone.heightInPx = height;
+                    }
+                    if (moved) {
+                        accessor.layoutZone(existing.id);
+                    }
+                    existing.placedAfter = line;
+                    existing.placedHeight = height;
+                    return existing;
+                }
+                if (existing?.id) {
+                    accessor.removeZone(existing.id);
+                }
                 const id = accessor.addZone(zone.zone);
-                return { ...zone, id };
+                return {
+                    ...zone,
+                    id,
+                    placedAfter: zone.zone.afterLineNumber,
+                    placedHeight: zone.zone.heightInPx,
+                };
             });
         });
     }

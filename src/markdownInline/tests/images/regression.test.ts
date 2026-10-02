@@ -52,4 +52,64 @@ describe("image layout", () => {
     it("matches the saved picture of images and missing images", async () => {
         await expectEditorShot(page, join(here, "screenshots", "images.png"));
     });
+
+    it("keeps settled images in place while the caret moves", async () => {
+        const result = await page.evaluate(async () => {
+            const api = (window as unknown as {
+                __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+            }).__inlineMarkdown;
+            const doc = api.getDocument();
+            const picture = document.querySelector("img.inline-md-image");
+            if (!(picture instanceof HTMLImageElement)) {
+                return { foreign: ["missing picture"], labels: [] as string[], settled: false };
+            }
+            picture.dataset.settled = "blue";
+            const foreign: string[] = [];
+            const observer = new MutationObserver((records) => {
+                const note = (image: HTMLImageElement): void => {
+                    const src = image.getAttribute("src") ?? "";
+                    if (image.dataset.settled === "blue") {
+                        return;
+                    }
+                    foreign.push(src.length > 0 ? src : image.alt);
+                };
+                for (const record of records) {
+                    for (const node of record.addedNodes) {
+                        if (node instanceof HTMLImageElement) {
+                            note(node);
+                        }
+                        if (node instanceof Element) {
+                            for (const image of node.querySelectorAll("img")) {
+                                note(image);
+                            }
+                        }
+                    }
+                }
+            });
+            observer.observe(document.body, { childList: true, subtree: true });
+            const spots = [
+                doc.indexOf("Missing chart"),
+                doc.indexOf("also-missing"),
+                0,
+                doc.length,
+            ];
+            for (const offset of spots) {
+                api.setCursor(Math.max(0, offset));
+                await new Promise((resolve) => {
+                    requestAnimationFrame(() => requestAnimationFrame(resolve));
+                });
+            }
+            observer.disconnect();
+            const still = document.querySelector("img.inline-md-image");
+            const labels = [...document.querySelectorAll(".inline-md-image-fallback")].map((node) => node.textContent ?? "");
+            return {
+                foreign,
+                labels,
+                settled: still instanceof HTMLImageElement && still.dataset.settled === "blue",
+            };
+        });
+        expect(result.foreign).toEqual([]);
+        expect(result.settled).toBe(true);
+        expect(result.labels).toEqual(expect.arrayContaining(["Missing chart", "Image"]));
+    });
 });

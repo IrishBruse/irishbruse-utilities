@@ -31,6 +31,8 @@ export interface InlineEditorHandle {
     setDocument(text: string): void;
     getDocument(): string;
     focus(): void;
+    getCursor(): number;
+    hasTextFocus(): boolean;
     setCursor(offset: number): void;
     select(from: number, to: number): void;
 }
@@ -413,6 +415,12 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     fitNow();
     placeFindWidget();
 
+    if (options.text.length === 0 && options.readOnly !== true) {
+        queueMicrotask(() => {
+            revealOffset(0);
+        });
+    }
+
     return {
         destroy() {
             unbindDragSelection();
@@ -463,6 +471,17 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         },
         focus() {
             editor.focus();
+        },
+        getCursor() {
+            const currentModel = editor.getModel();
+            const selection = editor.getSelection();
+            if (!currentModel || !selection) {
+                return 0;
+            }
+            return currentModel.getOffsetAt(selection.getPosition());
+        },
+        hasTextFocus() {
+            return editor.hasTextFocus();
         },
         setCursor,
         select(from: number, to: number) {

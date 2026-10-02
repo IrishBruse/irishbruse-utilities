@@ -24,3 +24,5 @@ The word lines up with the code mark.
 A link label is colored.
 The address stays hidden.
 The label lines up with the link mark.
+
+The shared `blank.md` sample opens with the caret on the first line and the editor ready to type.

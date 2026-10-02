@@ -159,3 +159,29 @@ describeFixture("basic/fixtures/case-6.md link", "basic/fixtures/case-6.md", "li
         expect(mark.sharesEdge).toBe(true);
     });
 });
+
+describe("blank.md", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("blank.md", "");
+        browser = opened.browser;
+        page = opened.page;
+        await page.waitForFunction(() => {
+            const api = (window as unknown as { __inlineMarkdown: { getCursor(): number } }).__inlineMarkdown;
+            return api.getCursor() === 0;
+        });
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("places the caret on the first line when the document is empty", async () => {
+        const offset = await page.evaluate(() => {
+            return (window as unknown as { __inlineMarkdown: { getCursor(): number } }).__inlineMarkdown.getCursor();
+        });
+        expect(offset).toBe(0);
+    });
+});

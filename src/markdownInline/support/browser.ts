@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
-import { chromium, type Browser, type Page } from "playwright-core";
+import { chromium, type Browser, type Locator, type Page } from "playwright-core";
 
 const playground = "http://127.0.0.1:5175";
 
@@ -23,18 +23,27 @@ export async function openPlayground(fixture: string, marker?: string): Promise<
     const browser = await chromium.launch({ channel: "chrome", headless: true });
     const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
     await page.goto(`${playground}/?fixture=${fixture}`, { waitUntil: "networkidle" });
-    const readyMarker = marker
-        ?? (fixture.includes("list/")
-            ? "Nested bullet"
-            : fixture.includes("skill/")
-                ? "markdown-skill-fixture"
-                : "Hello");
+    const readyMarker = marker === ""
+        ? undefined
+        : marker
+            ?? (fixture.includes("list/")
+                ? "Nested bullet"
+                : fixture.includes("skill/")
+                    ? "markdown-skill-fixture"
+                    : "Hello");
     try {
-        await page.waitForFunction(
-            (id) => (document.querySelector("#editor .view-lines")?.textContent ?? "").replaceAll("\u00a0", " ").includes(id),
-            readyMarker,
-            { timeout: 15_000 },
-        );
+        if (readyMarker === undefined) {
+            await page.waitForFunction(
+                () => typeof (window as unknown as { __inlineMarkdown?: unknown }).__inlineMarkdown !== "undefined",
+                { timeout: 15_000 },
+            );
+        } else {
+            await page.waitForFunction(
+                (id) => (document.querySelector("#editor .view-lines")?.textContent ?? "").replaceAll("\u00a0", " ").includes(id),
+                readyMarker,
+                { timeout: 15_000 },
+            );
+        }
     } catch (error) {
         const body = await page.locator("body").innerText().catch(() => "");
         throw new Error(`${error instanceof Error ? error.message : String(error)}\n${body.slice(0, 500)}`);
@@ -95,8 +104,7 @@ export async function bulletLines(page: Page, needles: readonly string[]): Promi
     }, needles);
 }
 
-export async function expectEditorShot(page: Page, baselinePath: string): Promise<void> {
-    const buffer = await page.locator("#editor").screenshot({ animations: "disabled" });
+function compareShot(buffer: Buffer, baselinePath: string): void {
     if (!existsSync(baselinePath)) {
         mkdirSync(dirname(baselinePath), { recursive: true });
         writeFileSync(baselinePath, buffer);
@@ -115,4 +123,20 @@ export async function expectEditorShot(page: Page, baselinePath: string): Promis
         writeFileSync(diffPath, PNG.sync.write(diff));
         throw new Error(`${mismatched} pixels differ from ${baselinePath}. Diff written to ${diffPath}.`);
     }
+}
+
+export async function expectLocatorShot(locator: Locator, baselinePath: string): Promise<void> {
+    compareShot(await locator.screenshot({ animations: "disabled" }), baselinePath);
+}
+
+export async function expectEditorShot(page: Page, baselinePath: string): Promise<void> {
+    compareShot(await page.locator("#editor").screenshot({ animations: "disabled" }), baselinePath);
+}
+
+export async function expectPageClip(
+    page: Page,
+    clip: { x: number; y: number; width: number; height: number },
+    baselinePath: string,
+): Promise<void> {
+    compareShot(await page.screenshot({ animations: "disabled", clip }), baselinePath);
 }

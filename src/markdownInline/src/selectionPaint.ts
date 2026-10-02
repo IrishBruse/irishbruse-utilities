@@ -9,13 +9,13 @@ export interface SelectionBox {
 export interface SelectionLine {
     top: number;
     height: number;
-    heading: boolean;
+    stretchToLineHeight: boolean;
 }
 
 export function layoutSelectionPieces(pieces: SelectionBox[], lines: readonly SelectionLine[]): void {
     const stretched = new Set<SelectionBox>();
     for (const line of lines) {
-        if (!line.heading) {
+        if (!line.stretchToLineHeight) {
             continue;
         }
         for (const piece of pieces) {

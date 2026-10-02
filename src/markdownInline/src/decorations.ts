@@ -653,6 +653,7 @@ export class InlinePresentation {
         const fontSize = this.editor.getOption(monaco.editor.EditorOption.fontSize);
         const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
         this.syncHeadingLineHeights(fontSize, lineHeight);
+        this.syncListLineHeights(lineHeight);
         this.syncCurrentLine(headingLines, fontSize, lineHeight);
         const quoteDepths = new Map<number, number>();
         for (const scope of scopes) {
@@ -749,6 +750,14 @@ export class InlinePresentation {
             const extra = headingExtraHeight(level, fontSize, lineHeight);
             root.style.setProperty(`--ib-md-h${level}-line`, `${lineHeight + extra}px`);
         }
+    }
+
+    private syncListLineHeights(lineHeight: number): void {
+        const root = this.editor.getDomNode()?.closest(".inline-md-root");
+        if (!(root instanceof HTMLElement)) {
+            return;
+        }
+        root.style.setProperty("--ib-md-list-line", `${lineHeight + LIST_ITEM_GAP_PX}px`);
     }
 
     private writeHiddenAreas(model: monaco.editor.ITextModel): void {
@@ -1155,26 +1164,8 @@ export class InlinePresentation {
         }
         this.selectionFrame = requestAnimationFrame(() => {
             this.selectionFrame = 0;
-            this.syncListGapOverlayClasses();
             this.applySelectionHeights();
         });
-    }
-
-    private syncListGapOverlayClasses(): void {
-        const dom = this.editor.getDomNode();
-        if (!dom) {
-            return;
-        }
-        const viewLines = dom.querySelectorAll<HTMLElement>(".view-lines .view-line");
-        const overlays = dom.querySelectorAll<HTMLElement>(".view-overlays > div");
-        for (let index = 0; index < viewLines.length; index += 1) {
-            const line = viewLines[index];
-            const overlay = overlays[index];
-            if (!line || !overlay) {
-                continue;
-            }
-            overlay.classList.toggle("inline-md-list-gap-after", line.classList.contains("inline-md-list-gap-after"));
-        }
     }
 
     private applySelectionHeights(): void {
@@ -1185,6 +1176,7 @@ export class InlinePresentation {
         const pieces = [...dom.querySelectorAll<HTMLElement>(".selected-text")];
         const viewLines = [...dom.querySelectorAll<HTMLElement>(".view-lines .view-line")];
         const headingSelector = ".inline-md-h1, .inline-md-h2, .inline-md-h3, .inline-md-h4";
+        const listGapEndClass = "inline-md-list-gap-after";
         const boxes = pieces.map((piece) => {
             const rect = piece.getBoundingClientRect();
             return {
@@ -1197,10 +1189,12 @@ export class InlinePresentation {
         });
         const lines = viewLines.map((viewLine) => {
             const rect = viewLine.getBoundingClientRect();
+            const stretchToLineHeight = viewLine.querySelector(headingSelector) !== null
+                || viewLine.classList.contains(listGapEndClass);
             return {
                 top: rect.top,
                 height: rect.height,
-                heading: viewLine.querySelector(headingSelector) !== null,
+                stretchToLineHeight,
             };
         });
         layoutSelectionPieces(boxes, lines);

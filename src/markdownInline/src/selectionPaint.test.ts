@@ -30,8 +30,8 @@ describe("selection highlight", () => {
         layoutSelectionPieces(
             [paragraph, heading],
             [
-                { top: 40, height: 34, heading: true },
-                { top: 80, height: 20, heading: false },
+                { top: 40, height: 34, stretchToLineHeight: true },
+                { top: 80, height: 20, stretchToLineHeight: false },
             ],
         );
         expect(paragraph.styleBottom).toBe("0px");
@@ -40,8 +40,15 @@ describe("selection highlight", () => {
         expect(heading.styleHeight).toBe("34px");
 
         const stale = box(10, 34, "34px", "auto");
-        layoutSelectionPieces([stale], [{ top: 10, height: 20, heading: false }]);
+        layoutSelectionPieces([stale], [{ top: 10, height: 20, stretchToLineHeight: false }]);
         expect(stale.styleBottom).toBe("0px");
         expect(stale.styleHeight).toBe("");
+
+        const listEnd = box(60, 20);
+        layoutSelectionPieces(
+            [listEnd],
+            [{ top: 60, height: 24, stretchToLineHeight: true }],
+        );
+        expect(listEnd.styleHeight).toBe("24px");
     });
 });

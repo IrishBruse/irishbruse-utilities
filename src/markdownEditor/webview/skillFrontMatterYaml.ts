@@ -9,4 +9,4 @@ export {
     type SkillFieldWidget,
     type SkillMapEntry,
     type SkillProperty,
-} from "../../markdownInline/src/skillFrontMatterYaml";
+} from "../../markdownInline/src/skill";

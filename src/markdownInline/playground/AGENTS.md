@@ -1,5 +1,13 @@
 # Inline Markdown playground
 
+## Dev server (`npm run dev:markdown-inline`)
+
+Treat the playground dev server as **already running** at `http://127.0.0.1:5175/` for the whole session. Open that URL and rely on HMR for editor and playground changes.
+
+Do not stop, kill, or restart the process (no `pkill`, port cleanup, or second `npm run dev:markdown-inline` while the URL responds). Start the script only when `http://127.0.0.1:5175/` is unreachable and you need a local server.
+
+## Fixtures
+
 Test markdown files live in `docs/tests/markdown/` and load via `?fixture=<path>` (default `playground.md`).
 Feature samples live in `src/markdownInline/tests/<feature>/fixtures/` and load the same way, for example `?fixture=list/fixtures/case-1.md`.
 

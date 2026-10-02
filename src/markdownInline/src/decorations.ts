@@ -4,12 +4,12 @@ import { applyListLineHeight, listGapPaints, listMarkerBulletClass, listMarkerIn
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
 import { isMermaidCodeBlock } from "./preview/mermaid";
 import { previewContentClass, previewContentRange } from "./preview/paint";
-import { refreshMermaidCodeLens, setHiddenAreas } from "./monacoSetup";
+import { refreshMermaidCodeLens, setHiddenAreas } from "./monaco";
 import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "./raw/paint";
 import { reveal, revealCode, showFormatted } from "./reveal";
 import { parseScopes } from "./document/scopes";
 import { layoutSelectionPieces, stretchesSelectionLine } from "./selection";
-import { readFrontMatter, type FrontMatterSpan } from "./yamlFrontMatter";
+import { readFrontMatter, type FrontMatterSpan } from "./skill";
 import type { CursorContext, Scope, TextRange } from "./document/types";
 
 export interface InlinePresentationHandlers {

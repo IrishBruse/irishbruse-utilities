@@ -1,5 +1,5 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { toMonacoColor } from "./monacoColor";
+import { toMonacoColor } from "./color";
 import "monaco-editor/min/vs/editor/editor.main.css";
 import "monaco-editor/esm/vs/editor/browser/coreCommands.js";
 import "monaco-editor/esm/vs/editor/contrib/clipboard/browser/clipboard.js";
@@ -12,13 +12,10 @@ import "monaco-editor/esm/vs/editor/contrib/wordOperations/browser/wordOperation
 import { conf as markdownConf, language as markdownLanguage } from "monaco-editor/esm/vs/basic-languages/markdown/markdown.js";
 import { conf as typescriptConf, language as typescriptLanguage } from "monaco-editor/esm/vs/basic-languages/typescript/typescript.js";
 import { conf as yamlConf, language as yamlLanguage } from "monaco-editor/esm/vs/basic-languages/yaml/yaml.js";
-import { completeSkillPropertyKeys, parseSkillFrontMatter } from "./skillFrontMatterYaml";
-import { completeAgentPropertyKeys } from "./skillKeys";
-import { readFrontMatter } from "./yamlFrontMatter";
-import { installMermaidCodeLens, refreshMermaidCodeLens } from "./mermaidCodeLens";
+import { completeAgentPropertyKeys, completeSkillPropertyKeys, parseSkillFrontMatter, readFrontMatter, skillMarkdownLanguageId } from "../skill";
+import { installMermaidCodeLens, refreshMermaidCodeLens } from "./codeLens";
 
 export { refreshMermaidCodeLens };
-import { skillMarkdownLanguageId } from "./skillYaml";
 
 let skillYamlInstalled = false;
 

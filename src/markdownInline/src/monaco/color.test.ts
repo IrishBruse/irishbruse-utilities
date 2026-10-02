@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { toMonacoColor } from "./monacoColor";
+import { toMonacoColor } from "./color";
 
 describe("toMonacoColor", () => {
     it("keeps hex colors Monaco can parse", () => {

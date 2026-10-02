@@ -1,5 +1,5 @@
 import { mountInlineEditor } from "./editor";
-import { readFrontMatter } from "./yamlFrontMatter";
+import { readFrontMatter } from "./skill";
 import { installWebviewThemeSync, webviewThemeTargets } from "./webviewTheme";
 import "./styles/editor.css";
 

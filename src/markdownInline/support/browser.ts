@@ -6,6 +6,39 @@ import { chromium, type Browser, type Locator, type Page } from "playwright-core
 
 const playground = "http://127.0.0.1:5175";
 
+async function viteOverlay(page: Page): Promise<string | undefined> {
+    const text = await page.evaluate(() => {
+        const overlay = document.querySelector("vite-error-overlay");
+        return overlay?.shadowRoot?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+    }).catch(() => "");
+    return text.length > 0 ? text : undefined;
+}
+
+async function waitForEditor(page: Page, marker: string | undefined): Promise<true | string> {
+    try {
+        const handle = await page.waitForFunction((id: string | undefined) => {
+            const overlay = document.querySelector("vite-error-overlay");
+            const message = overlay?.shadowRoot?.textContent?.replace(/\s+/g, " ").trim();
+            if (message) {
+                return message;
+            }
+            if (id === undefined) {
+                return typeof (window as unknown as { __inlineMarkdown?: unknown }).__inlineMarkdown !== "undefined" ? true : false;
+            }
+            const text = (document.querySelector("#editor .view-lines")?.textContent ?? "").replaceAll("\u00a0", " ");
+            return text.includes(id) ? true : false;
+        }, marker, { timeout: 15_000 });
+        const value = await handle.jsonValue();
+        return value === true ? true : String(value);
+    } catch (error) {
+        const overlay = await viteOverlay(page);
+        if (overlay) {
+            return overlay;
+        }
+        throw error;
+    }
+}
+
 export interface BulletLine {
     readonly text: string;
     readonly bulletLeft: number;
@@ -22,7 +55,6 @@ export async function openPlayground(fixture: string, marker?: string): Promise<
     }
     const browser = await chromium.launch({ channel: "chrome", headless: true });
     const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
-    await page.goto(`${playground}/?fixture=${fixture}`, { waitUntil: "networkidle" });
     const readyMarker = marker === ""
         ? undefined
         : marker
@@ -31,22 +63,14 @@ export async function openPlayground(fixture: string, marker?: string): Promise<
                 : fixture.includes("skill/")
                     ? "markdown-skill-fixture"
                     : "Hello");
-    try {
-        if (readyMarker === undefined) {
-            await page.waitForFunction(
-                () => typeof (window as unknown as { __inlineMarkdown?: unknown }).__inlineMarkdown !== "undefined",
-                { timeout: 15_000 },
-            );
-        } else {
-            await page.waitForFunction(
-                (id) => (document.querySelector("#editor .view-lines")?.textContent ?? "").replaceAll("\u00a0", " ").includes(id),
-                readyMarker,
-                { timeout: 15_000 },
-            );
+    await page.goto(`${playground}/?fixture=${fixture}`, { waitUntil: "domcontentloaded" });
+    let opened = await waitForEditor(page, readyMarker);
+    if (opened !== true) {
+        await page.reload({ waitUntil: "domcontentloaded" });
+        opened = await waitForEditor(page, readyMarker);
+        if (opened !== true) {
+            throw new Error(opened);
         }
-    } catch (error) {
-        const body = await page.locator("body").innerText().catch(() => "");
-        throw new Error(`${error instanceof Error ? error.message : String(error)}\n${body.slice(0, 500)}`);
     }
     await page.evaluate(() => document.fonts.ready);
     await page.addStyleTag({

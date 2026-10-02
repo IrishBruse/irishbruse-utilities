@@ -2,4 +2,4 @@ export {
     hasYamlFrontMatter,
     readYamlFrontMatter,
     type YamlFrontMatterSpan,
-} from "../../markdownInline/src/yamlFrontMatter";
+} from "../../markdownInline/src/skill";

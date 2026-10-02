@@ -1,12 +1,9 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { InlinePresentation } from "./decorations";
 import { bindDragSelection, isDragSelecting } from "./selection";
-import { installInlineKeybindings } from "./keybindings";
-import { bindMermaidCodeLens } from "./mermaidCodeLens";
-import { installMonaco, readEditorFontSize } from "./monacoSetup";
+import { bindMermaidCodeLens, installInlineKeybindings, installMonaco, readEditorFontSize } from "./monaco";
 import { parseScopes } from "./document/scopes";
-import { readFrontMatter } from "./yamlFrontMatter";
-import { skillMarkdownLanguageId } from "./skillYaml";
+import { readFrontMatter, skillMarkdownLanguageId } from "./skill";
 import type { Scope } from "./document/types";
 
 export interface InlineEdit {

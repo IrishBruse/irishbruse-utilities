@@ -2,7 +2,17 @@
 
 ## Unreleased
 
+-   **Fix**: Inline Markdown focuses the first line when a new empty `.md` file opens so typing can start without an extra click.
+
+-   **Fix**: Inline Markdown draws a previewed horizontal rule as one normal line, and drops the blank lines that were leaving a gap around it.
+
+-   **Fix**: Inline Markdown opens a previewed horizontal rule for editing when that line is clicked.
+
 -   **Change**: Remove the `generators/` package and `generate:contributes` scripts; maintain `src/constants.ts` by hand.
+
+-   **Fix**: Inline Markdown paints a continuous selection highlight on task list lines by dropping the extra checkbox spacer and using the list gutter bullet.
+
+-   **Fix**: Inline Markdown paints a continuous selection highlight on task list lines by dropping the extra checkbox spacer and using the list gutter bullet.
 
 -   **Fix**: Inline Markdown updates inline marks while the mouse is held during a drag selection, not only after release.
 

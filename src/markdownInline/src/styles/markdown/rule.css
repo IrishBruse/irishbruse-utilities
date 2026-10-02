@@ -1,7 +1,16 @@
+.inline-md-hr-line {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
 .inline-md-hr {
     display: block;
+    position: relative;
+    top: 50%;
+    width: 100%;
     height: 0;
     border: 0;
     border-top: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
-    margin: 0.8em 0;
+    margin: 0;
 }

@@ -279,10 +279,6 @@ function contentClass(scope: Scope): string | undefined {
     }
 }
 
-function listMarkerIsTask(scopes: readonly Scope[], marker: TextRange): boolean {
-    return scopes.some((scope) => scope.kind === "task" && scope.start === marker.end);
-}
-
 function lineClass(scope: Scope): string | undefined {
     if (scope.kind === "codeBlock") {
         return "inline-md-code-line";
@@ -541,7 +537,7 @@ export class InlinePresentation {
                         ? { inlineClassName: "inline-md-quote-marker" }
                         : {
                             ...hideOptions(before),
-                            ...(scope.kind === "listMarker" && !listMarkerIsTask(scopes, marker)
+                            ...(scope.kind === "listMarker"
                                 ? {
                                     firstLineDecorationClassName: listMarkerBulletClass(
                                         listMarkerIndentColumns(
@@ -823,7 +819,7 @@ export class InlinePresentation {
                     checked: scope.checked === true,
                     position,
                 });
-                return injected(scope.checked === true ? "☑ " : "☐ ", "inline-md-task-spacer");
+                return undefined;
             }
             case "codeBlock":
                 if (index !== 0) {
@@ -837,14 +833,23 @@ export class InlinePresentation {
 
     private blockZone(scope: Scope, from: number, lineNumber: number): ZoneRecord {
         if (scope.kind === "thematicBreak") {
+            const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
+            const frame = document.createElement("div");
+            frame.className = "inline-md-hr-line";
             const rule = document.createElement("hr");
             rule.className = "inline-md-hr";
+            frame.append(rule);
+            frame.addEventListener("mousedown", (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                this.handlers.onReveal(from + 1);
+            });
             return {
                 key: `hr:${from}`,
                 zone: {
                     afterLineNumber: lineNumber - 1,
-                    heightInPx: 28,
-                    domNode: rule,
+                    heightInPx: lineHeight,
+                    domNode: frame,
                     marginDomNode: lineNumberNode(lineNumber),
                     suppressMouseDown: true,
                     showInHiddenAreas: true,

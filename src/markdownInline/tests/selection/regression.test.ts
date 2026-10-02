@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { expectEditorShot, openPlayground } from "../../support/browser";
+import { expectEditorShot, expectPageClip, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -150,5 +150,82 @@ describe("task list selection highlight", () => {
             return document.querySelector(".inline-md-task") !== null;
         });
         expect(formatted).toBe(false);
+    });
+});
+
+async function maxSelectionGapOnLine(page: Page, needle: string): Promise<number> {
+    return page.evaluate((lineNeedle) => {
+        const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+        const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes(lineNeedle));
+        if (!(line instanceof HTMLElement)) {
+            return Number.POSITIVE_INFINITY;
+        }
+        const top = line.getBoundingClientRect().top;
+        const pieces = [...document.querySelectorAll<HTMLElement>(".selected-text")].filter(
+            (piece) => Math.abs(piece.getBoundingClientRect().top - top) < 3,
+        );
+        pieces.sort((left, right) => left.getBoundingClientRect().left - right.getBoundingClientRect().left);
+        let maxGap = 0;
+        for (let index = 1; index < pieces.length; index += 1) {
+            const gap = pieces[index].getBoundingClientRect().left - pieces[index - 1].getBoundingClientRect().right;
+            maxGap = Math.max(maxGap, gap);
+        }
+        const lineLeft = line.getBoundingClientRect().left;
+        const firstLeft = pieces[0]?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY;
+        return Math.max(maxGap, Math.max(0, firstLeft - lineLeft));
+    }, needle);
+}
+
+describe("task line selection picture", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("selection/fixtures/case-5.md", "Quote line");
+        browser = opened.browser;
+        page = opened.page;
+        await page.evaluate(async () => {
+            const doc = window.__inlineMarkdown.getDocument();
+            const from = doc.indexOf("> Quote");
+            window.__inlineMarkdown.select(from, doc.length);
+            await new Promise((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(resolve));
+            });
+        });
+        await page.waitForFunction(() => document.querySelectorAll(".selected-text").length > 0);
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("keeps one continuous highlight band on the task line", async () => {
+        expect(await maxSelectionGapOnLine(page, "Task")).toBeLessThanOrEqual(1);
+    });
+
+    it("matches the saved picture of the task line selection", async () => {
+        const clip = await page.evaluate(() => {
+            const editor = document.querySelector("#editor");
+            const margin = document.querySelector("#editor .margin");
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const lines = [...document.querySelectorAll("#editor .view-line")];
+            const task = lines.find((entry) => fold(entry.textContent).includes("Task"));
+            const below = lines.find((entry) => fold(entry.textContent).includes("Still selected"));
+            if (!(editor instanceof HTMLElement) || !(margin instanceof HTMLElement) || !(task instanceof HTMLElement) || !(below instanceof HTMLElement)) {
+                return null;
+            }
+            const editorBox = editor.getBoundingClientRect();
+            const marginBox = margin.getBoundingClientRect();
+            const top = task.getBoundingClientRect().top;
+            const bottom = below.getBoundingClientRect().bottom;
+            return {
+                x: Math.round(marginBox.left),
+                y: Math.round(top),
+                width: Math.round(editorBox.right - marginBox.left),
+                height: Math.round(bottom - top),
+            };
+        });
+        expect(clip).not.toBeNull();
+        await expectPageClip(page, clip ?? { x: 0, y: 0, width: 1, height: 1 }, join(here, "screenshots", "task-line-selection.png"));
     });
 });

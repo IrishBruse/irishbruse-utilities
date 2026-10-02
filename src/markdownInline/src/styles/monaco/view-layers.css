@@ -46,6 +46,7 @@
 .inline-md-block,
 .inline-md-image,
 .inline-md-image-fallback,
+.inline-md-hr-line,
 .inline-md-hr,
 .inline-md-table {
     pointer-events: auto;

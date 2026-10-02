@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lineModelFromSource, listItemGapAfterLines, listItemStartLines } from "./listItemGap";
+import { lineModelFromSource, listGapPaints, listItemGapAfterLines, listItemStartLines, listLineHeightPx } from "./listItemGap";
 import { parseScopes } from "./scopes";
 
 function gaps(source: string): number[] {
@@ -27,5 +27,14 @@ describe("listItemGapAfterLines", () => {
 
     it("skips gaps for plain paragraphs", () => {
         expect(gaps("para one\npara two\n")).toEqual([]);
+    });
+
+    it("paints the gap class and height from the list module", () => {
+        const model = lineModelFromSource("- a\n- b\n");
+        expect(listGapPaints(model, parseScopes("- a\n- b\n"), 4)).toEqual([
+            { lineNumber: 1, className: "inline-md-list-gap-after", heightPx: 4, zoneKey: "list-gap:1:4" },
+            { lineNumber: 2, className: "inline-md-list-gap-after", heightPx: 4, zoneKey: "list-gap:2:4" },
+        ]);
+        expect(listLineHeightPx(20)).toBe(24);
     });
 });

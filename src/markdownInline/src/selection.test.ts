@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { layoutSelectionPieces, type SelectionBox } from "./selectionPaint";
+import { layoutSelectionPieces, type SelectionBox } from "./selection";
 
 const here = dirname(fileURLToPath(import.meta.url));
 
@@ -24,6 +24,7 @@ describe("selection highlight", () => {
             source.indexOf("private syncCurrentLine"),
         );
         expect(body).not.toMatch(/for \(const piece of pieces\) \{\s*piece\.style\.bottom = "";\s*piece\.style\.height = "";\s*\}/);
+        expect(body).toContain("stretchesSelectionLine");
 
         const paragraph = box(80, 20);
         const heading = box(40, 20);

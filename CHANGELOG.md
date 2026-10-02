@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+-   **Change**: Inline Markdown list gaps, bullet indent, and the list line-height variable come from the list module.
+
+-   **Change**: Inline Markdown keeps reveal, selection stretch, and block view zones behind their own modules.
+
 -   **Fix**: Inline Markdown focuses the first line when a new empty `.md` file opens so typing can start without an extra click.
 
 -   **Fix**: Inline Markdown draws a previewed horizontal rule as one normal line, and drops the blank lines that were leaving a gap around it.

@@ -1,15 +1,14 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { blockquoteDepthClass, blockquoteLineDepth } from "./blockquote";
-import { LIST_ITEM_GAP_PX, listItemGapAfterLines, listItemStartLines, monacoLineModel } from "./listItemGap";
-import { listMarkerBulletClass, listMarkerIndentColumns } from "./listMarker";
-import { resolveImageUrl } from "./imageUrl";
-import { isMermaidCodeBlock, renderMermaidDiagram } from "./mermaid";
+import { applyListLineHeight, listGapPaints, listMarkerBulletClass, listMarkerIndentColumns, monacoLineModel } from "./listItemGap";
+import { blockZone as buildBlockZone, contentClass, createMermaidZone as buildMermaidZone, headingLevel, tableZone as buildTableZone, type BlockZoneHost } from "./blockZone";
+import { isMermaidCodeBlock } from "./mermaid";
 import { refreshMermaidCodeLens, setHiddenAreas } from "./monacoSetup";
-import { layoutSelectionPieces } from "./selectionPaint";
+import { revealMarker, revealMermaid, showFormatted } from "./reveal";
 import { parseScopes } from "./scopes";
+import { layoutSelectionPieces, stretchesSelectionLine } from "./selection";
 import { readFrontMatter, type FrontMatterSpan } from "./yamlFrontMatter";
 import type { CursorContext, Scope, TextRange } from "./types";
-import { markerVisibility, selectionOverlaps, showsFormattedContent } from "./visibility";
 
 export interface InlinePresentationHandlers {
     onToggleTask(from: number, to: number): void;
@@ -140,106 +139,12 @@ function paintInline(
 const HEADING_SCALE = [1, 1.5, 1.4, 1.25, 1.1, 1, 0.85];
 const HEADING_PAD = 2;
 
-function headingLevel(scope: Scope): number {
-    const raw = scope.level ?? 1;
-    return raw >= 1 && raw <= 6 ? Math.trunc(raw) : 1;
-}
-
 function headingExtraHeight(level: number, fontSize: number, lineHeight: number): number {
     const scale = HEADING_SCALE[level] ?? 1;
     if (scale <= 1 || fontSize <= 0) {
         return 0;
     }
     return HEADING_PAD * 2;
-}
-
-const INLINE_CELL = new Set<Scope["kind"]>(["strong", "emphasis", "strikethrough", "inlineCode", "link"]);
-
-function trimmedTextRange(source: string, range: TextRange): TextRange {
-    let start = range.start;
-    let end = range.end;
-    while (start < end && (source[start] === " " || source[start] === "\t")) {
-        start += 1;
-    }
-    while (end > start && (source[end - 1] === " " || source[end - 1] === "\t")) {
-        end -= 1;
-    }
-    return { start, end };
-}
-
-function caretIn(x: number, y: number): { node: Node; offset: number } | undefined {
-    const doc = document as Document & {
-        caretPositionFromPoint?(x: number, y: number): { offsetNode: Node; offset: number } | null;
-        caretRangeFromPoint?(x: number, y: number): Range | null;
-    };
-    const position = doc.caretPositionFromPoint?.(x, y);
-    if (position) {
-        return { node: position.offsetNode, offset: position.offset };
-    }
-    const range = doc.caretRangeFromPoint?.(x, y);
-    if (!range) {
-        return undefined;
-    }
-    return { node: range.startContainer, offset: range.startOffset };
-}
-
-function sourceOffsetAt(node: Node, offset: number): number | undefined {
-    const element = node instanceof Element ? node : node.parentElement;
-    const marked = element?.closest("[data-from]");
-    if (!(marked instanceof HTMLElement)) {
-        return undefined;
-    }
-    const from = Number(marked.dataset.from);
-    if (!Number.isFinite(from)) {
-        return undefined;
-    }
-    return from + offset;
-}
-
-function tableCellOffset(event: MouseEvent, cell: HTMLElement, fallback: number): number {
-    const start = Number(cell.dataset.start);
-    const end = Number(cell.dataset.end);
-    const caret = caretIn(event.clientX, event.clientY);
-    const fromCaret = caret && cell.contains(caret.node) ? sourceOffsetAt(caret.node, caret.offset) : undefined;
-    if (fromCaret !== undefined && Number.isFinite(start) && Number.isFinite(end) && fromCaret >= start && fromCaret <= end) {
-        return fromCaret;
-    }
-    if (Number.isFinite(start)) {
-        return start;
-    }
-    return fallback;
-}
-
-function appendFormatted(parent: HTMLElement, source: string, start: number, end: number, scopes: readonly Scope[]): void {
-    const relevant = scopes
-        .filter((scope) => INLINE_CELL.has(scope.kind) && scope.start >= start && scope.end <= end)
-        .sort((left, right) => left.start - right.start || right.end - left.end);
-    let cursor = start;
-    while (cursor < end) {
-        const next = relevant.find((scope) => scope.start >= cursor);
-        const plainEnd = next && next.start < end ? next.start : end;
-        if (plainEnd > cursor) {
-            const text = document.createElement("span");
-            text.dataset.from = String(cursor);
-            text.textContent = source.slice(cursor, plainEnd);
-            parent.append(text);
-            cursor = plainEnd;
-        }
-        if (!next || next.start >= end) {
-            break;
-        }
-        const node = document.createElement("span");
-        const className = contentClass(next);
-        if (className) {
-            node.className = className;
-        }
-        if (next.kind === "link" && next.url) {
-            node.dataset.href = next.url;
-        }
-        appendFormatted(node, source, next.contentStart, next.contentEnd, scopes);
-        parent.append(node);
-        cursor = next.end > cursor ? next.end : cursor + 1;
-    }
 }
 
 function lineNumbersCovering(model: monaco.editor.ITextModel, text: string, range: TextRange): number[] {
@@ -258,25 +163,6 @@ function lineNumbersCovering(model: monaco.editor.ITextModel, text: string, rang
         lines.push(line);
     }
     return lines;
-}
-
-function contentClass(scope: Scope): string | undefined {
-    switch (scope.kind) {
-        case "heading":
-            return `inline-md-h${headingLevel(scope)}`;
-        case "strong":
-            return "inline-md-strong";
-        case "emphasis":
-            return "inline-md-em";
-        case "strikethrough":
-            return "inline-md-strike";
-        case "inlineCode":
-            return "inline-md-code";
-        case "link":
-            return "inline-md-link";
-        default:
-            return undefined;
-    }
 }
 
 function lineClass(scope: Scope): string | undefined {
@@ -371,42 +257,6 @@ function injected(content: string, inlineClassName: string): monaco.editor.Injec
     };
 }
 
-function tableFrameHeight(frame: HTMLElement): number {
-    const table = frame.querySelector("table");
-    const content = table instanceof HTMLElement ? table.offsetHeight : frame.scrollHeight;
-    const style = getComputedStyle(frame);
-    const padding = (Number.parseFloat(style.paddingTop) || 0) + (Number.parseFloat(style.paddingBottom) || 0);
-    const border = (Number.parseFloat(style.borderTopWidth) || 0) + (Number.parseFloat(style.borderBottomWidth) || 0);
-    return Math.ceil(content + padding + border);
-}
-
-function lineNumberNode(lineNumber: number): HTMLDivElement {
-    const number = document.createElement("div");
-    number.className = "inline-md-zone-number";
-    number.textContent = String(lineNumber);
-    return number;
-}
-
-function imageLabel(alt: string): string {
-    if (alt.length > 0) {
-        return alt;
-    }
-    return "Image";
-}
-
-function fallbackElement(alt: string, from: number, onReveal: (offset: number) => void): HTMLSpanElement {
-    const fallback = document.createElement("span");
-    fallback.className = "inline-md-image-fallback";
-    fallback.textContent = imageLabel(alt);
-    fallback.dataset.from = String(from);
-    fallback.addEventListener("mousedown", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        onReveal(from + 1);
-    });
-    return fallback;
-}
-
 export class InlinePresentation {
     private readonly decorations: monaco.editor.IEditorDecorationsCollection;
     private readonly widgets = new Map<string, TaskWidget>();
@@ -497,7 +347,19 @@ export class InlinePresentation {
                 if (!marker || marker.end <= marker.start) {
                     continue;
                 }
-                if (findHits(scope, finds) || markerVisibility(scope, marker, cursor, markerLineAt(model, marker.start)) !== "hidden") {
+                const findHit = findHits(scope, finds);
+                const markerLine = markerLineAt(model, marker.start);
+                const frontMatterEnd = this.frontMatter?.end;
+                let action = revealMarker({
+                    scope,
+                    marker,
+                    cursor,
+                    markerLine,
+                    findHit,
+                    frontMatterEnd,
+                    singleLine: false,
+                });
+                if (action !== "hidden" && action !== "zone" && action !== "occupy") {
                     continue;
                 }
                 const bounds = withoutTrailingLineBreak(text, marker.start, marker.end);
@@ -507,8 +369,25 @@ export class InlinePresentation {
                 if (replaced.some((range) => spansOverlap(bounds.start, bounds.end, range.start, range.end))) {
                     continue;
                 }
+                if (action === "hidden" && (scope.kind === "image" || scope.kind === "thematicBreak")) {
+                    action = revealMarker({
+                        scope,
+                        marker,
+                        cursor,
+                        markerLine,
+                        findHit,
+                        frontMatterEnd,
+                        singleLine: coveredLine(model, bounds) !== undefined,
+                    });
+                }
+                if (action !== "hidden" && action !== "zone" && action !== "occupy") {
+                    continue;
+                }
                 replaced.push(bounds);
-                if (scope.kind === "table") {
+                if (action === "occupy") {
+                    continue;
+                }
+                if (action === "zone" && scope.kind === "table") {
                     const lines = lineNumbersCovering(model, text, bounds);
                     for (const line of lines) {
                         hiddenLines.add(line);
@@ -519,13 +398,12 @@ export class InlinePresentation {
                     }
                     continue;
                 }
-                const line = coveredLine(model, bounds);
-                if (scope.kind === "thematicBreak" && this.frontMatter && bounds.start < this.frontMatter.end) {
-                    continue;
-                }
-                if ((scope.kind === "image" || scope.kind === "thematicBreak") && line !== undefined) {
-                    hiddenLines.add(line);
-                    zones.push(this.blockZone(scope, bounds.start, line));
+                if (action === "zone") {
+                    const line = coveredLine(model, bounds);
+                    if (line !== undefined) {
+                        hiddenLines.add(line);
+                        zones.push(this.blockZone(scope, bounds.start, line));
+                    }
                     continue;
                 }
                 const before = scope.kind === "blockquoteMarker"
@@ -568,7 +446,7 @@ export class InlinePresentation {
             if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
                 continue;
             }
-            if (selectionOverlaps(scope, cursor) || findHits(scope, finds)) {
+            if (revealMermaid(scope, cursor, findHits(scope, finds)) !== "zone") {
                 continue;
             }
             const lines = lineNumbersCovering(model, text, { start: scope.start, end: scope.end });
@@ -591,7 +469,7 @@ export class InlinePresentation {
 
         for (const scope of scopes) {
             const className = contentClass(scope);
-            const formatted = showsFormattedContent(scope, cursor) && !findHits(scope, finds);
+            const formatted = showFormatted(scope, cursor, findHits(scope, finds));
             if (className && (formatted || scope.kind === "heading")) {
                 const rawHeading = scope.kind === "heading" && !formatted;
                 const start = rawHeading ? scope.start : scope.contentStart;
@@ -625,7 +503,15 @@ export class InlinePresentation {
                 }
             }
             for (const marker of scope.markers) {
-                if (markerVisibility(scope, marker, cursor, markerLineAt(model, marker.start)) !== "ghost") {
+                if (revealMarker({
+                    scope,
+                    marker,
+                    cursor,
+                    markerLine: markerLineAt(model, marker.start),
+                    findHit: findHits(scope, finds),
+                    frontMatterEnd: this.frontMatter?.end,
+                    singleLine: false,
+                }) !== "ghost") {
                     continue;
                 }
                 for (const segment of subtractRanges(marker.start, marker.end, replaced)) {
@@ -638,8 +524,16 @@ export class InlinePresentation {
             this.addLineDecorations(model, scope, decorations);
             if (
                 scope.kind === "codeBlock"
-                && scope.markers.some((marker) => markerVisibility(scope, marker, cursor, markerLineAt(model, marker.start)) === "hidden")
-                && !(isMermaidCodeBlock(scope.language) && !selectionOverlaps(scope, cursor))
+                && scope.markers.some((marker) => revealMarker({
+                    scope,
+                    marker,
+                    cursor,
+                    markerLine: markerLineAt(model, marker.start),
+                    findHit: false,
+                    frontMatterEnd: this.frontMatter?.end,
+                    singleLine: false,
+                }) === "hidden")
+                && !(isMermaidCodeBlock(scope.language) && revealMermaid(scope, cursor, false) === "zone")
             ) {
                 const codeText = text.slice(scope.contentStart, scope.contentEnd).trim();
                 if (codeText.length > 0) {
@@ -656,7 +550,10 @@ export class InlinePresentation {
         const fontSize = this.editor.getOption(monaco.editor.EditorOption.fontSize);
         const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
         this.syncHeadingLineHeights(fontSize, lineHeight);
-        this.syncListLineHeights(lineHeight);
+        const listRoot = this.editor.getDomNode()?.closest(".inline-md-root");
+        if (listRoot instanceof HTMLElement) {
+            applyListLineHeight(listRoot, lineHeight);
+        }
         this.syncCurrentLine(headingLines, fontSize, lineHeight);
         const quoteDepths = new Map<number, number>();
         for (const scope of scopes) {
@@ -704,22 +601,20 @@ export class InlinePresentation {
 
         const tabSize = this.editor.getOption(monaco.editor.EditorOption.tabSize);
         const lineModel = monacoLineModel(model);
-        const listStarts = listItemStartLines(lineModel, scopes, tabSize);
-        const listGapLines = listItemGapAfterLines(lineModel, listStarts, tabSize);
-        for (const lineNumber of listGapLines) {
+        for (const gap of listGapPaints(lineModel, scopes, tabSize)) {
             decorations.push({
-                range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+                range: new monaco.Range(gap.lineNumber, 1, gap.lineNumber, 1),
                 options: {
                     isWholeLine: true,
-                    className: "inline-md-list-gap-after",
+                    className: gap.className,
                 },
             });
             const spacer = document.createElement("div");
             zones.push({
-                key: `list-gap:${lineNumber}:${LIST_ITEM_GAP_PX}`,
+                key: gap.zoneKey,
                 zone: {
-                    afterLineNumber: lineNumber,
-                    heightInPx: LIST_ITEM_GAP_PX,
+                    afterLineNumber: gap.lineNumber,
+                    heightInPx: gap.heightPx,
                     domNode: spacer,
                     suppressMouseDown: true,
                 },
@@ -754,14 +649,6 @@ export class InlinePresentation {
             const extra = headingExtraHeight(level, fontSize, lineHeight);
             root.style.setProperty(`--ib-md-h${level}-line`, `${lineHeight + extra}px`);
         }
-    }
-
-    private syncListLineHeights(lineHeight: number): void {
-        const root = this.editor.getDomNode()?.closest(".inline-md-root");
-        if (!(root instanceof HTMLElement)) {
-            return;
-        }
-        root.style.setProperty("--ib-md-list-line", `${lineHeight + LIST_ITEM_GAP_PX}px`);
     }
 
     private writeHiddenAreas(model: monaco.editor.ITextModel): void {
@@ -831,81 +718,33 @@ export class InlinePresentation {
         }
     }
 
+    private zoneHost(): BlockZoneHost {
+        const onLink = this.handlers.onLink;
+        const onOpenMermaidPreview = this.handlers.onOpenMermaidPreview;
+        return {
+            onReveal: (offset) => {
+                this.handlers.onReveal(offset);
+            },
+            onLink: onLink
+                ? (href) => {
+                    this.handlers.onLink?.(href);
+                }
+                : undefined,
+            onOpenMermaidPreview: onOpenMermaidPreview
+                ? (openLine) => {
+                    this.handlers.onOpenMermaidPreview?.(openLine);
+                }
+                : undefined,
+            onLayout: (key) => {
+                this.layoutZone(key);
+            },
+            documentUrl: this.documentUrl,
+            lineHeight: this.editor.getOption(monaco.editor.EditorOption.lineHeight),
+        };
+    }
+
     private blockZone(scope: Scope, from: number, lineNumber: number): ZoneRecord {
-        if (scope.kind === "thematicBreak") {
-            const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
-            const frame = document.createElement("div");
-            frame.className = "inline-md-hr-line";
-            const rule = document.createElement("hr");
-            rule.className = "inline-md-hr";
-            frame.append(rule);
-            frame.addEventListener("mousedown", (event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                this.handlers.onReveal(from + 1);
-            });
-            return {
-                key: `hr:${from}`,
-                zone: {
-                    afterLineNumber: lineNumber - 1,
-                    heightInPx: lineHeight,
-                    domNode: frame,
-                    marginDomNode: lineNumberNode(lineNumber),
-                    suppressMouseDown: true,
-                    showInHiddenAreas: true,
-                },
-            };
-        }
-        const alt = scope.alt ?? "";
-        const src = scope.url ? resolveImageUrl(scope.url, this.documentUrl) : undefined;
-        const frame = document.createElement("div");
-        frame.className = "inline-md-block";
-        const zone: monaco.editor.IViewZone = {
-            afterLineNumber: lineNumber - 1,
-            heightInPx: src ? 48 : 28,
-            domNode: frame,
-            marginDomNode: lineNumberNode(lineNumber),
-            suppressMouseDown: true,
-            showInHiddenAreas: true,
-        };
-        if (!src) {
-            frame.append(fallbackElement(alt, from, this.handlers.onReveal));
-            return { key: `image:${from}:missing`, zone };
-        }
-        const image = document.createElement("img");
-        image.className = "inline-md-image";
-        image.alt = alt;
-        image.dataset.from = String(from);
-        image.addEventListener("mousedown", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            this.handlers.onReveal(from + 1);
-        });
-        image.addEventListener("error", () => {
-            image.replaceWith(fallbackElement(alt, from, this.handlers.onReveal));
-            zone.heightInPx = 28;
-            this.layoutZone(`image:${from}:${src}`);
-        });
-        const fitImage = (): void => {
-            const displayed = image.getBoundingClientRect().height;
-            const height = displayed > 0 ? displayed : image.naturalHeight;
-            if (height <= 0) {
-                return;
-            }
-            const next = Math.min(Math.ceil(height), 240);
-            if (Math.abs(next - (zone.heightInPx ?? 0)) <= 1) {
-                return;
-            }
-            zone.heightInPx = next;
-            this.layoutZone(`image:${from}:${src}`);
-        };
-        image.addEventListener("load", () => {
-            fitImage();
-            requestAnimationFrame(fitImage);
-        });
-        image.src = src;
-        frame.append(image);
-        return { key: `image:${from}:${src}`, zone };
+        return buildBlockZone(scope, from, lineNumber, this.zoneHost());
     }
 
     private ensureMermaidZone(scope: Scope, source: string, lineNumber: number): ZoneRecord {
@@ -921,57 +760,7 @@ export class InlinePresentation {
     }
 
     private createMermaidZone(scope: Scope, content: string, key: string, lineNumber: number): ZoneRecord {
-        const openLine = lineNumber - 1;
-        const frame = document.createElement("div");
-        frame.className = "inline-md-mermaid";
-        const openPreview = document.createElement("button");
-        openPreview.type = "button";
-        openPreview.className = "inline-md-mermaid-open-preview";
-        openPreview.textContent = "Open Preview";
-        openPreview.title = "Open Mermaid preview";
-        openPreview.addEventListener("mousedown", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            this.handlers.onOpenMermaidPreview?.(openLine);
-        });
-        frame.append(openPreview);
-        frame.addEventListener("mousedown", (event) => {
-            if (event.target instanceof HTMLElement && event.target.closest(".inline-md-mermaid-open-preview")) {
-                return;
-            }
-            event.preventDefault();
-            event.stopPropagation();
-            this.handlers.onReveal(scope.contentStart + 1);
-        });
-        const diagram = document.createElement("div");
-        diagram.className = "inline-md-mermaid-diagram";
-        frame.append(diagram);
-        const zone: monaco.editor.IViewZone = {
-            afterLineNumber: lineNumber - 1,
-            heightInPx: 120,
-            domNode: frame,
-            marginDomNode: lineNumberNode(lineNumber),
-            suppressMouseDown: true,
-            showInHiddenAreas: true,
-        };
-        const fitZoneHeight = (): void => {
-            if (!frame.isConnected) {
-                return;
-            }
-            const measured = Math.ceil(frame.scrollHeight);
-            if (measured > 0 && Math.abs(measured - (zone.heightInPx ?? 0)) > 1) {
-                zone.heightInPx = measured;
-                this.layoutZone(key);
-            }
-        };
-        void renderMermaidDiagram(diagram, content).then((height) => {
-            if (!frame.isConnected || height <= 0) {
-                return;
-            }
-            zone.heightInPx = height;
-            requestAnimationFrame(fitZoneHeight);
-        });
-        return { key, zone };
+        return buildMermaidZone(scope, content, key, lineNumber, this.zoneHost());
     }
 
     private tableZone(
@@ -981,87 +770,7 @@ export class InlinePresentation {
         from: number,
         lineNumber: number,
     ): ZoneRecord {
-        const frame = document.createElement("div");
-        frame.className = "inline-md-table";
-        frame.addEventListener("mousedown", (event) => {
-            const element = event.target instanceof Element
-                ? event.target
-                : event.target instanceof Node
-                    ? event.target.parentElement
-                    : null;
-            const link = element?.closest(".inline-md-link");
-            const href = link instanceof HTMLElement ? link.dataset.href : undefined;
-            event.preventDefault();
-            event.stopPropagation();
-            if (href && this.handlers.onLink) {
-                this.handlers.onLink(href);
-                return;
-            }
-            const cell = element?.closest("td, th");
-            const offset = cell instanceof HTMLElement
-                ? tableCellOffset(event, cell, from + 1)
-                : from + 1;
-            this.handlers.onReveal(offset);
-        });
-        const table = document.createElement("table");
-        const rows = scope.rows ?? [];
-        const head = rows[0];
-        if (head) {
-            const thead = document.createElement("thead");
-            thead.append(this.tableRow(source, scopes, head, "th"));
-            table.append(thead);
-        }
-        const bodyRows = rows.slice(1);
-        if (bodyRows.length > 0) {
-            const tbody = document.createElement("tbody");
-            for (const cells of bodyRows) {
-                tbody.append(this.tableRow(source, scopes, cells, "td"));
-            }
-            table.append(tbody);
-        }
-        frame.append(table);
-        const key = `table:${scope.start}:${scope.end}`;
-        const zone: monaco.editor.IViewZone = {
-            afterLineNumber: lineNumber - 1,
-            heightInPx: Math.max(28, rows.length * 32),
-            domNode: frame,
-            marginDomNode: lineNumberNode(lineNumber),
-            suppressMouseDown: true,
-            showInHiddenAreas: true,
-            onDomNodeTop: () => {
-                const fit = (): void => {
-                    const measured = tableFrameHeight(frame);
-                    if (measured > 0 && Math.abs(measured - (zone.heightInPx ?? 0)) > 1) {
-                        zone.heightInPx = measured;
-                        this.layoutZone(key);
-                    }
-                };
-                if (frame.style.display === "none") {
-                    requestAnimationFrame(fit);
-                    return;
-                }
-                fit();
-            },
-        };
-        return { key, zone };
-    }
-
-    private tableRow(
-        source: string,
-        scopes: readonly Scope[],
-        cells: readonly TextRange[],
-        cellTag: "th" | "td",
-    ): HTMLTableRowElement {
-        const row = document.createElement("tr");
-        for (const cell of cells) {
-            const node = document.createElement(cellTag);
-            const trimmed = trimmedTextRange(source, cell);
-            node.dataset.start = String(trimmed.start);
-            node.dataset.end = String(trimmed.end);
-            appendFormatted(node, source, trimmed.start, trimmed.end, scopes);
-            row.append(node);
-        }
-        return row;
+        return buildTableZone(scope, source, scopes, from, lineNumber, this.zoneHost());
     }
 
     private layoutZone(key: string): void {
@@ -1224,8 +933,6 @@ export class InlinePresentation {
         }
         const pieces = [...dom.querySelectorAll<HTMLElement>(".selected-text")];
         const viewLines = [...dom.querySelectorAll<HTMLElement>(".view-lines .view-line")];
-        const headingSelector = ".inline-md-h1, .inline-md-h2, .inline-md-h3, .inline-md-h4";
-        const listGapEndClass = "inline-md-list-gap-after";
         const boxes = pieces.map((piece) => {
             const rect = piece.getBoundingClientRect();
             return {
@@ -1238,12 +945,10 @@ export class InlinePresentation {
         });
         const lines = viewLines.map((viewLine) => {
             const rect = viewLine.getBoundingClientRect();
-            const stretchToLineHeight = viewLine.querySelector(headingSelector) !== null
-                || viewLine.classList.contains(listGapEndClass);
             return {
                 top: rect.top,
                 height: rect.height,
-                stretchToLineHeight,
+                stretchToLineHeight: stretchesSelectionLine(viewLine),
             };
         });
         layoutSelectionPieces(boxes, lines);

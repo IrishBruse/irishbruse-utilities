@@ -2,7 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
-import { dragSelectionClassName } from "./dragSelection";
+import { dragSelectionClassName } from "./selection";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const dragCssPath = join(here, "styles/selection/dragging.css");

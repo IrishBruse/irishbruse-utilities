@@ -34,7 +34,6 @@ body {
     );
     --ib-md-blockquote-border: var(--vscode-textBlockQuote-border, #4b5163);
     --vscode-editorCodeLens-foreground: var(--vscode-descriptionForeground, #9da5b4);
-    --ib-md-list-item-gap: 4px;
 }
 
 .inline-md-root::-webkit-scrollbar {

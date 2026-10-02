@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { listMarkerBulletClass, listMarkerIndentColumns } from "./listMarker";
+import { listMarkerBulletClass, listMarkerIndentColumns } from "./listItemGap";
 
 describe("listMarkerIndentColumns", () => {
     it("counts leading spaces before the marker column", () => {

@@ -1,7 +1,51 @@
-import { listMarkerIndentColumns } from "./listMarker";
 import type { Scope, TextRange } from "./types";
 
 export const LIST_ITEM_GAP_PX = 4;
+export const listGapAfterClass = "inline-md-list-gap-after";
+export const listLineHeightVariable = "--ib-md-list-line";
+
+export function listMarkerIndentColumns(line: string, markerColumn: number, tabSize: number): number {
+    const before = line.slice(0, Math.max(0, markerColumn - 1));
+    let columns = 0;
+    for (const character of before) {
+        if (character === "\t") {
+            columns += tabSize;
+        } else if (character === " ") {
+            columns += 1;
+        }
+    }
+    return columns;
+}
+
+export function listMarkerBulletClass(indentColumns: number): string {
+    const clamped = Math.max(0, Math.min(indentColumns, 24));
+    return `inline-md-list-bullet inline-md-list-indent-${clamped}`;
+}
+
+export function listLineHeightPx(lineHeight: number): number {
+    return lineHeight + LIST_ITEM_GAP_PX;
+}
+
+export function applyListLineHeight(root: HTMLElement, lineHeight: number): void {
+    root.style.setProperty(listLineHeightVariable, `${listLineHeightPx(lineHeight)}px`);
+}
+
+export interface ListGapPaint {
+    readonly lineNumber: number;
+    readonly className: string;
+    readonly heightPx: number;
+    readonly zoneKey: string;
+}
+
+export function listGapPaints(model: TextLineModel, scopes: readonly Scope[], tabSize: number): ListGapPaint[] {
+    const starts = listItemStartLines(model, scopes, tabSize);
+    return listItemGapAfterLines(model, starts, tabSize).map((lineNumber) => ({
+        lineNumber,
+        className: listGapAfterClass,
+        heightPx: LIST_ITEM_GAP_PX,
+        zoneKey: `list-gap:${lineNumber}:${LIST_ITEM_GAP_PX}`,
+    }));
+}
 
 const ORDERED_LIST_LINE = /^\s*\d+(?:\.\s|\)\s)/;
 

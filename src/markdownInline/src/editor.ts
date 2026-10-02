@@ -1,6 +1,6 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { InlinePresentation } from "./decorations";
-import { bindDragSelection, isDragSelecting } from "./dragSelection";
+import { bindDragSelection, isDragSelecting } from "./selection";
 import { installInlineKeybindings } from "./keybindings";
 import { bindMermaidCodeLens } from "./mermaidCodeLens";
 import { installMonaco, readEditorFontSize } from "./monacoSetup";

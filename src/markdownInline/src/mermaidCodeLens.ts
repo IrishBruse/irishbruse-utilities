@@ -1,6 +1,6 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { isMermaidCodeBlock } from "./mermaid";
-import { parseScopes } from "./scopes";
+import { isMermaidCodeBlock } from "./preview/mermaid";
+import { parseScopes } from "./document/scopes";
 import { skillMarkdownLanguageId } from "./skillYaml";
 
 const openCommandId = "inline-md.openMermaidPreview";

@@ -1,5 +1,5 @@
 export { mountInlineEditor } from "./editor";
 export type { InlineEdit, InlineEditorHandle, MountInlineEditorOptions } from "./editor";
-export { resolveImageUrl } from "./imageUrl";
-export { parseScopes } from "./scopes";
+export { resolveImageUrl } from "./preview/imageUrl";
+export { parseScopes } from "./document/scopes";
 export { markerVisibility, showsFormattedContent } from "./visibility";

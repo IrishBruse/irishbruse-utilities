@@ -1,9 +1,13 @@
-import type { CursorContext, Scope, TextRange } from "./types";
+import type { CursorContext, Scope, TextRange } from "./document/types";
 import { markerVisibility, selectionOverlaps, showsFormattedContent, type MarkerLineContext } from "./visibility";
 
 export type RevealAction = "raw" | "ghost" | "hidden" | "zone" | "occupy";
 
-export function revealMarker(input: {
+export type RevealSurface =
+    | { surface: "preview"; zone: boolean; occupy: boolean }
+    | { surface: "raw"; ghost: boolean };
+
+export type RevealInput = {
     scope: Scope;
     marker: TextRange;
     cursor: CursorContext;
@@ -11,7 +15,28 @@ export function revealMarker(input: {
     findHit: boolean;
     frontMatterEnd: number | undefined;
     singleLine: boolean;
-}): RevealAction {
+};
+
+function surfaceFor(action: RevealAction): RevealSurface {
+    switch (action) {
+        case "raw":
+            return { surface: "raw", ghost: false };
+        case "ghost":
+            return { surface: "raw", ghost: true };
+        case "hidden":
+            return { surface: "preview", zone: false, occupy: false };
+        case "zone":
+            return { surface: "preview", zone: true, occupy: false };
+        case "occupy":
+            return { surface: "preview", zone: false, occupy: true };
+    }
+}
+
+export function reveal(input: RevealInput): RevealSurface {
+    return surfaceFor(revealMarker(input));
+}
+
+export function revealMarker(input: RevealInput): RevealAction {
     const visibility = markerVisibility(input.scope, input.marker, input.cursor, input.markerLine);
     if (input.findHit) {
         if (visibility === "hidden") {
@@ -43,4 +68,11 @@ export function revealMermaid(scope: Scope, cursor: CursorContext, findHit: bool
         return "raw";
     }
     return "zone";
+}
+
+export function revealCode(scope: Scope, cursor: CursorContext, findHit: boolean): RevealSurface {
+    if (revealMermaid(scope, cursor, findHit) === "zone") {
+        return { surface: "preview", zone: true, occupy: false };
+    }
+    return { surface: "raw", ghost: false };
 }

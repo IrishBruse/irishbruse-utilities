@@ -1,14 +1,16 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { blockquoteDepthClass, blockquoteLineDepth } from "./blockquote";
-import { applyListLineHeight, listGapPaints, listMarkerBulletClass, listMarkerIndentColumns, monacoLineModel } from "./listItemGap";
-import { blockZone as buildBlockZone, contentClass, createMermaidZone as buildMermaidZone, headingLevel, tableZone as buildTableZone, type BlockZoneHost } from "./blockZone";
-import { isMermaidCodeBlock } from "./mermaid";
+import { blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
+import { applyListLineHeight, listGapPaints, listMarkerBulletClass, listMarkerIndentColumns, monacoLineModel } from "./preview/listItemGap";
+import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
+import { isMermaidCodeBlock } from "./preview/mermaid";
+import { previewContentClass, previewContentRange } from "./preview/paint";
 import { refreshMermaidCodeLens, setHiddenAreas } from "./monacoSetup";
-import { revealMarker, revealMermaid, showFormatted } from "./reveal";
-import { parseScopes } from "./scopes";
+import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "./raw/paint";
+import { reveal, revealCode, showFormatted } from "./reveal";
+import { parseScopes } from "./document/scopes";
 import { layoutSelectionPieces, stretchesSelectionLine } from "./selection";
 import { readFrontMatter, type FrontMatterSpan } from "./yamlFrontMatter";
-import type { CursorContext, Scope, TextRange } from "./types";
+import type { CursorContext, Scope, TextRange } from "./document/types";
 
 export interface InlinePresentationHandlers {
     onToggleTask(from: number, to: number): void;
@@ -350,7 +352,7 @@ export class InlinePresentation {
                 const findHit = findHits(scope, finds);
                 const markerLine = markerLineAt(model, marker.start);
                 const frontMatterEnd = this.frontMatter?.end;
-                let action = revealMarker({
+                let decision = reveal({
                     scope,
                     marker,
                     cursor,
@@ -359,7 +361,7 @@ export class InlinePresentation {
                     frontMatterEnd,
                     singleLine: false,
                 });
-                if (action !== "hidden" && action !== "zone" && action !== "occupy") {
+                if (decision.surface !== "preview") {
                     continue;
                 }
                 const bounds = withoutTrailingLineBreak(text, marker.start, marker.end);
@@ -369,8 +371,8 @@ export class InlinePresentation {
                 if (replaced.some((range) => spansOverlap(bounds.start, bounds.end, range.start, range.end))) {
                     continue;
                 }
-                if (action === "hidden" && (scope.kind === "image" || scope.kind === "thematicBreak")) {
-                    action = revealMarker({
+                if (!decision.zone && !decision.occupy && (scope.kind === "image" || scope.kind === "thematicBreak")) {
+                    decision = reveal({
                         scope,
                         marker,
                         cursor,
@@ -380,14 +382,14 @@ export class InlinePresentation {
                         singleLine: coveredLine(model, bounds) !== undefined,
                     });
                 }
-                if (action !== "hidden" && action !== "zone" && action !== "occupy") {
+                if (decision.surface !== "preview") {
                     continue;
                 }
                 replaced.push(bounds);
-                if (action === "occupy") {
+                if (decision.occupy) {
                     continue;
                 }
-                if (action === "zone" && scope.kind === "table") {
+                if (decision.zone && scope.kind === "table") {
                     const lines = lineNumbersCovering(model, text, bounds);
                     for (const line of lines) {
                         hiddenLines.add(line);
@@ -398,7 +400,7 @@ export class InlinePresentation {
                     }
                     continue;
                 }
-                if (action === "zone") {
+                if (decision.zone) {
                     const line = coveredLine(model, bounds);
                     if (line !== undefined) {
                         hiddenLines.add(line);
@@ -446,7 +448,7 @@ export class InlinePresentation {
             if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
                 continue;
             }
-            if (revealMermaid(scope, cursor, findHits(scope, finds)) !== "zone") {
+            if (revealCode(scope, cursor, findHits(scope, finds)).surface !== "preview") {
                 continue;
             }
             const lines = lineNumbersCovering(model, text, { start: scope.start, end: scope.end });
@@ -468,12 +470,17 @@ export class InlinePresentation {
         }
 
         for (const scope of scopes) {
-            const className = contentClass(scope);
             const formatted = showFormatted(scope, cursor, findHits(scope, finds));
-            if (className && (formatted || scope.kind === "heading")) {
-                const rawHeading = scope.kind === "heading" && !formatted;
-                const start = rawHeading ? scope.start : scope.contentStart;
-                const end = rawHeading ? withoutTrailingLineBreak(text, scope.start, scope.end).end : scope.contentEnd;
+            const rawHeading = scope.kind === "heading" && !formatted;
+            const className = rawHeading
+                ? rawHeadingClass(scope)
+                : formatted
+                    ? previewContentClass(scope)
+                    : undefined;
+            if (className) {
+                const range = rawHeading ? rawHeadingBounds(text, scope) : previewContentRange(scope);
+                const start = range.start;
+                const end = range.end;
                 if (end > start) {
                     for (const segment of subtractRanges(start, end, replaced)) {
                         decorations.push({
@@ -495,15 +502,12 @@ export class InlinePresentation {
                 }
             }
             if (scope.kind === "link" && !formatted) {
-                const resource = scope.markers.find((marker) => text[marker.start] === "(");
-                const labelEnd = resource?.start ?? scope.end;
-                paintInline(decorations, model, text, scope.start, labelEnd, replaced, "inline-md-link-label");
-                if (resource) {
-                    paintInline(decorations, model, text, resource.start, resource.end, replaced, "inline-md-link-url");
+                for (const span of rawLinkSpans(text, scope)) {
+                    paintInline(decorations, model, text, span.start, span.end, replaced, span.className);
                 }
             }
             for (const marker of scope.markers) {
-                if (revealMarker({
+                const ghost = reveal({
                     scope,
                     marker,
                     cursor,
@@ -511,29 +515,33 @@ export class InlinePresentation {
                     findHit: findHits(scope, finds),
                     frontMatterEnd: this.frontMatter?.end,
                     singleLine: false,
-                }) !== "ghost") {
+                });
+                if (ghost.surface !== "raw" || !ghost.ghost) {
                     continue;
                 }
                 for (const segment of subtractRanges(marker.start, marker.end, replaced)) {
                     decorations.push({
                         range: rangeFromOffsets(model, segment.start, segment.end),
-                        options: { inlineClassName: "inline-md-ghost" },
+                        options: { inlineClassName: rawGhostClass() },
                     });
                 }
             }
             this.addLineDecorations(model, scope, decorations);
             if (
                 scope.kind === "codeBlock"
-                && scope.markers.some((marker) => revealMarker({
-                    scope,
-                    marker,
-                    cursor,
-                    markerLine: markerLineAt(model, marker.start),
-                    findHit: false,
-                    frontMatterEnd: this.frontMatter?.end,
-                    singleLine: false,
-                }) === "hidden")
-                && !(isMermaidCodeBlock(scope.language) && revealMermaid(scope, cursor, false) === "zone")
+                && scope.markers.some((marker) => {
+                    const hidden = reveal({
+                        scope,
+                        marker,
+                        cursor,
+                        markerLine: markerLineAt(model, marker.start),
+                        findHit: false,
+                        frontMatterEnd: this.frontMatter?.end,
+                        singleLine: false,
+                    });
+                    return hidden.surface === "preview" && !hidden.zone && !hidden.occupy;
+                })
+                && !(isMermaidCodeBlock(scope.language) && revealCode(scope, cursor, false).surface === "preview")
             ) {
                 const codeText = text.slice(scope.contentStart, scope.contentEnd).trim();
                 if (codeText.length > 0) {

@@ -1,4 +1,4 @@
-import { listGapAfterClass } from "./listItemGap";
+import { listGapAfterClass } from "./preview/listItemGap";
 
 export interface SelectionBox {
     top: number;

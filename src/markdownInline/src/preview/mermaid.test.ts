@@ -12,7 +12,7 @@ vi.mock("mermaid", () => ({
     },
 }));
 
-vi.mock("../../mermaidEditor/vsCodeTheme.browser", () => ({
+vi.mock("../../../mermaidEditor/vsCodeTheme.browser", () => ({
     applyWorkbenchMermaidTokens: () => ({}),
     getWorkbenchMermaidInit: () => ({ themeVariables: {}, themeCSS: "" }),
 }));

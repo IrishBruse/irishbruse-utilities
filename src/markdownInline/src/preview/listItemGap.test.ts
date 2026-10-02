@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { lineModelFromSource, listGapPaints, listItemGapAfterLines, listItemStartLines, listLineHeightPx } from "./listItemGap";
-import { parseScopes } from "./scopes";
+import { parseScopes } from "../document/scopes";
 
 function gaps(source: string): number[] {
     const model = lineModelFromSource(source);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { revealMarker, revealMermaid, showFormatted } from "./reveal";
-import type { CursorContext, Scope } from "./types";
+import { reveal, revealCode, revealMarker, revealMermaid, showFormatted } from "./reveal";
+import type { CursorContext, Scope } from "./document/types";
 import { markerVisibility, showsFormattedContent } from "./visibility";
 
 function cursor(head: number, lineStart: number, lineEnd: number, anchor = head, eolLength = 1): CursorContext {
@@ -34,6 +34,15 @@ describe("revealMarker", () => {
             frontMatterEnd: undefined,
             singleLine: true,
         })).toBe("raw");
+        expect(reveal({
+            scope: table,
+            marker: table.markers[0]!,
+            cursor: away,
+            markerLine: line,
+            findHit: true,
+            frontMatterEnd: undefined,
+            singleLine: true,
+        })).toEqual({ surface: "raw", ghost: false });
     });
 
     it("zones a table when the caret is away and nothing is found", () => {
@@ -58,6 +67,15 @@ describe("revealMarker", () => {
             frontMatterEnd: undefined,
             singleLine: false,
         })).toBe("zone");
+        expect(reveal({
+            scope: table,
+            marker: table.markers[0]!,
+            cursor: away,
+            markerLine: line,
+            findHit: false,
+            frontMatterEnd: undefined,
+            singleLine: false,
+        })).toEqual({ surface: "preview", zone: true, occupy: false });
     });
 
     it("occupies a hidden thematic break inside front matter", () => {
@@ -81,6 +99,15 @@ describe("revealMarker", () => {
             frontMatterEnd: 20,
             singleLine: true,
         })).toBe("occupy");
+        expect(reveal({
+            scope: rule,
+            marker: rule.markers[0]!,
+            cursor: away,
+            markerLine: line,
+            findHit: false,
+            frontMatterEnd: 20,
+            singleLine: true,
+        })).toEqual({ surface: "preview", zone: false, occupy: true });
     });
 
     it("occupies a hidden thematic break inside front matter and zones one outside it", () => {
@@ -104,6 +131,15 @@ describe("revealMarker", () => {
             frontMatterEnd: 20,
             singleLine: true,
         })).toBe("occupy");
+        expect(reveal({
+            scope: rule,
+            marker: rule.markers[0]!,
+            cursor: away,
+            markerLine: line,
+            findHit: false,
+            frontMatterEnd: 20,
+            singleLine: true,
+        })).toEqual({ surface: "preview", zone: false, occupy: true });
         expect(revealMarker({
             scope: rule,
             marker: rule.markers[0]!,
@@ -113,6 +149,15 @@ describe("revealMarker", () => {
             frontMatterEnd: undefined,
             singleLine: true,
         })).toBe("zone");
+        expect(reveal({
+            scope: rule,
+            marker: rule.markers[0]!,
+            cursor: away,
+            markerLine: line,
+            findHit: false,
+            frontMatterEnd: undefined,
+            singleLine: true,
+        })).toEqual({ surface: "preview", zone: true, occupy: false });
     });
 
     it("zones a thematic break outside front matter when it covers one line", () => {
@@ -134,6 +179,15 @@ describe("revealMarker", () => {
             frontMatterEnd: undefined,
             singleLine: true,
         })).toBe("zone");
+        expect(reveal({
+            scope: rule,
+            marker: rule.markers[0]!,
+            cursor: away,
+            markerLine: markerLine(0, 1),
+            findHit: false,
+            frontMatterEnd: undefined,
+            singleLine: true,
+        })).toEqual({ surface: "preview", zone: true, occupy: false });
     });
 
     it("hides an image that does not cover a single line", () => {
@@ -159,6 +213,15 @@ describe("revealMarker", () => {
             frontMatterEnd: undefined,
             singleLine: false,
         })).toBe("hidden");
+        expect(reveal({
+            scope: image,
+            marker: image.markers[0]!,
+            cursor: away,
+            markerLine: line,
+            findHit: false,
+            frontMatterEnd: undefined,
+            singleLine: false,
+        })).toEqual({ surface: "preview", zone: false, occupy: false });
     });
 });
 
@@ -199,5 +262,30 @@ describe("revealMermaid", () => {
 
     it("returns a zone when the caret is away and nothing is found", () => {
         expect(revealMermaid(diagram, cursor(80, 50, 90), false)).toBe("zone");
+    });
+});
+
+describe("revealCode", () => {
+    const diagram: Scope = {
+        kind: "codeBlock",
+        start: 0,
+        end: 40,
+        contentStart: 10,
+        contentEnd: 30,
+        markers: [{ start: 0, end: 10 }],
+        language: "mermaid",
+    };
+
+    it("maps a mermaid zone onto the preview surface", () => {
+        expect(revealCode(diagram, cursor(80, 50, 90), false)).toEqual({
+            surface: "preview",
+            zone: true,
+            occupy: false,
+        });
+    });
+
+    it("maps mermaid source onto the raw surface", () => {
+        expect(revealCode(diagram, cursor(12, 0, 40), false)).toEqual({ surface: "raw", ghost: false });
+        expect(revealCode(diagram, cursor(80, 50, 90), true)).toEqual({ surface: "raw", ghost: false });
     });
 });

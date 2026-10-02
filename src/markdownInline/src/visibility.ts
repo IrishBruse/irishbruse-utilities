@@ -1,4 +1,4 @@
-import type { CursorContext, MarkerVisibility, Scope, TextRange } from "./types";
+import type { CursorContext, MarkerVisibility, Scope, TextRange } from "./document/types";
 
 const STRUCTURAL = new Set<Scope["kind"]>(["listMarker", "blockquoteMarker", "task"]);
 

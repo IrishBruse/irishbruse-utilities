@@ -1,4 +1,4 @@
-import type { Scope, TextRange } from "./types";
+import type { Scope, TextRange } from "../document/types";
 
 export const LIST_ITEM_GAP_PX = 4;
 export const listGapAfterClass = "inline-md-list-gap-after";

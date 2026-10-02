@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CursorContext, Scope } from "./types";
+import type { CursorContext, Scope } from "./document/types";
 import { markerVisibility, showsFormattedContent } from "./visibility";
 
 function cursor(head: number, lineStart: number, lineEnd: number, anchor = head, eolLength = 1): CursorContext {

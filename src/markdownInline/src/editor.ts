@@ -4,10 +4,10 @@ import { bindDragSelection, isDragSelecting } from "./selection";
 import { installInlineKeybindings } from "./keybindings";
 import { bindMermaidCodeLens } from "./mermaidCodeLens";
 import { installMonaco, readEditorFontSize } from "./monacoSetup";
-import { parseScopes } from "./scopes";
+import { parseScopes } from "./document/scopes";
 import { readFrontMatter } from "./yamlFrontMatter";
 import { skillMarkdownLanguageId } from "./skillYaml";
-import type { Scope } from "./types";
+import type { Scope } from "./document/types";
 
 export interface InlineEdit {
     start: number;

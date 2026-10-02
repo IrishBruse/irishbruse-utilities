@@ -1,7 +1,7 @@
 import {
     applyWorkbenchMermaidTokens,
     getWorkbenchMermaidInit,
-} from "../../mermaidEditor/vsCodeTheme.browser";
+} from "../../../mermaidEditor/vsCodeTheme.browser";
 
 let mermaidPromise: Promise<(typeof import("mermaid"))["default"]> | undefined;
 let configured = false;

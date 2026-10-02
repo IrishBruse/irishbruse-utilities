@@ -1,7 +1,7 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { resolveImageUrl } from "./imageUrl";
 import { renderMermaidDiagram } from "./mermaid";
-import type { Scope, TextRange } from "./types";
+import type { Scope, TextRange } from "../document/types";
 
 export interface BlockZoneHost {
     onReveal(offset: number): void;

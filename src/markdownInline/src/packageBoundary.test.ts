@@ -1,5 +1,5 @@
 import { readFileSync, readdirSync } from "node:fs";
-import { join } from "node:path";
+import { dirname, join, relative, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
 
@@ -22,22 +22,24 @@ function collectTsFiles(dir: string): string[] {
 const markdownEditorImport = /from\s+["'][^"']*markdownEditor/;
 const mermaidEditorImport = /from\s+["'][^"']*mermaidEditor/;
 
-function isAllowedImport(line: string): boolean {
+function staysInPackageSrc(fromFile: string, specifier: string): boolean {
+    const srcDir = join(packageRoot, "src");
+    const rel = relative(srcDir, join(dirname(fromFile), specifier));
+    return rel === "" || (rel !== ".." && !rel.startsWith(`..${sep}`) && !rel.startsWith("/"));
+}
+
+function isAllowedImport(line: string, fromFile: string): boolean {
     if (mermaidEditorImport.test(line)) {
         return true;
     }
     if (markdownEditorImport.test(line)) {
         return false;
     }
-    const relative = /from\s+["'](\.\.\/[^"']+)["']/.exec(line);
-    if (!relative) {
+    const parentImport = /from\s+["'](\.\.\/[^"']+)["']/.exec(line);
+    if (!parentImport) {
         return true;
     }
-    const path = relative[1];
-    if (path.startsWith("../") && !path.includes("mermaidEditor")) {
-        return false;
-    }
-    return true;
+    return staysInPackageSrc(fromFile, parentImport[1]);
 }
 
 describe("markdownInline package boundary", () => {
@@ -52,7 +54,7 @@ describe("markdownInline package boundary", () => {
                 if (!trimmed.startsWith("import ") && !trimmed.includes(" from ")) {
                     continue;
                 }
-                if (!isAllowedImport(trimmed)) {
+                if (!isAllowedImport(trimmed, file)) {
                     violations.push(`${rel}: ${trimmed}`);
                 }
             }

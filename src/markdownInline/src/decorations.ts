@@ -740,7 +740,7 @@ export class InlinePresentation {
                     checked: scope.checked === true,
                     position,
                 });
-                return undefined;
+                return injected("☐ ", "inline-md-task-spacer");
             }
             case "codeBlock":
                 if (index !== 0) {

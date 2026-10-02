@@ -1,17 +1,27 @@
 ---
 name: verify-markdownInline
-description: Prove an Inline Markdown editor or playground change with the feature tests under src/markdownInline/tests. Use when verifying the editor, the playground, or a visual change.
+description: >-
+  Prove an Inline Markdown editor or playground change with the feature tests
+  under src/markdownInline/tests. Use when verifying the editor, the playground,
+  or a visual change; when running or debugging test:markdown-inline-browser;
+  when a browser test hangs or fails; or when moving or renaming Inline Markdown
+  modules.
 ---
 
 # verify-markdownInline
 
 The playground is `http://127.0.0.1:5175/`.
-`npm run dev:markdown-inline` starts it when nothing is listening there.
-When that URL is already up, leave the server running.
+Dev server rules are in `src/markdownInline/playground/AGENTS.md`.
 
-A change to the editor or playground is finished when `npm run test:markdown-inline-browser` exits 0.
-That command is the run.
+A source change is finished when both of these exit 0:
+
+- `npm run test:markdown-inline` for the colocated unit tests
+- `npm run check:markdown-inline` for the typecheck, then the browser tests
+
+The browser command alone does not typecheck.
 `npm test` does not open the playground.
+When a change is imported from outside `src/markdownInline`, also run `npm test` and `npm run lint`.
+The report names every red run and what turned it green.
 
 ## Feature folder
 
@@ -26,7 +36,7 @@ Each feature lives in `src/markdownInline/tests/<feature-name>/`.
 | `screenshots/` | The saved picture a visual check compares. |
 
 Shared browser setup for those tests lives in `src/markdownInline/support/browser.ts`.
-A new feature is finished when that folder exists and the browser command exits 0.
+A new feature is finished when that folder exists and the finish commands above exit 0.
 A numbered case may be `fixtures/case-N.md`.
 A skill sample is `fixtures/<name>/SKILL.md`, and `<name>` is the `name` value in that file.
 
@@ -46,6 +56,12 @@ VS Code loads the built webview and sets theme variables on the document body, o
 A playground pass does not show those.
 Rebuild before claiming the webview.
 A claim about the VS Code editor, including which tab or diff it opens, is checked in VS Code or reported as unverified.
+
+## Browser run hangs or fails
+
+Read the thrown error, or the Vite overlay text, before guessing a cause.
+Put the fix in the moved code or in `support/browser.ts`.
+Do not change import style to work around a dev-server symptom.
 
 ## Editor misrenders
 

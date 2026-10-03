@@ -1,6 +1,6 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
-import { blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
-import { applyListLineHeight, listGapPaints, listMarkerBulletClass, listMarkerIndentColumns, monacoLineModel } from "./preview/listItemGap";
+import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
+import { applyListLineHeight, listGapPaints, listMarkerBulletClass, listMarkerIndentColumns, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
 import { isMermaidCodeBlock } from "./preview/mermaid";
 import { previewContentClass, previewContentRange } from "./preview/paint";
@@ -424,7 +424,7 @@ export class InlinePresentation {
                         ? { inlineClassName: "inline-md-quote-marker" }
                         : {
                             ...hideOptions(before),
-                            ...(scope.kind === "listMarker"
+                            ...(scope.kind === "listMarker" && !listMarkerIsTask(scopes, marker.end)
                                 ? {
                                     firstLineDecorationClassName: listMarkerBulletClass(
                                         listMarkerIndentColumns(
@@ -604,13 +604,45 @@ export class InlinePresentation {
             }
         }
         for (const [lineNumber, depth] of quoteDepths) {
-            decorations.push({
-                range: new monaco.Range(lineNumber, 1, lineNumber, 1),
-                options: {
-                    isWholeLine: true,
-                    className: `inline-md-quote ${blockquoteDepthClass(depth)}`,
-                },
+            const content = model.getLineContent(lineNumber);
+            const lineStart = model.getOffsetAt({ lineNumber, column: 1 });
+            const lineEnd = lineStart + content.length;
+            const raw = scopes.some((scope) => {
+                if (scope.kind !== "blockquoteMarker") {
+                    return false;
+                }
+                return scope.markers.some((marker) => {
+                    if (marker.start < lineStart || marker.start > lineEnd) {
+                        return false;
+                    }
+                    const decision = reveal({
+                        scope,
+                        marker,
+                        cursor,
+                        markerLine: markerLineAt(model, marker.start),
+                        findHit: findHits(scope, finds),
+                        frontMatterEnd: this.frontMatter?.end,
+                        singleLine: false,
+                    });
+                    return decision.surface !== "preview";
+                });
             });
+            if (!raw) {
+                decorations.push({
+                    range: new monaco.Range(lineNumber, 1, lineNumber, 1),
+                    options: {
+                        isWholeLine: true,
+                        className: `inline-md-quote ${blockquoteDepthClass(depth)}`,
+                    },
+                });
+            }
+            const start = blockquoteContentIndex(content);
+            if (start < content.length) {
+                decorations.push({
+                    range: new monaco.Range(lineNumber, start + 1, lineNumber, content.length + 1),
+                    options: { inlineClassName: "inline-md-quote-text" },
+                });
+            }
         }
 
         const headingExtras = new Map<number, number>();

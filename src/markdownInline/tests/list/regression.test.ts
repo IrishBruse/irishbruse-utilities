@@ -100,7 +100,8 @@ describe("task list label spacing", () => {
             if (!(checkbox instanceof HTMLElement)) {
                 return false;
             }
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => (entry.textContent ?? "").includes("ask"));
+            const checkboxTop = checkbox.getBoundingClientRect().top;
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => Math.abs(entry.getBoundingClientRect().top - checkboxTop) <= 8);
             const walker = line ? document.createTreeWalker(line, NodeFilter.SHOW_TEXT) : null;
             let labelBox: DOMRect | null = null;
             let node = walker?.nextNode() ?? null;

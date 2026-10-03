@@ -5,44 +5,69 @@
 .inline-md-root .monaco-editor .inline-md-quote {
     box-sizing: border-box;
     width: 100% !important;
-    background-color: var(--ib-md-blockquote-background);
-    color: var(--vscode-descriptionForeground, #9da5b4);
+    background-color: transparent;
     padding-left: 10px;
     padding-right: 10px;
 }
 
+.inline-md-quote-text {
+    color: color-mix(in srgb, var(--vscode-descriptionForeground, #9da5b4) 60%, transparent) !important;
+}
+
 .inline-md-root .monaco-editor .inline-md-quote-depth-1 {
-    box-shadow: inset 3px 0 0 var(--ib-md-blockquote-border);
+    background-image: linear-gradient(to right, var(--ib-md-blockquote-border) 0 3px, transparent 3px);
 }
 
 .inline-md-root .monaco-editor .inline-md-quote-depth-2 {
-    box-shadow:
-        inset 3px 0 0 var(--ib-md-blockquote-border),
-        inset 14px 0 0 var(--ib-md-blockquote-border);
+    background-image: linear-gradient(
+        to right,
+        var(--ib-md-blockquote-border) 0 3px,
+        transparent 3px 11px,
+        var(--ib-md-blockquote-border) 11px 14px,
+        transparent 14px
+    );
 }
 
 .inline-md-root .monaco-editor .inline-md-quote-depth-3 {
-    box-shadow:
-        inset 3px 0 0 var(--ib-md-blockquote-border),
-        inset 14px 0 0 var(--ib-md-blockquote-border),
-        inset 25px 0 0 var(--ib-md-blockquote-border);
+    background-image: linear-gradient(
+        to right,
+        var(--ib-md-blockquote-border) 0 3px,
+        transparent 3px 11px,
+        var(--ib-md-blockquote-border) 11px 14px,
+        transparent 14px 22px,
+        var(--ib-md-blockquote-border) 22px 25px,
+        transparent 25px
+    );
 }
 
 .inline-md-root .monaco-editor .inline-md-quote-depth-4 {
-    box-shadow:
-        inset 3px 0 0 var(--ib-md-blockquote-border),
-        inset 14px 0 0 var(--ib-md-blockquote-border),
-        inset 25px 0 0 var(--ib-md-blockquote-border),
-        inset 36px 0 0 var(--ib-md-blockquote-border);
+    background-image: linear-gradient(
+        to right,
+        var(--ib-md-blockquote-border) 0 3px,
+        transparent 3px 11px,
+        var(--ib-md-blockquote-border) 11px 14px,
+        transparent 14px 22px,
+        var(--ib-md-blockquote-border) 22px 25px,
+        transparent 25px 33px,
+        var(--ib-md-blockquote-border) 33px 36px,
+        transparent 36px
+    );
 }
 
 .inline-md-root .monaco-editor .inline-md-quote-depth-5 {
-    box-shadow:
-        inset 3px 0 0 var(--ib-md-blockquote-border),
-        inset 14px 0 0 var(--ib-md-blockquote-border),
-        inset 25px 0 0 var(--ib-md-blockquote-border),
-        inset 36px 0 0 var(--ib-md-blockquote-border),
-        inset 47px 0 0 var(--ib-md-blockquote-border);
+    background-image: linear-gradient(
+        to right,
+        var(--ib-md-blockquote-border) 0 3px,
+        transparent 3px 11px,
+        var(--ib-md-blockquote-border) 11px 14px,
+        transparent 14px 22px,
+        var(--ib-md-blockquote-border) 22px 25px,
+        transparent 25px 33px,
+        var(--ib-md-blockquote-border) 33px 36px,
+        transparent 36px 44px,
+        var(--ib-md-blockquote-border) 44px 47px,
+        transparent 47px
+    );
 }
 
 .inline-md-root .monaco-editor .inline-md-quote .inline-md-strong,

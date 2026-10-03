@@ -62,8 +62,12 @@ export interface TextLineModel {
     positionAt(offset: number): { lineNumber: number; column: number };
 }
 
-function markerIsTask(scopes: readonly Scope[], markerEnd: number): boolean {
+export function listMarkerIsTask(scopes: readonly Scope[], markerEnd: number): boolean {
     return scopes.some((scope) => scope.kind === "task" && scope.start === markerEnd);
+}
+
+function markerIsTask(scopes: readonly Scope[], markerEnd: number): boolean {
+    return listMarkerIsTask(scopes, markerEnd);
 }
 
 function leadingIndentColumns(line: string, tabSize: number): number {

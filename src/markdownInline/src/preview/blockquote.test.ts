@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blockquoteDepthClass, blockquoteLineDepth } from "./blockquote";
+import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./blockquote";
 
 describe("blockquoteLineDepth", () => {
     it("counts nested markers", () => {
@@ -11,6 +11,14 @@ describe("blockquoteLineDepth", () => {
 
     it("ignores non-quote lines", () => {
         expect(blockquoteLineDepth("plain")).toBe(0);
+    });
+});
+
+describe("blockquoteContentIndex", () => {
+    it("starts after the quote marks", () => {
+        expect(blockquoteContentIndex("> Quote")).toBe(2);
+        expect(blockquoteContentIndex("> > Nested")).toBe(4);
+        expect(blockquoteContentIndex(">")).toBe(1);
     });
 });
 

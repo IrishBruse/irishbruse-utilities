@@ -1,4 +1,4 @@
-export function blockquoteLineDepth(line: string): number {
+function skipQuotePrefixes(line: string): { depth: number; contentIndex: number } {
     let depth = 0;
     let index = 0;
     while (index < line.length) {
@@ -14,7 +14,15 @@ export function blockquoteLineDepth(line: string): number {
             index += 1;
         }
     }
-    return depth;
+    return { depth, contentIndex: index };
+}
+
+export function blockquoteLineDepth(line: string): number {
+    return skipQuotePrefixes(line).depth;
+}
+
+export function blockquoteContentIndex(line: string): number {
+    return skipQuotePrefixes(line).contentIndex;
 }
 
 export function blockquoteDepthClass(depth: number): string {

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import pixelmatch from "pixelmatch";
 import { PNG } from "pngjs";
@@ -74,7 +74,7 @@ export async function openPlayground(fixture: string, marker?: string): Promise<
     }
     await page.evaluate(() => document.fonts.ready);
     await page.addStyleTag({
-        content: ".monaco-editor .cursors-layer { opacity: 0 !important; }",
+        content: ".monaco-editor .cursors-layer, .monaco-editor .current-line { opacity: 0 !important; }",
     });
     return { browser, page };
 }
@@ -142,11 +142,195 @@ function compareShot(buffer: Buffer, baselinePath: string): void {
     const diff = new PNG({ width: actual.width, height: actual.height });
     const mismatched = pixelmatch(expected.data, actual.data, diff.data, actual.width, actual.height, { threshold: 0.1 });
     const allowed = Math.round(actual.width * actual.height * 0.002);
+    const diffPath = baselinePath.replace(/\.png$/, ".diff.png");
     if (mismatched > allowed) {
-        const diffPath = baselinePath.replace(/\.png$/, ".diff.png");
         writeFileSync(diffPath, PNG.sync.write(diff));
         throw new Error(`${mismatched} pixels differ from ${baselinePath}. Diff written to ${diffPath}.`);
     }
+    if (existsSync(diffPath)) {
+        unlinkSync(diffPath);
+    }
+}
+
+export interface PageClipBox {
+    readonly x: number;
+    readonly y: number;
+    readonly width: number;
+    readonly height: number;
+}
+
+export async function featureClip(
+    page: Page,
+    options: {
+        readonly from: string;
+        readonly to: string;
+        readonly pad?: number;
+        readonly lineNumbers?: boolean;
+        readonly fullWidth?: readonly string[];
+    },
+): Promise<PageClipBox> {
+    const clip = await page.evaluate((options) => {
+        const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+        const hasNeedle = (text: string, needle: string): boolean => {
+            if (!/^[A-Za-z0-9]/.test(needle) || !/[A-Za-z0-9]$/.test(needle)) {
+                return text.includes(needle);
+            }
+            let from = 0;
+            while (from < text.length) {
+                const index = text.indexOf(needle, from);
+                if (index < 0) {
+                    return false;
+                }
+                const before = text[index - 1] ?? "";
+                const after = text[index + needle.length] ?? "";
+                if (!/[A-Za-z0-9]/.test(before) && !/[A-Za-z0-9]/.test(after)) {
+                    return true;
+                }
+                from = index + needle.length;
+            }
+            return false;
+        };
+        const editor = document.querySelector("#editor");
+        const content = document.querySelector("#editor .view-lines");
+        if (!(editor instanceof HTMLElement) || !(content instanceof HTMLElement)) {
+            return null;
+        }
+        const lines = [...document.querySelectorAll<HTMLElement>("#editor .view-line")];
+        const locate = (needle: string, which: "first" | "last"): HTMLElement | null => {
+            const ordered = which === "first" ? lines : [...lines].reverse();
+            for (const line of ordered) {
+                if (hasNeedle(fold(line.textContent), needle)) {
+                    return line;
+                }
+            }
+            const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT);
+            let hit: HTMLElement | null = null;
+            let node = walker.nextNode();
+            while (node) {
+                if (hasNeedle(fold(node.textContent), needle) && node.parentElement instanceof HTMLElement) {
+                    hit = node.parentElement.closest(".inline-md-table table, .inline-md-image-fallback, .view-line") ?? node.parentElement;
+                    if (which === "first") {
+                        return hit;
+                    }
+                }
+                node = walker.nextNode();
+            }
+            return hit;
+        };
+        const start = locate(options.from, "first");
+        const end = locate(options.to, "last");
+        if (!start || !end) {
+            return null;
+        }
+        const startBox = start.getBoundingClientRect();
+        const endBox = end.getBoundingClientRect();
+        const contentWidth = content.getBoundingClientRect().width;
+        let top = Math.min(startBox.top, endBox.top);
+        let bottom = Math.max(startBox.bottom, endBox.bottom);
+        let left = Number.POSITIVE_INFINITY;
+        let right = Number.NEGATIVE_INFINITY;
+        const grow = (box: DOMRect, edge: "all" | "left"): void => {
+            if (box.width < 1 || box.height < 1) {
+                return;
+            }
+            top = Math.min(top, box.top);
+            bottom = Math.max(bottom, box.bottom);
+            left = Math.min(left, box.left);
+            if (edge === "all") {
+                right = Math.max(right, box.right);
+            }
+        };
+        const band = { top, bottom };
+        const overlaps = (box: DOMRect): boolean => box.bottom > band.top + 0.5 && box.top < band.bottom - 0.5;
+        const centered = (box: DOMRect): boolean => {
+            const center = (box.top + box.bottom) / 2;
+            return center >= band.top && center <= band.bottom;
+        };
+        for (const line of lines) {
+            const box = line.getBoundingClientRect();
+            if (!centered(box)) {
+                continue;
+            }
+            for (const leaf of line.querySelectorAll("span")) {
+                if (leaf.childElementCount > 0 || fold(leaf.textContent).trim().length === 0) {
+                    continue;
+                }
+                const range = document.createRange();
+                range.selectNodeContents(leaf);
+                const textBox = range.getBoundingClientRect();
+                const bleed = textBox.width >= contentWidth * 0.9;
+                grow(textBox, bleed ? "left" : "all");
+            }
+        }
+        for (const anchor of [start, end]) {
+            if (!anchor.classList.contains("view-line")) {
+                grow(anchor.getBoundingClientRect(), "all");
+            }
+        }
+        if (options.lineNumbers !== false) {
+            for (const number of document.querySelectorAll("#editor .line-numbers, #editor .inline-md-zone-number")) {
+                const box = number.getBoundingClientRect();
+                if (centered(box)) {
+                    grow(box, "all");
+                }
+            }
+        }
+        const extras = options.fullWidth ?? [];
+        const widgets = [
+            ".inline-md-list-bullet",
+            ".inline-md-task",
+            ".selected-text",
+            "img.inline-md-image",
+            ".inline-md-image-fallback",
+            ".inline-md-table table",
+            ".inline-md-hr",
+            ".inline-md-hr-line",
+            ".inline-md-quote",
+            ".inline-md-lang",
+            ".inline-md-code-line",
+        ];
+        for (const selector of widgets) {
+            for (const node of document.querySelectorAll(`#editor ${selector}`)) {
+                const box = node.getBoundingClientRect();
+                if (!overlaps(box)) {
+                    continue;
+                }
+                const bleed = box.width >= contentWidth * 0.9;
+                const keepRight = !bleed || extras.some((extra) => node.matches(extra));
+                grow(box, keepRight ? "all" : "left");
+            }
+        }
+        if (!Number.isFinite(left) || !Number.isFinite(right) || right <= left) {
+            return null;
+        }
+        const pad = options.pad ?? 8;
+        const editorBox = editor.getBoundingClientRect();
+        const startTop = start.getBoundingClientRect().top;
+        const endBottom = end.getBoundingClientRect().bottom;
+        const lineBoxes = lines.map((line) => line.getBoundingClientRect());
+        const above = lineBoxes.filter((box) => box.bottom <= startTop + 0.5).sort((a, b) => b.bottom - a.bottom)[0];
+        const below = lineBoxes.filter((box) => box.top >= endBottom - 0.5).sort((a, b) => a.top - b.top)[0];
+        let y = Math.floor(Math.min(top, startTop) - pad);
+        let clipBottom = Math.ceil(Math.max(bottom, endBottom) + pad);
+        if (above) {
+            y = Math.max(y, Math.ceil(above.bottom));
+        }
+        if (below) {
+            clipBottom = Math.min(clipBottom, Math.floor(below.top));
+        }
+        y = Math.max(y, Math.ceil(editorBox.top));
+        clipBottom = Math.min(clipBottom, Math.floor(editorBox.bottom));
+        const x = Math.max(Math.ceil(editorBox.left), Math.floor(left - pad));
+        const clipRight = Math.min(Math.floor(editorBox.right), Math.ceil(right + pad));
+        if (clipRight - x < 8 || clipBottom - y < 8) {
+            return null;
+        }
+        return { x, y, width: clipRight - x, height: clipBottom - y };
+    }, options);
+    if (!clip) {
+        throw new Error(`No clip for "${options.from}" through "${options.to}".`);
+    }
+    return clip;
 }
 
 export async function expectLocatorShot(locator: Locator, baselinePath: string): Promise<void> {

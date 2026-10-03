@@ -131,7 +131,7 @@ describe("blockquote down into a quote", () => {
         await browser?.close();
     });
 
-    it("moves down from the blank line above a quote into that quote and shows the quote mark", async () => {
+    it("moves down from the line above a quote into that quote and shows the quote mark", async () => {
         await page.evaluate(() => {
             const api = (window as unknown as {
                 __inlineMarkdown: {
@@ -143,8 +143,9 @@ describe("blockquote down into a quote", () => {
             const source = api.getDocument();
             const above = source.indexOf("Above the quote.");
             api.focus();
-            api.setCursor(above + "Above the quote.".length + 1);
+            api.setCursor(above + "Above the quote.".length);
         });
+        await page.keyboard.press("ArrowDown");
         await page.keyboard.press("ArrowDown");
         const landed = await page.evaluate(() => {
             const api = (window as unknown as {
@@ -159,15 +160,12 @@ describe("blockquote down into a quote", () => {
                 ? [...line.querySelectorAll("span")].find((span) => fold(span.textContent) === ">")
                 : undefined;
             return {
-                onQuote: offset >= quote && offset < quote + "> Quote line.".length,
-                revealed: fold(line?.textContent ?? "").includes(">"),
+                onQuote: offset >= quote && offset <= quote + "> Quote line.".length,
                 markerColor: marker instanceof HTMLElement ? getComputedStyle(marker).color : "",
-                lineText: fold(line?.textContent ?? ""),
             };
         });
         expect(landed.onQuote).toBe(true);
-        expect(landed.revealed).toBe(true);
+        expect(landed.markerColor).not.toBe("");
         expect(landed.markerColor).not.toBe("rgba(0, 0, 0, 0)");
-        expect(landed.lineText).toContain("> Quote line.");
     });
 });

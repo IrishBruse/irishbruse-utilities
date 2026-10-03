@@ -44,6 +44,7 @@
         "package": "node esbuild.mjs --production && npm run build-markdown-editor && node src/markdownInline/build.mjs",
         "lint": "eslint . && tsc --noEmit",
         "test": "vitest run",
+        "test:coverage": "vitest run --coverage",
         "verify": "npm run build && npm run test && npm run lint",
         "package:vsix": "vsce package --out ib-utilities-$(node -p \"require('./package.json').version\").vsix",
         "install:local": "npm run package:vsix && node scripts/install-local.mjs",

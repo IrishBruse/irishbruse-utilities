@@ -19,6 +19,7 @@
     "activationEvents": [
         "onStartupFinished",
         "onView:ib-utilities.gitHelpers",
+        "onView:ib-utilities.localPorts",
         "onCustomEditor:ib-utilities.markdownEditor",
         "onCustomEditor:ib-utilities.markdownInline"
     ],
@@ -206,6 +207,13 @@
                     "title": "Snippet Manager",
                     "icon": "media/snippet_icon.svg"
                 }
+            ],
+            "panel": [
+                {
+                    "id": "localPorts",
+                    "title": "Localhost",
+                    "icon": "media/ports_icon.svg"
+                }
             ]
         },
         "views": {
@@ -214,6 +222,13 @@
                     "id": "snippetView",
                     "name": "Groups",
                     "icon": "media/snippet_icon.svg"
+                }
+            ],
+            "localPorts": [
+                {
+                    "id": "ib-utilities.localPorts",
+                    "name": "Ports",
+                    "contextualTitle": "Localhost"
                 }
             ],
             "scm": [
@@ -422,6 +437,23 @@
                 "title": "Discard Editor Changes",
                 "shortTitle": "Discard",
                 "icon": "$(discard)"
+            },
+            {
+                "command": "ib-utilities.refreshLocalPorts",
+                "title": "Refresh Localhost",
+                "shortTitle": "Refresh",
+                "icon": "$(refresh)"
+            },
+            {
+                "command": "ib-utilities.openLocalPort",
+                "title": "Open Port",
+                "shortTitle": "Open"
+            },
+            {
+                "command": "ib-utilities.killLocalPort",
+                "title": "Kill Process on Port",
+                "shortTitle": "Kill",
+                "icon": "$(trash)"
             }
         ],
         "menus": {
@@ -542,6 +574,11 @@
                     "command": "ib-utilities.copyPrUrl",
                     "when": "view == ib-utilities.gitHelpers && (viewItem == action-openPr || viewItem == action-openPr-draft || viewItem == action-openPr-hasJira || viewItem == action-openPr-draft-hasJira || viewItem == action-openPr-noJira || viewItem == action-openPr-draft-noJira)",
                     "group": "inline@4"
+                },
+                {
+                    "command": "ib-utilities.killLocalPort",
+                    "when": "view == ib-utilities.localPorts && viewItem == port",
+                    "group": "inline"
                 }
             ],
             "view/title": [
@@ -564,6 +601,11 @@
                     "command": "ib-utilities.refreshGitHelpers",
                     "when": "view == ib-utilities.gitHelpers",
                     "group": "navigation@2"
+                },
+                {
+                    "command": "ib-utilities.refreshLocalPorts",
+                    "when": "view == ib-utilities.localPorts",
+                    "group": "navigation"
                 }
             ]
         }

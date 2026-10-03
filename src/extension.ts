@@ -14,6 +14,7 @@ import { registerMarkdownEditor } from "./markdownEditor/host/MarkdownEditorProv
 import { registerMarkdownInlineEditor } from "./markdownEditor/host/MarkdownInlineProvider";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { registerMarkdownMermaidFeatures } from "./mermaidEditor/registerMarkdownMermaid";
+import { LocalPortsViewProvider } from "./ports/LocalPortsView";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
 import { copyScmResourcePath, copyScmResourceRelativePath } from "./scm/copyResourcePath";
 import { copyGithubHeadFileUrl } from "./scm/copyGithubHeadFileUrl";
@@ -50,6 +51,7 @@ export function activate(context: ExtensionContext) {
     activateBranchDiffRevert(context);
     context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));
     GitHelpersViewProvider.activate(context);
+    LocalPortsViewProvider.activate(context);
 }
 
 export function deactivate() {

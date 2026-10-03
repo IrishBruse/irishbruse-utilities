@@ -68,6 +68,12 @@ export enum Commands {
 
     RevertToDisk = `ib-utilities.revertToDisk`,
 
+    RefreshLocalPorts = `ib-utilities.refreshLocalPorts`,
+
+    OpenLocalPort = `ib-utilities.openLocalPort`,
+
+    KillLocalPort = `ib-utilities.killLocalPort`,
+
     ViewSnippetContainer = `workbench.view.snippetContainer`,
 
 }
@@ -81,6 +87,8 @@ export enum Views {
     SnippetView = `snippetView`,
 
     IbUtilitiesGitHelpers = `ib-utilities.gitHelpers`,
+
+    LocalPorts = `ib-utilities.localPorts`,
 
 }
 

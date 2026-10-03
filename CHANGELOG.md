@@ -39,7 +39,7 @@
 -   **Change**: Inline Markdown skill front matter stays as raw YAML only; the Properties form and fence chrome are removed.
 
 -   **Fix**: Inline Markdown stays on the text editor for git, diff, and merge opens.
-    A normal file view is the only place it renders.
+A normal file view is the only place it renders.
 
 -   Change: Ban comments in TypeScript and JavaScript via ESLint and remove existing comments from source.
 

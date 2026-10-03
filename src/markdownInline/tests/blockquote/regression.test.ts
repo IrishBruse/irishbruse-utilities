@@ -1,0 +1,173 @@
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { expectPageClip, featureClip, openPlayground } from "../../support/browser";
+import type { Browser, Page } from "playwright-core";
+
+const here = dirname(fileURLToPath(import.meta.url));
+const fixture = "blockquote/fixtures/case-1.md";
+
+describe("blockquote paint", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground(fixture, "Outside the quote");
+        browser = opened.browser;
+        page = opened.page;
+        await page.evaluate(() => {
+            const api = (window as unknown as {
+                __inlineMarkdown: { setCursor(offset: number): void };
+            }).__inlineMarkdown;
+            api.setCursor(0);
+        });
+        await page.waitForFunction(() => {
+            const text = (document.querySelector("#editor .view-lines")?.textContent ?? "").replaceAll("\u00a0", " ");
+            return text.includes("Quote line.") && document.querySelector(".inline-md-quote") instanceof HTMLElement;
+        });
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("leaves the editor background showing through the quote", async () => {
+        const backgrounds = await page.evaluate(() => {
+            return [...document.querySelectorAll(".inline-md-quote")].map((node) => getComputedStyle(node).backgroundColor);
+        });
+        expect(backgrounds.length).toBeGreaterThan(0);
+        expect(backgrounds.every((color) => color === "rgba(0, 0, 0, 0)")).toBe(true);
+    });
+
+    it("paints ordinary quote text softer than the text outside the quote", async () => {
+        const colors = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const colorOf = (needle: string) => {
+                const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes(needle));
+                const span = [...(line?.querySelectorAll("span") ?? [])]
+                    .filter((entry) => fold(entry.textContent).includes(needle))
+                    .sort((left, right) => (left.textContent?.length ?? 0) - (right.textContent?.length ?? 0))[0];
+                return span instanceof HTMLElement ? getComputedStyle(span).color : "";
+            };
+            const root = document.querySelector(".inline-md-root");
+            const probe = document.createElement("span");
+            probe.style.color = "color-mix(in srgb, var(--vscode-descriptionForeground) 60%, transparent)";
+            root?.appendChild(probe);
+            const faded = probe instanceof HTMLElement ? getComputedStyle(probe).color : "";
+            probe.remove();
+            return {
+                outside: colorOf("Outside the quote"),
+                quote: colorOf("Quote line."),
+                faded,
+            };
+        });
+        expect(colors.quote).toBe(colors.faded);
+        expect(colors.quote).not.toBe(colors.outside);
+    });
+
+    it("matches the saved picture of a quote", async () => {
+        const clip = await featureClip(page, { from: "Outside the quote", to: "Nested quote." });
+        expect(clip.width).toBeGreaterThan(40);
+        expect(clip.height).toBeGreaterThan(40);
+        expect(clip.width).toBeLessThan(500);
+        await expectPageClip(page, clip, join(here, "screenshots", "blockquote.png"));
+    });
+
+    it("hides the quote bar while the quote mark is revealed", async () => {
+        await page.evaluate(() => {
+            const api = (window as unknown as {
+                __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+            }).__inlineMarkdown;
+            const quote = api.getDocument().indexOf("> Quote line.");
+            api.setCursor(quote + 1);
+        });
+        await page.waitForFunction(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Quote line."));
+            const marker = line instanceof HTMLElement
+                ? [...line.querySelectorAll("span")].find((span) => fold(span.textContent) === ">")
+                : undefined;
+            return marker instanceof HTMLElement && getComputedStyle(marker).color !== "rgba(0, 0, 0, 0)";
+        });
+        const paint = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const lineFor = (needle: string) => [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes(needle));
+            const barOn = (line: Element | undefined) => {
+                if (!(line instanceof HTMLElement)) {
+                    return false;
+                }
+                const top = line.getBoundingClientRect().top;
+                return [...document.querySelectorAll(".inline-md-quote")].some((entry) => Math.abs(entry.getBoundingClientRect().top - top) <= 2);
+            };
+            const quote = lineFor("Quote line.");
+            const marker = quote instanceof HTMLElement
+                ? [...quote.querySelectorAll("span")].find((span) => fold(span.textContent) === ">")
+                : undefined;
+            return {
+                revealed: fold(quote?.textContent ?? "").includes(">"),
+                markerColor: marker instanceof HTMLElement ? getComputedStyle(marker).color : "",
+                quoteBar: barOn(quote),
+                nestedBar: barOn(lineFor("Nested quote.")),
+            };
+        });
+        expect(paint.revealed).toBe(true);
+        expect(paint.markerColor).not.toBe("rgba(0, 0, 0, 0)");
+        expect(paint.quoteBar).toBe(false);
+        expect(paint.nestedBar).toBe(true);
+    });
+});
+
+describe("blockquote down into a quote", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("blockquote/fixtures/case-2.md", "Above the quote");
+        browser = opened.browser;
+        page = opened.page;
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("moves down from the blank line above a quote into that quote and shows the quote mark", async () => {
+        await page.evaluate(() => {
+            const api = (window as unknown as {
+                __inlineMarkdown: {
+                    focus(): void;
+                    getDocument(): string;
+                    setCursor(offset: number): void;
+                };
+            }).__inlineMarkdown;
+            const source = api.getDocument();
+            const above = source.indexOf("Above the quote.");
+            api.focus();
+            api.setCursor(above + "Above the quote.".length + 1);
+        });
+        await page.keyboard.press("ArrowDown");
+        const landed = await page.evaluate(() => {
+            const api = (window as unknown as {
+                __inlineMarkdown: { getCursor(): number; getDocument(): string };
+            }).__inlineMarkdown;
+            const source = api.getDocument();
+            const offset = api.getCursor();
+            const quote = source.indexOf("> Quote line.");
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Quote line."));
+            const marker = line instanceof HTMLElement
+                ? [...line.querySelectorAll("span")].find((span) => fold(span.textContent) === ">")
+                : undefined;
+            return {
+                onQuote: offset >= quote && offset < quote + "> Quote line.".length,
+                revealed: fold(line?.textContent ?? "").includes(">"),
+                markerColor: marker instanceof HTMLElement ? getComputedStyle(marker).color : "",
+                lineText: fold(line?.textContent ?? ""),
+            };
+        });
+        expect(landed.onQuote).toBe(true);
+        expect(landed.revealed).toBe(true);
+        expect(landed.markerColor).not.toBe("rgba(0, 0, 0, 0)");
+        expect(landed.lineText).toContain("> Quote line.");
+    });
+});

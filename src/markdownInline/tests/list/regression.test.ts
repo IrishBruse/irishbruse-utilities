@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { bulletLines, expectEditorShot, openPlayground } from "../../support/browser";
+import { bulletLines, expectPageClip, featureClip, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -27,7 +27,8 @@ describe("nested list bullets stay visible", () => {
     });
 
     it("matches the saved picture of the list", async () => {
-        await expectEditorShot(page, join(here, "screenshots", "list.png"));
+        const clip = await featureClip(page, { from: "Heading for color", to: "Nested ordered" });
+        await expectPageClip(page, clip, join(here, "screenshots", "list.png"));
     });
 });
 
@@ -46,12 +47,30 @@ describe("task list label spacing", () => {
         await browser?.close();
     });
 
+    it("does not paint a list bullet beside the checkbox", async () => {
+        const bulletOnTaskLine = await page.evaluate(() => {
+            const checkbox = document.querySelector(".inline-md-task");
+            if (!(checkbox instanceof HTMLElement)) {
+                return null;
+            }
+            const top = checkbox.getBoundingClientRect().top;
+            return [...document.querySelectorAll("#editor .margin-view-overlays .inline-md-list-bullet")].some(
+                (bullet) => Math.abs(bullet.getBoundingClientRect().top - top) <= 2,
+            );
+        });
+        expect(bulletOnTaskLine).toBe(false);
+    });
+
     it("keeps space between the checkbox and the label", async () => {
         const gap = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
             const checkbox = document.querySelector(".inline-md-task");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("ask"));
-            if (!(checkbox instanceof HTMLElement) || !(line instanceof HTMLElement)) {
+            if (!(checkbox instanceof HTMLElement)) {
+                return null;
+            }
+            const top = checkbox.getBoundingClientRect().top;
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => Math.abs(entry.getBoundingClientRect().top - top) <= 2);
+            if (!(line instanceof HTMLElement)) {
                 return null;
             }
             const walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT);
@@ -74,7 +93,44 @@ describe("task list label spacing", () => {
         expect(gap).toBeGreaterThan(2);
     });
 
-    it("matches the saved picture of the task list item", async () => {
-        await expectEditorShot(page, join(here, "screenshots", "task-list-label.png"));
+    it("matches the saved picture of checkbox padding before the label", async () => {
+        const clip = await featureClip(page, { from: "ask", to: "ask", lineNumbers: false, pad: 8 });
+        const covers = await page.evaluate((box) => {
+            const checkbox = document.querySelector(".inline-md-task");
+            if (!(checkbox instanceof HTMLElement)) {
+                return false;
+            }
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => (entry.textContent ?? "").includes("ask"));
+            const walker = line ? document.createTreeWalker(line, NodeFilter.SHOW_TEXT) : null;
+            let labelBox: DOMRect | null = null;
+            let node = walker?.nextNode() ?? null;
+            while (node) {
+                const text = node.textContent ?? "";
+                const index = text.indexOf("ask");
+                if (index >= 0) {
+                    const range = document.createRange();
+                    range.setStart(node, index);
+                    range.setEnd(node, index + 3);
+                    labelBox = range.getBoundingClientRect();
+                    break;
+                }
+                node = walker?.nextNode() ?? null;
+            }
+            if (!labelBox) {
+                return false;
+            }
+            const checkboxBox = checkbox.getBoundingClientRect();
+            const right = box.x + box.width;
+            const bottom = box.y + box.height;
+            return checkboxBox.top >= box.y
+                && checkboxBox.bottom <= bottom
+                && checkboxBox.left >= box.x
+                && labelBox.right <= right
+                && labelBox.bottom <= bottom
+                && labelBox.left > checkboxBox.right;
+        }, clip);
+        expect(covers).toBe(true);
+        expect(clip.height).toBeLessThan(48);
+        await expectPageClip(page, clip, join(here, "screenshots", "task-checkbox-padding.png"));
     });
 });

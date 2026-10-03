@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { expectEditorShot, openPlayground } from "../../support/browser";
+import { expectPageClip, featureClip, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -66,6 +66,8 @@ describe("skill front matter looks like a code block", () => {
     });
 
     it("matches the saved picture of the front matter", async () => {
-        await expectEditorShot(page, join(here, "screenshots", "skill.png"));
+        const clip = await featureClip(page, { from: "---", to: "---", fullWidth: [".inline-md-code-line"] });
+        expect(clip.height).toBeLessThan(220);
+        await expectPageClip(page, clip, join(here, "screenshots", "skill.png"));
     });
 });

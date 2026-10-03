@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { expectEditorShot, expectPageClip, openPlayground } from "../../support/browser";
+import { expectPageClip, featureClip, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -66,7 +66,9 @@ describe("selection highlight layout", () => {
     });
 
     it("matches the saved picture of a document-wide selection", async () => {
-        await expectEditorShot(page, join(here, "screenshots", "selection-all.png"));
+        const clip = await featureClip(page, { from: "Main title", to: "Second paragraph" });
+        expect(clip.width).toBeLessThan(700);
+        await expectPageClip(page, clip, join(here, "screenshots", "selection-all.png"));
     });
 });
 
@@ -204,28 +206,8 @@ describe("task line selection picture", () => {
     });
 
     it("matches the saved picture of the task line selection", async () => {
-        const clip = await page.evaluate(() => {
-            const editor = document.querySelector("#editor");
-            const margin = document.querySelector("#editor .margin");
-            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const lines = [...document.querySelectorAll("#editor .view-line")];
-            const task = lines.find((entry) => fold(entry.textContent).includes("Task"));
-            const below = lines.find((entry) => fold(entry.textContent).includes("Still selected"));
-            if (!(editor instanceof HTMLElement) || !(margin instanceof HTMLElement) || !(task instanceof HTMLElement) || !(below instanceof HTMLElement)) {
-                return null;
-            }
-            const editorBox = editor.getBoundingClientRect();
-            const marginBox = margin.getBoundingClientRect();
-            const top = task.getBoundingClientRect().top;
-            const bottom = below.getBoundingClientRect().bottom;
-            return {
-                x: Math.round(marginBox.left),
-                y: Math.round(top),
-                width: Math.round(editorBox.right - marginBox.left),
-                height: Math.round(bottom - top),
-            };
-        });
-        expect(clip).not.toBeNull();
-        await expectPageClip(page, clip ?? { x: 0, y: 0, width: 1, height: 1 }, join(here, "screenshots", "task-line-selection.png"));
+        const clip = await featureClip(page, { from: "- [ ] Task", to: "Still selected" });
+        expect(clip.width).toBeLessThan(500);
+        await expectPageClip(page, clip, join(here, "screenshots", "task-line-selection.png"));
     });
 });

@@ -1,7 +1,10 @@
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { openPlayground } from "../../support/browser";
+import { expectLineRangeShot, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
+const here = dirname(fileURLToPath(import.meta.url));
 const fixture = "fence/fixtures/case-1.md";
 
 describe("fenced code colors", () => {
@@ -9,24 +12,16 @@ describe("fenced code colors", () => {
     let page: Page;
 
     beforeAll(async () => {
-        console.log("fence beforeAll");
-        const opened = await openPlayground(fixture, "");
+        const opened = await openPlayground(fixture, "Before the fence.");
         browser = opened.browser;
         page = opened.page;
-        const loaded = await page.evaluate(() => {
-            const api = (window as unknown as { __inlineMarkdown?: { getDocument(): string } }).__inlineMarkdown;
-            return api?.getDocument?.() ?? "";
-        });
-        if (!loaded.includes("Before the fence.")) {
-            throw new Error(`Loaded the wrong document: ${loaded.slice(0, 120)}`);
-        }
         await page.evaluate(() => {
             const api = (window as unknown as {
                 __inlineMarkdown: { focus(): void; getDocument(): string; setCursor(offset: number): void };
             }).__inlineMarkdown;
             const source = api.getDocument();
             api.focus();
-            api.setCursor(source.indexOf("```mermaid"));
+            api.setCursor(source.indexOf("flowchart"));
         });
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
@@ -47,9 +42,20 @@ describe("fenced code colors", () => {
                 .map((span) => ({ text: fold(span.textContent), color: getComputedStyle(span).color }));
             return spans;
         });
-        const backticks = colors.find((span) => span.text === "```");
-        const language = colors.find((span) => span.text === "mermaid");
-        expect(backticks?.color).toBe("rgb(171, 178, 191)");
-        expect(language?.color).toBe("rgb(86, 182, 194)");
+        expect(colors.filter((span) => span.text.includes("`") || span.text.includes("mermaid"))).toEqual([
+            { text: "```", color: "rgb(171, 178, 191)" },
+            { text: "mermaid", color: "rgb(86, 182, 194)" },
+        ]);
+        const closing = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).trim() === "```");
+            const span = [...(line?.querySelectorAll("span") ?? [])].find((entry) => entry.childElementCount === 0 && fold(entry.textContent) === "```");
+            return span ? getComputedStyle(span).color : "";
+        });
+        expect(closing).toBe("rgb(171, 178, 191)");
+    });
+
+    it("shows the opening and closing fences", async () => {
+        await expectLineRangeShot(page, join(here, "screenshots/fence.png"), { from: "```mermaid", to: "```" });
     });
 });

@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { expectPageClip, featureClip, openPlayground } from "../../support/browser";
+import { expectLineRangeShot, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -102,9 +102,12 @@ describe("horizontal rule spacing", () => {
     });
 
     it("matches the saved picture of the rule", async () => {
-        const clip = await featureClip(page, { from: "Before the rule", to: "After the rule", fullWidth: [".inline-md-hr", ".inline-md-hr-line"] });
+        const clip = await expectLineRangeShot(page, join(here, "screenshots", "rule.png"), {
+            from: "Before the rule",
+            to: "After the rule",
+            fullWidth: [".inline-md-hr", ".inline-md-hr-line"],
+        });
         expect(clip.height).toBeLessThan(160);
-        await expectPageClip(page, clip, join(here, "screenshots", "rule.png"));
     });
 });
 

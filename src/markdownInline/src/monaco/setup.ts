@@ -12,6 +12,7 @@ import "monaco-editor/esm/vs/editor/contrib/wordOperations/browser/wordOperation
 import { conf as markdownConf, language as markdownLanguage } from "monaco-editor/esm/vs/basic-languages/markdown/markdown.js";
 import { conf as typescriptConf, language as typescriptLanguage } from "monaco-editor/esm/vs/basic-languages/typescript/typescript.js";
 import { conf as yamlConf, language as yamlLanguage } from "monaco-editor/esm/vs/basic-languages/yaml/yaml.js";
+import { markdownWithFenceColors } from "./markdownFences";
 import { completeAgentPropertyKeys, completeSkillPropertyKeys, parseSkillFrontMatter, readFrontMatter, skillMarkdownLanguageId } from "../skill";
 import { installMermaidCodeLens, refreshMermaidCodeLens } from "./codeLens";
 
@@ -29,11 +30,12 @@ export function installSkillYaml(): void {
         monaco.languages.setMonarchTokensProvider(id, language);
         monaco.languages.setLanguageConfiguration(id, conf);
     };
+    const markdown = markdownWithFenceColors(markdownLanguage);
     register("yaml", yamlLanguage, yamlConf);
     register(skillMarkdownLanguageId, {
-        ...markdownLanguage,
+        ...markdown,
         tokenizer: {
-            ...markdownLanguage.tokenizer,
+            ...markdown.tokenizer,
             root: [
                 [/^---$/, { token: "meta.separator", switchTo: "@skillFrontMatter", nextEmbedded: "yaml" }],
                 [/^/, { token: "@rematch", switchTo: "@markdownBody" }],
@@ -41,7 +43,7 @@ export function installSkillYaml(): void {
             skillFrontMatter: [
                 [/^---$/, { token: "meta.separator", switchTo: "@markdownBody", nextEmbedded: "@pop" }],
             ],
-            markdownBody: markdownLanguage.tokenizer.root ?? [],
+            markdownBody: markdown.tokenizer.root ?? [],
         },
     }, {
         ...markdownConf,
@@ -146,7 +148,7 @@ export function installMonaco(): void {
         monaco.languages.setLanguageConfiguration(id, conf);
     };
 
-    register("markdown", markdownLanguage as monaco.languages.IMonarchLanguage, markdownConf as monaco.languages.LanguageConfiguration);
+    register("markdown", markdownWithFenceColors(markdownLanguage), markdownConf as monaco.languages.LanguageConfiguration);
     installSkillYaml();
     installMermaidCodeLens();
     const typescript = typescriptLanguage as monaco.languages.IMonarchLanguage;
@@ -167,6 +169,7 @@ export function installMonaco(): void {
             { token: "string.link.md", foreground: "35A854" },
             { token: "comment.md", foreground: "9DA5B4" },
             { token: "string.md", foreground: "CE9178" },
+            { token: "type.md", foreground: "56B6C2" },
             { token: "type.yaml", foreground: "E06C75" },
             { token: "string.yaml", foreground: "98C379" },
             { token: "keyword.yaml", foreground: "56B6C2" },

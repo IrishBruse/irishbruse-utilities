@@ -42,6 +42,7 @@ Manual documents that a person opens in VS Code stay in `docs/tests/markdown/`.
 A paint or layout bug saves a picture beside the regression test.
 Clip it to the feature that check names: the marks, the words, and the line numbers that prove the case.
 `featureClip` in `src/markdownInline/support/browser.ts` builds that clip.
+`expectLineRangeShot` screenshots it and compares the picture.
 A full-width mark stays full width. A rule does. A code block does when its language label sits at the right edge.
 The whole mark sits inside the frame, with a margin of editor background around the glyphs, bars, and borders.
 The clip starts at the editor top or at the feature line, whichever is lower, so the playground toolbar and the previous line stay outside the frame.

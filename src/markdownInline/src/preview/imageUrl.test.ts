@@ -18,5 +18,7 @@ describe("resolveImageUrl", () => {
         expect(resolveImageUrl("javascript:alert(1)", documentUrl)).toBeUndefined();
         expect(resolveImageUrl("   ", documentUrl)).toBeUndefined();
         expect(resolveImageUrl("dot.png", "")).toBeUndefined();
+        expect(resolveImageUrl("#x", "javascript:alert(1)")).toBeUndefined();
+        expect(resolveImageUrl("#x", "vbscript:msg")).toBeUndefined();
     });
 });

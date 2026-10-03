@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { expectPageClip, featureClip, openPlayground } from "../../support/browser";
+import { expectLineRangeShot, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -66,11 +66,13 @@ describe("blockquote paint", () => {
     });
 
     it("matches the saved picture of a quote", async () => {
-        const clip = await featureClip(page, { from: "Outside the quote", to: "Nested quote." });
+        const clip = await expectLineRangeShot(page, join(here, "screenshots", "blockquote.png"), {
+            from: "Outside the quote",
+            to: "Nested quote.",
+        });
         expect(clip.width).toBeGreaterThan(40);
         expect(clip.height).toBeGreaterThan(40);
         expect(clip.width).toBeLessThan(500);
-        await expectPageClip(page, clip, join(here, "screenshots", "blockquote.png"));
     });
 
     it("hides the quote bar while the quote mark is revealed", async () => {

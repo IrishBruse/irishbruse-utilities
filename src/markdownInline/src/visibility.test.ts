@@ -215,5 +215,42 @@ describe("markerVisibility", () => {
         expect(markerVisibility(table, table.markers[0]!, cursor(10, 0, 27), markerLine(0, 1))).toBe("hidden");
         expect(markerVisibility(table, table.markers[0]!, cursor(90, 80, 100), markerLine(0, 1))).toBe("hidden");
         expect(markerVisibility(table, table.markers[0]!, cursor(90, 80, 100, 0), markerLine(0, 1))).toBe("raw");
+        expect(markerVisibility(table, table.markers[0]!, cursor(5, 0, 10, 0), markerLine(0, 1))).toBe("hidden");
+    });
+});
+
+describe("showsFormattedContent", () => {
+    it("keeps code and quotes formatted and leaves images raw", () => {
+        const block: Scope = {
+            kind: "codeBlock",
+            start: 0,
+            end: 10,
+            contentStart: 4,
+            contentEnd: 8,
+            markers: [],
+            language: "",
+        };
+        const quote: Scope = {
+            kind: "blockquote",
+            start: 0,
+            end: 8,
+            contentStart: 0,
+            contentEnd: 8,
+            markers: [],
+        };
+        const image: Scope = {
+            kind: "image",
+            start: 0,
+            end: 12,
+            contentStart: 2,
+            contentEnd: 5,
+            markers: [{ start: 0, end: 12 }],
+            alt: "Dot",
+            url: "dot.png",
+        };
+        const away = cursor(40, 20, 30);
+        expect(showsFormattedContent(block, away)).toBe(true);
+        expect(showsFormattedContent(quote, cursor(2, 0, 8))).toBe(true);
+        expect(showsFormattedContent(image, away)).toBe(false);
     });
 });

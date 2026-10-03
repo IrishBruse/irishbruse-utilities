@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { expectPageClip, featureClip, openPlayground } from "../../support/browser";
+import { expectLineRangeShot, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -66,9 +66,11 @@ describe("selection highlight layout", () => {
     });
 
     it("matches the saved picture of a document-wide selection", async () => {
-        const clip = await featureClip(page, { from: "Main title", to: "Second paragraph" });
+        const clip = await expectLineRangeShot(page, join(here, "screenshots", "selection-all.png"), {
+            from: "Main title",
+            to: "Second paragraph",
+        });
         expect(clip.width).toBeLessThan(700);
-        await expectPageClip(page, clip, join(here, "screenshots", "selection-all.png"));
     });
 });
 
@@ -206,8 +208,10 @@ describe("task line selection picture", () => {
     });
 
     it("matches the saved picture of the task line selection", async () => {
-        const clip = await featureClip(page, { from: "- [ ] Task", to: "Still selected" });
+        const clip = await expectLineRangeShot(page, join(here, "screenshots", "task-line-selection.png"), {
+            from: "- [ ] Task",
+            to: "Still selected",
+        });
         expect(clip.width).toBeLessThan(500);
-        await expectPageClip(page, clip, join(here, "screenshots", "task-line-selection.png"));
     });
 });

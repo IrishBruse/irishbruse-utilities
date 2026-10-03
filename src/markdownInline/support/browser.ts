@@ -159,16 +159,15 @@ export interface PageClipBox {
     readonly height: number;
 }
 
-export async function featureClip(
-    page: Page,
-    options: {
-        readonly from: string;
-        readonly to: string;
-        readonly pad?: number;
-        readonly lineNumbers?: boolean;
-        readonly fullWidth?: readonly string[];
-    },
-): Promise<PageClipBox> {
+export interface LineRangeClip {
+    readonly from: string;
+    readonly to: string;
+    readonly pad?: number;
+    readonly lineNumbers?: boolean;
+    readonly fullWidth?: readonly string[];
+}
+
+export async function featureClip(page: Page, options: LineRangeClip): Promise<PageClipBox> {
     const clip = await page.evaluate((options) => {
         const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
         const hasNeedle = (text: string, needle: string): boolean => {
@@ -347,4 +346,10 @@ export async function expectPageClip(
     baselinePath: string,
 ): Promise<void> {
     compareShot(await page.screenshot({ animations: "disabled", clip }), baselinePath);
+}
+
+export async function expectLineRangeShot(page: Page, baselinePath: string, options: LineRangeClip): Promise<PageClipBox> {
+    const clip = await featureClip(page, options);
+    await expectPageClip(page, clip, baselinePath);
+    return clip;
 }

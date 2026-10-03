@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { bulletLines, expectPageClip, featureClip, openPlayground } from "../../support/browser";
+import { bulletLines, expectLineRangeShot, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -27,8 +27,10 @@ describe("nested list bullets stay visible", () => {
     });
 
     it("matches the saved picture of the list", async () => {
-        const clip = await featureClip(page, { from: "Heading for color", to: "Nested ordered" });
-        await expectPageClip(page, clip, join(here, "screenshots", "list.png"));
+        await expectLineRangeShot(page, join(here, "screenshots", "list.png"), {
+            from: "Heading for color",
+            to: "Nested ordered",
+        });
     });
 });
 
@@ -94,7 +96,12 @@ describe("task list label spacing", () => {
     });
 
     it("matches the saved picture of checkbox padding before the label", async () => {
-        const clip = await featureClip(page, { from: "ask", to: "ask", lineNumbers: false, pad: 8 });
+        const clip = await expectLineRangeShot(page, join(here, "screenshots", "task-checkbox-padding.png"), {
+            from: "ask",
+            to: "ask",
+            lineNumbers: false,
+            pad: 8,
+        });
         const covers = await page.evaluate((box) => {
             const checkbox = document.querySelector(".inline-md-task");
             if (!(checkbox instanceof HTMLElement)) {
@@ -132,6 +139,5 @@ describe("task list label spacing", () => {
         }, clip);
         expect(covers).toBe(true);
         expect(clip.height).toBeLessThan(48);
-        await expectPageClip(page, clip, join(here, "screenshots", "task-checkbox-padding.png"));
     });
 });

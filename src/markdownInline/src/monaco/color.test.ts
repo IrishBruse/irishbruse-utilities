@@ -17,4 +17,15 @@ describe("toMonacoColor", () => {
         expect(toMonacoColor("rgb(62, 68, 81)")).toBe("#3e4451");
         expect(toMonacoColor("rgba(62, 68, 81, 1)")).toBe("#3e4451");
     });
+
+    it("accepts percent channels and alpha", () => {
+        expect(toMonacoColor("rgb(100%, 0%, 0%)")).toBe("#ff0000");
+        expect(toMonacoColor("rgba(0, 0, 0, 50%)")).toBe("#00000080");
+    });
+
+    it("rejects values Monaco cannot parse", () => {
+        expect(toMonacoColor("blue")).toBeUndefined();
+        expect(toMonacoColor("rgb(nope, 1, 2)")).toBeUndefined();
+        expect(toMonacoColor("rgba(1, 2, 3, nope)")).toBeUndefined();
+    });
 });

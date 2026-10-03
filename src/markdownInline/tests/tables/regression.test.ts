@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { expectPageClip, featureClip, openPlayground } from "../../support/browser";
+import { expectLineRangeShot, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -30,8 +30,10 @@ describe("table layout", () => {
     });
 
     it("matches the saved picture of the formatted tables", async () => {
-        const clip = await featureClip(page, { from: "Tables:", to: "Plain text" });
+        const clip = await expectLineRangeShot(page, join(here, "screenshots", "tables.png"), {
+            from: "Tables:",
+            to: "Plain text",
+        });
         expect(clip.width).toBeLessThan(700);
-        await expectPageClip(page, clip, join(here, "screenshots", "tables.png"));
     });
 });

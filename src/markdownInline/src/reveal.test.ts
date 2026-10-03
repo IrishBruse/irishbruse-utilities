@@ -190,6 +190,50 @@ describe("revealMarker", () => {
         })).toEqual({ surface: "preview", zone: true, occupy: false });
     });
 
+    it("keeps a ghost marker as ghost source when the caret is on its line", () => {
+        const strong: Scope = {
+            kind: "strong",
+            start: 0,
+            end: 8,
+            contentStart: 2,
+            contentEnd: 6,
+            markers: [
+                { start: 0, end: 2 },
+                { start: 6, end: 8 },
+            ],
+        };
+        const onLine = cursor(9, 0, 10);
+        const line = markerLine(0, 1);
+        expect(markerVisibility(strong, strong.markers[0]!, onLine, line)).toBe("ghost");
+        expect(revealMarker({
+            scope: strong,
+            marker: strong.markers[0]!,
+            cursor: onLine,
+            markerLine: line,
+            findHit: true,
+            frontMatterEnd: undefined,
+            singleLine: false,
+        })).toBe("ghost");
+        expect(reveal({
+            scope: strong,
+            marker: strong.markers[0]!,
+            cursor: onLine,
+            markerLine: line,
+            findHit: true,
+            frontMatterEnd: undefined,
+            singleLine: false,
+        })).toEqual({ surface: "raw", ghost: true });
+        expect(revealMarker({
+            scope: strong,
+            marker: strong.markers[0]!,
+            cursor: onLine,
+            markerLine: line,
+            findHit: false,
+            frontMatterEnd: undefined,
+            singleLine: false,
+        })).toBe("ghost");
+    });
+
     it("hides an image that does not cover a single line", () => {
         const image: Scope = {
             kind: "image",

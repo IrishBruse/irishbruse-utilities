@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { expectPageClip, featureClip, openPlayground } from "../../support/browser";
+import { expectLineRangeShot, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -50,9 +50,11 @@ describe("image layout", () => {
     });
 
     it("matches the saved picture of images and missing images", async () => {
-        const clip = await featureClip(page, { from: "Images", to: "Image" });
+        const clip = await expectLineRangeShot(page, join(here, "screenshots", "images.png"), {
+            from: "Images",
+            to: "Image",
+        });
         expect(clip.width).toBeLessThan(500);
-        await expectPageClip(page, clip, join(here, "screenshots", "images.png"));
     });
 
     it("keeps settled images in place while the caret moves", async () => {

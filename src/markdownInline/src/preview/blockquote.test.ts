@@ -11,6 +11,14 @@ describe("blockquoteLineDepth", () => {
 
     it("ignores non-quote lines", () => {
         expect(blockquoteLineDepth("plain")).toBe(0);
+        expect(blockquoteLineDepth("  plain")).toBe(0);
+    });
+
+    it("skips indentation before the quote mark", () => {
+        expect(blockquoteLineDepth("  > Quote")).toBe(1);
+        expect(blockquoteLineDepth("\t> Quote")).toBe(1);
+        expect(blockquoteContentIndex("  > Quote")).toBe(4);
+        expect(blockquoteContentIndex("\t> Quote")).toBe(3);
     });
 });
 

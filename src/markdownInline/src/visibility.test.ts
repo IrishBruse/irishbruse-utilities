@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { parseScopes } from "./document/scopes";
 import type { CursorContext, Scope } from "./document/types";
 import { markerVisibility, showsFormattedContent } from "./visibility";
 
@@ -80,7 +81,7 @@ describe("markerVisibility", () => {
         expect(showsFormattedContent(heading, drag)).toBe(false);
     });
 
-    it("keeps list and quote markers rendered unless the cursor is on them", () => {
+    it("keeps list markers rendered unless the cursor is on them, and shows a quote mark on its line", () => {
         const list: Scope = {
             kind: "listMarker",
             start: 0,
@@ -99,7 +100,7 @@ describe("markerVisibility", () => {
         };
         expect(markerVisibility(list, list.markers[0]!, cursor(5, 0, 12), markerLine(0, 12))).toBe("hidden");
         expect(markerVisibility(list, list.markers[0]!, cursor(0, 0, 12), markerLine(0, 12))).toBe("raw");
-        expect(markerVisibility(quote, quote.markers[0]!, cursor(4, 0, 10), markerLine(0, 10))).toBe("hidden");
+        expect(markerVisibility(quote, quote.markers[0]!, cursor(4, 0, 10), markerLine(0, 10))).toBe("raw");
         expect(markerVisibility(quote, quote.markers[0]!, cursor(1, 0, 10), markerLine(0, 10))).toBe("raw");
         expect(markerVisibility(quote, quote.markers[0]!, cursor(16, 8, 20, 8), markerLine(0, 8))).toBe("hidden");
     });
@@ -140,7 +141,7 @@ describe("markerVisibility", () => {
         expect(markerVisibility(quote, quote.markers[0]!, cursor(30, 20, 40, 20), markerLine(0, 8))).toBe("hidden");
     });
 
-    it("shows an image as source when the caret is inside it, on its line, or on the line before", () => {
+    it("shows an image as source when the caret is inside it or on its line", () => {
         const image: Scope = {
             kind: "image",
             start: 20,
@@ -154,11 +155,28 @@ describe("markerVisibility", () => {
         expect(markerVisibility(image, image.markers[0]!, cursor(24, 20, 40), markerLine(0, 1))).toBe("raw");
         expect(markerVisibility(image, image.markers[0]!, cursor(20, 20, 40), markerLine(0, 1))).toBe("raw");
         expect(markerVisibility(image, image.markers[0]!, cursor(36, 20, 40), markerLine(0, 1))).toBe("raw");
-        expect(markerVisibility(image, image.markers[0]!, cursor(10, 0, 19), markerLine(0, 1))).toBe("raw");
-        expect(markerVisibility(image, image.markers[0]!, cursor(10, 0, 18), markerLine(0, 1))).toBe("raw");
+        expect(markerVisibility(image, image.markers[0]!, cursor(10, 0, 19), markerLine(0, 1))).toBe("hidden");
+        expect(markerVisibility(image, image.markers[0]!, cursor(10, 0, 18), markerLine(0, 1))).toBe("hidden");
+        expect(markerVisibility(image, image.markers[0]!, cursor(10, 0, 18, 10, 2), markerLine(0, 1))).toBe("hidden");
         expect(markerVisibility(image, image.markers[0]!, cursor(10, 0, 17), markerLine(0, 1))).toBe("hidden");
         expect(markerVisibility(image, image.markers[0]!, cursor(50, 40, 60), markerLine(0, 1))).toBe("hidden");
         expect(markerVisibility(image, image.markers[0]!, cursor(50, 40, 60, 0), markerLine(0, 1))).toBe("raw");
+    });
+
+    it("keeps an image previewed when the caret is on a rule two lines above it", () => {
+        const source = "---\n\n![Dot](https://www.w3.org/Icons/valid-xhtml10)\n";
+        const image = parseScopes(source).find((scope) => scope.kind === "image");
+        expect(image).toBeDefined();
+        const ruleEnd = source.indexOf("\n");
+        expect(markerVisibility(image!, image!.markers[0]!, cursor(0, 0, ruleEnd), markerLine(0, 1))).toBe("hidden");
+    });
+
+    it("keeps an image previewed when the caret is on the blank line before it", () => {
+        const source = "---\n\n![Dot](https://www.w3.org/Icons/valid-xhtml10)\n";
+        const image = parseScopes(source).find((scope) => scope.kind === "image");
+        expect(image).toBeDefined();
+        const blank = source.indexOf("\n") + 1;
+        expect(markerVisibility(image!, image!.markers[0]!, cursor(blank, blank, blank), markerLine(0, 1))).toBe("hidden");
     });
 
     it("shows a table as source only while the cursor is inside it", () => {

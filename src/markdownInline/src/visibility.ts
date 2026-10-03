@@ -1,6 +1,6 @@
 import type { CursorContext, MarkerVisibility, Scope, TextRange } from "./document/types";
 
-const STRUCTURAL = new Set<Scope["kind"]>(["listMarker", "blockquoteMarker", "task"]);
+const STRUCTURAL = new Set<Scope["kind"]>(["listMarker", "task"]);
 
 function selectionBounds(cursor: CursorContext): { from: number; to: number } {
     return {
@@ -29,15 +29,6 @@ function cursorOnRange(range: TextRange, cursor: CursorContext): boolean {
     return from < range.end && to > range.start;
 }
 
-function adjacentApproach(scope: TextRange, cursor: CursorContext): boolean {
-    const { from, to } = selectionBounds(cursor);
-    if (from !== to) {
-        return false;
-    }
-    const gap = scope.start - cursor.lineEnd;
-    return gap >= 1 && gap <= 2;
-}
-
 function oneBreakBefore(scope: TextRange, cursor: CursorContext): boolean {
     const { from, to } = selectionBounds(cursor);
     if (from !== to) {
@@ -48,8 +39,7 @@ function oneBreakBefore(scope: TextRange, cursor: CursorContext): boolean {
 
 function blockReveal(scope: TextRange, cursor: CursorContext): boolean {
     return selectionOverlaps(scope, cursor)
-        || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
-        || adjacentApproach(scope, cursor);
+        || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd);
 }
 
 export interface MarkerLineContext {
@@ -79,6 +69,12 @@ export function markerVisibility(
     }
     if (scope.kind === "thematicBreak") {
         return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) ? "raw" : "hidden";
+    }
+    if (scope.kind === "blockquoteMarker") {
+        const onQuoteLine = rangesOverlap(markerLine.lineStart, markerLine.lineEnd, cursor.lineStart, cursor.lineEnd);
+        return cursorOnRange(marker, cursor) || selectionCoversMarkerLine(marker, cursor, markerLine) || onQuoteLine
+            ? "raw"
+            : "hidden";
     }
     if (STRUCTURAL.has(scope.kind)) {
         return cursorOnRange(marker, cursor) || selectionCoversMarkerLine(marker, cursor, markerLine) ? "raw" : "hidden";

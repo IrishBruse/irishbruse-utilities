@@ -1,6 +1,6 @@
 ---
 name: verify-markdownInline
-description: "Prove an Inline Markdown editor or playground change with the feature tests under src/markdownInline/tests. Use when verifying the editor, the playground, or a visual change, when running or debugging test:markdown-inline-browser, when a browser test hangs or fails, or when moving or renaming Inline Markdown modules."
+description: "Prove an Inline Markdown editor or playground change with the feature tests under src/markdownInline/tests. Use when verifying the editor, the playground, or a visual change, when reviewing or cropping screenshots under src/markdownInline/tests, when running or debugging test:markdown-inline-browser, when a browser test hangs or fails, or when moving or renaming Inline Markdown modules."
 ---
 
 # verify-markdownInline
@@ -39,10 +39,16 @@ Manual documents that a person opens in VS Code stay in `docs/tests/markdown/`.
 
 ## Visual check
 
-A paint or layout bug saves a picture from `#editor` beside the regression test.
+A paint or layout bug saves a picture beside the regression test.
+Clip it to the feature that check names: the marks, the words, and the line numbers that prove the case.
+`featureClip` in `src/markdownInline/support/browser.ts` builds that clip.
+A full-width mark stays full width. A rule does. A code block does when its language label sits at the right edge.
+The whole mark sits inside the frame, with a margin of editor background around the glyphs, bars, and borders.
+The clip starts at the editor top or at the feature line, whichever is lower, so the playground toolbar and the previous line stay outside the frame.
+The current-line highlight stays hidden for the shot.
 The first run writes `screenshots/<name>.png` and exits non-zero.
-Open that file and check the picture shows the page you just judged.
-When it does not, delete it, fix the page or the clip, and write it again.
+Open that file and judge it against the README sentence for that check.
+When the frame is the whole editor, cuts a mark, or shows the toolbar or the line above the feature, delete it, fix the clip, and write it again.
 The next run compares that picture.
 Done when the picture was opened and matches, and the compare exits 0.
 
@@ -67,3 +73,5 @@ A theme color paints pure red, or the highlight is the wrong color: the host col
 A rendered image, rule, or table vanishes: its view zone is tied to a hidden line.
 The selection or current line sits under a decoration, or the decoration covers the glyphs: the overlay paint order is wrong.
 The text and the selection disagree horizontally: a hidden marker was collapsed to zero width, so the words moved and the highlight stayed on the source columns.
+Arrow up or down from the line beside a previewed rule, image, or table skips that hidden line. Land the caret on the hidden model line, then let Monaco move.
+An image stays previewed until the caret is on its line. A table stays previewed until the caret is on it or one line break above it. A blank line between a table and the caret is a second break. A two-character gap is a CRLF break when the end-of-line length is 2, and a blank line when that length is 1.

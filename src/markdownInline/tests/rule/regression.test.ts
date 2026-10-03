@@ -7,6 +7,42 @@ import type { Browser, Page } from "playwright-core";
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = "rule/fixtures/case-1.md";
 
+async function arrowOntoRule(page: Page, direction: "down" | "up"): Promise<{ onRule: boolean; shown: boolean; offset: number; rule: number }> {
+    await page.evaluate((dir) => {
+        const api = (window as unknown as {
+            __inlineMarkdown: {
+                focus(): void;
+                getDocument(): string;
+                setCursor(offset: number): void;
+            };
+        }).__inlineMarkdown;
+        const source = api.getDocument();
+        const rule = source.indexOf("---");
+        api.focus();
+        api.setCursor(dir === "down" ? rule - 1 : rule + 4);
+    }, direction);
+    await page.keyboard.press(direction === "down" ? "ArrowDown" : "ArrowUp");
+    await page.evaluate(() => new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+    }));
+    return page.evaluate(() => {
+        const api = (window as unknown as {
+            __inlineMarkdown: { getCursor(): number; getDocument(): string };
+        }).__inlineMarkdown;
+        const source = api.getDocument();
+        const offset = api.getCursor();
+        const rule = source.indexOf("---");
+        const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+        const shown = [...document.querySelectorAll("#editor .view-line")].some((line) => fold(line.textContent).includes("---"));
+        return {
+            onRule: offset >= rule && offset < rule + 3,
+            shown,
+            offset,
+            rule,
+        };
+    });
+}
+
 describe("horizontal rule spacing", () => {
     let browser: Browser;
     let page: Page;
@@ -93,7 +129,26 @@ describe("horizontal rule editing", () => {
         await browser?.close();
     });
 
+    it("stops on the dashes when the down arrow moves off the blank line above the rule", async () => {
+        const landed = await arrowOntoRule(page, "down");
+        expect(landed.onRule).toBe(true);
+        expect(landed.shown).toBe(true);
+    });
+
+    it("stops on the dashes when the up arrow moves off the blank line below the rule", async () => {
+        const landed = await arrowOntoRule(page, "up");
+        expect(landed.onRule).toBe(true);
+        expect(landed.shown).toBe(true);
+    });
+
     it("shows the dashes when the rule line is clicked", async () => {
+        await page.evaluate(() => {
+            const api = (window as unknown as {
+                __inlineMarkdown: { setCursor(offset: number): void };
+            }).__inlineMarkdown;
+            api.setCursor(0);
+        });
+        await page.waitForFunction(() => document.querySelector(".inline-md-hr-line") instanceof HTMLElement);
         await page.locator(".inline-md-hr-line").click();
         const shown = await page.waitForFunction(
             () => (document.querySelector("#editor .view-lines")?.textContent ?? "").replaceAll("\u00a0", " ").includes("---"),

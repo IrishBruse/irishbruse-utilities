@@ -147,6 +147,14 @@ describe("blockquote down into a quote", () => {
         });
         await page.keyboard.press("ArrowDown");
         await page.keyboard.press("ArrowDown");
+        await page.waitForFunction(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Quote line."));
+            const marker = line instanceof HTMLElement
+                ? [...line.querySelectorAll("span")].find((span) => fold(span.textContent) === ">")
+                : undefined;
+            return marker instanceof HTMLElement && getComputedStyle(marker).color !== "rgba(0, 0, 0, 0)";
+        });
         const landed = await page.evaluate(() => {
             const api = (window as unknown as {
                 __inlineMarkdown: { getCursor(): number; getDocument(): string };
@@ -161,11 +169,20 @@ describe("blockquote down into a quote", () => {
                 : undefined;
             return {
                 onQuote: offset >= quote && offset <= quote + "> Quote line.".length,
+                offset,
+                quote,
+                markerClass: marker?.className ?? "",
                 markerColor: marker instanceof HTMLElement ? getComputedStyle(marker).color : "",
             };
         });
         expect(landed.onQuote).toBe(true);
+        expect(landed.markerClass).not.toContain("inline-md-quote-marker");
         expect(landed.markerColor).not.toBe("");
         expect(landed.markerColor).not.toBe("rgba(0, 0, 0, 0)");
+        await page.keyboard.type("!");
+        const edited = await page.evaluate(() => {
+            return (window as unknown as { __inlineMarkdown: { getDocument(): string } }).__inlineMarkdown.getDocument();
+        });
+        expect(edited).toContain("> Quote line.!");
     });
 });

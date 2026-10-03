@@ -282,6 +282,49 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         historyBindings(editor, options.onHistory);
     }
     const removeKeybindings = installInlineKeybindings(editor, column);
+    const stopOnHiddenLine = (event: KeyboardEvent): void => {
+        if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) {
+            return;
+        }
+        const direction = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
+        if (direction === 0) {
+            return;
+        }
+        const currentModel = editor.getModel();
+        const selection = editor.getSelection();
+        if (!currentModel || !selection || (!event.shiftKey && !selection.isEmpty())) {
+            return;
+        }
+        const position = selection.getPosition();
+        const here = editor.getTopForPosition(position.lineNumber, position.column);
+        if (direction > 0) {
+            const endTop = editor.getTopForPosition(position.lineNumber, currentModel.getLineMaxColumn(position.lineNumber));
+            if (here + 1 < endTop) {
+                return;
+            }
+        } else if (here > editor.getTopForPosition(position.lineNumber, 1) + 1) {
+            return;
+        }
+        const next = position.lineNumber + direction;
+        if (next < 1 || next > currentModel.getLineCount() || !presentation.isHiddenLine(next)) {
+            return;
+        }
+        const column = Math.min(position.column, currentModel.getLineMaxColumn(next));
+        presentation.prepareReveal(currentModel.getOffsetAt({ lineNumber: next, column }));
+        if (event.shiftKey) {
+            editor.setSelection(new monaco.Selection(
+                selection.selectionStartLineNumber,
+                selection.selectionStartColumn,
+                next,
+                column,
+            ));
+        } else {
+            editor.setPosition({ lineNumber: next, column });
+        }
+        event.preventDefault();
+        event.stopPropagation();
+    };
+    column.addEventListener("keydown", stopOnHiddenLine, true);
 
     const contentListener = editor.onDidChangeModelContent((event) => {
         refresh();
@@ -430,6 +473,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             contentSizeListener.dispose();
             cursorRevealListener.dispose();
             removeKeybindings();
+            column.removeEventListener("keydown", stopOnHiddenLine, true);
             contentListener.dispose();
             cursorListener.dispose();
             mouseListener.dispose();

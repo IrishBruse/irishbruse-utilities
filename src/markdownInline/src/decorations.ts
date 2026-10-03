@@ -311,6 +311,10 @@ export class InlinePresentation {
         this.writeHiddenAreas(model);
     }
 
+    isHiddenLine(lineNumber: number): boolean {
+        return this.hiddenLineNumbers.has(lineNumber);
+    }
+
     update(): void {
         if (this.updating) {
             this.updateQueued = true;

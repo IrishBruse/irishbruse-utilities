@@ -14,8 +14,18 @@ Quote the red failure to the user before editing production code.
 
 Write one check that asserts the correct behavior.
 
+A keyboard skip is a key press. Place the caret on the line beside the hidden line, press ArrowUp or ArrowDown, and assert the caret is on that hidden line and its source is shown.
+`setCursor` onto the hidden line does not show the skip.
+Read the caret and the view on the next frame after the key.
+Tests that share one page put the caret back on the preview position before a later check that needs the preview.
+
+A reveal that opens the wrong block is a unit test beside `src/markdownInline/src/visibility.ts` when `markerVisibility` can return the wrong surface.
+The playground picture is the report of that bug. The unit test is the check.
+
 When the bug is visible in the Inline Markdown editor or playground, add it to that feature's folder.
-Follow `.cursor/skills/markdown-inline-case/SKILL.md`, then `.cursor/skills/verify-markdownInline/SKILL.md`.
+Follow `.cursor/skills/new-test-markdown-inline/SKILL.md` only while the scenario is still open.
+Follow `.cursor/skills/verify-markdownInline/SKILL.md` for the folder, the picture, and the finish command.
+When the user already named the feature, the steps, and the wrong result, write the check.
 The check is `src/markdownInline/tests/<feature-name>/regression.test.ts`.
 The sample goes in that folder's `fixtures/`.
 A numbered case may be the next `case-N.md`.

@@ -48,7 +48,7 @@ Check every sentence in the README against the rendered page.
 A mark that should be seen is the thing under the pointer, not only a node in the page.
 Words that should line up with a mark share an edge with it.
 Text that should stay visible is still in the editor text.
-A picture matches the page you just checked.
+After a run writes a picture under `screenshots/`, open that file and check it shows the page you just judged.
 
 ## Verify
 
@@ -59,4 +59,4 @@ npm run test:markdown-inline-browser -- src/markdownInline/tests/<feature-name>/
 ```
 
 Then run `npm run test:markdown-inline-browser`.
-Done when that command exits 0, the README matches the page, and a visual case has its saved picture.
+Done when that command exits 0, the README matches the page, and each saved picture was opened and matches that page.

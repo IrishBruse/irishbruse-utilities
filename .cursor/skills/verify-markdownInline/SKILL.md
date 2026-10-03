@@ -1,11 +1,6 @@
 ---
 name: verify-markdownInline
-description: >-
-  Prove an Inline Markdown editor or playground change with the feature tests
-  under src/markdownInline/tests. Use when verifying the editor, the playground,
-  or a visual change; when running or debugging test:markdown-inline-browser;
-  when a browser test hangs or fails; or when moving or renaming Inline Markdown
-  modules.
+description: "Prove an Inline Markdown editor or playground change with the feature tests under src/markdownInline/tests. Use when verifying the editor, the playground, or a visual change, when running or debugging test:markdown-inline-browser, when a browser test hangs or fails, or when moving or renaming Inline Markdown modules."
 ---
 
 # verify-markdownInline
@@ -46,8 +41,10 @@ Manual documents that a person opens in VS Code stay in `docs/tests/markdown/`.
 
 A paint or layout bug saves a picture from `#editor` beside the regression test.
 The first run writes `screenshots/<name>.png` and exits non-zero.
+Open that file and check the picture shows the page you just judged.
+When it does not, delete it, fix the page or the clip, and write it again.
 The next run compares that picture.
-Done when the compare exits 0.
+Done when the picture was opened and matches, and the compare exits 0.
 
 ## Playground is not the host
 

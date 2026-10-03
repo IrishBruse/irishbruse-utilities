@@ -21,6 +21,7 @@ The sample goes in that folder's `fixtures/`.
 A numbered case may be the next `case-N.md`.
 A skill sample is `<name>/SKILL.md`, and the folder name is the `name` value.
 A paint or layout bug also saves a picture under `screenshots/`.
+Open that picture and check it before the compare counts.
 
 Run only that file:
 

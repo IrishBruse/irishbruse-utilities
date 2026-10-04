@@ -376,7 +376,34 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         options.onLink(href);
     };
     editor.getDomNode()?.addEventListener("mousedown", openRenderedLink, true);
+    let selectionClick: { x: number; y: number; lineNumber: number; column: number } | undefined;
     const mouseListener = editor.onMouseDown((event) => {
+        selectionClick = undefined;
+        const down = event.event;
+        const selection = editor.getSelection();
+        const position = event.target.position;
+        const onText = event.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT
+            || event.target.type === monaco.editor.MouseTargetType.CONTENT_EMPTY;
+        if (
+            down.leftButton
+            && down.detail === 1
+            && !down.shiftKey
+            && !down.altKey
+            && !down.ctrlKey
+            && !down.metaKey
+            && onText
+            && selection
+            && position
+            && !selection.isEmpty()
+            && selection.containsPosition(position)
+        ) {
+            selectionClick = {
+                x: down.browserEvent.clientX,
+                y: down.browserEvent.clientY,
+                lineNumber: position.lineNumber,
+                column: position.column,
+            };
+        }
         const element = event.target.element;
         if (element instanceof Element) {
             const image = element.closest(".inline-md-image, .inline-md-image-fallback");
@@ -389,6 +416,23 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
                 }
             }
         }
+    });
+    const mouseUpListener = editor.onMouseUp((event) => {
+        const armed = selectionClick;
+        selectionClick = undefined;
+        if (!armed || event.event.detail !== 1) {
+            return;
+        }
+        const dx = event.event.browserEvent.clientX - armed.x;
+        const dy = event.event.browserEvent.clientY - armed.y;
+        if (dx * dx + dy * dy > 16) {
+            return;
+        }
+        const selection = editor.getSelection();
+        if (!selection || selection.isEmpty() || !selection.containsPosition(armed)) {
+            return;
+        }
+        editor.setPosition({ lineNumber: armed.lineNumber, column: armed.column });
     });
 
     let fitting = false;
@@ -477,6 +521,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             contentListener.dispose();
             cursorListener.dispose();
             mouseListener.dispose();
+            mouseUpListener.dispose();
             editor.getDomNode()?.removeEventListener("mousedown", openRenderedLink, true);
             mermaidLens.dispose();
             presentation.dispose();

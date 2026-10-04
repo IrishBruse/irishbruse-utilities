@@ -17,3 +17,6 @@ While the mouse button is held and the selection is dragged across a link, the a
 
 When a selection runs from the quote through the lines below the task, the task line highlight stays one solid band across the dash, checkbox, and word Task.
 The picture shows the line numbers and the selected lines under the task.
+
+A click on text that is already selected places the caret at that click.
+A click outside the selection still places the caret there.

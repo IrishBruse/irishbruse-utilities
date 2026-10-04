@@ -215,3 +215,83 @@ describe("task line selection picture", () => {
         expect(clip.width).toBeLessThan(500);
     });
 });
+
+describe("click inside a selection", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground(fixture, "First paragraph");
+        browser = opened.browser;
+        page = opened.page;
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("places the caret where the selected text was clicked", async () => {
+        const target = await page.evaluate(async () => {
+            const doc = window.__inlineMarkdown.getDocument();
+            const needle = "First paragraph under the title.";
+            const from = doc.indexOf(needle);
+            const to = from + needle.length;
+            window.__inlineMarkdown.select(from, to);
+            await new Promise((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(resolve));
+            });
+            const piece = document.querySelector<HTMLElement>(".selected-text");
+            const box = piece?.getBoundingClientRect();
+            return {
+                from,
+                to,
+                pieces: document.querySelectorAll(".selected-text").length,
+                x: box ? box.left + box.width / 2 : 0,
+                y: box ? box.top + box.height / 2 : 0,
+            };
+        });
+        expect(target.from).toBeGreaterThanOrEqual(0);
+        expect(target.pieces).toBeGreaterThan(0);
+        await page.mouse.click(target.x, target.y);
+        await page.evaluate(() => new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+        }));
+        const placed = await page.evaluate(() => ({
+            cursor: window.__inlineMarkdown.getCursor(),
+            pieces: document.querySelectorAll(".selected-text").length,
+        }));
+        expect(placed.cursor).toBeGreaterThan(target.from);
+        expect(placed.cursor).toBeLessThan(target.to);
+        expect(placed.pieces).toBe(0);
+
+        const outside = await page.evaluate(async () => {
+            const doc = window.__inlineMarkdown.getDocument();
+            const needle = "First paragraph under the title.";
+            const from = doc.indexOf(needle);
+            window.__inlineMarkdown.select(from, from + needle.length);
+            await new Promise((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(resolve));
+            });
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Second paragraph"));
+            const spans = [...(line?.querySelectorAll("span") ?? [])].filter((span) => fold(span.textContent).includes("Second"));
+            spans.sort((left, right) => (left.textContent?.length ?? 0) - (right.textContent?.length ?? 0));
+            const box = spans[0]?.getBoundingClientRect();
+            return {
+                from,
+                to: from + needle.length,
+                at: doc.indexOf("Second"),
+                x: box ? box.left + Math.min(8, box.width / 2) : 0,
+                y: box ? box.top + box.height / 2 : 0,
+            };
+        });
+        expect(outside.at).toBeGreaterThanOrEqual(outside.to);
+        await page.mouse.click(outside.x, outside.y);
+        await page.evaluate(() => new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+        }));
+        const moved = await page.evaluate(() => window.__inlineMarkdown.getCursor());
+        expect(moved).toBeGreaterThanOrEqual(outside.at);
+        expect(moved).toBeLessThan(outside.at + "Second".length);
+    });
+});

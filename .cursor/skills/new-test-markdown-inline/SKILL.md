@@ -1,6 +1,6 @@
 ---
 name: new-test-markdown-inline
-description: Walk through a new Inline Markdown test case by asking for the scenario, then checking it in the playground. Use when adding a feature test, a sample, a scenario, or a regression under src/markdownInline/tests.
+description: "Walk through a new Inline Markdown test case by asking for the scenario, then checking it in the playground. Use when adding a feature test, a sample, a scenario, or a regression under src/markdownInline/tests. Before the first edit, state the Change line and the Hold line, then continue."
 ---
 
 # markdown-inline-case
@@ -8,6 +8,7 @@ description: Walk through a new Inline Markdown test case by asking for the scen
 The folder shape and the finish command are in `.cursor/skills/verify-markdownInline/SKILL.md`.
 A bug still goes red before the product changes, as in `.cursor/skills/regression/SKILL.md`.
 When the user already named the feature, the steps, and what is wrong, skip the questions and follow that skill.
+Before the first edit, write the Change sentence and the Hold sentence from `.cursor/skills/markdown-inline/SKILL.md` in the reply, then continue in that same turn.
 
 Ask one question, then wait for the answer.
 Write nothing until the sample is accepted.

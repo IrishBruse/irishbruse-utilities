@@ -1,12 +1,13 @@
 ---
 name: verify-markdownInline
-description: "Prove an Inline Markdown editor or playground change with the feature tests under src/markdownInline/tests. Use when verifying the editor, the playground, or a visual change, when reviewing or cropping screenshots under src/markdownInline/tests, when running or debugging test:markdown-inline-browser, when a browser test hangs or fails, or when moving or renaming Inline Markdown modules."
+description: "Prove an Inline Markdown editor or playground change with the feature tests under src/markdownInline/tests. Use when verifying the editor, the playground, or a visual change, when reviewing or cropping screenshots under src/markdownInline/tests, when running or debugging test:markdown-inline-browser, when a browser test hangs or fails, or when moving or renaming Inline Markdown modules. Before a behavior edit, state the Change line and the Hold line, then continue."
 ---
 
 # verify-markdownInline
 
 The playground is `http://127.0.0.1:5175/`.
 Dev server rules are in `src/markdownInline/playground/AGENTS.md`.
+A behavior edit states the Change sentence and the Hold sentence from `.cursor/skills/markdown-inline/SKILL.md` before the first edit, then continues in that same turn.
 
 A source change is finished when both of these exit 0:
 

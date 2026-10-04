@@ -1,12 +1,13 @@
 ---
 name: regression
-description: "Locks a reported bug behind a failing regression before the fix, then reruns that same check until it passes. Use when fixing a bug or adding a regression test."
+description: "Locks a reported bug behind a failing regression before the fix, then reruns that same check until it passes. Use when fixing a bug or adding a regression test. Before the first edit, state the Change line and the Hold line, then continue."
 ---
 
 # Regression
 
 A bug fix is finished only after the same check goes red on the current code and green after the fix.
 
+Before the first edit, write the Change sentence and the Hold sentence from `.cursor/skills/markdown-inline/SKILL.md` in the reply, then continue in that same turn.
 Leave production code unchanged until red is recorded.
 Quote the red failure to the user before editing production code.
 
@@ -25,7 +26,7 @@ The playground picture is the report of that bug. The unit test is the check.
 When the bug is visible in the Inline Markdown editor or playground, add it to that feature's folder.
 Follow `.cursor/skills/new-test-markdown-inline/SKILL.md` only while the scenario is still open.
 Follow `.cursor/skills/verify-markdownInline/SKILL.md` for the folder, the picture, and the finish command.
-When the user already named the feature, the steps, and the wrong result, write the check.
+When the user already named the feature, the steps, and the wrong result, write the check in that same turn. The Change sentence and the Hold sentence are part of that reply.
 The check is `src/markdownInline/tests/<feature-name>/regression.test.ts`.
 The sample goes in that folder's `fixtures/`.
 A numbered case may be the next `case-N.md`.

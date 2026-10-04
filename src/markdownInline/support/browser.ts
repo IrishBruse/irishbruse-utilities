@@ -105,9 +105,9 @@ export async function bulletLines(page: Page, needles: readonly string[]): Promi
                 root.scrollTop += top - Math.min(200, window.innerHeight / 2);
             }
             const shown = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes(needle));
-            const bullet = [...document.querySelectorAll("#editor .margin-view-overlays .inline-md-list-bullet")].find((entry) => {
-                return shown !== undefined && Math.abs(entry.getBoundingClientRect().top - shown.getBoundingClientRect().top) <= 2;
-            });
+            const bullet = shown
+                ? [...shown.querySelectorAll(".inline-md-list-mark")].find((entry) => entry.childElementCount === 0)
+                : undefined;
             const box = bullet?.getBoundingClientRect();
             const word = shown
                 ? [...shown.querySelectorAll("span")]
@@ -121,7 +121,7 @@ export async function bulletLines(page: Page, needles: readonly string[]): Promi
                 bulletLeft: box?.left ?? 0,
                 bulletRight: box?.right ?? 0,
                 wordLeft: word?.getBoundingClientRect().left ?? 0,
-                hitIsBullet: !!bullet && hit?.closest(".inline-md-list-bullet") === bullet,
+                hitIsBullet: !!bullet && hit?.closest(".inline-md-list-mark") === bullet,
                 insideMargin: !!box && !!marginBox && box.left >= marginBox.left - 1 && box.right <= marginBox.right + 1,
             };
         });
@@ -276,7 +276,7 @@ export async function featureClip(page: Page, options: LineRangeClip): Promise<P
         }
         const extras = options.fullWidth ?? [];
         const widgets = [
-            ".inline-md-list-bullet",
+            ".inline-md-list-mark",
             ".inline-md-task",
             ".selected-text",
             "img.inline-md-image",

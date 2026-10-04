@@ -21,8 +21,9 @@ describe("lists", () => {
     it("shows a bullet beside a top-level item", () => {
         const parent = lines.find((line) => line.text === "Bullet A");
         expect(parent?.hitIsBullet).toBe(true);
-        expect(parent?.insideMargin).toBe(true);
-        expect(parent && parent.wordLeft).toBeGreaterThanOrEqual((parent?.bulletRight ?? 0) - 1);
+        expect(parent?.insideMargin).toBe(false);
+        expect(parent && parent.wordLeft).toBeGreaterThanOrEqual((parent?.bulletRight ?? 0) - 2);
+        expect(parent && parent.wordLeft).toBeLessThanOrEqual((parent?.bulletRight ?? 0) + 2);
     });
 
     it("keeps a bullet on each nested item, set in from the parent", () => {
@@ -31,7 +32,8 @@ describe("lists", () => {
             const nested = lines.find((line) => line.text === name);
             expect(nested?.hitIsBullet).toBe(true);
             expect(nested && parent && nested.bulletLeft).toBeGreaterThan((parent?.bulletLeft ?? 0) + 1);
-            expect(Math.abs((nested?.wordLeft ?? 0) - (nested?.bulletRight ?? 0))).toBeLessThanOrEqual(2);
+            expect(nested && nested.wordLeft).toBeGreaterThanOrEqual((nested?.bulletRight ?? 0) - 2);
+            expect(nested && nested.wordLeft).toBeLessThanOrEqual((nested?.bulletRight ?? 0) + 2);
         }
     });
 

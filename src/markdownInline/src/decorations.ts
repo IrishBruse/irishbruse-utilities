@@ -1,6 +1,6 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
-import { applyListLineHeight, listGapPaints, listMarkerBulletClass, listMarkerIndentColumns, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
+import { applyListLineHeight, listGapPaints, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
 import { isMermaidCodeBlock } from "./preview/mermaid";
 import { previewContentClass, previewContentRange } from "./preview/paint";
@@ -426,20 +426,7 @@ export class InlinePresentation {
                     range: rangeFromOffsets(model, bounds.start, bounds.end),
                     options: scope.kind === "blockquoteMarker"
                         ? { inlineClassName: "inline-md-quote-marker" }
-                        : {
-                            ...hideOptions(before),
-                            ...(scope.kind === "listMarker" && !listMarkerIsTask(scopes, marker.end)
-                                ? {
-                                    firstLineDecorationClassName: listMarkerBulletClass(
-                                        listMarkerIndentColumns(
-                                            model.getLineContent(model.getPositionAt(marker.start).lineNumber),
-                                            model.getPositionAt(marker.start).column,
-                                            this.editor.getOption(monaco.editor.EditorOption.tabSize),
-                                        ),
-                                    ),
-                                }
-                                : {}),
-                        },
+                        : hideOptions(before),
                 });
             }
         };
@@ -766,7 +753,10 @@ export class InlinePresentation {
     ): monaco.editor.InjectedTextOptions | undefined {
         switch (scope.kind) {
             case "listMarker":
-                return undefined;
+                if (listMarkerIsTask(scopes, marker.end)) {
+                    return undefined;
+                }
+                return injected("• ", "inline-md-list-mark");
             case "task": {
                 const position = model.getPositionAt(clampOffset(marker.start, model.getValueLength()));
                 tasks.push({

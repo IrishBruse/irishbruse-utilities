@@ -34,6 +34,83 @@ describe("nested list bullets stay visible", () => {
     });
 });
 
+describe("list bullet column", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("list/fixtures/case-3.md", "keeps reveal");
+        browser = opened.browser;
+        page = opened.page;
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("paints the bullet on the raw dash, outside the gutter", async () => {
+        const placed = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("keeps reveal"));
+            if (!(line instanceof HTMLElement)) {
+                return null;
+            }
+            const lineBox = line.getBoundingClientRect();
+            const bullet = [...line.querySelectorAll(".inline-md-list-mark")].find((entry) => entry.childElementCount === 0);
+            const number = [...document.querySelectorAll("#editor .line-numbers")].find((entry) => {
+                return Math.abs(entry.getBoundingClientRect().top - lineBox.top) <= 2;
+            });
+            if (!(bullet instanceof HTMLElement) || !(number instanceof HTMLElement)) {
+                return null;
+            }
+            const bulletBox = bullet.getBoundingClientRect();
+            return {
+                bulletLeft: bulletBox.left,
+                lineLeft: lineBox.left,
+                numberRight: number.getBoundingClientRect().right,
+            };
+        });
+        expect(placed).not.toBeNull();
+        expect(placed!.bulletLeft).toBeGreaterThan(placed!.numberRight - 1);
+        expect(Math.abs(placed!.bulletLeft - placed!.lineLeft)).toBeLessThanOrEqual(1);
+    });
+
+    it("shows a bullet before the label", async () => {
+        const seen = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("keeps reveal"));
+            if (!(line instanceof HTMLElement)) {
+                return null;
+            }
+            const label = [...line.querySelectorAll("span")].find((span) => fold(span.textContent).startsWith("Change"));
+            const bullet = [...line.querySelectorAll(".inline-md-list-mark")].find((span) => span.childElementCount === 0);
+            const number = [...document.querySelectorAll("#editor .line-numbers")].find((entry) => {
+                return Math.abs(entry.getBoundingClientRect().top - line.getBoundingClientRect().top) <= 2;
+            });
+            if (!(label instanceof HTMLElement) || !(bullet instanceof HTMLElement) || !(number instanceof HTMLElement)) {
+                return null;
+            }
+            const bulletBox = bullet.getBoundingClientRect();
+            return {
+                bulletLeft: bulletBox.left,
+                bulletRight: bulletBox.right,
+                labelLeft: label.getBoundingClientRect().left,
+                numberRight: number.getBoundingClientRect().right,
+            };
+        });
+        expect(seen).not.toBeNull();
+        expect(seen!.bulletLeft).toBeGreaterThan(seen!.numberRight - 1);
+        expect(seen!.labelLeft).toBeGreaterThanOrEqual(seen!.bulletRight - 1);
+    });
+
+    it("matches the saved picture of the bullet on the dash column", async () => {
+        await expectLineRangeShot(page, join(here, "screenshots", "bullet-on-dash.png"), {
+            from: "keeps reveal",
+            to: "modules",
+        });
+    });
+});
+
 describe("task list label spacing", () => {
     let browser: Browser;
     let page: Page;
@@ -56,7 +133,7 @@ describe("task list label spacing", () => {
                 return null;
             }
             const top = checkbox.getBoundingClientRect().top;
-            return [...document.querySelectorAll("#editor .margin-view-overlays .inline-md-list-bullet")].some(
+            return [...document.querySelectorAll("#editor .inline-md-list-mark, #editor .margin-view-overlays .inline-md-list-bullet")].some(
                 (bullet) => Math.abs(bullet.getBoundingClientRect().top - top) <= 2,
             );
         });

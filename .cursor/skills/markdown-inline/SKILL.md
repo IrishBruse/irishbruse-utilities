@@ -10,7 +10,7 @@ Scope work to `src/markdownInline`, not `src/markdownEditor`. Read `src/markdown
 Before the first edit of editor behavior, write two sentences in the reply, then continue in that same turn.
 
 Change: the one behavior that will change.
-Hold: the nearby behavior that stays as it is.
+Hold: the nearby behavior that stays as it is. Hold names only a behavior the user ask or the feature README already states.
 
 Grain is one interaction. A caret on the marker character is a different behavior from a caret elsewhere on that line.
 

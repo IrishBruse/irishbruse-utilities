@@ -19,6 +19,11 @@ The browser command alone does not typecheck.
 When a change is imported from outside `src/markdownInline`, also run `npm test` and `npm run lint`.
 The report names every red run and what turned it green.
 
+The picture check and the finish command are those npm scripts, including `npm run test:markdown-inline-browser` on the feature regression file.
+A Shell command that launches Playwright is neither of those.
+Logs and probes go in `src/markdownInline`.
+`node_modules` stays unedited.
+
 ## Feature folder
 
 Each feature lives in `src/markdownInline/tests/<feature-name>/`.

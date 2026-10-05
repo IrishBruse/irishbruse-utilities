@@ -5,7 +5,6 @@ description: "Walk through a new Inline Markdown test case by asking for the sce
 
 # markdown-inline-case
 
-The folder shape and the finish command are in `.cursor/skills/verify-markdownInline/SKILL.md`.
 A bug still goes red before the product changes, as in `.cursor/skills/regression/SKILL.md`.
 When the user already named the feature, the steps, and what is wrong, skip the questions and follow that skill.
 The first edit is the check file. Monaco reads and screenshot pixel scans come after that file exists.
@@ -40,7 +39,7 @@ Save the accepted sample under `fixtures/`.
 Point `integration.test.ts` at the whole scenario.
 Point `regression.test.ts` at the bug, and leave production code unchanged until that file fails.
 A visible failure also gets a picture under `screenshots/`, taken only after the page looks right.
-Clip that picture to the feature, as in the visual check of `.cursor/skills/verify-markdownInline/SKILL.md`.
+Clip that picture to the feature.
 
 ## Explore
 

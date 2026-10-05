@@ -33,7 +33,6 @@ Work outside `src/markdownInline` gets one failing check beside the module befor
 
 ## Done
 
-Inline Markdown finishes with `.cursor/skills/verify-markdownInline/SKILL.md`.
 Playground server rules are in `src/markdownInline/playground/AGENTS.md`.
 
 A ticket is finished when every Done when line other than `Not in the source` is true. When every Done when line is `Not in the source`, a bug is finished at its Expected section and a todo is finished at the outcome in its Description.

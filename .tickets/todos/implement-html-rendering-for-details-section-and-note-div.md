@@ -1,11 +1,18 @@
-# Features
+---
+type: todo
+title: Implement rendering of details, section, and note div HTML blocks
+created: 2026-10-05
+source: text
+---
 
-- [ ]  When dragging a selection on a line for some markdown stuff it reveals the raw for stuff not touching the selection/cursor
-- [ ] todo
+# Implement rendering of details, section, and note div HTML blocks
 
-## 1
+## Description
+Implement rendering of details, section, and note div HTML blocks.
 
-Implement rendering of
+Render these blocks:
+
+```html
 <details>
   <summary>Expand me</summary>
   <p>Hidden details content.</p>
@@ -20,21 +27,10 @@ Implement rendering of
   </ul>
 </section>
 
-
 <div class="note">
   <strong>Note:</strong> HTML preview for inactive blocks. <a href="https://example.com">Link in HTML</a>.
 </div>
+```
 
-## 2
-
-better syntax highlight common langauges
-![](./image.png)
-
-- json
-- js/ts family
-- bash
-- css
-- html
-- python
-- gherkins
-
+## Done when
+- Not in the source

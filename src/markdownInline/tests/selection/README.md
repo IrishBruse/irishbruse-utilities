@@ -10,6 +10,9 @@ Body lines keep a normal highlight height.
 
 When the selection covers the whole sentence, the bold asterisks stay visible.
 
+When a selection on the line covers only the word between the marks, the bold, italic, code, and link stay previewed.
+The asterisks, backticks, and link address stay hidden.
+
 When a selection runs from the task line through the code below, the highlight stays solid across the task markers.
 The hyphen and checkbox are not left out of the highlight.
 

@@ -217,6 +217,44 @@ describe("task line selection picture", () => {
     });
 });
 
+describe("untouched marks on a selected line", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("selection/fixtures/case-6.md", "plain");
+        browser = opened.browser;
+        page = opened.page;
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("keeps marks previewed when the selection does not touch them", async () => {
+        const text = await page.evaluate(async () => {
+            const root = document.querySelector(".inline-md-root");
+            root?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, cancelable: true }));
+            const doc = window.__inlineMarkdown.getDocument();
+            const from = doc.indexOf(" and ");
+            const to = from + " and ".length;
+            window.__inlineMarkdown.select(from, to);
+            await new Promise((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(resolve));
+            });
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const view = document.querySelector("#editor .view-lines");
+            const shown = fold(view instanceof HTMLElement ? view.innerText : "");
+            window.dispatchEvent(new MouseEvent("mouseup"));
+            return shown;
+        });
+        expect(text).toContain("plain bold and italic then code and link end");
+        expect(text).not.toContain("**");
+        expect(text).not.toContain("`");
+        expect(text).not.toContain("https://");
+    });
+});
+
 describe("click inside a selection", () => {
     let browser: Browser;
     let page: Page;

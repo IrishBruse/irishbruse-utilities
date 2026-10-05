@@ -86,7 +86,8 @@ export function markerVisibility(
     if (selectionOverlaps(scope, cursor)) {
         return "raw";
     }
-    if (rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)) {
+    const { from, to } = selectionBounds(cursor);
+    if (from === to && rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)) {
         return "ghost";
     }
     return "hidden";

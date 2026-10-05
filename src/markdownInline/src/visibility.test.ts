@@ -31,6 +31,32 @@ describe("markerVisibility", () => {
         expect(showsFormattedContent(strong, cursor(9, 0, 10))).toBe(true);
     });
 
+    it("keeps inline marks hidden when a selection on the line does not touch them", () => {
+        const source = "plain **bold** and *italic* then `code` and [link](https://example.com) end";
+        const scopes = parseScopes(source);
+        const strongScope = scopes.find((scope) => scope.kind === "strong");
+        const emphasis = scopes.find((scope) => scope.kind === "emphasis");
+        const code = scopes.find((scope) => scope.kind === "inlineCode");
+        const link = scopes.find((scope) => scope.kind === "link");
+        expect(strongScope).toBeDefined();
+        expect(emphasis).toBeDefined();
+        expect(code).toBeDefined();
+        expect(link).toBeDefined();
+        const line = markerLine(0, source.length);
+        const andStart = source.indexOf("and");
+        const andEnd = andStart + "and".length;
+        const between = cursor(andEnd, 0, source.length, andStart);
+        for (const scope of [strongScope!, emphasis!, code!, link!]) {
+            expect(markerVisibility(scope, scope.markers[0]!, between, line)).toBe("hidden");
+            expect(showsFormattedContent(scope, between)).toBe(true);
+        }
+        const boldOnly = cursor(strongScope!.end, 0, source.length, strongScope!.start);
+        expect(markerVisibility(strongScope!, strongScope!.markers[0]!, boldOnly, line)).toBe("raw");
+        expect(showsFormattedContent(strongScope!, boldOnly)).toBe(false);
+        expect(markerVisibility(emphasis!, emphasis!.markers[0]!, boldOnly, line)).toBe("hidden");
+        expect(markerVisibility(link!, link!.markers[0]!, boldOnly, line)).toBe("hidden");
+    });
+
     it("shows a construct raw when the cursor is inside it", () => {
         const marker = strong.markers[0]!;
         expect(markerVisibility(strong, marker, cursor(3, 0, 10), markerLine(0, 1))).toBe("raw");

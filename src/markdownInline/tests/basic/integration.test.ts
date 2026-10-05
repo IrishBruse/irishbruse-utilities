@@ -66,8 +66,9 @@ async function readMark(page: Page, word: string, className: string): Promise<Ma
         const style = getComputedStyle(span);
         const previous = span.previousElementSibling?.getBoundingClientRect();
         const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        const view = document.querySelector("#editor .view-lines");
         return {
-            editorText: fold(document.querySelector("#editor .view-lines")?.innerText ?? ""),
+            editorText: fold(view instanceof HTMLElement ? view.innerText : ""),
             className: span.className,
             fontWeight: Number.parseInt(style.fontWeight, 10),
             fontStyle: style.fontStyle,

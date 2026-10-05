@@ -3,7 +3,17 @@ name: markdown-inline
 description: "Inline Markdown editor and playground work under src/markdownInline. Use when changing reveal, caret, preview, or other editor behavior. Before the first edit, state the Change line and the Hold line, then continue."
 ---
 
-Scope work to `src/markdownInline`, not `src/markdownEditor`. Read `src/markdownInline/AGENTS.md` for the package boundary (`src/` must not import extension or sibling packages).
+Scope work to `src/markdownInline`, not `src/markdownEditor`.
+Imports from `src/` stay inside this package. `src/packageBoundary.test.ts` is that rule.
+
+## Modules
+
+| Behavior | File |
+| --- | --- |
+| Which mark is raw or hidden | `src/visibility.ts`, `src/reveal.ts` |
+| Rule, image, and table zones | `src/preview/blockZone.ts` |
+| Bullets and task marks | `src/decorations.ts`, `src/styles/preview/list.css` |
+| Caret and click | `src/editor.ts`, `src/selection.ts` |
 
 ## Change and Hold
 

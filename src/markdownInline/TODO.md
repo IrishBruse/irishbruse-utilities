@@ -1,5 +1,8 @@
 # Features
 
+- [ ]  When dragging a selection on a line for some markdown stuff it reveals the raw for stuff not touching the selection/cursor
+- [ ] todo
+
 ## 1
 
 Implement rendering of
@@ -34,60 +37,4 @@ better syntax highlight common langauges
 - html
 - python
 - gherkins
-
-## 3
-
-Inline math latex
-
-
-## 4
-
-IMplement setting for full width editor
-
-## 5
-
-Implement setting for table cell editing without revealing the whole raw table
-
-# Bugs
-
-## 1
-
-images are nbot editable raw it just skips the line and when clicked
-
-## 2
-
-The open preview button should be green and underlined on mermiad
-
-## 3
-
-drag selection doesnt reveal the raw of everything eg headers still hide the `#`
-
-## 4
-
-Mermaid doesnt rerender after showing raw
-
-## 5
-
-- doesnt indent on wrap (red)
-
-## 6
-
-Horizontal scroll is abit broken
-and Not centered
-
-## 7
-
-Jumping back to it causes flicker
-
-## 8
-
-Find is not working well
-
-## 10
-
-cursor skips past table should raw
-
-## 11
-
-Line heading height
 

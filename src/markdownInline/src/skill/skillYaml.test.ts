@@ -82,7 +82,7 @@ describe("paintYamlFrontMatter", () => {
         const originalExec = RegExp.prototype.exec;
         const originalIndexOf = String.prototype.indexOf;
         try {
-            String.prototype.indexOf = function (search: string, position?: number) {
+            String.prototype.indexOf = function (this: string, search: string, position?: number) {
                 if (search === "#") {
                     return -1;
                 }
@@ -90,7 +90,7 @@ describe("paintYamlFrontMatter", () => {
             };
             paintYamlFrontMatter("name: value # note\n", 0, "name: value # note\n".length);
 
-            RegExp.prototype.exec = function (string: string) {
+            RegExp.prototype.exec = function (this: RegExp, string: string) {
                 if (this.source === "^ *") {
                     return null;
                 }
@@ -98,7 +98,7 @@ describe("paintYamlFrontMatter", () => {
             } as typeof RegExp.prototype.exec;
             paintYamlFrontMatter("body: |\n  line\n", 0, "body: |\n  line\n".length);
 
-            RegExp.prototype.exec = function (string: string) {
+            RegExp.prototype.exec = function (this: RegExp, string: string) {
                 const match = originalExec.call(this, string);
                 if (match && this.source.includes("[^:#")) {
                     for (let group = 1; group <= 6; group++) {

@@ -143,7 +143,7 @@ function paintInline(
 const HEADING_SCALE = [1, 1.5, 1.4, 1.25, 1.1, 1, 0.85];
 const HEADING_PAD = 2;
 
-function headingExtraHeight(level: number, fontSize: number, lineHeight: number): number {
+function headingExtraHeight(level: number, fontSize: number): number {
     const scale = HEADING_SCALE[level] ?? 1;
     if (scale <= 1 || fontSize <= 0) {
         return 0;
@@ -638,7 +638,7 @@ export class InlinePresentation {
 
         const headingExtras = new Map<number, number>();
         for (const [lineNumber, level] of headingLines) {
-            const extra = headingExtraHeight(level, fontSize, lineHeight);
+            const extra = headingExtraHeight(level, fontSize);
             if (extra <= 0) {
                 continue;
             }
@@ -655,7 +655,7 @@ export class InlinePresentation {
             });
         }
 
-        const tabSize = this.editor.getOption(monaco.editor.EditorOption.tabSize);
+        const tabSize = model.getOptions().tabSize;
         const lineModel = monacoLineModel(model);
         for (const gap of listGapPaints(lineModel, scopes, tabSize)) {
             decorations.push({
@@ -702,7 +702,7 @@ export class InlinePresentation {
             return;
         }
         for (let level = 1; level <= 6; level += 1) {
-            const extra = headingExtraHeight(level, fontSize, lineHeight);
+            const extra = headingExtraHeight(level, fontSize);
             root.style.setProperty(`--ib-md-h${level}-line`, `${lineHeight + extra}px`);
         }
     }
@@ -1050,7 +1050,7 @@ export class InlinePresentation {
         }
         const cursorLine = this.editor.getPosition()?.lineNumber;
         const level = cursorLine === undefined ? undefined : headingLines.get(cursorLine);
-        const extra = level === undefined ? 0 : headingExtraHeight(level, fontSize, lineHeight);
+        const extra = level === undefined ? 0 : headingExtraHeight(level, fontSize);
         if (extra > 0) {
             root.style.setProperty("--ib-md-current-line", `${lineHeight + extra}px`);
             root.classList.add("inline-md-current-heading");

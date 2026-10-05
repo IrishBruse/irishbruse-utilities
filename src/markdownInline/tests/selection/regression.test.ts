@@ -131,7 +131,8 @@ describe("task list selection highlight", () => {
                     requestAnimationFrame(() => requestAnimationFrame(resolve));
                 });
                 const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-                const text = fold(document.querySelector("#editor .view-lines")?.innerText ?? "");
+                const view = document.querySelector("#editor .view-lines");
+                const text = fold(view instanceof HTMLElement ? view.innerText : "");
                 const dragging = root?.classList.contains("inline-md-dragging") === true;
                 window.dispatchEvent(new MouseEvent("mouseup"));
                 return dragging && text.includes("(https://");

@@ -5,7 +5,8 @@ import type { Browser, Page } from "playwright-core";
 async function editorText(page: Page): Promise<string> {
     return page.evaluate(() => {
         const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-        return fold(document.querySelector("#editor .view-lines")?.innerText ?? "");
+        const view = document.querySelector("#editor .view-lines");
+        return fold(view instanceof HTMLElement ? view.innerText : "");
     });
 }
 
@@ -39,7 +40,8 @@ describe("selection/fixtures/case-1.md", () => {
         await moveCaret(page, source.length);
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const text = fold(document.querySelector("#editor .view-lines")?.innerText ?? "");
+            const view = document.querySelector("#editor .view-lines");
+            const text = fold(view instanceof HTMLElement ? view.innerText : "");
             return text.includes("Second paragraph") && !text.includes("#");
         });
     });
@@ -59,7 +61,8 @@ describe("selection/fixtures/case-1.md", () => {
         await selectRange(page, 0, source.length);
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            return fold(document.querySelector("#editor .view-lines")?.innerText ?? "").includes("# Main title");
+            const view = document.querySelector("#editor .view-lines");
+            return fold(view instanceof HTMLElement ? view.innerText : "").includes("# Main title");
         });
         const text = await editorText(page);
         expect(text).toContain("# Main title");
@@ -80,7 +83,8 @@ describe("selection/fixtures/case-2.md", () => {
         await moveCaret(page, source.length);
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const text = fold(document.querySelector("#editor .view-lines")?.innerText ?? "");
+            const view = document.querySelector("#editor .view-lines");
+            const text = fold(view instanceof HTMLElement ? view.innerText : "");
             return text === "A bold word in a sentence.";
         });
     });
@@ -97,7 +101,8 @@ describe("selection/fixtures/case-2.md", () => {
         await selectRange(page, 0, source.length);
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            return fold(document.querySelector("#editor .view-lines")?.innerText ?? "").includes("**bold**");
+            const view = document.querySelector("#editor .view-lines");
+            return fold(view instanceof HTMLElement ? view.innerText : "").includes("**bold**");
         });
         expect(await editorText(page)).toBe("A **bold** word in a sentence.");
     });

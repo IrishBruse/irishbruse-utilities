@@ -25,7 +25,7 @@ Editor behavior: write the Change sentence and the Hold sentence from `.cursor/s
 
 A bug ticket, or a source that states a wrong result, follows `.cursor/skills/regression/SKILL.md`.
 
-A todo ticket, a feature README, or new Inline Markdown behavior follows `.cursor/skills/new-test-markdown-inline/SKILL.md`. That ticket or README is the named scenario, so write the check from it in this turn.
+A todo ticket, a feature README, or new Inline Markdown behavior follows `.cursor/skills/markdown-inline-case/SKILL.md`. That ticket or README is the named scenario, so write the check from it in this turn.
 
 Work outside `src/markdownInline` gets one failing check beside the module before production code changes, then the tests that cover that module.
 

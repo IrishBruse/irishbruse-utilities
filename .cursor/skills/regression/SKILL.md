@@ -24,7 +24,7 @@ A reveal that opens the wrong block is a unit test beside `src/markdownInline/sr
 The playground picture is the report of that bug. The unit test is the check.
 
 When the bug is visible in the Inline Markdown editor or playground, add it to that feature's folder.
-Follow `.cursor/skills/new-test-markdown-inline/SKILL.md` only while the scenario is still open.
+Follow `.cursor/skills/markdown-inline-case/SKILL.md` only while the scenario is still open.
 When the user already named the feature, the steps, and the wrong result, write the check in that same turn. The Change sentence and the Hold sentence are part of that reply.
 The check is `src/markdownInline/tests/<feature-name>/regression.test.ts`.
 The sample goes in that folder's `fixtures/`.

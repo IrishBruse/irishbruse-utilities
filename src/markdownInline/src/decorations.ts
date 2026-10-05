@@ -487,10 +487,22 @@ export class InlinePresentation {
 
         for (const scope of scopes) {
             const formatted = showFormatted(scope, cursor, findHits(scope, finds));
+            const sourceLink = scope.kind === "link" && scope.markers.some((marker) => {
+                const shown = reveal({
+                    scope,
+                    marker,
+                    cursor,
+                    markerLine: markerLineAt(model, marker.start),
+                    findHit: findHits(scope, finds),
+                    frontMatterEnd: this.frontMatter?.end,
+                    singleLine: false,
+                });
+                return shown.surface === "raw";
+            });
             const rawHeading = scope.kind === "heading" && !formatted;
             const className = rawHeading
                 ? rawHeadingClass(scope)
-                : formatted
+                : formatted && !sourceLink
                     ? previewContentClass(scope)
                     : undefined;
             if (className) {
@@ -517,7 +529,7 @@ export class InlinePresentation {
                     }
                 }
             }
-            if (scope.kind === "link" && !formatted) {
+            if (sourceLink) {
                 for (const span of rawLinkSpans(text, scope)) {
                     paintInline(decorations, model, text, span.start, span.end, replaced, span.className);
                 }
@@ -532,7 +544,7 @@ export class InlinePresentation {
                     frontMatterEnd: this.frontMatter?.end,
                     singleLine: false,
                 });
-                if (ghost.surface !== "raw" || !ghost.ghost) {
+                if (ghost.surface !== "raw" || !ghost.ghost || scope.kind === "link") {
                     continue;
                 }
                 for (const segment of subtractRanges(marker.start, marker.end, replaced)) {

@@ -27,6 +27,7 @@ body {
     font-size: var(--vscode-editor-font-size, 14px);
     --ib-md-link: var(--vscode-textLink-foreground, #35A854);
     --ib-md-link-label: #61afef;
+    --ib-md-link-punctuation: #d19a66;
     --ib-md-code-block-background: var(--vscode-textCodeBlock-background, #21252b);
     --ib-md-blockquote-border: var(--vscode-textBlockQuote-border, #4b5163);
     --vscode-editorCodeLens-foreground: var(--vscode-descriptionForeground, #9da5b4);

@@ -7,4 +7,11 @@
 
 .inline-md-root .monaco-editor .inline-md-link-label {
     color: var(--ib-md-link-label) !important;
+    text-decoration: none !important;
+}
+
+.inline-md-root .monaco-editor .inline-md-link-punctuation {
+    color: var(--ib-md-link-punctuation) !important;
+    text-decoration: none !important;
+    opacity: 1;
 }

@@ -53,8 +53,12 @@ describe("rawLinkSpans", () => {
             ],
         };
         expect(rawLinkSpans(text, scope)).toEqual([
-            { start: 0, end: 6, className: "inline-md-link-label" },
-            { start: 6, end: text.length, className: "inline-md-link-url" },
+            { start: 0, end: 1, className: "inline-md-link-punctuation" },
+            { start: 5, end: 6, className: "inline-md-link-punctuation" },
+            { start: 1, end: 5, className: "inline-md-link-label" },
+            { start: 6, end: 7, className: "inline-md-link-punctuation" },
+            { start: 7, end: text.length - 1, className: "inline-md-link-url" },
+            { start: text.length - 1, end: text.length, className: "inline-md-link-punctuation" },
         ]);
     });
 

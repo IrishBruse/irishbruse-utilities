@@ -81,7 +81,7 @@ describe("markerVisibility", () => {
         expect(showsFormattedContent(heading, drag)).toBe(false);
     });
 
-    it("keeps list markers rendered unless the cursor is on them, and shows a quote mark on its line", () => {
+    it("keeps list markers rendered unless the cursor is on them", () => {
         const list: Scope = {
             kind: "listMarker",
             start: 0,
@@ -90,6 +90,11 @@ describe("markerVisibility", () => {
             contentEnd: 2,
             markers: [{ start: 0, end: 2 }],
         };
+        expect(markerVisibility(list, list.markers[0]!, cursor(5, 0, 12), markerLine(0, 12))).toBe("hidden");
+        expect(markerVisibility(list, list.markers[0]!, cursor(0, 0, 12), markerLine(0, 12))).toBe("raw");
+    });
+
+    it("hides a quote mark unless the cursor is touching it", () => {
         const quote: Scope = {
             kind: "blockquoteMarker",
             start: 0,
@@ -98,10 +103,10 @@ describe("markerVisibility", () => {
             contentEnd: 2,
             markers: [{ start: 0, end: 2 }],
         };
-        expect(markerVisibility(list, list.markers[0]!, cursor(5, 0, 12), markerLine(0, 12))).toBe("hidden");
-        expect(markerVisibility(list, list.markers[0]!, cursor(0, 0, 12), markerLine(0, 12))).toBe("raw");
-        expect(markerVisibility(quote, quote.markers[0]!, cursor(4, 0, 10), markerLine(0, 10))).toBe("raw");
+        expect(markerVisibility(quote, quote.markers[0]!, cursor(4, 0, 10), markerLine(0, 10))).toBe("hidden");
+        expect(markerVisibility(quote, quote.markers[0]!, cursor(2, 0, 10), markerLine(0, 10))).toBe("hidden");
         expect(markerVisibility(quote, quote.markers[0]!, cursor(1, 0, 10), markerLine(0, 10))).toBe("raw");
+        expect(markerVisibility(quote, quote.markers[0]!, cursor(0, 0, 10), markerLine(0, 10))).toBe("raw");
         expect(markerVisibility(quote, quote.markers[0]!, cursor(16, 8, 20, 8), markerLine(0, 8))).toBe("hidden");
     });
 

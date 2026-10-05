@@ -158,6 +158,15 @@ describe("horizontal rule editing", () => {
             null,
             { timeout: 2000 },
         ).then(() => true).catch(() => false);
+        const landed = await page.evaluate(() => {
+            const api = (window as unknown as {
+                __inlineMarkdown: { getCursor(): number; getDocument(): string };
+            }).__inlineMarkdown;
+            const source = api.getDocument();
+            const rule = source.indexOf("---");
+            return { offset: api.getCursor(), end: rule + "---".length };
+        });
         expect(shown).toBe(true);
+        expect(landed.offset).toBe(landed.end);
     });
 });

@@ -522,7 +522,7 @@ describe("blockZone", () => {
         element(record.zone.domNode).fire("mousedown", event);
         expect(event.preventDefault).toHaveBeenCalled();
         expect(event.stopPropagation).toHaveBeenCalled();
-        expect(host.onReveal).toHaveBeenCalledWith(6);
+        expect(host.onReveal).toHaveBeenCalledWith(8);
     });
 
     it("shows a fallback when the image url is missing or unsafe", () => {

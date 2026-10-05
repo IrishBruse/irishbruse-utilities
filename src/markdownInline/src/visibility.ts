@@ -1,6 +1,6 @@
 import type { CursorContext, MarkerVisibility, Scope, TextRange } from "./document/types";
 
-const STRUCTURAL = new Set<Scope["kind"]>(["listMarker", "task"]);
+const STRUCTURAL = new Set<Scope["kind"]>(["listMarker", "task", "blockquoteMarker"]);
 
 function selectionBounds(cursor: CursorContext): { from: number; to: number } {
     return {
@@ -69,12 +69,6 @@ export function markerVisibility(
     }
     if (scope.kind === "thematicBreak") {
         return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) ? "raw" : "hidden";
-    }
-    if (scope.kind === "blockquoteMarker") {
-        const onQuoteLine = rangesOverlap(markerLine.lineStart, markerLine.lineEnd, cursor.lineStart, cursor.lineEnd);
-        return cursorOnRange(marker, cursor) || selectionCoversMarkerLine(marker, cursor, markerLine) || onQuoteLine
-            ? "raw"
-            : "hidden";
     }
     if (STRUCTURAL.has(scope.kind)) {
         return cursorOnRange(marker, cursor) || selectionCoversMarkerLine(marker, cursor, markerLine) ? "raw" : "hidden";

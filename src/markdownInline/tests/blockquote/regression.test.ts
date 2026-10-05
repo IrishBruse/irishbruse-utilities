@@ -117,6 +117,39 @@ describe("blockquote paint", () => {
         expect(paint.quoteBar).toBe(false);
         expect(paint.nestedBar).toBe(true);
     });
+
+    it("keeps the quote mark hidden when the caret is on the quote but not on the mark", async () => {
+        await page.evaluate(() => {
+            const api = (window as unknown as {
+                __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+            }).__inlineMarkdown;
+            const quote = api.getDocument().indexOf("> Quote line.");
+            api.setCursor(quote + "> Quote line.".length);
+        });
+        await page.waitForFunction(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Quote line."));
+            const marker = line instanceof HTMLElement
+                ? [...line.querySelectorAll("span")].find((span) => fold(span.textContent) === ">")
+                : undefined;
+            return marker instanceof HTMLElement && getComputedStyle(marker).color === "rgba(0, 0, 0, 0)";
+        });
+        const paint = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Quote line."));
+            const marker = line instanceof HTMLElement
+                ? [...line.querySelectorAll("span")].find((span) => fold(span.textContent) === ">")
+                : undefined;
+            const top = line instanceof HTMLElement ? line.getBoundingClientRect().top : -1;
+            const bar = [...document.querySelectorAll(".inline-md-quote")].some((entry) => Math.abs(entry.getBoundingClientRect().top - top) <= 2);
+            return {
+                markerColor: marker instanceof HTMLElement ? getComputedStyle(marker).color : "",
+                bar,
+            };
+        });
+        expect(paint.markerColor).toBe("rgba(0, 0, 0, 0)");
+        expect(paint.bar).toBe(true);
+    });
 });
 
 describe("blockquote down into a quote", () => {
@@ -133,7 +166,7 @@ describe("blockquote down into a quote", () => {
         await browser?.close();
     });
 
-    it("moves down from the line above a quote into that quote and shows the quote mark", async () => {
+    it("moves down from the line above a quote into that quote and keeps the quote mark hidden", async () => {
         await page.evaluate(() => {
             const api = (window as unknown as {
                 __inlineMarkdown: {
@@ -150,12 +183,13 @@ describe("blockquote down into a quote", () => {
         await page.keyboard.press("ArrowDown");
         await page.keyboard.press("ArrowDown");
         await page.waitForFunction(() => {
-            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Quote line."));
-            const marker = line instanceof HTMLElement
-                ? [...line.querySelectorAll("span")].find((span) => fold(span.textContent) === ">")
-                : undefined;
-            return marker instanceof HTMLElement && getComputedStyle(marker).color !== "rgba(0, 0, 0, 0)";
+            const api = (window as unknown as {
+                __inlineMarkdown: { getCursor(): number; getDocument(): string };
+            }).__inlineMarkdown;
+            const source = api.getDocument();
+            const offset = api.getCursor();
+            const quote = source.indexOf("> Quote line.");
+            return offset >= quote && offset <= quote + "> Quote line.".length;
         });
         const landed = await page.evaluate(() => {
             const api = (window as unknown as {
@@ -171,16 +205,15 @@ describe("blockquote down into a quote", () => {
                 : undefined;
             return {
                 onQuote: offset >= quote && offset <= quote + "> Quote line.".length,
-                offset,
-                quote,
+                onMark: offset >= quote && offset < quote + "> ".length,
                 markerClass: marker?.className ?? "",
                 markerColor: marker instanceof HTMLElement ? getComputedStyle(marker).color : "",
             };
         });
         expect(landed.onQuote).toBe(true);
-        expect(landed.markerClass).not.toContain("inline-md-quote-marker");
-        expect(landed.markerColor).not.toBe("");
-        expect(landed.markerColor).not.toBe("rgba(0, 0, 0, 0)");
+        expect(landed.onMark).toBe(false);
+        expect(landed.markerClass).toContain("inline-md-quote-marker");
+        expect(landed.markerColor).toBe("rgba(0, 0, 0, 0)");
         await page.keyboard.type("!");
         const edited = await page.evaluate(() => {
             return (window as unknown as { __inlineMarkdown: { getDocument(): string } }).__inlineMarkdown.getDocument();

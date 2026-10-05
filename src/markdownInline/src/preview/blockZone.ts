@@ -192,7 +192,7 @@ export function blockZone(scope: Scope, from: number, lineNumber: number, host: 
         frame.addEventListener("mousedown", (event) => {
             event.preventDefault();
             event.stopPropagation();
-            host.onReveal(from + 1);
+            host.onReveal(scope.end);
         });
         return {
             key: `hr:${from}`,

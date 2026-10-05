@@ -6,4 +6,4 @@ The words inside the quote are a transparent gray, fainter than the words outsid
 The quote marks stay hidden.
 The bar hides while a quote mark is showing.
 A nested quote has a second bar, set in from the first.
-From the blank line above a quote, Down moves into that quote and shows the quote mark so the line can be edited.
+From the blank line above a quote, Down moves into that quote and the quote mark stays hidden, so the line can be edited.

@@ -11,7 +11,7 @@ One run builds one source.
 
 | The message names | Source |
 | --- | --- |
-| A path under `.tickets/bugs/` or `.tickets/todos/`, or a title that matches one ticket folder | That folder's `bug-1.md` or `todo-1.md`. Read it and every linked image. |
+| A path under `.tickets/bugs/` or `.tickets/todos/`, or a title that matches one ticket folder | That folder's `bug.md` or `todo.md`. Read it and every linked image. |
 | `src/markdownInline/tests/<feature>/` | That folder's `README.md`. |
 | Anything else | The message, including its images. |
 

@@ -19,7 +19,7 @@ Use only that source. When a field is absent, write `Not in the source`.
 
 ## File
 
-Write `.tickets/bugs/<slug>/bug-1.md`.
+Write `.tickets/bugs/<slug>/bug.md`.
 
 `<slug>` is the title in lowercase words joined by hyphens. If that folder exists, append `-2`, then `-3`, until the name is free.
 

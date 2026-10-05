@@ -24,4 +24,4 @@ Header lines use enlarged line height that extends downward, leaving awkward ver
 - Image: line 8 shows large orange title “Better syntax highlight for common languages”; line 10 shows pink “Description”; line 11 repeats that title in smaller grey text; line numbers 8 and 10 align with the bottom of the large header glyphs; visible gap below the “Description” header before line 11.
 
 ## Images
-- ![](./header-line-height-grows-down-instead-of-up-1.jpg)
+- ![](./image-1.jpg)

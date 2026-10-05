@@ -26,4 +26,4 @@ The blue selection highlight is shifted to the right over empty space / the rend
 - Localhost port "Inline Markdown Editor 5175" visible in the IDE, suggesting Inline Markdown editor involvement.
 
 ## Images
-- ![](./front-matter-selection-jumps-to-yaml-on-right-1.jpg)
+- ![](./image-1.jpg)

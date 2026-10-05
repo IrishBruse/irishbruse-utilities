@@ -19,11 +19,11 @@ Use only that source. When a field is absent, write `Not in the source`.
 
 ## File
 
-Write `.tickets/todos/<slug>.md`.
+Write `.tickets/todos/<slug>/todo-1.md`.
 
-`<slug>` is the title in lowercase words joined by hyphens. If that file exists, append `-2`, then `-3`, until the name is free.
+`<slug>` is the title in lowercase words joined by hyphens. If that folder exists, append `-2`, then `-3`, until the name is free.
 
-Copy each supplied image beside the ticket as `<slug>-1.<ext>`, `<slug>-2.<ext>`, in attachment order. Keep the original extension. Link each copy in the ticket. When no image is supplied, omit the Images section.
+Copy each supplied image into that folder as `image-1.<ext>`, `image-2.<ext>`, in attachment order. Keep the original extension. Link each copy in the ticket. When no image is supplied, omit the Images section.
 
 ```markdown
 ---
@@ -44,7 +44,7 @@ source: <text | image | both>
 - <Only completion conditions the source states or the image shows>
 
 ## Images
-- ![](./<slug>-1.<ext>)
+- ![](./image-1.<ext>)
 ```
 
 **Done when:** the description names the outcome and includes every detail the source gives for where, what, and constraints.

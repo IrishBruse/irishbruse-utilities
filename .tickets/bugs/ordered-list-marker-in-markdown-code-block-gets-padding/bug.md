@@ -25,4 +25,4 @@ The `1.` is styled as an ordered-list marker and there is visibly larger padding
 - Image: line 40 shows `1. <Only steps the source states or the image shows>` inside ```markdown; `1.` appears in list-marker styling; enlarged vertical gap below that line compared to adjacent lines in the same block.
 
 ## Images
-- ![](./ordered-list-marker-in-markdown-code-block-gets-padding-1.jpg)
+- ![](./image-1.jpg)

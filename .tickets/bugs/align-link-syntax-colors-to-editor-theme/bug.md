@@ -26,5 +26,5 @@ First image shows `[Example link]` in bright green with green underline; `(https
 - Image 2: `Related: [keyboard-whitespace.md](./keyboard-whitespace.md), [showcase.md](./showcase.md).` — brackets/parens tan; labels light blue; paths green with green underline
 
 ## Images
-- ![](./align-link-syntax-colors-to-editor-theme-1.jpg)
-- ![](./align-link-syntax-colors-to-editor-theme-2.jpg)
+- ![](./image-1.jpg)
+- ![](./image-2.jpg)

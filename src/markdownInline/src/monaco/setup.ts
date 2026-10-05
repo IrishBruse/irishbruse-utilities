@@ -12,7 +12,7 @@ import "monaco-editor/esm/vs/editor/contrib/wordOperations/browser/wordOperation
 import { conf as markdownConf, language as markdownLanguage } from "monaco-editor/esm/vs/basic-languages/markdown/markdown.js";
 import { conf as typescriptConf, language as typescriptLanguage } from "monaco-editor/esm/vs/basic-languages/typescript/typescript.js";
 import { conf as yamlConf, language as yamlLanguage } from "monaco-editor/esm/vs/basic-languages/yaml/yaml.js";
-import { markdownWithFenceColors } from "./markdownFences";
+import { markdownFenceBody, markdownFenceLanguageId, markdownWithFenceColors } from "./markdownFences";
 import { completeAgentPropertyKeys, completeSkillPropertyKeys, parseSkillFrontMatter, readFrontMatter, skillMarkdownLanguageId } from "../skill";
 import { installMermaidCodeLens, refreshMermaidCodeLens } from "./codeLens";
 
@@ -148,7 +148,10 @@ export function installMonaco(): void {
         monaco.languages.setLanguageConfiguration(id, conf);
     };
 
-    register("markdown", markdownWithFenceColors(markdownLanguage), markdownConf as monaco.languages.LanguageConfiguration);
+    const markdown = markdownWithFenceColors(markdownLanguage);
+    const markdownConfiguration = markdownConf as monaco.languages.LanguageConfiguration;
+    register("markdown", markdown, markdownConfiguration);
+    register(markdownFenceLanguageId, markdownFenceBody(markdown), markdownConfiguration);
     installSkillYaml();
     installMermaidCodeLens();
     const typescript = typescriptLanguage as monaco.languages.IMonarchLanguage;

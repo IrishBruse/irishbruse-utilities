@@ -59,3 +59,61 @@ describe("fenced code colors", () => {
         await expectLineRangeShot(page, join(here, "screenshots/fence.png"), { from: "```mermaid", to: "```" });
     });
 });
+
+describe("ordered marker inside a markdown fence", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("fence/fixtures/case-2.md", "Only steps");
+        browser = opened.browser;
+        page = opened.page;
+    }, 45_000);
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("renders 1. as literal text with the same spacing as the next line", async () => {
+        const reading = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const lines = [...document.querySelectorAll("#editor .view-line")];
+            const marker = lines.find((entry) => fold(entry.textContent).includes("1. Only steps"));
+            const plain = lines.find((entry) => fold(entry.textContent).trim() === "plain line");
+            const afterPlain = plain ? lines[lines.indexOf(plain) + 1] : undefined;
+            if (!(marker instanceof HTMLElement) || !(plain instanceof HTMLElement) || !(afterPlain instanceof HTMLElement)) {
+                return null;
+            }
+            const markerBox = marker.getBoundingClientRect();
+            const plainBox = plain.getBoundingClientRect();
+            const afterBox = afterPlain.getBoundingClientRect();
+            const leaves = (line: Element) => [...line.querySelectorAll("span")].filter((span) => span.childElementCount === 0 && fold(span.textContent).trim().length > 0);
+            const markerLeaves = leaves(marker).map((span) => ({ text: fold(span.textContent), color: getComputedStyle(span).color }));
+            const plainLeaves = leaves(plain).map((span) => ({ text: fold(span.textContent), color: getComputedStyle(span).color }));
+            const markerSpan = markerLeaves.find((span) => span.text.includes("1."));
+            const plainSpan = plainLeaves.find((span) => span.text.includes("plain"));
+            return {
+                markerText: markerSpan?.text ?? "",
+                plainText: plainSpan?.text ?? "",
+                markerColor: markerSpan?.color ?? "",
+                plainColor: plainSpan?.color ?? "",
+                listGap: marker.classList.contains("inline-md-list-gap-after"),
+                markerStep: lines[lines.indexOf(marker) + 1]!.getBoundingClientRect().top - markerBox.top,
+                plainStep: afterBox.top - plainBox.top,
+            };
+        });
+        expect(reading?.markerText).toContain("1. Only steps");
+        expect(reading?.plainText).toBe("plain line");
+        expect(reading?.markerColor).toBe(reading?.plainColor);
+        expect(reading?.plainColor).not.toBe("");
+        expect(reading?.listGap).toBe(false);
+        expect(reading?.markerStep).toBe(reading?.plainStep);
+    });
+
+    it("shows the ordered marker as literal text", async () => {
+        await expectLineRangeShot(page, join(here, "screenshots/markdown-fence-ordered.png"), {
+            from: "1. Only steps",
+            to: "plain line",
+        });
+    });
+});

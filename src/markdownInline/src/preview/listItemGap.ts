@@ -169,6 +169,11 @@ export function listItemStartLines(
         if (!ORDERED_LIST_LINE.test(line)) {
             continue;
         }
+        const offset = model.offsetAt(lineNumber, 1);
+        const inCode = scopes.some((scope) => scope.kind === "codeBlock" && scope.markers.length > 0 && offset >= scope.contentStart && offset < scope.contentEnd);
+        if (inCode) {
+            continue;
+        }
         keyed.set(lineNumber, startFromOrderedLine(lineNumber, line, tabSize));
     }
 

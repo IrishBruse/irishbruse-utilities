@@ -34,6 +34,10 @@ describe("listItemGapAfterLines", () => {
         expect(gaps("- [ ] task\n1. ordered\n")).toEqual([1, 2]);
     });
 
+    it("skips an ordered marker inside a fenced code block", () => {
+        expect(gaps("```markdown\n1. steps\nplain\n```\n")).toEqual([]);
+    });
+
     it("skips gaps for plain paragraphs", () => {
         expect(gaps("para one\npara two\n")).toEqual([]);
     });

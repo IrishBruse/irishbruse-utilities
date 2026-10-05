@@ -26,6 +26,10 @@ Panel data is cached per repository so switching between local repos restores th
 
 The Git Helpers title bar opens the GitHub repository and refreshes the panel.
 
+### Localhost
+
+A **Localhost** panel lists local websites that are listening. Click a row to open it in the browser. The title bar refreshes the list, and the inline action stops the process on that port.
+
 Right-click any file in the file explorer for **Copy GitHub Head URL** (blob link at the current branch `HEAD`). Under **Source Control → Changes**, right-click for **Copy Path**, **Copy Relative Path**, and **Copy GitHub Head URL**.
 
 ### Relative goto
@@ -50,7 +54,7 @@ Idle `` ```mermaid `` `` fences render a themed diagram and show an **Open Previ
 
 Open `*.md` files with **Inline Markdown (ib-utilities)** from **Reopen Editor With...** or the editor title bar. The file stays raw Markdown; formatting hides until you click or select, then markers and source appear where you edit. Git diffs and compare views keep the stock text editor.
 
-The view uses your theme for headings, emphasis, links, blockquotes, and code blocks, with line numbers beside the text. Tables preview as a bordered grid; mermaid fences show an inline diagram and **Open Preview** CodeLens. YAML front matter highlights as YAML, with a Properties card for `SKILL.md` and autocomplete for agent property keys. Task lines show a checkbox without a list bullet.
+The view uses your theme for headings, emphasis, links, blockquotes, and code blocks, with line numbers beside the text and a language label on fenced code. Tables preview as a bordered grid; mermaid fences show an inline diagram and **Open Preview** CodeLens. `SKILL.md` YAML front matter highlights as YAML. Task lines show a checkbox without a list bullet.
 
 ### Mermaid Preview
 

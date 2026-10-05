@@ -41,4 +41,6 @@ A feature README is finished when each of its sentences is true.
 
 The reply names the source, the red command, and the green command.
 
-**Done when:** those commands exit 0 and the reply names them.
+When the source is a ticket folder, `git mv` that folder to `.tickets/archive/<folder-name>/` after those commands exit 0.
+
+**Done when:** those commands exit 0, the reply names them, and a ticket source sits at `.tickets/archive/<folder-name>/`.

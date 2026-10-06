@@ -36,7 +36,7 @@ describe("selection highlight", () => {
         const source = readFileSync(join(here, "decorations.ts"), "utf8");
         const body = source.slice(
             source.indexOf("private applySelectionHeights"),
-            source.indexOf("private syncCurrentLine"),
+            source.indexOf("private syncZones"),
         );
         expect(body).not.toMatch(/for \(const piece of pieces\) \{\s*piece\.style\.bottom = "";\s*piece\.style\.height = "";\s*\}/);
         expect(body).toContain("stretchesSelectionLine");

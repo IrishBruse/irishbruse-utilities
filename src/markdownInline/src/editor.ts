@@ -132,6 +132,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             || "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         fontSize: readEditorFontSize(),
         lineHeight: 0,
+        allowVariableLineHeights: true,
         padding: { top: 0, bottom: 48 },
         occurrencesHighlight: "off",
         selectionHighlight: false,

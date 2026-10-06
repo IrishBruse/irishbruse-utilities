@@ -1,6 +1,6 @@
 import * as monaco from "monaco-editor/editor/editor.api";
 import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
-import { headingAscentPx, headingGapPx, headingGapZoneClass, headingLineHeightPx, headingSelectionPadPx } from "./preview/headingGap";
+import { applyHeadingFontScales, headingLineHeightMultiplier, headingSelectionPadPx } from "./preview/headingGap";
 import { applyListLineHeight, listGapPaints, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
 import { isMermaidCodeBlock } from "./preview/mermaid";
@@ -9,7 +9,7 @@ import { refreshMermaidCodeLens, setHiddenAreas } from "./monaco";
 import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "./raw/paint";
 import { reveal, revealCode, showFormatted } from "./reveal";
 import { parseScopes } from "./document/scopes";
-import { extendHeadingSelectionPastText, extendSelectionAboveLine, layoutSelectionPieces, selectionHeadingSelector, stretchesSelectionLine } from "./selection";
+import { extendHeadingSelectionPastText, layoutSelectionPieces, selectionHeadingSelector, stretchesSelectionLine } from "./selection";
 import { readFrontMatter, type FrontMatterSpan } from "./skill";
 import type { CursorContext, Scope, TextRange } from "./document/types";
 
@@ -257,7 +257,6 @@ export class InlinePresentation {
     private readonly hits = new Map<string, TaskWidget>();
     private zones: ZoneRecord[] = [];
     private zoneKey = "";
-    private headingExtras = new Map<number, number>();
     private selectionListener: monaco.IDisposable | undefined;
     private selectionFrame = 0;
     private frontMatter: FrontMatterSpan | undefined;
@@ -338,7 +337,6 @@ export class InlinePresentation {
         const zones: ZoneRecord[] = [];
         const tasks: { id: string; from: number; to: number; checked: boolean; position: monaco.IPosition }[] = [];
         const hits: { id: string; text: string; offset: number; position: monaco.IPosition }[] = [];
-        const headingLines = new Map<number, number>();
 
         const addHidden = (scope: Scope): void => {
             for (let index = 0; index < scope.markers.length; index += 1) {
@@ -501,21 +499,20 @@ export class InlinePresentation {
                 const end = range.end;
                 if (end > start) {
                     for (const segment of subtractRanges(start, end, replaced)) {
+                        const options: monaco.editor.IModelDecorationOptions = {
+                            inlineClassName: className,
+                            inlineClassNameAffectsLetterSpacing: scope.kind === "heading",
+                        };
+                        if (scope.kind === "heading") {
+                            const lineHeight = headingLineHeightMultiplier(headingLevel(scope));
+                            if (lineHeight !== undefined) {
+                                options.lineHeight = lineHeight;
+                            }
+                        }
                         decorations.push({
                             range: rangeFromOffsets(model, segment.start, segment.end),
-                            options: {
-                                inlineClassName: className,
-                                inlineClassNameAffectsLetterSpacing: scope.kind === "heading",
-                            },
+                            options,
                         });
-                    }
-                    if (scope.kind === "heading") {
-                        const startLine = model.getPositionAt(clampOffset(start, text.length)).lineNumber;
-                        const endLine = model.getPositionAt(clampOffset(end - 1, text.length)).lineNumber;
-                        const level = headingLevel(scope);
-                        for (let line = startLine; line <= endLine; line += 1) {
-                            headingLines.set(line, level);
-                        }
                     }
                 }
             }
@@ -573,14 +570,12 @@ export class InlinePresentation {
             }
         }
 
-        const fontSize = this.editor.getOption(monaco.editor.EditorOption.fontSize);
         const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
-        this.syncHeadingLineHeights(fontSize, lineHeight);
         const listRoot = this.editor.getDomNode()?.closest(".inline-md-root");
         if (listRoot instanceof HTMLElement) {
+            applyHeadingFontScales(listRoot);
             applyListLineHeight(listRoot, lineHeight);
         }
-        this.syncCurrentLine(headingLines, fontSize, lineHeight);
         const quoteDepths = new Map<number, number>();
         for (const scope of scopes) {
             if (scope.kind !== "blockquote") {
@@ -638,27 +633,6 @@ export class InlinePresentation {
             }
         }
 
-        const headingExtras = new Map<number, number>();
-        for (const [lineNumber, level] of headingLines) {
-            const extra = headingAscentPx(level, fontSize, lineHeight);
-            if (extra <= 0) {
-                continue;
-            }
-            headingExtras.set(lineNumber, extra);
-            const spacer = document.createElement("div");
-            spacer.className = headingGapZoneClass;
-            spacer.dataset.headingLine = String(lineNumber);
-            zones.push({
-                key: `heading-gap:${lineNumber}:${extra}`,
-                zone: {
-                    afterLineNumber: lineNumber - 1,
-                    heightInPx: extra,
-                    domNode: spacer,
-                    suppressMouseDown: true,
-                },
-            });
-        }
-
         const tabSize = model.getOptions().tabSize;
         const lineModel = monacoLineModel(model);
         for (const gap of listGapPaints(lineModel, scopes, tabSize)) {
@@ -681,7 +655,6 @@ export class InlinePresentation {
             });
         }
 
-        this.headingExtras = headingExtras;
         this.paintFrontMatter(model, decorations);
         this.decorations.set(decorations);
         this.syncTasks(tasks);
@@ -698,17 +671,6 @@ export class InlinePresentation {
         }
         this.hiddenLineNumbers = hiddenLines;
         this.writeHiddenAreas(model);
-    }
-
-    private syncHeadingLineHeights(fontSize: number, lineHeight: number): void {
-        const root = this.editor.getDomNode()?.closest(".inline-md-root");
-        if (!(root instanceof HTMLElement)) {
-            return;
-        }
-        for (let level = 1; level <= 6; level += 1) {
-            const extra = headingLineHeightPx(level, fontSize, lineHeight);
-            root.style.setProperty(`--ib-md-h${level}-line`, `${extra}px`);
-        }
     }
 
     private writeHiddenAreas(model: monaco.editor.ITextModel): void {
@@ -1035,29 +997,6 @@ export class InlinePresentation {
             };
         });
         layoutSelectionPieces(boxes, lines);
-        const lineSelected = (line: HTMLElement): boolean => {
-            const bounds = line.getBoundingClientRect();
-            return pieces.some((piece) => {
-                const rect = piece.getBoundingClientRect();
-                return rect.bottom > bounds.top + 0.5 && rect.top < bounds.bottom - 0.5;
-            });
-        };
-        for (const zone of dom.querySelectorAll<HTMLElement>(`.${headingGapZoneClass}`)) {
-            const headingLine = Number(zone.dataset.headingLine);
-            const headingViewLine = viewLines[headingLine - 1];
-            if (!headingViewLine || !Number.isFinite(headingLine) || !lineSelected(headingViewLine)) {
-                continue;
-            }
-            const bounds = headingViewLine.getBoundingClientRect();
-            const zoneHeight = zone.getBoundingClientRect().height;
-            boxes.forEach((box) => {
-                const centerY = box.top + box.height / 2;
-                if (centerY < bounds.top || centerY >= bounds.bottom) {
-                    return;
-                }
-                extendSelectionAboveLine(box, bounds.height, zoneHeight);
-            });
-        }
         const pad = headingSelectionPadPx(this.editor.getOption(monaco.editor.EditorOption.fontSize));
         for (const viewLine of viewLines) {
             const heading = viewLine.querySelector(selectionHeadingSelector);
@@ -1095,23 +1034,6 @@ export class InlinePresentation {
                 piece.style.width = box.styleWidth;
             }
         });
-    }
-
-    private syncCurrentLine(headingLines: ReadonlyMap<number, number>, fontSize: number, lineHeight: number): void {
-        const root = this.editor.getDomNode()?.closest(".inline-md-root");
-        if (!(root instanceof HTMLElement)) {
-            return;
-        }
-        const cursorLine = this.editor.getPosition()?.lineNumber;
-        const level = cursorLine === undefined ? undefined : headingLines.get(cursorLine);
-        const gap = level === undefined ? 0 : headingGapPx(level, fontSize);
-        if (gap > 0 && level !== undefined) {
-            root.style.setProperty("--ib-md-current-line", `${lineHeight}px`);
-            root.classList.add("inline-md-current-heading");
-            return;
-        }
-        root.style.removeProperty("--ib-md-current-line");
-        root.classList.remove("inline-md-current-heading");
     }
 
     private syncZones(zones: readonly ZoneRecord[]): void {

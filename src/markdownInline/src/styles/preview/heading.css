@@ -11,43 +11,31 @@
 }
 
 .inline-md-root .monaco-editor .inline-md-h1 {
-    height: var(--ib-md-h1-line);
-    line-height: var(--ib-md-h1-line);
-    font-size: 1.5em !important;
+    font-size: calc(1em * var(--ib-md-h1-scale)) !important;
     color: var(--ib-md-heading-1, #d19a66) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h2 {
-    height: var(--ib-md-h2-line);
-    line-height: var(--ib-md-h2-line);
-    font-size: 1.4em !important;
+    font-size: calc(1em * var(--ib-md-h2-scale)) !important;
     color: var(--ib-md-heading-2, #e06c75) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h3 {
-    height: var(--ib-md-h3-line);
-    line-height: var(--ib-md-h3-line);
-    font-size: 1.25em !important;
+    font-size: calc(1em * var(--ib-md-h3-scale)) !important;
     color: var(--ib-md-heading-3, #61afef) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h4 {
-    height: var(--ib-md-h4-line);
-    line-height: var(--ib-md-h4-line);
-    font-size: 1.1em !important;
+    font-size: calc(1em * var(--ib-md-h4-scale)) !important;
     color: var(--ib-md-heading-4, #c678dd) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h5 {
-    height: var(--ib-md-h5-line);
-    line-height: var(--ib-md-h5-line);
-    font-size: 1em !important;
+    font-size: calc(1em * var(--ib-md-h5-scale)) !important;
     color: var(--ib-md-heading-5, #c678dd) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h6 {
-    height: var(--ib-md-h6-line);
-    line-height: var(--ib-md-h6-line);
-    font-size: 0.85em !important;
+    font-size: calc(1em * var(--ib-md-h6-scale)) !important;
     color: var(--ib-md-heading-6, #c678dd) !important;
 }

@@ -1,6 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { headingViewLineHeightPx } from "../../src/preview/headingGap";
 import { expectLineRangeShot, openPlayground } from "../../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -9,7 +10,7 @@ const fixture = "headings/fixtures/case-1.md";
 
 interface LineBox {
     readonly height: number;
-    readonly step: number;
+    readonly stepBelow: number;
 }
 
 async function lineBox(page: Page, needle: string): Promise<LineBox | null> {
@@ -18,15 +19,15 @@ async function lineBox(page: Page, needle: string): Promise<LineBox | null> {
         const lines = [...document.querySelectorAll<HTMLElement>("#editor .view-line")];
         const index = lines.findIndex((line) => fold(line.textContent).includes(title));
         const line = lines[index];
-        const above = lines[index - 1];
-        if (!(line instanceof HTMLElement) || !(above instanceof HTMLElement)) {
+        const below = lines[index + 1];
+        if (!(line instanceof HTMLElement) || !(below instanceof HTMLElement)) {
             return null;
         }
         const box = line.getBoundingClientRect();
-        const aboveBox = above.getBoundingClientRect();
+        const belowBox = below.getBoundingClientRect();
         return {
             height: box.height,
-            step: box.top - aboveBox.top,
+            stepBelow: belowBox.top - box.top,
         };
     }, needle);
 }
@@ -46,13 +47,22 @@ describe("heading line height", () => {
         await browser?.close();
     });
 
-    it("uses the same line height as a paragraph line", async () => {
+    it("sizes scaled heading lines from HEADING_SCALE", async () => {
+        const h1 = await lineBox(page, "Main title");
         const heading = await lineBox(page, "Description");
         const body = await lineBox(page, "Better syntax highlight");
+        expect(h1).not.toBeNull();
         expect(heading).not.toBeNull();
         expect(body).not.toBeNull();
-        expect(heading!.height).toBe(body!.height);
-        expect(heading!.step).toBe(body!.step);
+        const bodyHeight = body!.height;
+        expect(h1!.height).toBe(headingViewLineHeightPx(bodyHeight, 1));
+        expect(heading!.height).toBe(headingViewLineHeightPx(bodyHeight, 2));
+    });
+
+    it("places the next line below the full heading row", async () => {
+        const h1 = await lineBox(page, "Main title");
+        expect(h1).not.toBeNull();
+        expect(h1!.stepBelow).toBe(h1!.height);
     });
 
     it("matches the saved picture around the section heading", async () => {

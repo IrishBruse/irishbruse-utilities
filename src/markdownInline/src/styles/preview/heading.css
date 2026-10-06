@@ -1,62 +1,53 @@
-.inline-md-root.inline-md-current-heading .monaco-editor .current-line {
-    height: var(--ib-md-current-line) !important;
-}
-
-.inline-md-root .monaco-editor .view-line:has(.inline-md-h1) {
-    height: var(--ib-md-h1-line) !important;
-}
-
-.inline-md-root .monaco-editor .view-line:has(.inline-md-h2) {
-    height: var(--ib-md-h2-line) !important;
-}
-
-.inline-md-root .monaco-editor .view-line:has(.inline-md-h3) {
-    height: var(--ib-md-h3-line) !important;
-}
-
-.inline-md-root .monaco-editor .view-line:has(.inline-md-h4) {
-    height: var(--ib-md-h4-line) !important;
-}
-
 .inline-md-root .monaco-editor .inline-md-h1,
 .inline-md-root .monaco-editor .inline-md-h2,
 .inline-md-root .monaco-editor .inline-md-h3,
 .inline-md-root .monaco-editor .inline-md-h4,
 .inline-md-root .monaco-editor .inline-md-h5,
 .inline-md-root .monaco-editor .inline-md-h6 {
+    display: inline-block;
+    vertical-align: top;
+    overflow: visible;
     font-weight: 600;
 }
 
 .inline-md-root .monaco-editor .inline-md-h1 {
+    height: var(--ib-md-h1-line);
+    line-height: var(--ib-md-h1-line);
     font-size: 1.5em !important;
-    line-height: var(--ib-md-h1-line, inherit) !important;
-    color: var(--ib-md-heading-1, #D19A66) !important;
+    color: var(--ib-md-heading-1, #d19a66) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h2 {
+    height: var(--ib-md-h2-line);
+    line-height: var(--ib-md-h2-line);
     font-size: 1.4em !important;
-    line-height: var(--ib-md-h2-line, inherit) !important;
-    color: var(--ib-md-heading-2, #E06C75) !important;
+    color: var(--ib-md-heading-2, #e06c75) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h3 {
+    height: var(--ib-md-h3-line);
+    line-height: var(--ib-md-h3-line);
     font-size: 1.25em !important;
-    line-height: var(--ib-md-h3-line, inherit) !important;
-    color: var(--ib-md-heading-3, #61AFEF) !important;
+    color: var(--ib-md-heading-3, #61afef) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h4 {
+    height: var(--ib-md-h4-line);
+    line-height: var(--ib-md-h4-line);
     font-size: 1.1em !important;
-    line-height: var(--ib-md-h4-line, inherit) !important;
-    color: var(--ib-md-heading-4, #C678DD) !important;
+    color: var(--ib-md-heading-4, #c678dd) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h5 {
+    height: var(--ib-md-h5-line);
+    line-height: var(--ib-md-h5-line);
     font-size: 1em !important;
-    color: var(--ib-md-heading-5, #C678DD) !important;
+    color: var(--ib-md-heading-5, #c678dd) !important;
 }
 
 .inline-md-root .monaco-editor .inline-md-h6 {
+    height: var(--ib-md-h6-line);
+    line-height: var(--ib-md-h6-line);
     font-size: 0.85em !important;
-    color: var(--ib-md-heading-6, #C678DD) !important;
+    color: var(--ib-md-heading-6, #c678dd) !important;
 }

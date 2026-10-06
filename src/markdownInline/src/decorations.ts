@@ -1,5 +1,6 @@
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
 import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
+import { headingAscentPx, headingGapPx, headingGapZoneClass, headingLineHeightPx, headingSelectionPadPx } from "./preview/headingGap";
 import { applyListLineHeight, listGapPaints, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
 import { isMermaidCodeBlock } from "./preview/mermaid";
@@ -8,7 +9,7 @@ import { refreshMermaidCodeLens, setHiddenAreas } from "./monaco";
 import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "./raw/paint";
 import { reveal, revealCode, showFormatted } from "./reveal";
 import { parseScopes } from "./document/scopes";
-import { layoutSelectionPieces, stretchesSelectionLine } from "./selection";
+import { extendHeadingSelectionPastText, extendSelectionAboveLine, layoutSelectionPieces, selectionHeadingSelector, stretchesSelectionLine } from "./selection";
 import { readFrontMatter, type FrontMatterSpan } from "./skill";
 import type { CursorContext, Scope, TextRange } from "./document/types";
 
@@ -138,17 +139,6 @@ function paintInline(
             options: { inlineClassName: className },
         });
     }
-}
-
-const HEADING_SCALE = [1, 1.5, 1.4, 1.25, 1.1, 1, 0.85];
-const HEADING_PAD = 2;
-
-function headingExtraHeight(level: number, fontSize: number): number {
-    const scale = HEADING_SCALE[level] ?? 1;
-    if (scale <= 1 || fontSize <= 0) {
-        return 0;
-    }
-    return HEADING_PAD * 2;
 }
 
 function lineNumbersCovering(model: monaco.editor.ITextModel, text: string, range: TextRange): number[] {
@@ -650,16 +640,18 @@ export class InlinePresentation {
 
         const headingExtras = new Map<number, number>();
         for (const [lineNumber, level] of headingLines) {
-            const extra = headingExtraHeight(level, fontSize);
+            const extra = headingAscentPx(level, fontSize, lineHeight);
             if (extra <= 0) {
                 continue;
             }
             headingExtras.set(lineNumber, extra);
             const spacer = document.createElement("div");
+            spacer.className = headingGapZoneClass;
+            spacer.dataset.headingLine = String(lineNumber);
             zones.push({
                 key: `heading-gap:${lineNumber}:${extra}`,
                 zone: {
-                    afterLineNumber: lineNumber,
+                    afterLineNumber: lineNumber - 1,
                     heightInPx: extra,
                     domNode: spacer,
                     suppressMouseDown: true,
@@ -714,8 +706,8 @@ export class InlinePresentation {
             return;
         }
         for (let level = 1; level <= 6; level += 1) {
-            const extra = headingExtraHeight(level, fontSize);
-            root.style.setProperty(`--ib-md-h${level}-line`, `${lineHeight + extra}px`);
+            const extra = headingLineHeightPx(level, fontSize, lineHeight);
+            root.style.setProperty(`--ib-md-h${level}-line`, `${extra}px`);
         }
     }
 
@@ -1023,10 +1015,15 @@ export class InlinePresentation {
             const rect = piece.getBoundingClientRect();
             return {
                 top: rect.top,
+                left: rect.left,
+                width: rect.width,
                 height: rect.height,
                 styleTop: piece.style.top,
+                styleLeft: piece.style.left,
                 styleBottom: piece.style.bottom,
                 styleHeight: piece.style.height,
+                styleWidth: piece.style.width,
+                radius: [],
             };
         });
         const lines = viewLines.map((viewLine) => {
@@ -1038,6 +1035,45 @@ export class InlinePresentation {
             };
         });
         layoutSelectionPieces(boxes, lines);
+        const lineSelected = (line: HTMLElement): boolean => {
+            const bounds = line.getBoundingClientRect();
+            return pieces.some((piece) => {
+                const rect = piece.getBoundingClientRect();
+                return rect.bottom > bounds.top + 0.5 && rect.top < bounds.bottom - 0.5;
+            });
+        };
+        for (const zone of dom.querySelectorAll<HTMLElement>(`.${headingGapZoneClass}`)) {
+            const headingLine = Number(zone.dataset.headingLine);
+            const headingViewLine = viewLines[headingLine - 1];
+            if (!headingViewLine || !Number.isFinite(headingLine) || !lineSelected(headingViewLine)) {
+                continue;
+            }
+            const bounds = headingViewLine.getBoundingClientRect();
+            const zoneHeight = zone.getBoundingClientRect().height;
+            boxes.forEach((box) => {
+                const centerY = box.top + box.height / 2;
+                if (centerY < bounds.top || centerY >= bounds.bottom) {
+                    return;
+                }
+                extendSelectionAboveLine(box, bounds.height, zoneHeight);
+            });
+        }
+        const pad = headingSelectionPadPx(this.editor.getOption(monaco.editor.EditorOption.fontSize));
+        for (const viewLine of viewLines) {
+            const heading = viewLine.querySelector(selectionHeadingSelector);
+            if (!(heading instanceof HTMLElement)) {
+                continue;
+            }
+            const bounds = viewLine.getBoundingClientRect();
+            const textRight = heading.getBoundingClientRect().right;
+            for (const box of boxes) {
+                const centerY = box.top + box.height / 2;
+                if (centerY < bounds.top || centerY >= bounds.bottom || box.width < 12) {
+                    continue;
+                }
+                extendHeadingSelectionPastText(box, textRight, pad);
+            }
+        }
         pieces.forEach((piece, index) => {
             const box = boxes[index];
             if (!box) {
@@ -1046,11 +1082,17 @@ export class InlinePresentation {
             if (piece.style.top !== box.styleTop) {
                 piece.style.top = box.styleTop;
             }
+            if (piece.style.left !== box.styleLeft) {
+                piece.style.left = box.styleLeft;
+            }
             if (piece.style.bottom !== box.styleBottom) {
                 piece.style.bottom = box.styleBottom;
             }
             if (piece.style.height !== box.styleHeight) {
                 piece.style.height = box.styleHeight;
+            }
+            if (piece.style.width !== box.styleWidth) {
+                piece.style.width = box.styleWidth;
             }
         });
     }
@@ -1062,9 +1104,9 @@ export class InlinePresentation {
         }
         const cursorLine = this.editor.getPosition()?.lineNumber;
         const level = cursorLine === undefined ? undefined : headingLines.get(cursorLine);
-        const extra = level === undefined ? 0 : headingExtraHeight(level, fontSize);
-        if (extra > 0) {
-            root.style.setProperty("--ib-md-current-line", `${lineHeight + extra}px`);
+        const gap = level === undefined ? 0 : headingGapPx(level, fontSize);
+        if (gap > 0 && level !== undefined) {
+            root.style.setProperty("--ib-md-current-line", `${lineHeight}px`);
             root.classList.add("inline-md-current-heading");
             return;
         }

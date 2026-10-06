@@ -6,7 +6,9 @@ import {
     bindDragSelection,
     dragSelectionClassName,
     isDragSelecting,
+    extendSelectionAboveLine,
     layoutSelectionPieces,
+    extendHeadingSelectionPastText,
     selectionHeadingSelector,
     stretchesSelectionLine,
     type SelectionBox,
@@ -14,13 +16,18 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-function box(top: number, height: number, styleHeight = "", styleBottom = "0px"): SelectionBox {
+function box(top: number, height: number, left = 40, width = 20, styleHeight = "", styleBottom = "0px"): SelectionBox {
     return {
         top,
+        left,
+        width,
         height,
         styleTop: "0px",
+        styleLeft: "0px",
         styleBottom,
         styleHeight,
+        styleWidth: `${width}px`,
+        radius: [],
     };
 }
 
@@ -48,7 +55,7 @@ describe("selection highlight", () => {
         expect(heading.styleBottom).toBe("auto");
         expect(heading.styleHeight).toBe("34px");
 
-        const stale = box(10, 34, "34px", "auto");
+        const stale = box(10, 34, 40, 20, "34px", "auto");
         layoutSelectionPieces([stale], [{ top: 10, height: 20, stretchToLineHeight: false }]);
         expect(stale.styleBottom).toBe("0px");
         expect(stale.styleHeight).toBe("");
@@ -59,6 +66,32 @@ describe("selection highlight", () => {
             [{ top: 60, height: 24, stretchToLineHeight: true }],
         );
         expect(listEnd.styleHeight).toBe("24px");
+    });
+
+    it("stretches a heading line when the selection sits on the bottom of the line", () => {
+        const heading = box(52, 18);
+        layoutSelectionPieces(
+            [heading],
+            [{ top: 40, height: 34, stretchToLineHeight: true }],
+        );
+        expect(heading.styleHeight).toBe("34px");
+        expect(heading.styleBottom).toBe("auto");
+    });
+
+    it("extends a stretched heading selection through the gap above the line", () => {
+        const heading = box(52, 34, 40, 20, "34px", "auto");
+        extendSelectionAboveLine(heading, 34, 4);
+        expect(heading.styleTop).toBe("-4px");
+        expect(heading.styleHeight).toBe("38px");
+        expect(heading.styleBottom).toBe("auto");
+    });
+
+    it("extends a heading selection a little past the glyphs", () => {
+        const heading = box(40, 19, 40, 74);
+        extendHeadingSelectionPastText(heading, 114, 5);
+        expect(heading.styleWidth).toBe("79px");
+        extendHeadingSelectionPastText(heading, 114, 5);
+        expect(heading.styleWidth).toBe("79px");
     });
 
     it("leaves a line alone when it already matches the selection height", () => {
@@ -73,7 +106,7 @@ describe("selection highlight", () => {
         expect(fitted.styleHeight).toBe("");
         expect(distant.styleHeight).toBe("");
 
-        const preset = box(10, 30, "30px", "auto");
+        const preset = box(10, 30, 40, 20, "30px", "auto");
         layoutSelectionPieces([preset], [{ top: 10, height: 20, stretchToLineHeight: true }]);
         expect(preset.styleTop).toBe("0px");
         expect(preset.styleBottom).toBe("auto");

@@ -19,8 +19,11 @@ async function selectionStylesByLine(page: Page): Promise<LineSelectionStyles[]>
         const pieces = [...document.querySelectorAll<HTMLElement>(".selected-text")];
         return viewLines
             .map((viewLine) => {
-                const top = viewLine.getBoundingClientRect().top;
-                const onLine = pieces.filter((piece) => Math.abs(piece.getBoundingClientRect().top - top) < 3);
+                const bounds = viewLine.getBoundingClientRect();
+                const onLine = pieces.filter((piece) => {
+                    const rect = piece.getBoundingClientRect();
+                    return rect.bottom > bounds.top + 0.5 && rect.top < bounds.bottom - 0.5;
+                });
                 const text = (viewLine.textContent ?? "").replaceAll("\u00a0", " ").trim();
                 return {
                     heading: viewLine.querySelector(".inline-md-h1") !== null,
@@ -56,7 +59,7 @@ describe("selection highlight layout", () => {
         const lines = await selectionStylesByLine(page);
         const heading = lines.find((line) => line.heading);
         const body = lines.filter((line) => line.body);
-        expect(heading?.styles.some((style) => style.bottom === "auto" && style.height !== "")).toBe(true);
+        expect(heading?.styles.every((style) => style.bottom === "0px" || style.bottom === "auto")).toBe(true);
         for (const line of body) {
             for (const style of line.styles) {
                 expect(style.bottom).toBe("0px");
@@ -332,5 +335,70 @@ describe("click inside a selection", () => {
         const moved = await page.evaluate(() => window.__inlineMarkdown.getCursor());
         expect(moved).toBeGreaterThanOrEqual(outside.at);
         expect(moved).toBeLessThan(outside.at + "Second".length);
+    });
+});
+
+describe("heading selection highlight", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("selection/fixtures/case-7.md", "Text above the heading");
+        browser = opened.browser;
+        page = opened.page;
+        await page.evaluate(() => {
+            const api = window.__inlineMarkdown;
+            api.focus();
+            const doc = api.getDocument();
+            const start = doc.indexOf("# Hello");
+            api.select(start, doc.indexOf("\n", start));
+        });
+        await page.waitForFunction(() => document.querySelectorAll(".selected-text").length > 0);
+        await page.evaluate(() => new Promise((resolve) => {
+            requestAnimationFrame(() => requestAnimationFrame(resolve));
+        }));
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("wraps the heading glyphs in one rounded selection", async () => {
+        const layout = await page.evaluate(() => {
+            const line = [...document.querySelectorAll<HTMLElement>("#editor .view-line")].find((entry) => {
+                return (entry.textContent ?? "").replaceAll("\u00a0", " ").includes("Hello");
+            });
+            const heading = line?.querySelector(".inline-md-h1");
+            const piece = document.querySelector<HTMLElement>(".selected-text");
+            if (!(line instanceof HTMLElement) || !(heading instanceof HTMLElement) || !piece) {
+                return null;
+            }
+            const text = heading.getBoundingClientRect();
+            const band = piece.getBoundingClientRect();
+            return {
+                count: document.querySelectorAll(".selected-text").length,
+                past: band.right - text.right,
+                contains: band.top <= text.top + 1 && band.bottom >= text.bottom - 1,
+                rounded: piece.classList.contains("top-left-radius")
+                    && piece.classList.contains("top-right-radius")
+                    && piece.classList.contains("bottom-left-radius")
+                    && piece.classList.contains("bottom-right-radius"),
+            };
+        });
+        expect(layout).not.toBeNull();
+        expect(layout!.count).toBe(1);
+        expect(layout!.rounded).toBe(true);
+        expect(layout!.contains).toBe(true);
+        expect(layout!.past).toBeGreaterThan(2);
+        expect(layout!.past).toBeLessThan(16);
+    });
+
+    it("matches the saved picture of selection across the heading", async () => {
+        const clip = await expectLineRangeShot(page, join(here, "screenshots", "heading-selection-case-7.png"), {
+            from: "Text above the heading",
+            to: "A paragraph with more text",
+            lineNumbers: true,
+        });
+        expect(clip.height).toBeLessThan(120);
     });
 });

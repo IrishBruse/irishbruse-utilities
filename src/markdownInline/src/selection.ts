@@ -2,16 +2,27 @@ import { listGapAfterClass } from "./preview/listItemGap";
 
 export interface SelectionBox {
     top: number;
+    left: number;
+    width: number;
     height: number;
     styleTop: string;
+    styleLeft: string;
     styleBottom: string;
     styleHeight: string;
+    styleWidth: string;
+    radius: string[];
 }
 
 export interface SelectionLine {
     top: number;
     height: number;
     stretchToLineHeight: boolean;
+}
+
+function selectionPieceOnLine(piece: SelectionBox, line: SelectionLine): boolean {
+    const pieceBottom = piece.top + piece.height;
+    const lineBottom = line.top + line.height;
+    return pieceBottom > line.top + 0.5 && piece.top < lineBottom - 0.5;
 }
 
 export function layoutSelectionPieces(pieces: SelectionBox[], lines: readonly SelectionLine[]): void {
@@ -21,7 +32,7 @@ export function layoutSelectionPieces(pieces: SelectionBox[], lines: readonly Se
             continue;
         }
         for (const piece of pieces) {
-            if (Math.abs(piece.top - line.top) >= 2) {
+            if (!selectionPieceOnLine(piece, line)) {
                 continue;
             }
             stretched.add(piece);
@@ -44,6 +55,30 @@ export function layoutSelectionPieces(pieces: SelectionBox[], lines: readonly Se
 }
 
 export const selectionHeadingSelector = ".inline-md-h1, .inline-md-h2, .inline-md-h3, .inline-md-h4";
+
+export function extendSelectionAboveLine(piece: SelectionBox, lineHeight: number, zoneHeight: number): void {
+    if (zoneHeight <= 0) {
+        return;
+    }
+    piece.styleTop = `${-zoneHeight}px`;
+    if (piece.styleHeight !== "") {
+        piece.styleHeight = `${lineHeight + zoneHeight}px`;
+    }
+}
+
+export function extendHeadingSelectionPastText(piece: SelectionBox, textRight: number, padPx: number): void {
+    if (padPx <= 0 || piece.width < 1) {
+        return;
+    }
+    const parsed = piece.styleWidth === "" ? piece.width : Number.parseFloat(piece.styleWidth);
+    const width = Number.isFinite(parsed) && parsed > 0 ? parsed : piece.width;
+    const right = piece.left + width;
+    const target = textRight + padPx;
+    if (right < textRight - 2 || right >= target - 0.5) {
+        return;
+    }
+    piece.styleWidth = `${Math.round(width + target - right)}px`;
+}
 
 export function stretchesSelectionLine(viewLine: {
     querySelector(selector: string): unknown;

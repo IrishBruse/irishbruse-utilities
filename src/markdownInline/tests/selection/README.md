@@ -7,6 +7,8 @@ When the selection covers the heading and the paragraphs, the hash stays visible
 The selection highlight covers every selected line.
 Heading lines stretch the highlight to the line height.
 Body lines keep a normal highlight height.
+A document-wide selection keeps one solid band across a blank line and a heading below it.
+The picture for that case shows the line numbers and the heading band.
 
 When the selection covers the whole sentence, the bold asterisks stay visible.
 

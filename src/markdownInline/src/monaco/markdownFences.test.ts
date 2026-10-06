@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { language as markdownLanguage } from "monaco-editor/esm/vs/basic-languages/markdown/markdown.js";
+import { language as markdownLanguage } from "monaco-editor/languages/definitions/markdown/markdown.js";
 import { markdownFenceBody, markdownFenceLanguageId, markdownWithFenceColors } from "./markdownFences";
 
 describe("markdownWithFenceColors", () => {

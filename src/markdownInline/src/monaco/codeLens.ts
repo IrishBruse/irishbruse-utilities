@@ -1,4 +1,4 @@
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import * as monaco from "monaco-editor/editor/editor.api";
 import { isMermaidCodeBlock } from "../preview/mermaid";
 import { parseScopes } from "../document/scopes";
 import { skillMarkdownLanguageId } from "../skill";

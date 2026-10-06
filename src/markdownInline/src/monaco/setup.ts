@@ -1,17 +1,17 @@
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import * as monaco from "monaco-editor/editor/editor.api";
 import { toMonacoColor } from "./color";
-import "monaco-editor/min/vs/editor/editor.main.css";
-import "monaco-editor/esm/vs/editor/browser/coreCommands.js";
-import "monaco-editor/esm/vs/editor/contrib/clipboard/browser/clipboard.js";
-import "monaco-editor/esm/vs/editor/contrib/codelens/browser/codelensController.js";
-import "monaco-editor/esm/vs/editor/contrib/find/browser/findController.js";
-import "monaco-editor/esm/vs/editor/contrib/linesOperations/browser/linesOperations.js";
-import "monaco-editor/esm/vs/editor/contrib/multicursor/browser/multicursor.js";
-import "monaco-editor/esm/vs/editor/contrib/suggest/browser/suggestController.js";
-import "monaco-editor/esm/vs/editor/contrib/wordOperations/browser/wordOperations.js";
-import { conf as markdownConf, language as markdownLanguage } from "monaco-editor/esm/vs/basic-languages/markdown/markdown.js";
-import { conf as typescriptConf, language as typescriptLanguage } from "monaco-editor/esm/vs/basic-languages/typescript/typescript.js";
-import { conf as yamlConf, language as yamlLanguage } from "monaco-editor/esm/vs/basic-languages/yaml/yaml.js";
+import "../../../../node_modules/monaco-editor/min/vs/editor/editor.main.css";
+import "monaco-editor/editor/browser/coreCommands.js";
+import "monaco-editor/editor/contrib/clipboard/browser/clipboard.js";
+import "monaco-editor/editor/contrib/codelens/browser/codelensController.js";
+import "monaco-editor/editor/contrib/find/browser/findController.js";
+import "monaco-editor/editor/contrib/linesOperations/browser/linesOperations.js";
+import "monaco-editor/editor/contrib/multicursor/browser/multicursor.js";
+import "monaco-editor/editor/contrib/suggest/browser/suggestController.js";
+import "monaco-editor/editor/contrib/wordOperations/browser/wordOperations.js";
+import { conf as markdownConf, language as markdownLanguage } from "monaco-editor/languages/definitions/markdown/markdown.js";
+import { conf as typescriptConf, language as typescriptLanguage } from "monaco-editor/languages/definitions/typescript/typescript.js";
+import { conf as yamlConf, language as yamlLanguage } from "monaco-editor/languages/definitions/yaml/yaml.js";
 import { markdownFenceBody, markdownFenceLanguageId, markdownWithFenceColors } from "./markdownFences";
 import { completeAgentPropertyKeys, completeSkillPropertyKeys, parseSkillFrontMatter, readFrontMatter, skillMarkdownLanguageId } from "../skill";
 import { installMermaidCodeLens, refreshMermaidCodeLens } from "./codeLens";
@@ -123,7 +123,7 @@ function editorWorkerUrl(): string {
     if (meta instanceof HTMLMetaElement && meta.content.length > 0) {
         return meta.content;
     }
-    return new URL("monaco-editor/esm/vs/editor/editor.worker.js", import.meta.url).href;
+    return new URL("monaco-editor/editor/editor.worker.js", import.meta.url).href;
 }
 
 let installed = false;

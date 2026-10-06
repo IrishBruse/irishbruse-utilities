@@ -1,17 +1,18 @@
-declare module "monaco-editor/esm/vs/basic-languages/yaml/yaml.js" {
+declare module "monaco-editor/languages/definitions/yaml/yaml.js" {
     const conf: import("monaco-editor").languages.LanguageConfiguration;
     const language: import("monaco-editor").languages.IMonarchLanguage;
     export { conf, language };
 }
 
-declare module "monaco-editor/esm/vs/basic-languages/markdown/markdown.js" {
+declare module "monaco-editor/languages/definitions/markdown/markdown.js" {
     const conf: import("monaco-editor").languages.LanguageConfiguration;
     const language: import("monaco-editor").languages.IMonarchLanguage;
     export { conf, language };
 }
 
-declare module "monaco-editor/esm/vs/basic-languages/typescript/typescript.js" {
+declare module "monaco-editor/languages/definitions/typescript/typescript.js" {
     const conf: import("monaco-editor").languages.LanguageConfiguration;
     const language: import("monaco-editor").languages.IMonarchLanguage;
     export { conf, language };
 }
+

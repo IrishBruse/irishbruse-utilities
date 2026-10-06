@@ -1,4 +1,4 @@
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import * as monaco from "monaco-editor/editor/editor.api";
 import { InlinePresentation } from "./decorations";
 import { bindDragSelection, isDragSelecting } from "./selection";
 import { bindMermaidCodeLens, installInlineKeybindings, installMonaco, readEditorFontSize } from "./monaco";
@@ -140,11 +140,11 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         stickyScroll: { enabled: false },
         codeLens: true,
         codeLensFontSize: 11,
-        quickSuggestions: usesSkillMarkdown(options.text) ? { other: true, comments: false, strings: true } : false,
+        quickSuggestions: usesSkillMarkdown(options.text) ? { other: true, comments: false, strings: true } : "off",
         suggestOnTriggerCharacters: usesSkillMarkdown(options.text),
         wordBasedSuggestions: "off",
         parameterHints: { enabled: false },
-        hover: { enabled: false },
+        hover: { enabled: "off" },
         links: false,
         contextmenu: false,
         unicodeHighlight: { ambiguousCharacters: false, invisibleCharacters: false },

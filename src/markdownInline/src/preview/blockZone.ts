@@ -1,4 +1,4 @@
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import * as monaco from "monaco-editor/editor/editor.api";
 import { resolveImageUrl } from "./imageUrl";
 import { renderMermaidDiagram } from "./mermaid";
 import type { Scope, TextRange } from "../document/types";

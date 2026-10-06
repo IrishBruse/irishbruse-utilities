@@ -1,4 +1,4 @@
-import * as monaco from "monaco-editor/esm/vs/editor/editor.api";
+import * as monaco from "monaco-editor/editor/editor.api";
 import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
 import { headingAscentPx, headingGapPx, headingGapZoneClass, headingLineHeightPx, headingSelectionPadPx } from "./preview/headingGap";
 import { applyListLineHeight, listGapPaints, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";

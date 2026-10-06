@@ -5,20 +5,20 @@
     "scripts": {
         "check": "tsc --noEmit -p tsconfig.json && npm run test:markdown-inline-browser --prefix ../..",
         "test": "npm test --prefix ../.. -- src/markdownInline",
-        "dev": "vite --config playground/vite.config.ts",
+        "dev": "node playground/dev.mjs",
         "e2e": "node playground/e2e.mjs",
         "verify": "npm run check && npm run test && npm run e2e",
         "build": "node build.mjs",
         "watch": "node build.mjs --watch"
     },
     "dependencies": {
-        "monaco-editor": "^0.52.2",
+        "mermaid": "^11.16.0",
         "micromark": "^4.0.2",
         "micromark-extension-gfm-autolink-literal": "^2.1.0",
         "micromark-extension-gfm-strikethrough": "^2.1.0",
         "micromark-extension-gfm-table": "^2.1.1",
         "micromark-extension-gfm-task-list-item": "^2.1.0",
-        "mermaid": "^11.16.0"
+        "monaco-editor": "^0.57.0"
     },
     "devDependencies": {
         "esbuild": "0.28.1",

@@ -28,7 +28,7 @@ const editorConfig = {
 
 const workerConfig = {
     absWorkingDir: packageDir,
-    entryPoints: ["monaco-editor/esm/vs/editor/editor.worker.js"],
+    entryPoints: ["monaco-editor/editor/editor.worker.js"],
     bundle: true,
     minify: true,
     format: "iife",

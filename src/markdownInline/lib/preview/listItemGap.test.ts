@@ -2,11 +2,11 @@ import { describe, expect, it } from "vitest";
 import type { Scope } from "../document/types";
 import { parseScopes } from "../document/scopes";
 import {
-    applyListLineHeight,
     lineModelFromSource,
     listGapPaints,
     listItemGapAfterLines,
     listItemStartLines,
+    listLineHeightMultiplier,
     listLineHeightPx,
     monacoLineModel,
 } from "./listItemGap";
@@ -45,10 +45,12 @@ describe("listItemGapAfterLines", () => {
     it("paints the gap class and height from the list module", () => {
         const model = lineModelFromSource("- a\n- b\n");
         expect(listGapPaints(model, parseScopes("- a\n- b\n"), 4)).toEqual([
-            { lineNumber: 1, className: "inline-md-list-gap-after", heightPx: 4, zoneKey: "list-gap:1:4" },
-            { lineNumber: 2, className: "inline-md-list-gap-after", heightPx: 4, zoneKey: "list-gap:2:4" },
+            { lineNumber: 1, className: "inline-md-list-gap-after" },
+            { lineNumber: 2, className: "inline-md-list-gap-after" },
         ]);
         expect(listLineHeightPx(20)).toBe(24);
+        expect(listLineHeightMultiplier(20)).toBe(1.2);
+        expect(listLineHeightMultiplier(0)).toBe(1);
     });
 
     it("ends an item before a dedented line", () => {
@@ -163,24 +165,6 @@ describe("lineModelFromSource", () => {
         const model = lineModelFromSource(source as unknown as string);
         lineCount = 3;
         expect(model.positionAt(10)).toEqual({ lineNumber: 3, column: 11 });
-    });
-});
-
-describe("applyListLineHeight", () => {
-    it("writes the list line height custom property", () => {
-        let name = "";
-        let value = "";
-        const root = {
-            style: {
-                setProperty(property: string, propertyValue: string) {
-                    name = property;
-                    value = propertyValue;
-                },
-            },
-        } as unknown as HTMLElement;
-        applyListLineHeight(root, 18);
-        expect(name).toBe("--ib-md-list-line");
-        expect(value).toBe("22px");
     });
 });
 

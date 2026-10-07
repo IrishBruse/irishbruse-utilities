@@ -7,3 +7,7 @@ The words line up with that bullet.
 A numbered list keeps its numbers visible.
 A task item shows a checkbox with clear space before its label, not a list bullet.
 The gap between the checkbox and the first letter of the label matches the saved close-up picture.
+A previewed list item is taller than a paragraph by the list gap.
+The list item font size matches the paragraph font size.
+A selection across two previewed list items is one solid band.
+The picture shows the line numbers and that selection.

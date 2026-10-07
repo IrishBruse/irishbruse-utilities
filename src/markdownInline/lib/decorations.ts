@@ -1,7 +1,7 @@
 import * as monaco from "monaco-editor/editor/editor.api";
 import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
 import { applyHeadingFontScales, headingLineHeightMultiplier, headingSelectionPadPx } from "./headingLayout";
-import { applyListLineHeight, listGapPaints, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
+import { listGapPaints, listLineHeightMultiplier, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
 import { isMermaidCodeBlock } from "./preview/mermaid";
 import { previewContentClass, previewContentRange } from "./preview/paint";
@@ -630,7 +630,6 @@ export class InlinePresentation {
         const listRoot = this.editor.getDomNode()?.closest(".inline-md-root");
         if (listRoot instanceof HTMLElement) {
             applyHeadingFontScales(listRoot);
-            applyListLineHeight(listRoot, lineHeight);
         }
         const quoteDepths = new Map<number, number>();
         for (const scope of scopes) {
@@ -691,22 +690,14 @@ export class InlinePresentation {
 
         const tabSize = model.getOptions().tabSize;
         const lineModel = monacoLineModel(model);
+        const listLineHeight = listLineHeightMultiplier(lineHeight);
         for (const gap of listGapPaints(lineModel, scopes, tabSize)) {
             decorations.push({
                 range: new monaco.Range(gap.lineNumber, 1, gap.lineNumber, 1),
                 options: {
                     isWholeLine: true,
                     className: gap.className,
-                },
-            });
-            const spacer = document.createElement("div");
-            zones.push({
-                key: gap.zoneKey,
-                zone: {
-                    afterLineNumber: gap.lineNumber,
-                    heightInPx: gap.heightPx,
-                    domNode: spacer,
-                    suppressMouseDown: true,
+                    lineHeight: listLineHeight,
                 },
             });
         }

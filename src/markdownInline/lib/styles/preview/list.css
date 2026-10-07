@@ -1,7 +1,3 @@
-.inline-md-root .monaco-editor .view-line.inline-md-list-gap-after {
-    height: var(--ib-md-list-line) !important;
-}
-
 .inline-md-bullet {
     display: inline-block;
     width: 1.1em;

@@ -1,0 +1,25 @@
+export {
+    agentPropertyCompletions,
+    completeAgentPropertyKeys,
+    completeSkillPropertyKeys,
+    emptyProperty,
+    hasYamlFrontMatter,
+    isSkillMarkdownPath,
+    paintYamlFrontMatter,
+    parseSkillFrontMatter,
+    readFrontMatter,
+    readYamlFrontMatter,
+    serializeSkillFrontMatter,
+    SKILL_FRONT_MATTER_KEYS,
+    skillFrontMatterValueContent,
+    skillMarkdownLanguageId,
+    widgetForKey,
+} from "./lib/skill";
+export type {
+    FrontMatterSpan,
+    SkillFieldWidget,
+    SkillMapEntry,
+    SkillProperty,
+    YamlFrontMatterSpan,
+    YamlPaint,
+} from "./lib/skill";

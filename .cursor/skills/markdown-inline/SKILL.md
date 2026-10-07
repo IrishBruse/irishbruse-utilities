@@ -4,16 +4,16 @@ description: "Inline Markdown editor and playground work under src/markdownInlin
 ---
 
 Scope work to `src/markdownInline`, not `src/markdownEditor`.
-Imports from `src/` stay inside this package. `src/packageBoundary.test.ts` is that rule.
+Imports from `lib/` stay inside this package. `lib/packageBoundary.test.ts` is that rule.
 
 ## Modules
 
 | Behavior | File |
 | --- | --- |
-| Which mark is raw or hidden | `src/visibility.ts`, `src/reveal.ts` |
-| Rule, image, and table zones | `src/preview/blockZone.ts` |
-| Bullets and task marks | `src/decorations.ts`, `src/styles/preview/list.css` |
-| Caret and click | `src/editor.ts`, `src/selection.ts` |
+| Which mark is raw or hidden | `lib/visibility.ts`, `lib/reveal.ts` |
+| Rule, image, and table zones | `lib/preview/blockZone.ts` |
+| Bullets and task marks | `lib/decorations.ts`, `lib/styles/preview/list.css` |
+| Caret and click | `lib/editor.ts`, `lib/selection.ts` |
 
 ## Change and Hold
 

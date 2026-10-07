@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { openPlayground } from "../../support/browser";
+import { openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 interface Mark {

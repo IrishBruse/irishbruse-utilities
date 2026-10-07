@@ -3,7 +3,7 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "check": "tsc --noEmit -p tsconfig.json && npm run test:markdown-inline-browser --prefix ../..",
+        "check": "tsc --noEmit -p tsconfig.json && npm run lint:boundaries --prefix ../.. && npm run test:markdown-inline-browser --prefix ../..",
         "test": "npm test --prefix ../.. -- src/markdownInline",
         "dev": "node playground/dev.mjs",
         "e2e": "node playground/e2e.mjs",

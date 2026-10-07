@@ -22,9 +22,9 @@ function collectTsFiles(dir: string): string[] {
 const markdownEditorImport = /from\s+["'][^"']*markdownEditor/;
 const mermaidEditorImport = /from\s+["'][^"']*mermaidEditor/;
 
-function staysInPackageSrc(fromFile: string, specifier: string): boolean {
-    const srcDir = join(packageRoot, "src");
-    const rel = relative(srcDir, join(dirname(fromFile), specifier));
+function staysInLib(fromFile: string, specifier: string): boolean {
+    const libDir = join(packageRoot, "lib");
+    const rel = relative(libDir, join(dirname(fromFile), specifier));
     return rel === "" || (rel !== ".." && !rel.startsWith(`..${sep}`) && !rel.startsWith("/"));
 }
 
@@ -39,14 +39,14 @@ function isAllowedImport(line: string, fromFile: string): boolean {
     if (!parentImport) {
         return true;
     }
-    return staysInPackageSrc(fromFile, parentImport[1]);
+    return staysInLib(fromFile, parentImport[1]);
 }
 
 describe("markdownInline package boundary", () => {
-    it("src/ does not import outside the package (except mermaidEditor)", () => {
-        const srcDir = join(packageRoot, "src");
+    it("lib/ does not import outside the package (except mermaidEditor)", () => {
+        const libDir = join(packageRoot, "lib");
         const violations: string[] = [];
-        for (const file of collectTsFiles(srcDir)) {
+        for (const file of collectTsFiles(libDir)) {
             const text = readFileSync(file, "utf8");
             const rel = file.slice(packageRoot.length + 1);
             for (const line of text.split("\n")) {

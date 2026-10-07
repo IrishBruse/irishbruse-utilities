@@ -25,3 +25,6 @@ The picture shows the line numbers and the selected lines under the task.
 
 A click on text that is already selected places the caret at that click.
 A click outside the selection still places the caret there.
+
+When a selection starts in the middle of a wrapped paragraph, the highlight follows those words through the end of the paragraph.
+The highlight does not add a separate box before the first selected word or after the last selected word.

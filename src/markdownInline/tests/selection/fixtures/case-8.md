@@ -1,0 +1,1 @@
+Sample `.md` files for hands-on checks of **Markdown Editor (ib-utilities)**. Open any file in this folder, then use **Reopen Editor With... → Markdown Editor (ib-utilities)** (or the editor title bar swap icon when the file is already open).

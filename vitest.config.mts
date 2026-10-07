@@ -13,7 +13,7 @@ export default defineConfig({
                 "src/**/*.test.ts",
                 "src/markdownInline/tests/**",
                 "src/markdownInline/playground/**",
-                "src/markdownInline/support/**",
+                "src/markdownInline/tests/support/**",
                 // Coverage gate: markdown inline only for now.
                 "src/clipboard/**",
                 "src/commands/**",

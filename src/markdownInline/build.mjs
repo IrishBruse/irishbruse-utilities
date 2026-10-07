@@ -10,7 +10,7 @@ const isWatch = process.argv.includes("--watch");
 
 const editorConfig = {
     absWorkingDir: packageDir,
-    entryPoints: { editor: "src/webview.ts" },
+    entryPoints: { editor: "lib/webview.ts" },
     bundle: true,
     minify: true,
     format: "esm",

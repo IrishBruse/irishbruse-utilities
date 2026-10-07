@@ -1,7 +1,8 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { PNG } from "pngjs";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { expectLineRangeShot, openPlayground } from "../../support/browser";
+import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -400,5 +401,88 @@ describe("heading selection highlight", () => {
             lineNumbers: true,
         });
         expect(clip.height).toBeLessThan(120);
+    });
+});
+
+function channelDistance(left: readonly number[], right: readonly number[]): number {
+    return Math.abs(left[0] - right[0]) + Math.abs(left[1] - right[1]) + Math.abs(left[2] - right[2]);
+}
+
+function parseRgb(value: string): [number, number, number] {
+    const match = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(value);
+    if (!match) {
+        return [0, 0, 0];
+    }
+    return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+describe("wrapped paragraph selection corners", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("selection/fixtures/case-8.md", "hands-on checks");
+        browser = opened.browser;
+        page = opened.page;
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("does not show an extra box at the start or the end", async () => {
+        const sample = await page.evaluate(async () => {
+            const api = window.__inlineMarkdown;
+            api.focus();
+            const doc = api.getDocument();
+            const from = doc.indexOf("hands-on checks");
+            const endNeedle = "already open).";
+            const to = doc.indexOf(endNeedle) + endNeedle.length;
+            api.select(from, to);
+            await new Promise((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(resolve));
+            });
+            const editor = document.querySelector("#editor .monaco-editor");
+            const pieces = [...document.querySelectorAll<HTMLElement>(".selected-text")].map((piece) => {
+                const box = piece.getBoundingClientRect();
+                return {
+                    left: box.left,
+                    right: box.right,
+                    top: box.top,
+                    width: box.width,
+                    x: box.left + box.width / 2,
+                    y: box.top + box.height / 2,
+                };
+            });
+            const bands = pieces.filter((piece) => piece.width > 12);
+            const caps = pieces.filter((piece) => piece.width <= 12);
+            const sameRow = (cap: { top: number }, band: { top: number }) => Math.abs(cap.top - band.top) < 3;
+            const starts = caps.filter((cap) => bands.some((band) => sameRow(cap, band) && cap.right <= band.left + 1));
+            const ends = caps.filter((cap) => bands.some((band) => sameRow(cap, band) && cap.left >= band.right - 1));
+            return {
+                from,
+                to,
+                dpr: window.devicePixelRatio,
+                background: editor instanceof HTMLElement ? getComputedStyle(editor).backgroundColor : "",
+                selection: caps[0] ? getComputedStyle(document.querySelector(".selected-text")!).backgroundColor : "",
+                caps,
+                starts: starts.length,
+                ends: ends.length,
+            };
+        });
+        expect(sample.from).toBeGreaterThanOrEqual(0);
+        expect(sample.to).toBeGreaterThan(sample.from);
+        expect(sample.starts).toBeGreaterThan(0);
+        expect(sample.ends).toBeGreaterThan(0);
+        const background = parseRgb(sample.background);
+        const selection = parseRgb(sample.selection);
+        const png = PNG.sync.read(await page.screenshot({ animations: "disabled" }));
+        for (const cap of sample.caps) {
+            const px = Math.round(cap.x * sample.dpr);
+            const py = Math.round(cap.y * sample.dpr);
+            const index = (py * png.width + px) * 4;
+            const color = [png.data[index], png.data[index + 1], png.data[index + 2]];
+            expect(channelDistance(color, background)).toBeLessThan(channelDistance(color, selection));
+        }
     });
 });

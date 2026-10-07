@@ -1,6 +1,6 @@
 import * as monaco from "monaco-editor/editor/editor.api";
 import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
-import { applyHeadingFontScales, headingLineHeightMultiplier, headingSelectionPadPx } from "./preview/headingGap";
+import { applyHeadingFontScales, headingLineHeightMultiplier, headingSelectionPadPx } from "./headingLayout";
 import { applyListLineHeight, listGapPaints, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
 import { isMermaidCodeBlock } from "./preview/mermaid";

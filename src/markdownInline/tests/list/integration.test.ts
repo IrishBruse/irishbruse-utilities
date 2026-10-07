@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { bulletLines, openPlayground, type BulletLine } from "../../support/browser";
+import { bulletLines, openPlayground, type BulletLine } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 describe("lists", () => {

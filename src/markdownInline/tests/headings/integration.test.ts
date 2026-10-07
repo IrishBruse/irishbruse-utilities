@@ -1,8 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
-import { headingViewLineHeightPx } from "../../src/preview/headingGap";
-import { expectLineRangeShot, openPlayground } from "../../support/browser";
+import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -47,7 +46,7 @@ describe("heading line height", () => {
         await browser?.close();
     });
 
-    it("sizes scaled heading lines from HEADING_SCALE", async () => {
+    it("sizes a level-1 line at 1.5 times the paragraph and a level-2 line at 1.4 times", async () => {
         const h1 = await lineBox(page, "Main title");
         const heading = await lineBox(page, "Description");
         const body = await lineBox(page, "Better syntax highlight");
@@ -55,8 +54,8 @@ describe("heading line height", () => {
         expect(heading).not.toBeNull();
         expect(body).not.toBeNull();
         const bodyHeight = body!.height;
-        expect(h1!.height).toBe(headingViewLineHeightPx(bodyHeight, 1));
-        expect(heading!.height).toBe(headingViewLineHeightPx(bodyHeight, 2));
+        expect(h1!.height).toBe(Math.round(bodyHeight * 1.5));
+        expect(heading!.height).toBe(Math.round(bodyHeight * 1.4));
     });
 
     it("places the next line below the full heading row", async () => {

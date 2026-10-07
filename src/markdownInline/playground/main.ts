@@ -1,6 +1,6 @@
-import "../src/styles/editor.css";
-import { mountInlineEditor } from "../src/editor";
-import { hasYamlFrontMatter, isSkillMarkdownPath } from "../src/skill";
+import "../lib/styles/editor.css";
+import { mountInlineEditor } from "../lib/editor";
+import { hasYamlFrontMatter, isSkillMarkdownPath } from "../lib/skill";
 
 const DOCS_PREFIX = "../../../docs/tests/markdown/";
 const TESTS_PREFIX = "../tests/";

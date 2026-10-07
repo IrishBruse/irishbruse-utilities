@@ -20,7 +20,7 @@ A keyboard skip is a key press. Place the caret on the line beside the hidden li
 Read the caret and the view on the next frame after the key.
 Tests that share one page put the caret back on the preview position before a later check that needs the preview.
 
-A reveal that opens the wrong block is a unit test beside `src/markdownInline/src/visibility.ts` when `markerVisibility` can return the wrong surface.
+A reveal that opens the wrong block is a unit test beside `src/markdownInline/lib/visibility.ts` when `markerVisibility` can return the wrong surface.
 The playground picture is the report of that bug. The unit test is the check.
 
 When the bug is visible in the Inline Markdown editor or playground, add it to that feature's folder.

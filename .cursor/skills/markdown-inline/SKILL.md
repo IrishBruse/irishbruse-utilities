@@ -14,6 +14,9 @@ Imports from `lib/` stay inside this package. `lib/packageBoundary.test.ts` is t
 | Rule, image, and table zones | `lib/preview/blockZone.ts` |
 | Bullets and task marks | `lib/decorations.ts`, `lib/styles/preview/list.css` |
 | Caret and click | `lib/editor.ts`, `lib/selection.ts` |
+| 10px `.cslr.selected-text` corner. The next `.cslr.monaco-editor-background` covers it | `lib/styles/monaco/view-layers.css` |
+
+Keep the mask `z-index` above `.selected-text`.
 
 ## Change and Hold
 

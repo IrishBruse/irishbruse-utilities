@@ -36,4 +36,13 @@ describe("mouse drag selection", () => {
         expect(css).toContain(".view-overlays > div:has(.selected-text)");
         expect(css).toMatch(/\.view-lines\s*\{[^}]*z-index:\s*3/);
     });
+
+    it("paints the 10px selection corner under the editor background mask", () => {
+        const css = readFileSync(layersCssPath, "utf8");
+        const selected = /\.selected-text\s*\{[^}]*z-index:\s*(\d+)/.exec(css);
+        const mask = /\.cslr\.monaco-editor-background\s*\{[^}]*z-index:\s*(\d+)/.exec(css);
+        expect(selected).not.toBeNull();
+        expect(mask).not.toBeNull();
+        expect(Number(mask?.[1])).toBeGreaterThan(Number(selected?.[1]));
+    });
 });

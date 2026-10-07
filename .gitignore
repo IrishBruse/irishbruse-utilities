@@ -5,6 +5,7 @@ node_modules
 coverage/
 .vscode-test/
 *.vsix
+*.diff.png
 markdown-editor-out/
 media/markdownEditor/
 media/markdownInline/

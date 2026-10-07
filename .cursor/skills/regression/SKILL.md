@@ -15,6 +15,14 @@ Quote the red failure to the user before editing production code.
 
 Write one check that asserts the correct behavior.
 
+When the user names a node, the check names that node.
+A corner that stays hidden stays closer to the editor background than to the selection color.
+The wide highlight on a normal line stays the selection color.
+
+When the bug is a visible selection, read `.cslr.selected-text` in the playground before the production edit and record `style.width`.
+A width of `10px` is the corner.
+Done when `style.width` is recorded.
+
 A keyboard skip is a key press. Place the caret on the line beside the hidden line, press ArrowUp or ArrowDown, and assert the caret is on that hidden line and its source is shown.
 `setCursor` onto the hidden line does not show the skip.
 Read the caret and the view on the next frame after the key.

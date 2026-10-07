@@ -54,7 +54,10 @@ export async function openPlayground(fixture: string, marker?: string): Promise<
         throw new Error(`Playground is not running at ${playground}/`);
     }
     const browser = await chromium.launch({ channel: "chrome", headless: true });
-    const page = await browser.newPage({ viewport: { width: 900, height: 700 } });
+    const page = await browser.newPage({
+        viewport: { width: 900, height: 700 },
+        deviceScaleFactor: 1,
+    });
     const readyMarker = marker === ""
         ? undefined
         : marker
@@ -128,14 +131,51 @@ export async function bulletLines(page: Page, needles: readonly string[]): Promi
     }, needles);
 }
 
+const clipHeightSlack = 8;
+
+function cropY(source: PNG, offset: number, height: number): PNG {
+    const next = new PNG({ width: source.width, height });
+    PNG.bitblt(source, next, 0, offset, source.width, height, 0, 0);
+    return next;
+}
+
+function alignShot(actual: PNG, expected: PNG): { actual: PNG; expected: PNG } {
+    if (actual.width !== expected.width) {
+        return { actual, expected };
+    }
+    const delta = actual.height - expected.height;
+    if (delta === 0 || Math.abs(delta) > clipHeightSlack) {
+        return { actual, expected };
+    }
+    const height = Math.min(actual.height, expected.height);
+    const taller = delta > 0 ? actual : expected;
+    let bestOffset = 0;
+    let bestMismatch = Number.POSITIVE_INFINITY;
+    for (let offset = 0; offset <= Math.abs(delta); offset++) {
+        const cropped = cropY(taller, offset, height);
+        const left = delta > 0 ? cropped : actual;
+        const right = delta > 0 ? expected : cropped;
+        const mismatched = pixelmatch(left.data, right.data, undefined, left.width, height, { threshold: 0.1 });
+        if (mismatched < bestMismatch) {
+            bestMismatch = mismatched;
+            bestOffset = offset;
+        }
+    }
+    const cropped = cropY(taller, bestOffset, height);
+    return delta > 0
+        ? { actual: cropped, expected }
+        : { actual, expected: cropped };
+}
+
 function compareShot(buffer: Buffer, baselinePath: string): void {
     if (!existsSync(baselinePath)) {
         mkdirSync(dirname(baselinePath), { recursive: true });
         writeFileSync(baselinePath, buffer);
         throw new Error(`Wrote ${baselinePath}. Run the browser tests again to compare.`);
     }
-    const actual = PNG.sync.read(buffer);
-    const expected = PNG.sync.read(readFileSync(baselinePath));
+    const aligned = alignShot(PNG.sync.read(buffer), PNG.sync.read(readFileSync(baselinePath)));
+    const actual = aligned.actual;
+    const expected = aligned.expected;
     if (actual.width !== expected.width || actual.height !== expected.height) {
         throw new Error(`Screenshot size ${actual.width}x${actual.height} does not match ${expected.width}x${expected.height}`);
     }

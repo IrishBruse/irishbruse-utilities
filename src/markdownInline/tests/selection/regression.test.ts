@@ -438,51 +438,75 @@ describe("wrapped paragraph selection corners", () => {
             const from = doc.indexOf("hands-on checks");
             const endNeedle = "already open).";
             const to = doc.indexOf(endNeedle) + endNeedle.length;
+            const read = () => {
+                const pieces = [...document.querySelectorAll<HTMLElement>(".cslr.selected-text")].map((piece) => {
+                    const box = piece.getBoundingClientRect();
+                    const mask = piece.nextElementSibling;
+                    const covered = mask instanceof HTMLElement
+                        && mask.classList.contains("monaco-editor-background")
+                        && Number(getComputedStyle(mask).zIndex) > Number(getComputedStyle(piece).zIndex);
+                    return {
+                        width: box.width,
+                        styleWidth: piece.style.width,
+                        x: box.left + box.width / 2,
+                        y: box.top + box.height / 2,
+                        covered,
+                    };
+                });
+                return {
+                    caps: pieces.filter((piece) => piece.styleWidth === "10px"),
+                    bands: pieces.filter((piece) => piece.width > 12),
+                };
+            };
+            const overlays = document.querySelector("#editor .view-overlays");
+            let uncovered = false;
+            const observer = new MutationObserver(() => {
+                const snap = read();
+                if (snap.caps.some((cap) => !cap.covered)) {
+                    uncovered = true;
+                }
+            });
+            if (overlays) {
+                observer.observe(overlays, { childList: true, subtree: true });
+            }
             api.select(from, to);
             await new Promise((resolve) => {
                 requestAnimationFrame(() => requestAnimationFrame(resolve));
             });
+            observer.disconnect();
+            const settled = read();
             const editor = document.querySelector("#editor .monaco-editor");
-            const pieces = [...document.querySelectorAll<HTMLElement>(".selected-text")].map((piece) => {
-                const box = piece.getBoundingClientRect();
-                return {
-                    left: box.left,
-                    right: box.right,
-                    top: box.top,
-                    width: box.width,
-                    x: box.left + box.width / 2,
-                    y: box.top + box.height / 2,
-                };
-            });
-            const bands = pieces.filter((piece) => piece.width > 12);
-            const caps = pieces.filter((piece) => piece.width <= 12);
-            const sameRow = (cap: { top: number }, band: { top: number }) => Math.abs(cap.top - band.top) < 3;
-            const starts = caps.filter((cap) => bands.some((band) => sameRow(cap, band) && cap.right <= band.left + 1));
-            const ends = caps.filter((cap) => bands.some((band) => sameRow(cap, band) && cap.left >= band.right - 1));
+            const band = settled.bands[0];
             return {
                 from,
                 to,
+                uncovered,
+                caps: settled.caps,
+                band: band ? { x: band.x, y: band.y } : null,
                 dpr: window.devicePixelRatio,
                 background: editor instanceof HTMLElement ? getComputedStyle(editor).backgroundColor : "",
-                selection: caps[0] ? getComputedStyle(document.querySelector(".selected-text")!).backgroundColor : "",
-                caps,
-                starts: starts.length,
-                ends: ends.length,
+                selection: getComputedStyle(document.querySelector(".selected-text")!).backgroundColor,
             };
         });
         expect(sample.from).toBeGreaterThanOrEqual(0);
         expect(sample.to).toBeGreaterThan(sample.from);
-        expect(sample.starts).toBeGreaterThan(0);
-        expect(sample.ends).toBeGreaterThan(0);
+        expect(sample.uncovered).toBe(false);
+        expect(sample.caps.length).toBeGreaterThan(0);
+        expect(sample.band).not.toBeNull();
         const background = parseRgb(sample.background);
         const selection = parseRgb(sample.selection);
         const png = PNG.sync.read(await page.screenshot({ animations: "disabled" }));
-        for (const cap of sample.caps) {
-            const px = Math.round(cap.x * sample.dpr);
-            const py = Math.round(cap.y * sample.dpr);
+        const pixel = (x: number, y: number) => {
+            const px = Math.round(x * sample.dpr);
+            const py = Math.round(y * sample.dpr);
             const index = (py * png.width + px) * 4;
-            const color = [png.data[index], png.data[index + 1], png.data[index + 2]];
+            return [png.data[index], png.data[index + 1], png.data[index + 2]];
+        };
+        for (const cap of sample.caps) {
+            const color = pixel(cap.x, cap.y);
             expect(channelDistance(color, background)).toBeLessThan(channelDistance(color, selection));
         }
+        const bandColor = pixel(sample.band!.x, sample.band!.y);
+        expect(channelDistance(bandColor, selection)).toBeLessThan(channelDistance(bandColor, background));
     });
 });

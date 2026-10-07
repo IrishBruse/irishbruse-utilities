@@ -1064,7 +1064,7 @@ export class InlinePresentation {
                 stretchToLineHeight: stretchesSelectionLine(viewLine),
             };
         });
-        layoutSelectionPieces(boxes, lines);
+        layoutSelectionPieces(boxes.filter((box) => box.width > 12), lines);
         const frontMatterRows = [...dom.querySelectorAll<HTMLElement>(".inline-md-front-matter-line")].map((row) => row.getBoundingClientRect());
         for (const viewLine of viewLines) {
             const bounds = viewLine.getBoundingClientRect();

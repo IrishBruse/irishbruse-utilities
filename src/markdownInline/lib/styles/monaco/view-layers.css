@@ -55,3 +55,7 @@
 .inline-md-root .monaco-editor .selected-text {
     z-index: 1;
 }
+
+.inline-md-root .monaco-editor .view-overlays .cslr.monaco-editor-background {
+    z-index: 2;
+}

@@ -66,6 +66,24 @@ export function extendSelectionAboveLine(piece: SelectionBox, lineHeight: number
     }
 }
 
+export function clipSelectionToText(piece: SelectionBox, textRight: number): void {
+    if (piece.width < 1) {
+        return;
+    }
+    const right = piece.left + piece.width;
+    if (piece.left >= textRight - 0.5) {
+        piece.styleWidth = "0px";
+        piece.width = 0;
+        return;
+    }
+    if (right <= textRight + 1) {
+        return;
+    }
+    const width = textRight - piece.left;
+    piece.styleWidth = `${Math.round(width)}px`;
+    piece.width = width;
+}
+
 export function extendHeadingSelectionPastText(piece: SelectionBox, textRight: number, padPx: number): void {
     if (padPx <= 0 || piece.width < 1) {
         return;

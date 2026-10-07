@@ -9,7 +9,7 @@ import { refreshMermaidCodeLens, setHiddenAreas } from "./monaco";
 import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "./raw/paint";
 import { reveal, revealCode, showFormatted } from "./reveal";
 import { parseScopes } from "./document/scopes";
-import { extendHeadingSelectionPastText, layoutSelectionPieces, selectionHeadingSelector, stretchesSelectionLine } from "./selection";
+import { clipSelectionToText, extendHeadingSelectionPastText, layoutSelectionPieces, selectionHeadingSelector, stretchesSelectionLine } from "./selection";
 import { readFrontMatter, type FrontMatterSpan } from "./skill";
 import type { CursorContext, Scope, TextRange } from "./document/types";
 
@@ -27,6 +27,61 @@ interface ZoneRecord {
     id?: string;
     placedAfter?: number;
     placedHeight?: number;
+}
+
+class YamlLabelWidget implements monaco.editor.IContentWidget {
+    readonly allowEditorOverflow = false;
+    readonly suppressMouseDown = true;
+    private lineNumber = 1;
+    private readonly node: HTMLElement;
+
+    constructor() {
+        const node = document.createElement("span");
+        node.className = "inline-md-lang";
+        node.textContent = "yaml";
+        this.node = node;
+    }
+
+    getId(): string {
+        return "inline-md-yaml-label";
+    }
+
+    getDomNode(): HTMLElement {
+        return this.node;
+    }
+
+    getPosition(): monaco.editor.IContentWidgetPosition {
+        return {
+            position: { lineNumber: this.lineNumber, column: 1 },
+            preference: [monaco.editor.ContentWidgetPositionPreference.EXACT],
+        };
+    }
+
+    setLine(lineNumber: number): void {
+        this.lineNumber = lineNumber;
+    }
+
+    afterRender(): void {
+        const editor = this.node.closest(".monaco-editor");
+        const parent = this.node.parentElement;
+        if (!(editor instanceof HTMLElement) || !(parent instanceof HTMLElement)) {
+            return;
+        }
+        const nodeBox = this.node.getBoundingClientRect();
+        const line = [...editor.querySelectorAll(".view-line")].find((entry) => {
+            const box = entry.getBoundingClientRect();
+            return nodeBox.top < box.bottom && nodeBox.bottom > box.top;
+        });
+        if (!(line instanceof HTMLElement)) {
+            return;
+        }
+        const lineBox = line.getBoundingClientRect();
+        const parentBox = parent.getBoundingClientRect();
+        const width = this.node.offsetWidth;
+        this.node.style.transform = "none";
+        this.node.style.left = `${lineBox.right - 16 - width - parentBox.left}px`;
+        this.node.style.top = `${lineBox.top - parentBox.top}px`;
+    }
 }
 
 class TaskWidget implements monaco.editor.IContentWidget {
@@ -260,6 +315,7 @@ export class InlinePresentation {
     private selectionListener: monaco.IDisposable | undefined;
     private selectionFrame = 0;
     private frontMatter: FrontMatterSpan | undefined;
+    private yamlLabel: YamlLabelWidget | undefined;
     private readonly mermaidZones = new Map<string, ZoneRecord>();
     private readonly imageZones = new Map<string, ZoneRecord>();
     private mermaidLensKey = "";
@@ -684,6 +740,7 @@ export class InlinePresentation {
 
     dispose(): void {
         this.decorations.clear();
+        this.syncYamlLabel(undefined);
         this.syncTasks([]);
         this.syncHits([]);
         this.zoneKey = "";
@@ -831,6 +888,7 @@ export class InlinePresentation {
     ): void {
         const span = this.frontMatter;
         if (!span) {
+            this.syncYamlLabel(undefined);
             return;
         }
         const length = model.getValueLength();
@@ -839,16 +897,26 @@ export class InlinePresentation {
         for (let line = start.lineNumber; line <= end.lineNumber; line += 1) {
             decorations.push({
                 range: new monaco.Range(line, 1, line, 1),
-                options: { isWholeLine: true, className: "inline-md-code-line" },
+                options: { isWholeLine: true, className: "inline-md-code-line inline-md-front-matter-line" },
             });
         }
-        const column = Math.min(2, model.getLineMaxColumn(start.lineNumber));
-        decorations.push({
-            range: new monaco.Range(start.lineNumber, 1, start.lineNumber, column),
-            options: {
-                before: injected("yaml", "inline-md-lang"),
-            },
-        });
+        this.syncYamlLabel(start.lineNumber);
+    }
+
+    private syncYamlLabel(lineNumber: number | undefined): void {
+        if (lineNumber === undefined) {
+            if (this.yamlLabel) {
+                this.editor.removeContentWidget(this.yamlLabel);
+                this.yamlLabel = undefined;
+            }
+            return;
+        }
+        if (!this.yamlLabel) {
+            this.yamlLabel = new YamlLabelWidget();
+            this.editor.addContentWidget(this.yamlLabel);
+        }
+        this.yamlLabel.setLine(lineNumber);
+        this.editor.layoutContentWidget(this.yamlLabel);
     }
 
     private addLineDecorations(
@@ -997,6 +1065,32 @@ export class InlinePresentation {
             };
         });
         layoutSelectionPieces(boxes, lines);
+        const frontMatterRows = [...dom.querySelectorAll<HTMLElement>(".inline-md-front-matter-line")].map((row) => row.getBoundingClientRect());
+        for (const viewLine of viewLines) {
+            const bounds = viewLine.getBoundingClientRect();
+            const inFrontMatter = frontMatterRows.some((row) => bounds.top < row.bottom - 0.5 && bounds.bottom > row.top + 0.5);
+            if (!inFrontMatter) {
+                continue;
+            }
+            let textRight = bounds.left;
+            for (const span of viewLine.querySelectorAll("span")) {
+                if (span.childElementCount > 0) {
+                    continue;
+                }
+                const text = (span.textContent ?? "").replaceAll("\u00a0", " ").trim();
+                if (text.length === 0) {
+                    continue;
+                }
+                textRight = Math.max(textRight, span.getBoundingClientRect().right);
+            }
+            for (const box of boxes) {
+                const centerY = box.top + box.height / 2;
+                if (centerY < bounds.top || centerY >= bounds.bottom) {
+                    continue;
+                }
+                clipSelectionToText(box, textRight);
+            }
+        }
         const pad = headingSelectionPadPx(this.editor.getOption(monaco.editor.EditorOption.fontSize));
         for (const viewLine of viewLines) {
             const heading = viewLine.querySelector(selectionHeadingSelector);

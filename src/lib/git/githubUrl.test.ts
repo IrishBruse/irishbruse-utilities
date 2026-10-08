@@ -13,11 +13,11 @@ import {
     parseGithubOwnerRepo,
 } from "./githubUrl";
 
-vi.mock("../utils/asyncSpawn", () => ({
+vi.mock("../asyncSpawn/asyncSpawn", () => ({
     asyncSpawn: vi.fn(),
 }));
 
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../asyncSpawn/asyncSpawn";
 
 const mockAsyncSpawn = vi.mocked(asyncSpawn);
 

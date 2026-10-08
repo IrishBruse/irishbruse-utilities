@@ -1,6 +1,6 @@
 import { readdir, readFile } from "fs/promises";
 import path from "path";
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../lib/asyncSpawn/asyncSpawn";
 import { findBoardTicket, type SyncedJiraBoard } from "./jiraWorkspace";
 
 const SUMMARY_CACHE_TTL_MS = 5 * 60 * 1000;

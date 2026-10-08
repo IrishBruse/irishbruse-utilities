@@ -1,6 +1,6 @@
-import { getRepositoryByRoot } from "../git/getGitApi";
-import { getActiveRepository } from "../git/resolveActiveRepository";
-import { resolveBaseBranch, resolveMergeBaseSha } from "../git/resolveBaseBranch";
+import { getRepositoryByRoot } from "../lib/git/getGitApi";
+import { getActiveRepository } from "../lib/git/resolveActiveRepository";
+import { resolveBaseBranch, resolveMergeBaseSha } from "../lib/git/resolveBaseBranch";
 
 export type BranchChangesSummary = {
     additions: number;

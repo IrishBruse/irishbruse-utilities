@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { Uri, workspace } from "vscode";
-import { getGitApi } from "../git/getGitApi";
+import { getGitApi } from "../lib/git/getGitApi";
 import {
     normalizeScmResources,
     pathsFromScmResources,
@@ -10,7 +10,7 @@ import {
     resolveFileUri,
 } from "./copyResourcePath";
 
-vi.mock("../git/getGitApi", () => ({
+vi.mock("../lib/git/getGitApi", () => ({
     getGitApi: vi.fn(),
 }));
 

@@ -1,6 +1,6 @@
 import { env, SourceControl, Uri, window } from "vscode";
-import { getOriginUrl, getPrWebUrl, githubRepoWebUrl } from "../git/githubUrl";
-import { resolveRepositoryPath } from "../git/resolveRepositoryPath";
+import { getOriginUrl, getPrWebUrl, githubRepoWebUrl } from "../lib/git/githubUrl";
+import { resolveRepositoryPath } from "../lib/git/resolveRepositoryPath";
 
 export async function openPR(sourceControl?: SourceControl, repoPath?: string): Promise<void> {
     const resolvedPath = repoPath ?? (await resolveRepositoryPath(sourceControl));

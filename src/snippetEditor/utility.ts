@@ -3,7 +3,7 @@ import { readdir } from "fs/promises";
 import path from "path";
 import { commands, Range, TabInputText, Uri, ViewColumn, window, workspace } from "vscode";
 import { UserPath } from "../extension";
-import { getLineCommentSyntax } from "../utils/languages";
+import { getLineCommentSyntax } from "../lib/languages/languages";
 import { Snippet, Snippets } from "./SnippetView";
 
 export const GeneratedMap = getGeneratedIdMappings();

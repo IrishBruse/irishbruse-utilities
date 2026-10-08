@@ -13,7 +13,7 @@ import {
     workspace,
 } from "vscode";
 import { Commands } from "../constants";
-import { registerCommandIB } from "../utils/vscode";
+import { registerCommandIB } from "../lib/vscode/vscode";
 import { MERMAID_PREVIEW_VIEW_TYPE } from "./MermaidCustomEditorProvider";
 import { ensureMarkdownMermaidPreviewFile } from "./markdownMermaidPreview";
 import {

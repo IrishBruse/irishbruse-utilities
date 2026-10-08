@@ -1,7 +1,7 @@
 import { stat } from "fs/promises";
 import { env, Uri, window } from "vscode";
-import { getGithubHeadFileUrls, type GithubHeadPath } from "../git/githubUrl";
-import { gitRepositoryRootForUri, gitRepositoryRootForUriSync } from "../git/gitRepositoryRoot";
+import { getGithubHeadFileUrls, type GithubHeadPath } from "../lib/git/githubUrl";
+import { gitRepositoryRootForUri, gitRepositoryRootForUriSync } from "../lib/git/gitRepositoryRoot";
 import {
     relativePathsForScmResources,
     resolveCommandFileResources,

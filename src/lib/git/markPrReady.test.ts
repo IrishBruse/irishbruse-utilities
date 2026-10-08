@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-vi.mock("../utils/asyncSpawn", () => ({
+vi.mock("../asyncSpawn/asyncSpawn", () => ({
     asyncSpawn: vi.fn(),
 }));
 
@@ -16,7 +16,7 @@ vi.mock("vscode", () => ({
 }));
 
 import { window } from "vscode";
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../asyncSpawn/asyncSpawn";
 import { markPullRequestReady } from "./markPrReady";
 
 const mockAsyncSpawn = vi.mocked(asyncSpawn);

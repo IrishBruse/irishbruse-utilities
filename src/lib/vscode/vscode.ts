@@ -1,5 +1,5 @@
 import { commands, ExtensionContext } from "vscode";
-import { Commands } from "../constants";
+import { Commands } from "../../constants";
 
 export function registerCommandIB(
     command: Commands,

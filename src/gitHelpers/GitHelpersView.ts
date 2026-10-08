@@ -16,16 +16,16 @@ import {
     workspace,
 } from "vscode";
 import { Commands, Views } from "../constants";
-import { getGitApi, getGitApiAsync, getRepositoryByRoot } from "../git/getGitApi";
-import { clearLegacyBranchReviewState } from "../git/clearLegacyReviewState";
-import { createBlankDraftPullRequest } from "../git/createDraftPR";
-import type { Repository } from "../git/gitApi";
-import { getActiveRepository, resolveActiveRepository } from "../git/resolveActiveRepository";
-import { registerBaseBranchOverrideStorage } from "../git/baseBranchOverride";
-import { pickBaseBranchTarget } from "../git/pickBaseBranch";
-import { isMainlineBranch, isSameBranch, resolveBaseBranch } from "../git/resolveBaseBranch";
-import { wireGitRepositories } from "../git/wireGitRepositories";
-import { markPullRequestReady } from "../git/markPrReady";
+import { getGitApi, getGitApiAsync, getRepositoryByRoot } from "../lib/git/getGitApi";
+import { clearLegacyBranchReviewState } from "../lib/git/clearLegacyReviewState";
+import { createBlankDraftPullRequest } from "../lib/git/createDraftPR";
+import type { Repository } from "../lib/git/gitApi";
+import { getActiveRepository, resolveActiveRepository } from "../lib/git/resolveActiveRepository";
+import { registerBaseBranchOverrideStorage } from "../lib/git/baseBranchOverride";
+import { pickBaseBranchTarget } from "../lib/git/pickBaseBranch";
+import { isMainlineBranch, isSameBranch, resolveBaseBranch } from "../lib/git/resolveBaseBranch";
+import { wireGitRepositories } from "../lib/git/wireGitRepositories";
+import { markPullRequestReady } from "../lib/git/markPrReady";
 import { openPR } from "../commands/openPR";
 import { openRepo } from "../commands/openRepo";
 import {
@@ -33,14 +33,14 @@ import {
     formatPrLineChangeDescription,
     getPrInfo,
     runGh,
-} from "../git/githubUrl";
-import { openBranchDiff } from "../git/openBranchDiff";
-import { getPrCheckStatus } from "../git/prChecks";
-import { getPrReviewStatus } from "../git/prReviewStatus";
+} from "../lib/git/githubUrl";
+import { openBranchDiff } from "../lib/git/openBranchDiff";
+import { getPrCheckStatus } from "../lib/git/prChecks";
+import { getPrReviewStatus } from "../lib/git/prReviewStatus";
 import { getJiraBrowseUrl, getJiraKeyPattern, getJiraWorkspace } from "../jira/jiraWorkspace";
 import { extractJiraKeyFromTitle, resolveJiraKey, summaryFromPrTitle } from "../jira/jiraKey";
 import { pickJiraTicketPrTitle } from "../jira/pickJiraTicketForPrTitle";
-import { registerCommandIB } from "../utils/vscode";
+import { registerCommandIB } from "../lib/vscode/vscode";
 import { checksTreeItem } from "./checksTreeItem";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
 import { loadBranchChanges, type BranchChangesSummary } from "./loadBranchChanges";
@@ -50,7 +50,7 @@ import {
     syncGitHelpersDebugModeContext,
 } from "./debugMode";
 import { buildMockGitHelpersChildren, getGitHelpersMockState, MOCK_REPO_ROOT } from "./mockData";
-import { registerGitHelpersRefresh } from "./refresh";
+import { registerGitHelpersRefresh } from "../lib/git/refresh";
 import { RepoChildrenCache } from "./repoChildrenCache";
 
 export { GitHelperTreeItem } from "./GitHelperTreeItem";

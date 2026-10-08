@@ -3,7 +3,7 @@ import path from "path";
 import type { Extension } from "vscode";
 import { extensions } from "vscode";
 
-import { contributedLanguageIdToExtension } from "../constants";
+import { contributedLanguageIdToExtension } from "../../constants";
 
 const builtinLanguageIdToExtension: Record<string, string> = {
     bat: ".bat",

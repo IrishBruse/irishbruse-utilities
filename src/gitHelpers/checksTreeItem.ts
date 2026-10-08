@@ -1,6 +1,6 @@
 import { TreeItemCollapsibleState } from "vscode";
 import { Commands } from "../constants";
-import type { PrCheckStatus } from "../git/prChecks";
+import type { PrCheckStatus } from "../lib/git/prChecks";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
 
 export function checksTreeItem(repoRoot: string, prNumber: number, checkStatus: PrCheckStatus): GitHelperTreeItem {

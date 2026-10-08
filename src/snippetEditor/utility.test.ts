@@ -8,7 +8,7 @@ type Snippet = {
     description?: string;
 };
 
-vi.mock("../utils/languages", () => ({
+vi.mock("../lib/languages/languages", () => ({
     getLineCommentSyntax: vi.fn().mockResolvedValue("//"),
     getExtensionFromLanguageId: vi.fn().mockReturnValue(".ts"),
 }));

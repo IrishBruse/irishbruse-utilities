@@ -9,9 +9,9 @@ import {
     window,
     workspace,
 } from "vscode";
-import { Commands } from "../constants";
-import { registerCommandIB } from "../utils/vscode";
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { Commands } from "../../constants";
+import { registerCommandIB } from "../vscode/vscode";
+import { asyncSpawn } from "../asyncSpawn/asyncSpawn";
 import {
     getBranchDiffSession,
     hasOpenBranchDiffEditor,

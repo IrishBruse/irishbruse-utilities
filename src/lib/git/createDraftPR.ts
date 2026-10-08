@@ -1,5 +1,5 @@
 import { window } from "vscode";
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../asyncSpawn/asyncSpawn";
 import { spawnGh } from "./ghCli";
 import { getPrInfo, type GhPrInfo } from "./githubUrl";
 

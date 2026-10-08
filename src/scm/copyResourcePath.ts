@@ -1,6 +1,6 @@
 import { env, SourceControlResourceState, Uri, workspace } from "vscode";
-import { gitRepositoryRootForUri, gitRepositoryRootForUriSync, pathLooksRelative, relativePathFromRepoRoot } from "../git/gitRepositoryRoot";
-import { parseGitDocumentUri } from "../git/gitDocument";
+import { gitRepositoryRootForUri, gitRepositoryRootForUriSync, pathLooksRelative, relativePathFromRepoRoot } from "../lib/git/gitRepositoryRoot";
+import { parseGitDocumentUri } from "../lib/git/gitDocument";
 
 
 type ScmResourceLike =

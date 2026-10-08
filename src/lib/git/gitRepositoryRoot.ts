@@ -1,6 +1,6 @@
 import path from "path";
 import { Uri } from "vscode";
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../asyncSpawn/asyncSpawn";
 import { getGitApi } from "./getGitApi";
 
 async function gitToplevelFrom(cwd: string): Promise<string | undefined> {

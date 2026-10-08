@@ -16,15 +16,15 @@ vi.mock("vscode", () => ({
     },
 }));
 
-vi.mock("../utils/asyncSpawn", () => ({
+vi.mock("../lib/asyncSpawn/asyncSpawn", () => ({
     asyncSpawn: vi.fn(),
 }));
 
-vi.mock("../git/resolveRepositoryPath", () => ({
+vi.mock("../lib/git/resolveRepositoryPath", () => ({
     resolveRepositoryPath: vi.fn(),
 }));
 
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../lib/asyncSpawn/asyncSpawn";
 import { openPR } from "./openPR";
 
 const mockAsyncSpawn = vi.mocked(asyncSpawn);

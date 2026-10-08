@@ -1,7 +1,7 @@
 import { ExtensionContext, Uri, window } from "vscode";
 import { activateDiskEditorConflict } from "./diskConflict/activateDiskEditorConflict";
-import { activateBranchDiffRevert } from "./git/branchDiffRevert";
-import { syncBranchDiffWorkingTreeFiles } from "./git/branchDiffFiles";
+import { activateBranchDiffRevert } from "./lib/git/branchDiffRevert";
+import { syncBranchDiffWorkingTreeFiles } from "./lib/git/branchDiffFiles";
 import { openMarkdownEditor } from "./commands/openMarkdownEditor";
 import { openMarkdownInline } from "./commands/openMarkdownInline";
 import { openMarkdownSource } from "./commands/openMarkdownSource";
@@ -18,7 +18,7 @@ import { LocalPortsViewProvider } from "./ports/LocalPortsView";
 import { SnippetViewProvider } from "./snippetEditor/SnippetView";
 import { copyScmResourcePath, copyScmResourceRelativePath } from "./scm/copyResourcePath";
 import { copyGithubHeadFileUrl } from "./scm/copyGithubHeadFileUrl";
-import { registerCommandIB } from "./utils/vscode";
+import { registerCommandIB } from "./lib/vscode/vscode";
 import { Commands } from "./constants";
 
 export let UserPath: string = null!;

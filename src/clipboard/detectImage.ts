@@ -1,5 +1,5 @@
 import { platform } from "os";
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../lib/asyncSpawn/asyncSpawn";
 
 function mimeTypesIncludeImage(types: string): boolean {
     for (const line of types.split(/\r?\n/)) {

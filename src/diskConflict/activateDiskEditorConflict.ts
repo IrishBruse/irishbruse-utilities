@@ -8,7 +8,7 @@ import {
     workspace,
 } from "vscode";
 import { Commands } from "../constants";
-import { registerCommandIB } from "../utils/vscode";
+import { registerCommandIB } from "../lib/vscode/vscode";
 import { getActiveFileUri } from "./getActiveFileUri";
 import { hasDiskEditorConflict } from "./hasDiskEditorConflict";
 

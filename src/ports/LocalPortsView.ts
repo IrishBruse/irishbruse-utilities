@@ -11,7 +11,7 @@ import {
     window,
 } from "vscode";
 import { Commands, Views } from "../constants";
-import { registerCommandIB } from "../utils/vscode";
+import { registerCommandIB } from "../lib/vscode/vscode";
 import { killListeningProcess, listListeningPorts, type ListeningPort } from "./listListeningPorts";
 import { listeningHttpUrl } from "./listeningHttpUrl";
 import { selectWebsites, type WebsiteHit } from "./websiteProbe";

@@ -13,7 +13,7 @@ vi.mock("vscode", () => ({
     window: { showErrorMessage },
 }));
 
-vi.mock("../utils/asyncSpawn", () => ({
+vi.mock("../asyncSpawn/asyncSpawn", () => ({
     asyncSpawn: vi.fn(),
 }));
 
@@ -21,7 +21,7 @@ vi.mock("./githubUrl", () => ({
     getPrInfo: vi.fn(),
 }));
 
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../asyncSpawn/asyncSpawn";
 import { getPrInfo } from "./githubUrl";
 import { createBlankDraftPullRequest } from "./createDraftPR";
 

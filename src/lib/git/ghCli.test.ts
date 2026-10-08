@@ -6,12 +6,12 @@ vi.mock("vscode", () => ({
     },
 }));
 
-vi.mock("../utils/asyncSpawn", () => ({
+vi.mock("../asyncSpawn/asyncSpawn", () => ({
     asyncSpawn: vi.fn(),
 }));
 
 import { workspace } from "vscode";
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../asyncSpawn/asyncSpawn";
 import { getGhCommand, runGh, spawnGh } from "./ghCli";
 
 const mockGetConfiguration = vi.mocked(workspace.getConfiguration);

@@ -21,7 +21,7 @@ import {
 } from "vscode";
 import { Commands, Views } from "../constants";
 import { SnippetsPath } from "../extension";
-import { registerCommandIB } from "../utils/vscode";
+import { registerCommandIB } from "../lib/vscode/vscode";
 import {
     GeneratedMap,
     generateSnippetsForLanguage,
@@ -32,7 +32,7 @@ import {
     setSnippetsByLanguageId,
     SnippetParser,
 } from "./utility";
-import { getExtensionFromLanguageId } from "../utils/languages";
+import { getExtensionFromLanguageId } from "../lib/languages/languages";
 
 const snippetDir = path.join(os.tmpdir(), "ib-utilities_snippet-editor");
 

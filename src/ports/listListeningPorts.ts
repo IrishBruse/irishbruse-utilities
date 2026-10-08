@@ -1,6 +1,6 @@
 import { readlinkSync } from "fs";
 import path from "path";
-import { asyncSpawn, type Process } from "../utils/asyncSpawn";
+import { asyncSpawn, type Process } from "../lib/asyncSpawn/asyncSpawn";
 import { parseLsofListeners, parseSsListeners, type ParsedListener } from "./parseListeningPorts";
 
 export type ListeningPort = ParsedListener & {

@@ -1,5 +1,5 @@
 import type { Branch, Repository } from "./gitApi";
-import { asyncSpawn } from "../utils/asyncSpawn";
+import { asyncSpawn } from "../asyncSpawn/asyncSpawn";
 import { getBaseBranchOverride } from "./baseBranchOverride";
 
 export type ResolvedBaseBranch = {

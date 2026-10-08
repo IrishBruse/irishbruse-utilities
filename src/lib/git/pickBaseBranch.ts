@@ -4,7 +4,7 @@ import { getRepositoryByRoot } from "./getGitApi";
 import { listGitRefs } from "./listGitRefs";
 import { resolveAutoBaseBranch, resolveRefTarget } from "./resolveBaseBranch";
 import { getActiveRepository } from "./resolveActiveRepository";
-import { refreshGitHelpersView } from "../gitHelpers/refresh";
+import { refreshGitHelpersView } from "./refresh";
 
 type BaseBranchPickItem = QuickPickItem & {
     target: "auto" | "ref" | "custom";

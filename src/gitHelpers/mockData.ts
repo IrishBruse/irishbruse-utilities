@@ -4,9 +4,9 @@ import {
     formatPrFileChangeLabel,
     formatPrLineChangeDescription,
     type GhPrInfo,
-} from "../git/githubUrl";
-import type { PrCheckStatus } from "../git/prChecks";
-import type { PrReviewStatus } from "../git/prReviewStatus";
+} from "../lib/git/githubUrl";
+import type { PrCheckStatus } from "../lib/git/prChecks";
+import type { PrReviewStatus } from "../lib/git/prReviewStatus";
 import { summaryFromPrTitle } from "../jira/jiraKey";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
 import { checksTreeItem } from "./checksTreeItem";

@@ -1,6 +1,6 @@
 import { workspace } from "vscode";
-import type { Process } from "../utils/asyncSpawn";
-import { asyncSpawn, type AsyncSpawnOptions } from "../utils/asyncSpawn";
+import type { Process } from "../asyncSpawn/asyncSpawn";
+import { asyncSpawn, type AsyncSpawnOptions } from "../asyncSpawn/asyncSpawn";
 
 const DEFAULT_GH_COMMAND = "gh";
 

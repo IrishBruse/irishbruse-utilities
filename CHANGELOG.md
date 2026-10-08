@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.25.1
+
+-   **Change**: The extension package includes only the files the editor loads.
+
 ## 0.25.0
 
 -   **Fix**: Inline Markdown selection stays on the source. Front matter highlights the raw YAML and includes the newline after the line. List gaps join the highlight between items, and the extra selection corner no longer shows.

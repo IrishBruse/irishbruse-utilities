@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+## 0.25.0
+
+-   **Fix**: Inline Markdown selection stays on the source. Front matter highlights the raw YAML and includes the newline after the line. List gaps join the highlight between items, and the extra selection corner no longer shows.
+-   **Fix**: Headings use the heading scale for font size and line height, so the extra space sits above the heading.
+-   **Fix**: An ordered-list marker inside a fenced code block stays literal text.
+-   **Fix**: Visible Markdown links use the editor theme colors.
+-   **Fix**: The Localhost panel opens wildcard and loopback addresses as `http://localhost:<port>`.
+
 ## 0.24.0
 
 -   **Add**: **Localhost** panel lists local websites, opens one in the browser, and can stop the process on that port.

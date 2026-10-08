@@ -63,6 +63,43 @@ function wrapSelections(
     }
 }
 
+function installHostPaste(
+    editor: monaco.editor.IStandaloneCodeEditor,
+): () => void {
+    const owner = editor.getContainerDomNode().ownerDocument;
+    const native = owner.execCommand.bind(owner);
+    const paste = ((commandId: string, showUI?: boolean, value?: string): boolean => {
+        if (commandId !== "paste" || !editor.hasTextFocus() || editor.getOption(monaco.editor.EditorOption.readOnly)) {
+            return native(commandId, showUI, value);
+        }
+        if (native(commandId, showUI, value)) {
+            return true;
+        }
+        const clipboard = navigator.clipboard;
+        if (!clipboard) {
+            return false;
+        }
+        void clipboard.readText().then((text) => {
+            if (text.length === 0 || !editor.hasTextFocus()) {
+                return;
+            }
+            editor.trigger("keyboard", "paste", {
+                text,
+                pasteOnNewLine: false,
+                multicursorText: null,
+                mode: null,
+            });
+        }).catch(() => undefined);
+        return true;
+    }) as typeof owner.execCommand;
+    owner.execCommand = paste;
+    return () => {
+        if (owner.execCommand === paste) {
+            owner.execCommand = native;
+        }
+    };
+}
+
 function foreignField(target: EventTarget | null): boolean {
     if (!(target instanceof Element)) {
         return false;
@@ -150,7 +187,9 @@ export function installInlineKeybindings(
         event.stopPropagation();
     };
     window.addEventListener("keydown", onKeyDown, true);
+    const removeHostPaste = installHostPaste(editor);
     return () => {
+        removeHostPaste();
         window.removeEventListener("keydown", onKeyDown, true);
     };
 }

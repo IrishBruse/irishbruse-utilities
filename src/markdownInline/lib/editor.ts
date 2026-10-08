@@ -153,6 +153,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         matchBrackets: "never",
         renderValidationDecorations: "off",
         fixedOverflowWidgets: true,
+        editContext: false,
     });
     model.updateOptions({
         bracketColorizationOptions: {

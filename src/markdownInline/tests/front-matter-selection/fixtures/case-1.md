@@ -5,3 +5,4 @@ disable-model-invocation: true
 ---
 
 Reproduce your current context into the chat.
+Keep a following line so the newline space stays.

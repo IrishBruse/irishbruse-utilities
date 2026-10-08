@@ -66,20 +66,21 @@ export function extendSelectionAboveLine(piece: SelectionBox, lineHeight: number
     }
 }
 
-export function clipSelectionToText(piece: SelectionBox, textRight: number): void {
+export function clipSelectionToText(piece: SelectionBox, textRight: number, newlinePx = 0): void {
     if (piece.width < 1) {
         return;
     }
+    const limit = textRight + Math.max(0, newlinePx);
     const right = piece.left + piece.width;
     if (piece.left >= textRight - 0.5) {
         piece.styleWidth = "0px";
         piece.width = 0;
         return;
     }
-    if (right <= textRight + 1) {
+    if (right <= limit + 1) {
         return;
     }
-    const width = textRight - piece.left;
+    const width = limit - piece.left;
     piece.styleWidth = `${Math.round(width)}px`;
     piece.width = width;
 }

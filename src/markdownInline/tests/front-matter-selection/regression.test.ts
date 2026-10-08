@@ -86,13 +86,62 @@ describe("front matter selection", () => {
         expect(reading.name).not.toBeNull();
         expect(reading.labelOnRight).toBe(true);
         expect(reading.pieces.some((piece) => overlaps(piece, reading.dashes!))).toBe(true);
+        expect(reading.pieces.some((piece) => piece.left < reading.dashes!.left + 2)).toBe(true);
         expect(reading.pieces.every((piece) => piece.left < reading.dashes!.right - 1)).toBe(true);
-        expect(reading.pieces.every((piece) => piece.right <= reading.dashes!.right + 2)).toBe(true);
+        expect(reading.pieces.every((piece) => piece.right <= reading.dashes!.right + 12)).toBe(true);
         expect(reading.name!.left).toBeLessThanOrEqual(1);
         await expectLineRangeShot(page, join(here, "screenshots", "selection.png"), {
             from: "---",
             to: "disable-model-invocation",
             fullWidth: [".inline-md-code-line", ".inline-md-lang"],
         });
+    });
+
+    it("keeps the front matter newline space and leaves out the line-ending square", async () => {
+        const reading = await page.evaluate(async () => {
+            const api = window.__inlineMarkdown;
+            api.select(0, api.getDocument().length);
+            await new Promise((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(resolve));
+            });
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const measure = (needle: string) => {
+                const line = [...document.querySelectorAll<HTMLElement>("#editor .view-line")].find((entry) => fold(entry.textContent).includes(needle));
+                if (!(line instanceof HTMLElement)) {
+                    return null;
+                }
+                const bounds = line.getBoundingClientRect();
+                let textRight = bounds.left;
+                for (const span of line.querySelectorAll("span")) {
+                    if (span.childElementCount > 0) {
+                        continue;
+                    }
+                    if (fold(span.textContent).trim().length === 0) {
+                        continue;
+                    }
+                    textRight = Math.max(textRight, span.getBoundingClientRect().right);
+                }
+                const selected = [...document.querySelectorAll<HTMLElement>(".cslr.selected-text")].filter((node) => {
+                    const rect = node.getBoundingClientRect();
+                    return rect.bottom > bounds.top + 0.5 && rect.top < bounds.bottom - 0.5 && rect.width > 0.5;
+                });
+                const onText = selected.filter((node) => node.getBoundingClientRect().left < textRight - 1);
+                const highlightRight = onText.reduce((right, node) => Math.max(right, node.getBoundingClientRect().right), bounds.left);
+                const square = selected.find((node) => node.getBoundingClientRect().left >= textRight - 1) ?? null;
+                return {
+                    pastEnd: highlightRight - textRight,
+                    square: square === null ? null : square.style.width,
+                };
+            };
+            return {
+                front: measure("disable-model-invocation"),
+                body: measure("Reproduce"),
+            };
+        });
+        expect(reading.front).not.toBeNull();
+        expect(reading.body).not.toBeNull();
+        expect(reading.front!.square).toBeNull();
+        expect(reading.body!.pastEnd).toBeGreaterThan(2);
+        expect(Math.abs(reading.front!.pastEnd - reading.body!.pastEnd)).toBeLessThanOrEqual(2);
     });
 });

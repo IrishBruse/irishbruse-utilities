@@ -1074,12 +1074,21 @@ export class InlinePresentation {
                 }
                 textRight = Math.max(textRight, span.getBoundingClientRect().right);
             }
+            const newlinePx = this.editor.getOption(monaco.editor.EditorOption.fontInfo).spaceWidth;
             for (const box of boxes) {
                 const centerY = box.top + box.height / 2;
                 if (centerY < bounds.top || centerY >= bounds.bottom) {
                     continue;
                 }
-                clipSelectionToText(box, textRight);
+                clipSelectionToText(box, textRight, newlinePx);
+            }
+            for (const mask of dom.querySelectorAll<HTMLElement>(".cslr.monaco-editor-background")) {
+                const rect = mask.getBoundingClientRect();
+                const centerY = rect.top + rect.height / 2;
+                if (centerY < bounds.top || centerY >= bounds.bottom || rect.left < textRight - 0.5) {
+                    continue;
+                }
+                mask.style.width = "0px";
             }
         }
         const pad = headingSelectionPadPx(this.editor.getOption(monaco.editor.EditorOption.fontSize));

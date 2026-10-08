@@ -2,12 +2,16 @@
 import { InteractiveBrowserCredential } from "@azure/identity";
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { createInterface } from "node:readline/promises";
 import { dirname, join } from "node:path";
+import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
+import { changelogPrompt, prepCommitPrompt } from "./release-prompts.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const semverPattern = /^\d+\.\d+\.\d+(-[\w.]+)?$/;
 const marketplaceScope = "499b84ac-1321-427f-aa17-267ca6975798/.default";
+const releaseOnlyPaths = new Set(["CHANGELOG.md", "README.md", "package.json", "package-lock.json"]);
 
 function run(command, options = {}) {
     console.log(`\n> ${command}`);
@@ -97,6 +101,92 @@ function assertChangelog(version) {
     }
 }
 
+function changelogHasVersion(version) {
+    return readText("CHANGELOG.md").includes(`## ${version}`);
+}
+
+function dirtyPaths() {
+    const status = execSync("git status --porcelain", { cwd: root, encoding: "utf8" }).trim();
+    if (!status) {
+        return [];
+    }
+
+    return status.split("\n").map((line) => {
+        const raw = line.slice(3).trim();
+        const renamed = raw.includes(" -> ") ? raw.split(" -> ").pop() : raw;
+        return renamed.replace(/^"|"$/g, "");
+    });
+}
+
+function needsPrepCommit() {
+    return dirtyPaths().some((path) => !releaseOnlyPaths.has(path));
+}
+
+function runAgent(prompt) {
+    console.log("\n> agent --print (release)");
+    execSync("agent", ["--print", "--trust", "--force", prompt], { cwd: root, stdio: "inherit" });
+}
+
+function ensureChangelog(version) {
+    if (changelogHasVersion(version)) {
+        return;
+    }
+
+    runAgent(changelogPrompt(version));
+    assertChangelog(version);
+}
+
+function ensurePrep() {
+    if (!needsPrepCommit()) {
+        return;
+    }
+
+    runAgent(prepCommitPrompt());
+
+    if (needsPrepCommit()) {
+        throw new Error("Non-release changes remain after prep. Commit or stash them, then re-run release.");
+    }
+}
+
+function prepareForStamp(version) {
+    ensureChangelog(version);
+    ensurePrep();
+    run("npm run verify");
+}
+
+async function promptVersionBump(current) {
+    const nextMinor = nextVersion(current, "minor");
+    const nextPatch = nextVersion(current, "patch");
+    const rl = createInterface({ input, output });
+
+    console.log(`\nCurrent version is ${current}. Which release bump?`);
+    console.log(`  1) Minor (${nextMinor})`);
+    console.log(`  2) Patch (${nextPatch})`);
+    const answer = (await rl.question("Enter 1, 2, or an explicit semver: ")).trim();
+    rl.close();
+
+    if (answer === "1") {
+        return "minor";
+    }
+
+    if (answer === "2") {
+        return "patch";
+    }
+
+    if (semverPattern.test(answer)) {
+        return answer;
+    }
+
+    throw new Error(`Invalid version choice: ${answer}`);
+}
+
+async function promptPublish(version) {
+    const rl = createInterface({ input, output });
+    const answer = (await rl.question(`\nPublish ${version} to the VS Code Marketplace? [y/N] `)).trim();
+    rl.close();
+    return /^y(es)?$/i.test(answer);
+}
+
 function hasServicePrincipalAuth() {
     return Boolean(
         process.env.AZURE_CLIENT_ID &&
@@ -136,15 +226,15 @@ function runVscePublish(env) {
     console.log(`\n> ${command}`);
 
     try {
-        const output = execSync(command, {
+        const outputText = execSync(command, {
             cwd: root,
             encoding: "utf8",
             env,
             stdio: ["inherit", "pipe", "pipe"],
         });
 
-        if (output) {
-            process.stdout.write(output);
+        if (outputText) {
+            process.stdout.write(outputText);
         }
     } catch (error) {
         if (error.stdout) {
@@ -185,7 +275,7 @@ function releaseFiles() {
         files.push("README.md");
     }
 
-    for (const path of ["scripts/release.mjs", ".cursor/skills/release/SKILL.md", "AGENTS.md"]) {
+    for (const path of ["scripts/release.mjs", "scripts/release-prompts.mjs", "AGENTS.md"]) {
         if (existsSync(join(root, path)) && fileChanged(path)) {
             files.push(path);
         }
@@ -200,71 +290,93 @@ function commitRelease(version) {
     run(`git commit -m "${version}"`);
 }
 
-const { versionArg, publishOnly } = parseArgs(process.argv);
-
-if (!versionArg) {
-    console.error("Usage: npm run release -- <version|patch|minor|major> [--publish]");
-    process.exit(1);
+function stampVersion(version) {
+    bumpVersions(version);
+    commitRelease(version);
+    console.log(`\nStamped ${version}.`);
 }
 
-const currentVersion = readJson("package.json").version;
-const version = nextVersion(currentVersion, versionArg);
-const isRetry = versionArg === version && compareSemver(version, currentVersion) === 0;
-
-if (!semverPattern.test(version)) {
-    console.error(`Invalid semver: ${version}`);
-    process.exit(1);
-}
-
-if (!isRetry && compareSemver(version, currentVersion) <= 0) {
-    console.error(`Version ${version} must be greater than current version ${currentVersion}`);
-    process.exit(1);
-}
-
-console.log(
-    isRetry
-        ? publishOnly
-            ? `Publishing ${version}`
-            : `Version ${version} already stamped. Run with --publish to deploy.`
-        : `Stamping ${version}`,
-);
-
-const packageSnapshot = !publishOnly && !isRetry ? readText("package.json") : null;
-const lockSnapshot = !publishOnly && !isRetry ? readText("package-lock.json") : null;
-let published = false;
-
-try {
-    assertChangelog(version);
-
-    if (!publishOnly) {
-        if (isRetry) {
-            process.exit(0);
-        }
-
-        bumpVersions(version);
-        commitRelease(version);
-        console.log(`\nStamped ${version}. Approve publish, then: npm run release -- ${version} --publish`);
-        process.exit(0);
-    }
-
-    if (!isRetry) {
-        throw new Error(
-            `package.json is ${currentVersion}, expected ${version}. Stamp first: npm run release -- ${version}`,
-        );
-    }
-
+async function doPublish(version) {
     run("npm run verify");
     run("npm run package:vsix");
     await publishExtension();
-    published = true;
     run("git push");
     console.log(`\nReleased ${version} to the Marketplace`);
-} catch (error) {
-    if (!published && packageSnapshot !== null) {
-        restoreWorkingTreeFiles(packageSnapshot, lockSnapshot);
-        console.error("\nRestored package.json and package-lock.json to their pre-stamp versions.");
+}
+
+async function main() {
+    let { versionArg, publishOnly } = parseArgs(process.argv);
+    const currentVersion = readJson("package.json").version;
+
+    if (!versionArg) {
+        versionArg = await promptVersionBump(currentVersion);
     }
 
-    console.error(`\nRelease failed: ${error.message}`);
+    const version = nextVersion(currentVersion, versionArg);
+    const isRetry = versionArg === version && compareSemver(version, currentVersion) === 0;
+
+    if (!semverPattern.test(version)) {
+        console.error(`Invalid semver: ${version}`);
+        process.exit(1);
+    }
+
+    if (!isRetry && compareSemver(version, currentVersion) <= 0) {
+        console.error(`Version ${version} must be greater than current version ${currentVersion}`);
+        process.exit(1);
+    }
+
+    const packageSnapshot = !publishOnly && !isRetry ? readText("package.json") : null;
+    const lockSnapshot = !publishOnly && !isRetry ? readText("package-lock.json") : null;
+    let published = false;
+
+    try {
+        if (publishOnly && isRetry) {
+            console.log(`Publishing ${version}`);
+            await doPublish(version);
+            published = true;
+            return;
+        }
+
+        if (publishOnly && !isRetry) {
+            console.log(`Preparing and publishing ${version}`);
+            prepareForStamp(version);
+            stampVersion(version);
+            await doPublish(version);
+            published = true;
+            return;
+        }
+
+        if (isRetry) {
+            console.log(`Version ${version} already stamped. Run with --publish to deploy.`);
+            return;
+        }
+
+        console.log(`Preparing ${version}`);
+        prepareForStamp(version);
+        stampVersion(version);
+
+        const approved = await promptPublish(version);
+        if (approved) {
+            await doPublish(version);
+            published = true;
+        } else {
+            console.log(`Publish later: npm run release -- ${version} --publish`);
+        }
+    } catch (error) {
+        if (!published && packageSnapshot !== null) {
+            restoreWorkingTreeFiles(packageSnapshot, lockSnapshot);
+            console.error("\nRestored package.json and package-lock.json to their pre-stamp versions.");
+        }
+
+        console.error(`\nRelease failed: ${error.message}`);
+        process.exit(1);
+    }
+}
+
+const hasVersionArg = parseArgs(process.argv).versionArg;
+if (!hasVersionArg && process.argv.includes("--publish")) {
+    console.error("Usage: npm run release [--] [<version|patch|minor|major>] [--publish]");
     process.exit(1);
 }
+
+main();

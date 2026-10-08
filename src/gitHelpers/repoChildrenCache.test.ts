@@ -24,6 +24,18 @@ describe("RepoChildrenCache", () => {
         expect(cache.get("/repo")).toEqual({ children, signature: "sig" });
     });
 
+    it("stores the checks link with the saved panel", () => {
+        const cache = new RepoChildrenCache<{ id?: string; repoRoot?: string }>();
+        const children = [{ id: "repo:checks", repoRoot: "/repo" }];
+
+        cache.set("/repo", children, "sig", "https://example.test/checks");
+        expect(cache.get("/repo")).toEqual({
+            children,
+            signature: "sig",
+            checksUrl: "https://example.test/checks",
+        });
+    });
+
     it("ignores non-cacheable children", () => {
         const cache = new RepoChildrenCache<{ id?: string; repoRoot?: string }>();
         cache.set("/repo", [{ id: "info:loading" }], "sig");

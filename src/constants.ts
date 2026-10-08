@@ -1,109 +1,112 @@
+export const Commands = {
+    RelativeGoTo: `ib-utilities.relativeGoTo`,
 
-export enum Commands {
-    RelativeGoTo = `ib-utilities.relativeGoTo`,
+    OpenSnippet: `ib-utilities.openSnippet`,
 
-    OpenSnippet = `ib-utilities.openSnippet`,
+    ShowSnippetView: `ib-utilities.showSnippetView`,
 
-    ShowSnippetView = `ib-utilities.showSnippetView`,
+    OpenPR: `ib-utilities.openPR`,
 
-    OpenPR = `ib-utilities.openPR`,
+    OpenRepo: `ib-utilities.openRepo`,
 
-    OpenRepo = `ib-utilities.openRepo`,
+    CreateDraftPR: `ib-utilities.createDraftPR`,
 
-    CreateDraftPR = `ib-utilities.createDraftPR`,
+    MarkPrReady: `ib-utilities.markPrReady`,
 
-    MarkPrReady = `ib-utilities.markPrReady`,
+    CopyPrUrl: `ib-utilities.copyPrUrl`,
 
-    CopyPrUrl = `ib-utilities.copyPrUrl`,
+    OpenPrChecks: `ib-utilities.openPrChecks`,
 
-    OpenPrChecks = `ib-utilities.openPrChecks`,
+    OpenChangesFile: `ib-utilities.openChangesFile`,
 
-    OpenChangesFile = `ib-utilities.openChangesFile`,
+    OpenPrReview: `ib-utilities.openPrReview`,
 
-    OpenPrReview = `ib-utilities.openPrReview`,
+    OpenJiraTicket: `ib-utilities.openJiraTicket`,
 
-    OpenJiraTicket = `ib-utilities.openJiraTicket`,
+    AddJiraKeyToPrTitle: `ib-utilities.addJiraKeyToPrTitle`,
 
-    AddJiraKeyToPrTitle = `ib-utilities.addJiraKeyToPrTitle`,
+    RefreshSnippetView: `ib-utilities.refreshSnippetView`,
 
-    RefreshSnippetView = `ib-utilities.refreshSnippetView`,
+    AddSnippet: `ib-utilities.addSnippet`,
 
-    AddSnippet = `ib-utilities.addSnippet`,
+    EditSnippet: `ib-utilities.editSnippet`,
 
-    EditSnippet = `ib-utilities.editSnippet`,
+    DeleteSnippet: `ib-utilities.deleteSnippet`,
 
-    DeleteSnippet = `ib-utilities.deleteSnippet`,
+    TerminalPaste: `ib-utilities.terminalPaste`,
 
-    TerminalPaste = `ib-utilities.terminalPaste`,
+    OpenMarkdownEditor: `ib-utilities.openMarkdownEditor`,
 
-    OpenMarkdownEditor = `ib-utilities.openMarkdownEditor`,
+    OpenMarkdownInline: `ib-utilities.openMarkdownInline`,
 
-    OpenMarkdownInline = `ib-utilities.openMarkdownInline`,
+    OpenMarkdownSource: `ib-utilities.openMarkdownSource`,
 
-    OpenMarkdownSource = `ib-utilities.openMarkdownSource`,
+    OpenMermaidPreview: `ib-utilities.openMermaidPreview`,
 
-    OpenMermaidPreview = `ib-utilities.openMermaidPreview`,
+    OpenMermaidSource: `ib-utilities.openMermaidSource`,
 
-    OpenMermaidSource = `ib-utilities.openMermaidSource`,
+    OpenMermaidMarkdownPreview: `ib-utilities.openMermaidMarkdownPreview`,
 
-    OpenMermaidMarkdownPreview = `ib-utilities.openMermaidMarkdownPreview`,
+    ShowGitHelpers: `ib-utilities.showGitHelpers`,
 
-    ShowGitHelpers = `ib-utilities.showGitHelpers`,
+    RefreshGitHelpers: `ib-utilities.refreshGitHelpers`,
 
-    RefreshGitHelpers = `ib-utilities.refreshGitHelpers`,
+    GitHelpersRefreshing: `ib-utilities.gitHelpersRefreshing`,
 
-    DiffWithBase = `ib-utilities.diffWithBase`,
+    DiffWithBase: `ib-utilities.diffWithBase`,
 
-    SetBaseBranch = `ib-utilities.setBaseBranch`,
+    SetBaseBranch: `ib-utilities.setBaseBranch`,
 
-    RevertBranchDiffHunk = `ib-utilities.revertBranchDiffHunk`,
+    RevertBranchDiffHunk: `ib-utilities.revertBranchDiffHunk`,
 
-    RevertBranchDiffSelection = `ib-utilities.revertBranchDiffSelection`,
+    RevertBranchDiffSelection: `ib-utilities.revertBranchDiffSelection`,
 
-    CopyScmResourcePath = `ib-utilities.copyScmResourcePath`,
+    CopyScmResourcePath: `ib-utilities.copyScmResourcePath`,
 
-    CopyScmResourceRelativePath = `ib-utilities.copyScmResourceRelativePath`,
+    CopyScmResourceRelativePath: `ib-utilities.copyScmResourceRelativePath`,
 
-    CopyGithubHeadFileUrl = `ib-utilities.copyGithubHeadFileUrl`,
+    CopyGithubHeadFileUrl: `ib-utilities.copyGithubHeadFileUrl`,
 
-    RevertToDisk = `ib-utilities.revertToDisk`,
+    RevertToDisk: `ib-utilities.revertToDisk`,
 
-    RefreshLocalPorts = `ib-utilities.refreshLocalPorts`,
+    RefreshLocalPorts: `ib-utilities.refreshLocalPorts`,
 
-    OpenLocalPort = `ib-utilities.openLocalPort`,
+    OpenLocalPort: `ib-utilities.openLocalPort`,
 
-    KillLocalPort = `ib-utilities.killLocalPort`,
+    KillLocalPort: `ib-utilities.killLocalPort`,
 
-    ViewSnippetContainer = `workbench.view.snippetContainer`,
+    ViewSnippetContainer: `workbench.view.snippetContainer`,
 
-}
+} as const;
 
-export enum ViewContainers {
-      SnippetContainer = `snippetContainer`,
+export type Commands = (typeof Commands)[keyof typeof Commands];
 
-}
+export const ViewContainers = {
+      SnippetContainer: `snippetContainer`,
 
-export enum Views {
-    SnippetView = `snippetView`,
+} as const;
 
-    IbUtilitiesGitHelpers = `ib-utilities.gitHelpers`,
+export const Views = {
+    SnippetView: `snippetView`,
 
-    LocalPorts = `ib-utilities.localPorts`,
+    IbUtilitiesGitHelpers: `ib-utilities.gitHelpers`,
 
-}
+    LocalPorts: `ib-utilities.localPorts`,
 
-export enum Configuration {
-    LanguageIdMappings = `ib-utilities.languageIdMappings`,
+} as const;
 
-    GeneratedLanguageMappings = `ib-utilities.generatedLanguageMappings`,
+export const Configuration = {
+    LanguageIdMappings: `ib-utilities.languageIdMappings`,
 
-    JiraKeyPattern = `ib-utilities.jira.keyPattern`,
+    GeneratedLanguageMappings: `ib-utilities.generatedLanguageMappings`,
 
-    GithubGhPath = `ib-utilities.github.ghPath`,
+    JiraKeyPattern: `ib-utilities.jira.keyPattern`,
 
-    GitHelpersDebugMode = `ib-utilities.gitHelpers.debugMode`,
+    GithubGhPath: `ib-utilities.github.ghPath`,
 
-}
+    GitHelpersDebugMode: `ib-utilities.gitHelpers.debugMode`,
+
+} as const;
 
 export const contributedLanguageIdToExtension: Record<string, string> = {
     "mermaid": ".mmd",

@@ -394,6 +394,12 @@
                 "icon": "$(refresh)"
             },
             {
+                "command": "ib-utilities.gitHelpersRefreshing",
+                "title": "Refreshing Git Helpers",
+                "shortTitle": "Refreshing",
+                "icon": "$(sync~spin)"
+            },
+            {
                 "command": "ib-utilities.diffWithBase",
                 "title": "Diff",
                 "shortTitle": "Diff",
@@ -600,7 +606,12 @@
                 },
                 {
                     "command": "ib-utilities.refreshGitHelpers",
-                    "when": "view == ib-utilities.gitHelpers",
+                    "when": "view == ib-utilities.gitHelpers && !ib-utilities.gitHelpers.refreshing",
+                    "group": "navigation@2"
+                },
+                {
+                    "command": "ib-utilities.gitHelpersRefreshing",
+                    "when": "view == ib-utilities.gitHelpers && ib-utilities.gitHelpers.refreshing",
                     "group": "navigation@2"
                 },
                 {

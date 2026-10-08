@@ -1,6 +1,7 @@
 export type RepoChildrenCacheEntry<T> = {
     children: T[];
     signature: string;
+    checksUrl?: string;
 };
 
 type CacheableChild = {
@@ -25,11 +26,15 @@ export class RepoChildrenCache<T extends CacheableChild> {
         return this.entries.get(repoRoot);
     }
 
-    set(repoRoot: string, children: T[], signature: string): void {
+    set(repoRoot: string, children: T[], signature: string, checksUrl?: string): void {
         if (!isCacheableGitHelperChildren(children)) {
             return;
         }
-        this.entries.set(repoRoot, { children, signature });
+        const entry: RepoChildrenCacheEntry<T> = { children, signature };
+        if (checksUrl) {
+            entry.checksUrl = checksUrl;
+        }
+        this.entries.set(repoRoot, entry);
     }
 
     delete(repoRoot: string): void {

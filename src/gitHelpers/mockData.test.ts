@@ -6,11 +6,12 @@ describe("getGitHelpersMockState", () => {
         expect(getGitHelpersMockState().repoRoot).toBe(MOCK_REPO_ROOT);
     });
 
-    it("includes draft PR, Jira, checks, review, and change stats", () => {
+    it("includes a draft PR, checks, review, and change stats", () => {
         const state = getGitHelpersMockState();
 
         expect(state.pr.isDraft).toBe(true);
-        expect(state.jiraKey).toBe("PROJ-123");
+        expect(state).not.toHaveProperty("jiraKey");
+        expect(state).not.toHaveProperty("jiraBaseUrl");
         expect(state.checkStatus.label).toBe("ci / build");
         expect(state.checkStatus.description).toBe("Checks failing");
         expect(state.checkStatus.isFailing).toBe(true);

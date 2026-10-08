@@ -21,10 +21,6 @@ export const Commands = {
 
     OpenPrReview: `ib-utilities.openPrReview`,
 
-    OpenJiraTicket: `ib-utilities.openJiraTicket`,
-
-    AddJiraKeyToPrTitle: `ib-utilities.addJiraKeyToPrTitle`,
-
     RefreshSnippetView: `ib-utilities.refreshSnippetView`,
 
     AddSnippet: `ib-utilities.addSnippet`,
@@ -99,8 +95,6 @@ export const Configuration = {
     LanguageIdMappings: `ib-utilities.languageIdMappings`,
 
     GeneratedLanguageMappings: `ib-utilities.generatedLanguageMappings`,
-
-    JiraKeyPattern: `ib-utilities.jira.keyPattern`,
 
     GithubGhPath: `ib-utilities.github.ghPath`,
 

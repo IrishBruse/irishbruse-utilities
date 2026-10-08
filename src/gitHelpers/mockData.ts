@@ -7,7 +7,6 @@ import {
 } from "../lib/git/githubUrl";
 import type { PrCheckStatus } from "../lib/git/prChecks";
 import type { PrReviewStatus } from "../lib/git/prReviewStatus";
-import { summaryFromPrTitle } from "../jira/jiraKey";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
 import { checksTreeItem } from "./checksTreeItem";
 import type { BranchChangesSummary } from "./loadBranchChanges";
@@ -20,8 +19,6 @@ export type GitHelpersMockState = {
     branch: string;
     baseBranch: string;
     pr: GhPrInfo;
-    jiraKey: string;
-    jiraBaseUrl: string;
     checkStatus: PrCheckStatus;
     reviewStatus: PrReviewStatus;
     changesSummary: BranchChangesSummary;
@@ -49,8 +46,6 @@ export function getGitHelpersMockState(): GitHelpersMockState {
             deletions: changesSummary.deletions,
             changedFiles: changesSummary.changedFiles,
         },
-        jiraKey: "PROJ-123",
-        jiraBaseUrl: "https://example.atlassian.net",
         checkStatus: {
             label: "ci / build",
             description: "Checks failing",
@@ -66,13 +61,8 @@ export function getGitHelpersMockState(): GitHelpersMockState {
     };
 }
 
-function prRowDescription(pr: { title: string }, jiraKey: string): string {
-    return summaryFromPrTitle(pr.title, jiraKey) ?? pr.title;
-}
-
 export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelperTreeItem[] {
-    const { repoRoot, pr, jiraKey, baseBranch, reviewStatus, changesSummary } = state;
-    const jiraUrl = `${state.jiraBaseUrl}/browse/${jiraKey}`;
+    const { repoRoot, pr, baseBranch, reviewStatus, changesSummary } = state;
     const items: GitHelperTreeItem[] = [];
 
     const prItem = new GitHelperTreeItem(
@@ -82,13 +72,11 @@ export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelp
         TreeItemCollapsibleState.None,
         `${repoRoot}:openPr:${pr.number}`,
         "openPr",
-        prRowDescription(pr, jiraKey)
+        pr.title
     );
     prItem.isDraftPr = pr.isDraft;
-    prItem.contextValue = "action-openPr-draft-hasJira";
+    prItem.contextValue = "action-openPr-draft";
     prItem.prUrl = pr.url;
-    prItem.jiraUrl = jiraUrl;
-    prItem.jiraKey = jiraKey;
     prItem.command = { command: Commands.OpenPR, title: "Open PR", arguments: [prItem] };
     items.push(prItem);
 

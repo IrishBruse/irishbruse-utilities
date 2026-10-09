@@ -7,12 +7,11 @@ import { dirname, join } from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { createAgentPrinter } from "./agent-stream.mjs";
-import { changelogPrompt, prepCommitPrompt } from "./release-prompts.mjs";
+import { changelogPrompt } from "./release-prompts.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const semverPattern = /^\d+\.\d+\.\d+(-[\w.]+)?$/;
 const marketplaceScope = "499b84ac-1321-427f-aa17-267ca6975798/.default";
-const releaseOnlyPaths = new Set(["CHANGELOG.md", "README.md", "package.json", "package-lock.json"]);
 
 function run(command, options = {}) {
     console.log(`\n> ${command}`);
@@ -106,21 +105,17 @@ function changelogHasVersion(version) {
     return readText("CHANGELOG.md").includes(`## ${version}`);
 }
 
-function dirtyPaths() {
-    const status = execSync("git status --porcelain", { cwd: root, encoding: "utf8" }).trim();
-    if (!status) {
-        return [];
+function changelogHistory() {
+    const versions = [...readText("CHANGELOG.md").matchAll(/^## (\d+\.\d+\.\d+)/gm)].map((match) => match[1]);
+    const previous = versions[0];
+    if (!previous) {
+        return execSync("git log --oneline -20", { cwd: root, encoding: "utf8" }).trim();
     }
-
-    return status.split("\n").map((line) => {
-        const raw = line.slice(3).trim();
-        const renamed = raw.includes(" -> ") ? raw.split(" -> ").pop() : raw;
-        return renamed.replace(/^"|"$/g, "");
-    });
-}
-
-function needsPrepCommit() {
-    return dirtyPaths().some((path) => !releaseOnlyPaths.has(path));
+    const rev = execSync(`git rev-list -n 1 --grep=^${previous}$ HEAD`, { cwd: root, encoding: "utf8" }).trim();
+    if (rev.length === 0) {
+        return execSync("git log --oneline -20", { cwd: root, encoding: "utf8" }).trim();
+    }
+    return execSync(`git log --oneline ${rev}..HEAD`, { cwd: root, encoding: "utf8" }).trim();
 }
 
 function runAgent(prompt) {
@@ -180,25 +175,12 @@ async function ensureChangelog(version) {
         return;
     }
 
-    await runAgent(changelogPrompt(version));
+    await runAgent(changelogPrompt(version, changelogHistory()));
     assertChangelog(version);
-}
-
-async function ensurePrep() {
-    if (!needsPrepCommit()) {
-        return;
-    }
-
-    await runAgent(prepCommitPrompt());
-
-    if (needsPrepCommit()) {
-        throw new Error("Non-release changes remain after prep. Commit or stash them, then re-run release.");
-    }
 }
 
 async function prepareForStamp(version) {
     await ensureChangelog(version);
-    await ensurePrep();
     run("npm run verify");
 }
 

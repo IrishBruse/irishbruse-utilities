@@ -1,26 +1,16 @@
-export function changelogPrompt(version) {
+export function changelogPrompt(version, history) {
     return [
-        `Release changelog for version ${version} in this repo.`,
-        "Edit CHANGELOG.md only.",
-        `If CHANGELOG.md lacks ## ${version}, add it immediately below ## Unreleased.`,
-        "Draft bullets from git history since the previous ## version section and from any text under ## Unreleased.",
-        "Changelog review rules:",
-        "- One bullet per theme; merge small related changes.",
-        "- Prefixes: **Add** / **Fix** / **Remove** / **Change**.",
-        "- Drop refactors, tests, dev tooling, and agent churn unless users see it.",
-        "- Patch releases: about 1–3 bullets; minor: about 3–8.",
-        `Move reviewed bullets under ## ${version}; leave ## Unreleased empty.`,
-        "Do not edit README.md.",
-        "Do not commit. Do not change package.json or package-lock.json version fields.",
-    ].join("\n");
-}
-
-export function prepCommitPrompt() {
-    return [
-        "Prepare this repo for release stamp.",
-        "Commit every pending change except edits to CHANGELOG.md, README.md, package.json, and package-lock.json.",
-        "Do not bump version fields.",
-        "Use the repo commit message style from recent git log.",
-        "Stop when only those four release files differ from HEAD, or when there is nothing left to commit.",
+        `Write ## ${version} in CHANGELOG.md. Be fast. Stop when that section is saved.`,
+        "Read CHANGELOG.md only. Do not open, search, or read any other file.",
+        "Do not run git. The history since the previous release is below.",
+        `If ## ${version} is missing, add it immediately below ## Unreleased.`,
+        "One bullet per theme. Prefixes: **Add** / **Fix** / **Remove** / **Change**.",
+        "Drop refactors, tests, dev tooling, and agent churn unless users see it.",
+        "Patch: 1–3 bullets. Minor: 3–8 bullets.",
+        `Move reviewed bullets under ## ${version}. Leave ## Unreleased empty.`,
+        "Do not edit README.md. Do not commit. Do not change package.json or package-lock.json.",
+        "",
+        "Git history:",
+        history.length > 0 ? history : "(no commits since the previous release)",
     ].join("\n");
 }

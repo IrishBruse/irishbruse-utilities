@@ -1,10 +1,13 @@
 export {
     agentPropertyCompletions,
     completeAgentPropertyKeys,
+    skillPropertyInsertText,
     completeSkillPropertyKeys,
     emptyProperty,
     hasYamlFrontMatter,
     isSkillMarkdownPath,
+    skillDirectoryName,
+    skillFrontMatterIssues,
     paintYamlFrontMatter,
     parseSkillFrontMatter,
     readFrontMatter,
@@ -18,6 +21,7 @@ export {
 export type {
     FrontMatterSpan,
     SkillFieldWidget,
+    SkillFrontMatterIssue,
     SkillMapEntry,
     SkillProperty,
     YamlFrontMatterSpan,

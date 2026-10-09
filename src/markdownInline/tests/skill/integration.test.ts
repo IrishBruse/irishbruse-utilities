@@ -66,7 +66,22 @@ describe("skill front matter", () => {
         const labels = page.locator(".suggest-widget .monaco-list-row .label-name");
         await labels.first().waitFor({ state: "visible" });
         const names = await labels.allInnerTexts();
-        expect(names).toContain("compatibility");
-        expect(names).toContain("color");
+        expect(names).toEqual(["compatibility"]);
+    });
+
+    it("shows the spec error on an invalid name", async () => {
+        await page.evaluate(() => {
+            const api = (window as unknown as {
+                __inlineMarkdown: {
+                    getDocument(): string;
+                    setDocument(text: string): void;
+                };
+            }).__inlineMarkdown;
+            api.setDocument(api.getDocument().replace("name: markdown-skill-fixture", "name: PDF"));
+        });
+        const message = page.locator(".inline-md-skill-error-message");
+        await message.first().waitFor({ state: "visible" });
+        const shown = (await message.allInnerTexts()).join("").replaceAll("\u00a0", " ");
+        expect(shown).toContain("name must use lowercase letters, numbers, and hyphens.");
     });
 });

@@ -33,6 +33,14 @@
     container-type: inline-size;
 }
 
+.inline-md-root .monaco-editor .inline-md-skill-error {
+    text-decoration: underline wavy var(--vscode-errorForeground, #f48771);
+}
+
+.inline-md-root .monaco-editor .inline-md-skill-error-message {
+    color: var(--vscode-errorForeground, #f48771) !important;
+}
+
 .inline-md-root .monaco-editor .inline-md-lang {
     position: absolute;
     left: calc(100cqi - 16px);

@@ -1,5 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { isSkillMarkdownPath } from "./skillPath";
+import { isSkillMarkdownPath, skillDirectoryName } from "./skillPath";
+
+describe("skillDirectoryName", () => {
+    it("reads the parent folder of SKILL.md", () => {
+        expect(skillDirectoryName("https://example.com/skills/pdf-processing/SKILL.md")).toBe("pdf-processing");
+        expect(skillDirectoryName("file:///tmp/demo/SKILL.md")).toBe("demo");
+        expect(skillDirectoryName("https://example.com/readme.md")).toBeUndefined();
+        expect(skillDirectoryName("SKILL.md")).toBeUndefined();
+    });
+});
 
 describe("isSkillMarkdownPath", () => {
     it("is true only when the file name is SKILL.md", () => {

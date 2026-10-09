@@ -12,6 +12,7 @@ describe("widgetForKey", () => {
     it("picks a widget from the key", () => {
         expect(widgetForKey("description")).toBe("multiline");
         expect(widgetForKey("disable-model-invocation")).toBe("boolean");
+        expect(widgetForKey("user-invocable")).toBe("boolean");
         expect(widgetForKey("metadata")).toBe("map");
         expect(widgetForKey("name")).toBe("text");
         expect(widgetForKey("license")).toBe("text");
@@ -36,11 +37,12 @@ describe("completeSkillPropertyKeys", () => {
     it("filters used keys and matches a case-insensitive prefix", () => {
         expect(completeSkillPropertyKeys(["name"], "")).toEqual([
             "description",
-            "disable-model-invocation",
             "license",
             "compatibility",
-            "allowed-tools",
             "metadata",
+            "allowed-tools",
+            "disable-model-invocation",
+            "user-invocable",
         ]);
         expect(completeSkillPropertyKeys([], "Meta")).toEqual(["metadata"]);
         expect(completeSkillPropertyKeys(["metadata"], "meta")).toEqual([]);
@@ -146,6 +148,8 @@ describe("parseSkillFrontMatter", () => {
         expect(parseSkillFrontMatter("metadata:\n  quote: 'it''s'\n")).toEqual([
             { key: "metadata", kind: "map", entries: [{ key: "quote", value: "it's" }] },
         ]);
+        const common = "metadata:\n  author: example-org\n  version: \"1.0\"\n";
+        expect(serializeSkillFrontMatter(parseSkillFrontMatter(common))).toBe(common);
     });
 
     it("reads literal and folded block scalars with each chomp", () => {

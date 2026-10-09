@@ -1,11 +1,12 @@
 export const SKILL_FRONT_MATTER_KEYS = [
 	'name',
 	'description',
-	'disable-model-invocation',
 	'license',
 	'compatibility',
-	'allowed-tools',
 	'metadata',
+	'allowed-tools',
+	'disable-model-invocation',
+	'user-invocable',
 ] as const;
 
 export type SkillFieldWidget = 'text' | 'multiline' | 'boolean' | 'map';
@@ -24,7 +25,7 @@ export function widgetForKey(key: string): SkillFieldWidget {
 	if (key === 'description') {
 		return 'multiline';
 	}
-	if (key === 'disable-model-invocation') {
+	if (key === 'disable-model-invocation' || key === 'user-invocable') {
 		return 'boolean';
 	}
 	if (key === 'metadata') {
@@ -236,7 +237,7 @@ function dumpInlineScalar(value: string): string {
 	if (value === '') {
 		return '""';
 	}
-	if (/[\n:#&*!{}[\],'"|>]/.test(value) || /^(?:true|false|null|yes|no|on|off)$/i.test(value) || /^\s|\s$/.test(value)) {
+	if (/[\n:#&*!{}[\],'"|>]/.test(value) || /^(?:true|false|null|yes|no|on|off)$/i.test(value) || /^[+-]?(?:\d+\.\d*|\.\d+|\d+)(?:[eE][+-]?\d+)?$/.test(value) || /^\s|\s$/.test(value)) {
 		return `"${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"').replace(/\n/g, '\\n')}"`;
 	}
 	return value;

@@ -1,13 +1,20 @@
 import { completeSkillPropertyKeys } from "./skillFrontMatterYaml";
 
-const AGENT_PROPERTY_KEYS = ["paths", "icon", "color"] as const;
-
 export function completeAgentPropertyKeys(existingKeys: readonly string[], prefix: string): string[] {
-    const keys = completeSkillPropertyKeys(existingKeys, prefix);
-    const used = new Set(existingKeys);
-    const needle = prefix.toLowerCase();
-    const extra = AGENT_PROPERTY_KEYS.filter((key) => !used.has(key) && key.startsWith(needle));
-    return [...keys, ...extra];
+    return completeSkillPropertyKeys(existingKeys, prefix);
+}
+
+export function skillPropertyInsertText(key: string, hasColon: boolean): string {
+    if (hasColon) {
+        return key;
+    }
+    if (key === "disable-model-invocation") {
+        return "disable-model-invocation: true";
+    }
+    if (key === "metadata") {
+        return "metadata:\n  author: example-org\n  version: \"1.0\"";
+    }
+    return `${key}: `;
 }
 
 export function agentPropertyCompletions(existingKeys: readonly string[], lineBeforeCursor: string): string[] | undefined {

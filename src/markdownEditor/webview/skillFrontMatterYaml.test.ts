@@ -81,11 +81,12 @@ describe('serializeSkillFrontMatter', () => {
 describe('completeSkillPropertyKeys', () => {
 	it('omits keys already present and filters by prefix', () => {
 		expect(completeSkillPropertyKeys([ 'name', 'description' ], '')).toEqual([
-			'disable-model-invocation',
 			'license',
 			'compatibility',
-			'allowed-tools',
 			'metadata',
+			'allowed-tools',
+			'disable-model-invocation',
+			'user-invocable',
 		]);
 		expect(completeSkillPropertyKeys([ 'name' ], 'dis')).toEqual([ 'disable-model-invocation' ]);
 		expect(completeSkillPropertyKeys([ 'license' ], 'l')).toEqual([]);

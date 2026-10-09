@@ -13,7 +13,7 @@ import { conf as markdownConf, language as markdownLanguage } from "monaco-edito
 import { conf as typescriptConf, language as typescriptLanguage } from "monaco-editor/languages/definitions/typescript/typescript.js";
 import { conf as yamlConf, language as yamlLanguage } from "monaco-editor/languages/definitions/yaml/yaml.js";
 import { markdownFenceBody, markdownFenceLanguageId, markdownWithFenceColors } from "./markdownFences";
-import { completeAgentPropertyKeys, completeSkillPropertyKeys, parseSkillFrontMatter, readFrontMatter, skillMarkdownLanguageId } from "../skill";
+import { completeAgentPropertyKeys, completeSkillPropertyKeys, parseSkillFrontMatter, readFrontMatter, skillMarkdownLanguageId, skillPropertyInsertText } from "../skill";
 import { installMermaidCodeLens, refreshMermaidCodeLens } from "./codeLens";
 
 export { refreshMermaidCodeLens };
@@ -88,7 +88,7 @@ function skillKeyCompletions(
     return [...skillKeys, ...extra].map((key, index) => ({
         label: key,
         kind: monaco.languages.CompletionItemKind.Property,
-        insertText: hasColon ? key : `${key}: `,
+        insertText: skillPropertyInsertText(key, hasColon),
         sortText: String(index).padStart(2, "0"),
         range,
     }));

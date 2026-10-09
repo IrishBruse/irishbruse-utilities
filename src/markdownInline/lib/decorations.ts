@@ -11,7 +11,7 @@ import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "
 import { reveal, revealCode, showFormatted } from "./reveal";
 import { parseScopes } from "./document/scopes";
 import { clipSelectionToText, extendHeadingSelectionPastText, layoutSelectionPieces, selectionHeadingSelector, stretchesSelectionLine } from "./selection";
-import { readFrontMatter, type FrontMatterSpan } from "./skill";
+import { readFrontMatter, skillDirectoryName, skillFrontMatterIssues, type FrontMatterSpan } from "./skill";
 import type { CursorContext, Scope, TextRange } from "./document/types";
 
 export interface InlinePresentationHandlers {
@@ -82,6 +82,186 @@ class YamlLabelWidget implements monaco.editor.IContentWidget {
         this.node.style.transform = "none";
         this.node.style.left = `${lineBox.right - 16 - width - parentBox.left}px`;
         this.node.style.top = `${lineBox.top - parentBox.top}px`;
+    }
+}
+
+class TableOverlayWidget implements monaco.editor.IContentWidget {
+    readonly allowEditorOverflow = false;
+    readonly suppressMouseDown = true;
+    private lines: readonly number[];
+
+    constructor(
+        private readonly id: string,
+        private readonly node: HTMLElement,
+        lines: readonly number[],
+        private readonly editor: monaco.editor.IStandaloneCodeEditor,
+        private readonly onMeasure: (lines: readonly number[], heights: ReadonlyMap<number, number>) => void,
+        private readonly scaleFor: (line: number) => number,
+    ) {
+        this.lines = lines;
+    }
+
+    getId(): string {
+        return `inline-md-table-${this.id.replace(/[^a-zA-Z0-9_-]+/g, "-")}`;
+    }
+
+    getDomNode(): HTMLElement {
+        return this.node;
+    }
+
+    getPosition(): monaco.editor.IContentWidgetPosition {
+        return {
+            position: { lineNumber: this.lines[0] ?? 1, column: 1 },
+            preference: [monaco.editor.ContentWidgetPositionPreference.EXACT],
+        };
+    }
+
+    setLines(lines: readonly number[]): void {
+        this.lines = lines;
+    }
+
+    afterRender(): void {
+        const editorNode = this.editor.getDomNode();
+        const parent = this.node.parentElement;
+        if (!(editorNode instanceof HTMLElement) || !(parent instanceof HTMLElement)) {
+            return;
+        }
+        const first = this.lines[0];
+        const last = this.lines[this.lines.length - 1];
+        if (first === undefined || last === undefined) {
+            return;
+        }
+        const viewLines = editorNode.querySelector(".view-lines");
+        if (!(viewLines instanceof HTMLElement)) {
+            return;
+        }
+        const scrollTop = this.editor.getScrollTop();
+        const top = this.editor.getTopForLineNumber(first) - scrollTop;
+        const editorBox = editorNode.getBoundingClientRect();
+        const parentBox = parent.getBoundingClientRect();
+        const linesBox = viewLines.getBoundingClientRect();
+        const fontSize = this.editor.getOption(monaco.editor.EditorOption.fontSize);
+        const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
+        this.node.style.left = `${linesBox.left - parentBox.left}px`;
+        this.node.style.width = `${Math.max(0, linesBox.width)}px`;
+        this.node.style.maxWidth = `${Math.max(0, linesBox.width)}px`;
+        this.node.style.top = `${editorBox.top + top - parentBox.top}px`;
+        this.node.style.fontSize = `${fontSize}px`;
+        this.node.style.lineHeight = `${lineHeight}px`;
+        this.fitColumns(Math.max(0, linesBox.width));
+        this.fitRows(lineHeight);
+    }
+
+    private fitColumns(available: number): void {
+        const table = this.node.querySelector("table");
+        if (!(table instanceof HTMLTableElement) || available <= 0) {
+            return;
+        }
+        const frameWidth = this.node.style.width;
+        const frameMax = this.node.style.maxWidth;
+        this.node.style.width = "max-content";
+        this.node.style.maxWidth = "none";
+        const rows = [...table.rows].filter((row) => !row.classList.contains("inline-md-table-rule"));
+        const count = rows.reduce((max, row) => Math.max(max, row.cells.length), 0);
+        if (count === 0) {
+            this.node.style.width = frameWidth;
+            this.node.style.maxWidth = frameMax;
+            return;
+        }
+        const probe = document.createElement("span");
+        probe.style.whiteSpace = "nowrap";
+        probe.style.position = "absolute";
+        probe.style.visibility = "hidden";
+        this.node.append(probe);
+        const textWidth = (text: string): number => {
+            probe.textContent = text;
+            return Math.ceil(probe.offsetWidth);
+        };
+        const pad = (cell: HTMLTableCellElement): number => {
+            const style = getComputedStyle(cell);
+            return Math.ceil(
+                (Number.parseFloat(style.paddingLeft) || 0)
+                + (Number.parseFloat(style.paddingRight) || 0)
+                + (Number.parseFloat(style.borderLeftWidth) || 0)
+                + (Number.parseFloat(style.borderRightWidth) || 0),
+            );
+        };
+        const maxWidths = Array.from({ length: count }, () => 0);
+        const minWidths = Array.from({ length: count }, () => 1);
+        for (const row of rows) {
+            for (let index = 0; index < row.cells.length; index += 1) {
+                const cell = row.cells[index];
+                if (!cell) {
+                    continue;
+                }
+                const text = cell.innerText.replaceAll("\u00a0", " ").trim();
+                const extra = pad(cell);
+                const full = text.length > 0 ? textWidth(text) + extra : extra;
+                const word = text.split(/\s+/).reduce((wide, part) => Math.max(wide, part.length > 0 ? textWidth(part) : 0), 0);
+                maxWidths[index] = Math.max(maxWidths[index] ?? 0, full);
+                minWidths[index] = Math.max(minWidths[index] ?? 1, word + extra);
+            }
+        }
+        probe.remove();
+        if (maxWidths.every((width) => width <= 1)) {
+            this.node.style.width = frameWidth;
+            this.node.style.maxWidth = frameMax;
+            return;
+        }
+        this.node.style.width = frameWidth;
+        this.node.style.maxWidth = frameMax;
+        const sumMax = maxWidths.reduce((sum, width) => sum + width, 0);
+        const sizes = maxWidths.slice();
+        if (sumMax > available) {
+            const widest = maxWidths.reduce((best, width, index) => width > (maxWidths[best] ?? 0) ? index : best, 0);
+            const others = sumMax - (maxWidths[widest] ?? 0);
+            const floor = minWidths[widest] ?? 1;
+            sizes[widest] = Math.max(floor, available - others);
+        }
+        const total = sizes.reduce((sum, width) => sum + width, 0);
+        table.style.tableLayout = "fixed";
+        table.style.width = `${Math.max(1, Math.min(available, total))}px`;
+        for (const row of table.rows) {
+            for (let index = 0; index < row.cells.length; index += 1) {
+                const cell = row.cells[index];
+                const size = sizes[index];
+                const max = maxWidths[index];
+                if (!cell || size === undefined || max === undefined) {
+                    continue;
+                }
+                cell.style.width = `${size}px`;
+                cell.style.maxWidth = `${size}px`;
+                cell.style.whiteSpace = size + 2 < max ? "normal" : "nowrap";
+            }
+        }
+    }
+
+    private fitRows(lineHeight: number): void {
+        const rows = [...this.node.querySelectorAll("tr")];
+        const heights = new Map<number, number>();
+        rows.forEach((row, index) => {
+            const line = this.lines[index];
+            if (line === undefined || !(row instanceof HTMLElement) || lineHeight <= 0) {
+                return;
+            }
+            row.style.height = "auto";
+            const cells = [...row.children].filter((cell): cell is HTMLElement => cell instanceof HTMLElement);
+            for (const cell of cells) {
+                cell.style.height = "auto";
+            }
+            const content = Math.max(lineHeight, ...cells.map((cell) => Math.ceil(cell.scrollHeight)));
+            const applied = this.scaleFor(line);
+            const rendered = Math.max(lineHeight, this.editor.getBottomForLineNumber(line) - this.editor.getTopForLineNumber(line));
+            const wraps = Math.max(1, Math.round(rendered / Math.max(1, applied * lineHeight)));
+            const natural = wraps * lineHeight;
+            const needed = Math.max(natural, content);
+            row.style.height = `${needed}px`;
+            const scale = Math.round((needed / natural) * 100) / 100;
+            if (scale > 1.05) {
+                heights.set(line, scale);
+            }
+        });
+        this.onMeasure(this.lines, heights);
     }
 }
 
@@ -321,6 +501,8 @@ export class InlinePresentation {
     private readonly imageZones = new Map<string, ZoneRecord>();
     private mermaidLensKey = "";
     private hiddenLineNumbers = new Set<number>();
+    private readonly tableWidgets = new Map<string, TableOverlayWidget>();
+    private readonly tableLineHeights = new Map<number, number>();
     private findListener: monaco.IDisposable | undefined;
     private updating = false;
     private updateQueued = false;
@@ -392,6 +574,7 @@ export class InlinePresentation {
         const replaced: TextRange[] = [];
         const hiddenLines = new Set<number>();
         const zones: ZoneRecord[] = [];
+        const tables: { key: string; domNode: HTMLElement; lines: readonly number[] }[] = [];
         const tasks: { id: string; from: number; to: number; checked: boolean; position: monaco.IPosition }[] = [];
         const hits: { id: string; text: string; offset: number; position: monaco.IPosition }[] = [];
 
@@ -443,12 +626,22 @@ export class InlinePresentation {
                 }
                 if (decision.zone && scope.kind === "table") {
                     const lines = lineNumbersCovering(model, text, bounds);
+                    const record = this.tableZone(scope, text, scopes, bounds.start);
+                    tables.push({ key: record.key, domNode: record.domNode, lines });
+                    const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
                     for (const line of lines) {
-                        hiddenLines.add(line);
-                    }
-                    const first = lines[0];
-                    if (first !== undefined) {
-                        zones.push(this.tableZone(scope, text, scopes, bounds.start, first));
+                        const scale = this.tableLineHeights.get(line);
+                        const options: monaco.editor.IModelDecorationOptions = {
+                            isWholeLine: true,
+                            className: "inline-md-table-source",
+                        };
+                        if (scale !== undefined && lineHeight > 0 && scale > 1.05) {
+                            options.lineHeight = scale;
+                        }
+                        decorations.push({
+                            range: new monaco.Range(line, 1, line, 1),
+                            options,
+                        });
                     }
                     continue;
                 }
@@ -721,6 +914,7 @@ export class InlinePresentation {
         this.decorations.set(decorations);
         this.syncTasks(tasks);
         this.syncHits(hits);
+        this.syncTables(tables);
         this.syncZones(zones);
         this.scheduleSelectionHeights();
         const mermaidLensKey = scopes
@@ -758,6 +952,11 @@ export class InlinePresentation {
             }
         });
         this.zones = [];
+        for (const widget of this.tableWidgets.values()) {
+            this.editor.removeContentWidget(widget);
+        }
+        this.tableWidgets.clear();
+        this.tableLineHeights.clear();
         this.imageZones.clear();
         this.mermaidZones.clear();
         this.mermaidLensKey = "";
@@ -869,9 +1068,60 @@ export class InlinePresentation {
         source: string,
         scopes: readonly Scope[],
         from: number,
-        lineNumber: number,
-    ): ZoneRecord {
-        return buildTableZone(scope, source, scopes, from, lineNumber, this.zoneHost());
+    ) {
+        return buildTableZone(scope, source, scopes, from, this.zoneHost());
+    }
+
+    private applyTableHeights(lines: readonly number[], heights: ReadonlyMap<number, number>): void {
+        let changed = false;
+        for (const line of lines) {
+            const next = heights.get(line);
+            const prev = this.tableLineHeights.get(line);
+            if (next === undefined) {
+                if (prev !== undefined) {
+                    this.tableLineHeights.delete(line);
+                    changed = true;
+                }
+                continue;
+            }
+            if (prev !== next) {
+                this.tableLineHeights.set(line, next);
+                changed = true;
+            }
+        }
+        if (changed) {
+            this.update();
+        }
+    }
+
+    private syncTables(tables: readonly { key: string; domNode: HTMLElement; lines: readonly number[] }[]): void {
+        const next = new Set(tables.map((table) => table.key));
+        for (const [key, widget] of this.tableWidgets) {
+            if (!next.has(key)) {
+                this.editor.removeContentWidget(widget);
+                this.tableWidgets.delete(key);
+            }
+        }
+        for (const table of tables) {
+            const existing = this.tableWidgets.get(table.key);
+            if (existing) {
+                existing.setLines(table.lines);
+                this.editor.layoutContentWidget(existing);
+                continue;
+            }
+            const widget = new TableOverlayWidget(
+                table.key,
+                table.domNode,
+                table.lines,
+                this.editor,
+                (lines, heights) => {
+                    this.applyTableHeights(lines, heights);
+                },
+                (line) => this.tableLineHeights.get(line) ?? 1,
+            );
+            this.tableWidgets.set(table.key, widget);
+            this.editor.addContentWidget(widget);
+        }
     }
 
     private layoutZone(key: string): void {
@@ -907,6 +1157,19 @@ export class InlinePresentation {
             });
         }
         this.syncYamlLabel(start.lineNumber);
+        for (const issue of skillFrontMatterIssues(span.yaml, skillDirectoryName(this.documentUrl))) {
+            const from = issue.start < 0 ? 0 : span.yamlStart + issue.start;
+            const to = issue.start < 0 ? Math.min(3, length) : span.yamlStart + issue.end;
+            const issueStart = model.getPositionAt(clampOffset(from, length));
+            const issueEnd = model.getPositionAt(clampOffset(Math.max(from, to), length));
+            decorations.push({
+                range: new monaco.Range(issueStart.lineNumber, issueStart.column, issueEnd.lineNumber, issueEnd.column),
+                options: {
+                    inlineClassName: "inline-md-skill-error",
+                    after: injected(` ${issue.message}`, "inline-md-skill-error-message"),
+                },
+            });
+        }
     }
 
     private syncYamlLabel(lineNumber: number | undefined): void {

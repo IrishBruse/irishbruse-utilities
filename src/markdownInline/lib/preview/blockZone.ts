@@ -130,15 +130,6 @@ function appendFormatted(parent: HTMLElement, source: string, start: number, end
     }
 }
 
-function tableFrameHeight(frame: HTMLElement): number {
-    const table = frame.querySelector("table");
-    const content = table instanceof HTMLElement ? table.offsetHeight : frame.scrollHeight;
-    const style = getComputedStyle(frame);
-    const padding = (Number.parseFloat(style.paddingTop) || 0) + (Number.parseFloat(style.paddingBottom) || 0);
-    const border = (Number.parseFloat(style.borderTopWidth) || 0) + (Number.parseFloat(style.borderBottomWidth) || 0);
-    return Math.ceil(content + padding + border);
-}
-
 function lineNumberNode(lineNumber: number): HTMLDivElement {
     const number = document.createElement("div");
     number.className = "inline-md-zone-number";
@@ -329,22 +320,72 @@ export function createMermaidZone(
     return { key, zone };
 }
 
+export type TableAlign = "left" | "center" | "right";
+
+export function tableAlignments(source: string, start: number, end: number): TableAlign[] {
+    const lines = source.slice(start, end).split(/\r?\n/);
+    for (const line of lines) {
+        const parts = line.split("|").map((cell) => cell.trim()).filter((cell) => cell.length > 0);
+        if (parts.length === 0 || !parts.every((cell) => /^:?-+:?$/.test(cell))) {
+            continue;
+        }
+        return parts.map((cell) => {
+            const left = cell.startsWith(":");
+            const right = cell.endsWith(":");
+            if (left && right) {
+                return "center";
+            }
+            if (right) {
+                return "right";
+            }
+            return "left";
+        });
+    }
+    return [];
+}
+
+function alignClass(align: TableAlign | undefined): string {
+    if (align === "center" || align === "right") {
+        return `inline-md-align-${align}`;
+    }
+    return "";
+}
+
 export function tableRow(
     source: string,
     scopes: readonly Scope[],
     cells: readonly TextRange[],
     cellTag: "th" | "td",
+    aligns: readonly TableAlign[] = [],
 ): HTMLTableRowElement {
     const row = document.createElement("tr");
-    for (const cell of cells) {
+    cells.forEach((cell, index) => {
         const node = document.createElement(cellTag);
         const trimmed = trimmedTextRange(source, cell);
         node.dataset.start = String(trimmed.start);
         node.dataset.end = String(trimmed.end);
+        const className = alignClass(aligns[index]);
+        if (className) {
+            node.className = className;
+        }
         appendFormatted(node, source, trimmed.start, trimmed.end, scopes);
         row.append(node);
+    });
+    return row;
+}
+
+function ruleRow(columns: number): HTMLTableRowElement {
+    const row = document.createElement("tr");
+    row.className = "inline-md-table-rule";
+    for (let index = 0; index < columns; index += 1) {
+        row.append(document.createElement("td"));
     }
     return row;
+}
+
+export interface TableOverlayRecord {
+    readonly key: string;
+    readonly domNode: HTMLElement;
 }
 
 export function tableZone(
@@ -352,9 +393,8 @@ export function tableZone(
     source: string,
     scopes: readonly Scope[],
     from: number,
-    lineNumber: number,
     host: BlockZoneHost,
-): BlockZoneRecord {
+): TableOverlayRecord {
     const frame = document.createElement("div");
     frame.className = "inline-md-table";
     frame.addEventListener("mousedown", (event) => {
@@ -379,43 +419,23 @@ export function tableZone(
     });
     const table = document.createElement("table");
     const rows = scope.rows ?? [];
+    const aligns = tableAlignments(source, scope.start, scope.end);
     const head = rows[0];
+    const columns = Math.max(head?.length ?? 0, ...rows.map((row) => row.length));
     if (head) {
         const thead = document.createElement("thead");
-        thead.append(tableRow(source, scopes, head, "th"));
+        thead.append(tableRow(source, scopes, head, "th", aligns));
         table.append(thead);
     }
-    const bodyRows = rows.slice(1);
-    if (bodyRows.length > 0) {
+    if (columns > 0) {
         const tbody = document.createElement("tbody");
-        for (const cells of bodyRows) {
-            tbody.append(tableRow(source, scopes, cells, "td"));
+        tbody.append(ruleRow(columns));
+        for (const cells of rows.slice(1)) {
+            tbody.append(tableRow(source, scopes, cells, "td", aligns));
         }
         table.append(tbody);
     }
     frame.append(table);
-    const key = `table:${scope.start}:${scope.end}`;
-    const zone: monaco.editor.IViewZone = {
-        afterLineNumber: lineNumber - 1,
-        heightInPx: Math.max(28, rows.length * 32),
-        domNode: frame,
-        marginDomNode: lineNumberNode(lineNumber),
-        suppressMouseDown: true,
-        showInHiddenAreas: true,
-        onDomNodeTop: () => {
-            const fit = (): void => {
-                const measured = tableFrameHeight(frame);
-                if (measured > 0 && Math.abs(measured - (zone.heightInPx ?? 0)) > 1) {
-                    zone.heightInPx = measured;
-                    host.onLayout(key);
-                }
-            };
-            if (frame.style.display === "none") {
-                requestAnimationFrame(fit);
-                return;
-            }
-            fit();
-        },
-    };
-    return { key, zone };
+    const key = `table:${scope.start}:${scope.end}:${source.slice(scope.start, scope.end)}`;
+    return { key, domNode: frame };
 }

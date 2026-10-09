@@ -38,7 +38,7 @@ describe("tables", () => {
                 return null;
             }
             return {
-                text: fold(line.textContent),
+                text: fold(line instanceof HTMLElement ? line.innerText : line.textContent),
                 bold: fold(line.querySelector(".inline-md-strong")?.textContent ?? null),
                 em: fold(line.querySelector(".inline-md-em")?.textContent ?? null),
                 code: fold(line.querySelector(".inline-md-code")?.textContent ?? null),
@@ -47,8 +47,8 @@ describe("tables", () => {
         });
         const editor = (await page.locator("#editor .view-lines").innerText()).replaceAll("\u00a0", " ");
         expect(editor).toContain("Tables:");
-        expect(editor).not.toContain("##");
-        expect(editor).not.toContain("**");
+        expect(heading?.text).not.toContain("##");
+        expect(heading?.text).not.toContain("**");
         expect(heading?.bold).toBe("bold");
         expect(heading?.em).toBe("italic");
         expect(heading?.code).toBe("code");
@@ -76,9 +76,20 @@ describe("tables", () => {
         expect(codes).toEqual(expect.arrayContaining(["word word", "code cell"]));
     });
 
-    it("hides pipe source while the caret is outside the tables", async () => {
+    it("covers pipe source while the caret is outside the tables", async () => {
         const text = (await page.locator("#editor .view-lines").innerText()).replaceAll("\u00a0", " ");
         expect(text).toContain("Keep the caret here while reading.");
-        expect(text).not.toMatch(/\|\s*Apple\s*\|/);
+        expect(text).toContain("Apple");
+        const covered = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Apple"));
+            const box = line?.getBoundingClientRect();
+            if (!box || box.height <= 0) {
+                return false;
+            }
+            const hit = document.elementFromPoint(box.left + 28, box.top + box.height / 2);
+            return hit?.closest(".inline-md-table") != null;
+        });
+        expect(covered).toBe(true);
     });
 });

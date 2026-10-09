@@ -1,32 +1,62 @@
 .inline-md-table {
     box-sizing: border-box;
-    width: fit-content;
+    width: auto;
     max-width: 100%;
-    overflow: visible;
     margin: 0;
-    padding: 0.35em 0 0.8em;
+    padding: 0;
+    overflow: visible;
     cursor: text;
+    color: var(--vscode-editor-foreground);
+    background: var(--vscode-editor-background);
+    font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
 }
 
 .inline-md-table table {
-    border-collapse: collapse;
-    width: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+    box-sizing: border-box;
+    width: max-content;
     max-width: 100%;
     table-layout: auto;
+    font: inherit;
+    line-height: inherit;
+    color: inherit;
+    background: transparent;
 }
 
 .inline-md-table th,
 .inline-md-table td {
-    padding: 5px 10px;
-    border: 1px solid var(--vscode-editorWidget-border, #3c3c3c);
+    box-sizing: border-box;
+    padding: 0 0.5em;
+    border: none;
+    border-left: 2px solid var(--vscode-editorWidget-border, #3c3c3c);
+    background: var(--vscode-editor-background);
+    font-weight: inherit;
     text-align: left;
     vertical-align: top;
-    overflow-wrap: break-word;
+    overflow-wrap: anywhere;
     word-break: normal;
+    white-space: nowrap;
 }
 
-.inline-md-table th {
-    font-weight: 600;
-    padding-top: 10px;
-    padding-bottom: 10px;
+.inline-md-table th:last-child,
+.inline-md-table td:last-child {
+    border-right: 2px solid var(--vscode-editorWidget-border, #3c3c3c);
+}
+
+.inline-md-table-rule td {
+    padding: 0;
+    border-top: 2px solid var(--vscode-editorWidget-border, #3c3c3c);
+}
+
+.inline-md-align-center {
+    text-align: center;
+}
+
+.inline-md-align-right {
+    text-align: right;
+}
+
+.inline-md-root .monaco-editor .view-line.inline-md-table-source span {
+    color: transparent !important;
 }

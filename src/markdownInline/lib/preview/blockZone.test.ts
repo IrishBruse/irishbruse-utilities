@@ -12,6 +12,7 @@ import {
     createMermaidZone,
     headingLevel,
     imageZoneKey,
+    tableAlignments,
     tableCellOffset,
     tableRow,
     tableZone,
@@ -724,11 +725,9 @@ describe("tableZone", () => {
     it("reveals cells, follows links, and walks text targets", () => {
         installRichDom();
         const host = createHost({ onLink: vi.fn() });
-        const record = tableZone(scope({ kind: "table", start: 3, end: 9, rows: [head, body, []] }), source, scopes, 50, 6, host);
-        expect(record.key).toBe("table:3:9");
-        expect(record.zone.heightInPx).toBe(96);
-        expect(element(record.zone.marginDomNode).textContent).toBe("6");
-        const frame = element(record.zone.domNode);
+        const record = tableZone(scope({ kind: "table", start: 3, end: 9, rows: [head, body, []] }), source, scopes, 50, host);
+        expect(record.key).toBe(`table:3:9:${source.slice(3, 9)}`);
+        const frame = element(record.domNode);
         const link = frame.find(".inline-md-link");
         const linkEvent = mouse(link);
         frame.fire("mousedown", linkEvent);
@@ -742,7 +741,8 @@ describe("tableZone", () => {
         expect(host.onReveal).toHaveBeenCalledWith(0);
 
         const text = new TestNode();
-        frame.find("td")?.append(text);
+        const bodyCell = element(element(frame.find("tbody")?.childNodes[1]).childNodes[0]);
+        bodyCell.append(text);
         frame.fire("mousedown", mouse(text));
         expect(host.onReveal).toHaveBeenCalledWith(4);
 
@@ -762,69 +762,35 @@ describe("tableZone", () => {
     it("reveals the cell when a link has no click handler", () => {
         installRichDom();
         const host = createHost();
-        const record = tableZone(scope({ kind: "table", rows: [head, body] }), source, scopes, 50, 2, host);
-        const frame = element(record.zone.domNode);
+        const record = tableZone(scope({ kind: "table", rows: [head, body] }), source, scopes, 50, host);
+        const frame = element(record.domNode);
         frame.fire("mousedown", mouse(frame.find(".inline-md-link")));
         expect(host.onReveal).toHaveBeenCalledWith(4);
     });
 
     it("builds a header-only table and an empty table", () => {
         installRichDom();
-        const headerOnly = tableZone(scope({ kind: "table", start: 1, end: 2, rows: [head] }), source, [], 0, 1, createHost());
-        const headerFrame = element(headerOnly.zone.domNode);
+        const headerOnly = tableZone(scope({ kind: "table", start: 1, end: 2, rows: [head] }), source, [], 0, createHost());
+        const headerFrame = element(headerOnly.domNode);
         expect(headerFrame.find("th")).toBeDefined();
-        expect(headerFrame.find("td")).toBeUndefined();
+        expect(headerFrame.find(".inline-md-table-rule")).toBeDefined();
 
-        const empty = tableZone(scope({ kind: "table", start: 0, end: 1 }), "", [], 4, 1, createHost());
-        expect(empty.zone.heightInPx).toBe(28);
-        expect(element(empty.zone.domNode).querySelector("table")?.childNodes).toHaveLength(0);
+        const empty = tableZone(scope({ kind: "table", start: 0, end: 1 }), "", [], 4, createHost());
+        expect(element(empty.domNode).querySelector("table")?.childNodes).toHaveLength(0);
     });
 
-    it("measures padding and border, skips a close or empty height, and defers while hidden", () => {
+    it("reads delimiter alignment and builds one rule row", () => {
         installRichDom();
-        const host = createHost();
-        const record = tableZone(scope({ kind: "table", start: 1, end: 4, rows: [head] }), source, [], 0, 1, host);
-        const frame = element(record.zone.domNode);
-        const table = frame.querySelector("table");
-        expect(table).not.toBeNull();
-        table!.offsetHeight = 32;
-        record.zone.onDomNodeTop?.(0);
-        expect(host.onLayout).not.toHaveBeenCalled();
-
-        table!.offsetHeight = 0;
-        record.zone.onDomNodeTop?.(0);
-        expect(host.onLayout).not.toHaveBeenCalled();
-
-        computedStyle.paddingTop = "8px";
-        computedStyle.paddingBottom = "0px";
-        computedStyle.borderTopWidth = "1.5px";
-        computedStyle.borderBottomWidth = "";
-        table!.offsetHeight = 10;
-        record.zone.onDomNodeTop?.(0);
-        expect(record.zone.heightInPx).toBe(20);
-        expect(host.onLayout).toHaveBeenCalledWith("table:1:4");
-
-        computedStyle.paddingTop = "0px";
-        computedStyle.paddingBottom = "0px";
-        computedStyle.borderTopWidth = "0px";
-        computedStyle.borderBottomWidth = "0px";
-        frame.replaceChildren();
-        frame.scrollHeight = 40;
-        record.zone.onDomNodeTop?.(0);
-        expect(record.zone.heightInPx).toBe(40);
-
-        runFrames = false;
-        frame.style.display = "none";
-        frame.scrollHeight = 70;
-        record.zone.onDomNodeTop?.(0);
-        expect(record.zone.heightInPx).toBe(40);
-        queuedFrame?.(0);
-        expect(record.zone.heightInPx).toBe(70);
-
-        record.zone.heightInPx = undefined;
-        frame.scrollHeight = 15;
-        frame.style.display = "";
-        record.zone.onDomNodeTop?.(0);
-        expect(record.zone.heightInPx).toBe(15);
+        const source = "| A | B |\n| --- | ---: |\n| c | d |\n";
+        expect(tableAlignments(source, 0, source.length)).toEqual(["left", "right"]);
+        expect(tableAlignments("no table", 0, 8)).toEqual([]);
+        const head = [{ start: 2, end: 3 }, { start: 6, end: 7 }];
+        const body = [{ start: 24, end: 25 }, { start: 28, end: 29 }];
+        const record = tableZone(scope({ kind: "table", start: 0, end: source.length, rows: [head, body] }), source, [], 0, createHost());
+        const frame = element(record.domNode);
+        const header = element(frame.find("thead")?.childNodes[0]);
+        expect(element(header.childNodes[1]).className).toBe("inline-md-align-right");
+        expect(frame.find(".inline-md-table-rule")).toBeDefined();
+        expect(element(frame.find(".inline-md-table-rule")).childNodes).toHaveLength(2);
     });
 });

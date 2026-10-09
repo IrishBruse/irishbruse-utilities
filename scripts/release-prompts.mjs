@@ -1,7 +1,7 @@
 export function changelogPrompt(version) {
     return [
         `Release changelog for version ${version} in this repo.`,
-        "Edit CHANGELOG.md and README.md only.",
+        "Edit CHANGELOG.md only.",
         `If CHANGELOG.md lacks ## ${version}, add it immediately below ## Unreleased.`,
         "Draft bullets from git history since the previous ## version section and from any text under ## Unreleased.",
         "Changelog review rules:",
@@ -10,7 +10,7 @@ export function changelogPrompt(version) {
         "- Drop refactors, tests, dev tooling, and agent churn unless users see it.",
         "- Patch releases: about 1–3 bullets; minor: about 3–8.",
         `Move reviewed bullets under ## ${version}; leave ## Unreleased empty.`,
-        "Update README.md only for user-facing feature or command changes.",
+        "Do not edit README.md.",
         "Do not commit. Do not change package.json or package-lock.json version fields.",
     ].join("\n");
 }

@@ -1,11 +1,12 @@
 
 import { InteractiveBrowserCredential } from "@azure/identity";
-import { execSync } from "node:child_process";
+import { execSync, spawn } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { dirname, join } from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
+import { createAgentPrinter } from "./agent-stream.mjs";
 import { changelogPrompt, prepCommitPrompt } from "./release-prompts.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
@@ -123,34 +124,81 @@ function needsPrepCommit() {
 }
 
 function runAgent(prompt) {
-    console.log("\n> agent --print (release)");
-    execSync("agent", ["--print", "--trust", "--force", prompt], { cwd: root, stdio: "inherit" });
+    console.log("\n> agent --print --output-format stream-json (release)");
+    return new Promise((resolve, reject) => {
+        const child = spawn("agent", [
+            "--print",
+            "--trust",
+            "--force",
+            "--model",
+            "composer-2.5",
+            "--output-format",
+            "stream-json",
+            "--stream-partial-output",
+            prompt,
+        ], {
+            cwd: root,
+            stdio: ["ignore", "pipe", "inherit"],
+        });
+        const printer = createAgentPrinter((chunk) => {
+            process.stdout.write(chunk);
+        }, { color: process.stdout.isTTY === true });
+        let buffer = "";
+        child.stdout.setEncoding("utf8");
+        child.stdout.on("data", (chunk) => {
+            buffer += chunk;
+            const lines = buffer.split("\n");
+            buffer = lines.pop() ?? "";
+            for (const line of lines) {
+                if (line.trim().length === 0) {
+                    continue;
+                }
+                printer.writeLine(line);
+            }
+        });
+        child.on("error", reject);
+        child.on("close", (status) => {
+            if (buffer.trim().length > 0) {
+                printer.writeLine(buffer);
+            }
+            printer.finish();
+            if (printer.failed) {
+                reject(new Error(printer.failureMessage));
+                return;
+            }
+            if (status !== 0) {
+                reject(new Error("Command failed: agent --print (release)"));
+                return;
+            }
+            resolve();
+        });
+    });
 }
 
-function ensureChangelog(version) {
+async function ensureChangelog(version) {
     if (changelogHasVersion(version)) {
         return;
     }
 
-    runAgent(changelogPrompt(version));
+    await runAgent(changelogPrompt(version));
     assertChangelog(version);
 }
 
-function ensurePrep() {
+async function ensurePrep() {
     if (!needsPrepCommit()) {
         return;
     }
 
-    runAgent(prepCommitPrompt());
+    await runAgent(prepCommitPrompt());
 
     if (needsPrepCommit()) {
         throw new Error("Non-release changes remain after prep. Commit or stash them, then re-run release.");
     }
 }
 
-function prepareForStamp(version) {
-    ensureChangelog(version);
-    ensurePrep();
+async function prepareForStamp(version) {
+    await ensureChangelog(version);
+    await ensurePrep();
     run("npm run verify");
 }
 
@@ -339,7 +387,7 @@ async function main() {
 
         if (publishOnly && !isRetry) {
             console.log(`Preparing and publishing ${version}`);
-            prepareForStamp(version);
+            await prepareForStamp(version);
             stampVersion(version);
             await doPublish(version);
             published = true;
@@ -352,7 +400,7 @@ async function main() {
         }
 
         console.log(`Preparing ${version}`);
-        prepareForStamp(version);
+        await prepareForStamp(version);
         stampVersion(version);
 
         const approved = await promptPublish(version);

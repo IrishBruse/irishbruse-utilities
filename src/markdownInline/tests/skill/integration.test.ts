@@ -85,3 +85,23 @@ describe("skill front matter", () => {
         expect(shown).toContain("name must use lowercase letters, numbers, and hyphens.");
     });
 });
+
+describe("non-skill YAML front matter", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("playground.md");
+        browser = opened.browser;
+        page = opened.page;
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("does not show SKILL spec errors on generic front matter keys", async () => {
+        await page.locator("#editor .view-lines").waitFor({ state: "visible" });
+        expect(await page.locator(".inline-md-skill-error-message").count()).toBe(0);
+    });
+});

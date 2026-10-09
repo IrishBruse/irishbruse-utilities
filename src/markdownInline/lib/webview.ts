@@ -1,5 +1,4 @@
 import { mountInlineEditor } from "./editor";
-import { readFrontMatter } from "./skill";
 import { installWebviewThemeSync, webviewThemeTargets } from "./webviewTheme";
 import "./styles/editor.css";
 
@@ -60,7 +59,7 @@ const editor = mountInlineEditor(parent, {
     text: boot.content,
     documentUrl: boot.documentUrl,
     readOnly: boot.readonly,
-    skillFrontMatter: boot.skillFrontMatter === true || readFrontMatter(boot.content) !== undefined,
+    skillFrontMatter: boot.skillFrontMatter === true,
     onEdit(edit) {
         vscode.postMessage({
             type: "edit",

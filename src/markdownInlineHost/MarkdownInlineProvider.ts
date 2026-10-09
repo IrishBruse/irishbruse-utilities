@@ -20,7 +20,6 @@ import {
     markdownInlineEditorColorsCssVars,
 } from "./markdownInlineEditorColors";
 import { openMarkdownWithRawEditor, shouldUseMarkdownCustomEditor } from "./shouldUseMarkdownCustomEditor";
-import { hasYamlFrontMatter } from "./yamlFrontMatter";
 import { isSkillMarkdownPath, prefixMarkdownForFastOpen } from "./webviewInitialState";
 
 export const MARKDOWN_INLINE_VIEW_TYPE = "ib-utilities.markdownInline";
@@ -78,7 +77,7 @@ function getEditorHtml(
         documentVersion,
         readonly: false,
         documentUrl: baseUri.toString(),
-        skillFrontMatter: isSkillMarkdownPath(documentUri.path) || hasYamlFrontMatter(content),
+        skillFrontMatter: isSkillMarkdownPath(documentUri.path),
     }));
     const colorVars = markdownInlineEditorColorsCssVars(getMarkdownInlineEditorColors());
 

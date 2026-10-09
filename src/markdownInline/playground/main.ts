@@ -1,6 +1,6 @@
 import "../lib/styles/editor.css";
 import { mountInlineEditor } from "../lib/editor";
-import { hasYamlFrontMatter, isSkillMarkdownPath } from "../lib/skill";
+import { isSkillMarkdownPath } from "../lib/skill";
 
 const DOCS_PREFIX = "../../../docs/tests/markdown/";
 const TESTS_PREFIX = "../tests/";
@@ -135,7 +135,7 @@ async function main(): Promise<void> {
     window.__inlineMarkdown = mountInlineEditor(parent, {
         text,
         documentUrl: baseUrl,
-        skillFrontMatter: isSkillMarkdownPath(selected.id) || hasYamlFrontMatter(text),
+        skillFrontMatter: isSkillMarkdownPath(selected.id),
         onLink(href) {
             openPlaygroundLink(href, baseUrl, fixtures);
         },

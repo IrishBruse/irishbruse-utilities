@@ -3,7 +3,7 @@ import { InlinePresentation } from "./decorations";
 import { bindDragSelection, isDragSelecting } from "./selection";
 import { bindMermaidCodeLens, installInlineKeybindings, installMonaco, readEditorFontSize } from "./monaco";
 import { parseScopes } from "./document/scopes";
-import { readFrontMatter, skillMarkdownLanguageId } from "./skill";
+import { skillMarkdownLanguageId } from "./skill";
 import type { Scope } from "./document/types";
 
 export interface InlineEdit {
@@ -95,9 +95,8 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     column.className = "inline-md-column";
     parent.append(column);
 
-    const usesSkillMarkdown = (text: string): boolean =>
-        options.skillFrontMatter === true || readFrontMatter(text) !== undefined;
-    const languageId = usesSkillMarkdown(options.text) ? skillMarkdownLanguageId : "markdown";
+    const usesSkillMarkdown = (): boolean => options.skillFrontMatter === true;
+    const languageId = usesSkillMarkdown() ? skillMarkdownLanguageId : "markdown";
     const model = monaco.editor.createModel(options.text, languageId);
     model.setEOL(endOfLine(options.text));
     const editor = monaco.editor.create(column, {
@@ -142,8 +141,8 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         stickyScroll: { enabled: false },
         codeLens: true,
         codeLensFontSize: 11,
-        quickSuggestions: usesSkillMarkdown(options.text) ? { other: true, comments: false, strings: true } : "off",
-        suggestOnTriggerCharacters: usesSkillMarkdown(options.text),
+        quickSuggestions: usesSkillMarkdown() ? { other: true, comments: false, strings: true } : "off",
+        suggestOnTriggerCharacters: usesSkillMarkdown(),
         wordBasedSuggestions: "off",
         parameterHints: { enabled: false },
         hover: { enabled: "off" },
@@ -210,10 +209,10 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             const currentModel = editor.getModel();
             if (currentModel) {
                 const text = currentModel.getValue();
-                const nextLanguage = usesSkillMarkdown(text) ? skillMarkdownLanguageId : "markdown";
+                const nextLanguage = usesSkillMarkdown() ? skillMarkdownLanguageId : "markdown";
                 if (currentModel.getLanguageId() !== nextLanguage) {
                     monaco.editor.setModelLanguage(currentModel, nextLanguage);
-                    const suggestions = usesSkillMarkdown(text);
+                    const suggestions = usesSkillMarkdown();
                     editor.updateOptions({
                         quickSuggestions: suggestions ? { other: true, comments: false, strings: true } : false,
                         suggestOnTriggerCharacters: suggestions,

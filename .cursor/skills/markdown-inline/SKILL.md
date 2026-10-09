@@ -5,7 +5,7 @@ description: "Inline Markdown editor and playground work under src/markdownInlin
 
 Scope editor behavior to `src/markdownInline`.
 VS Code host integration lives in `src/markdownInlineHost`.
-Imports from `lib/` stay inside this package. `lib/packageBoundary.test.ts` is that rule.
+Imports from `lib/` stay inside this package. `npm run lint:boundaries` enforces that rule and playground entry-point imports.
 
 ## Modules
 

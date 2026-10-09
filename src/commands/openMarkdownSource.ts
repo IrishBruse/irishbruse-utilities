@@ -1,5 +1,5 @@
 import { commands, window } from "vscode";
-import { getActiveMarkdownUri } from "../markdownInlineHost/getActiveMarkdownUri";
+import { getActiveMarkdownUri } from "../markdownInlineHost";
 
 export async function openMarkdownSource(): Promise<void> {
     const uri = getActiveMarkdownUri();

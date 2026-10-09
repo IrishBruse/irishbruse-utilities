@@ -1,7 +1,9 @@
 import { commands, window } from "vscode";
-import { getActiveMarkdownUri } from "../markdownInlineHost/getActiveMarkdownUri";
-import { MARKDOWN_INLINE_VIEW_TYPE } from "../markdownInlineHost/MarkdownInlineProvider";
-import { shouldUseMarkdownCustomEditor } from "../markdownInlineHost/shouldUseMarkdownCustomEditor";
+import {
+    getActiveMarkdownUri,
+    MARKDOWN_INLINE_VIEW_TYPE,
+    shouldUseMarkdownCustomEditor,
+} from "../markdownInlineHost";
 
 export async function openMarkdownInline(): Promise<void> {
     const uri = getActiveMarkdownUri();

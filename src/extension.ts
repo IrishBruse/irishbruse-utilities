@@ -9,7 +9,7 @@ import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
 import { terminalPaste } from "./commands/terminalPaste";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
-import { registerMarkdownInlineEditor } from "./markdownInlineHost/MarkdownInlineProvider";
+import { registerMarkdownInlineEditor } from "./markdownInlineHost";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { registerMarkdownMermaidFeatures } from "./mermaidEditor/registerMarkdownMermaid";
 import { LocalPortsViewProvider } from "./ports/LocalPortsView";

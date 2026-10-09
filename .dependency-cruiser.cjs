@@ -1,5 +1,5 @@
 const PACKAGES_ROOT = "src";
-const PACKAGE_PATTERN = "markdownInline";
+const PACKAGE_PATTERN = "(markdownInline|markdownInlineHost)";
 
 const packageRoot = `${PACKAGES_ROOT}/${PACKAGE_PATTERN}`;
 
@@ -30,6 +30,25 @@ module.exports = {
             },
         },
         {
+            name: "playground-through-entrypoints",
+            severity: "error",
+            from: { path: `^${PACKAGES_ROOT}/markdownInline/playground/` },
+            to: {
+                path: `^${PACKAGES_ROOT}/markdownInline/.+/`,
+                pathNot: `^${PACKAGES_ROOT}/markdownInline/playground/`,
+            },
+        },
+        {
+            name: "lib-contained",
+            severity: "error",
+            comment: "markdownInline lib/ stays inside the package except mermaidEditor",
+            from: { path: "^src/markdownInline/lib/" },
+            to: {
+                path: "^src/",
+                pathNot: ["^src/markdownInline/", "^src/mermaidEditor/"],
+            },
+        },
+        {
             name: "no-circular",
             severity: "error",
             from: { path: `^${packageRoot}/` },
@@ -37,10 +56,17 @@ module.exports = {
         },
         {
             name: "layering",
-            comment: "Which packages may depend on which. Leave severity on ignore until this repo fills the rule in.",
-            severity: "ignore",
-            from: { path: "^$" },
-            to: { path: "^$" },
+            severity: "error",
+            comment: "Editor package does not depend on the VS Code host layer",
+            from: { path: "^src/markdownInline/" },
+            to: { path: "^src/markdownInlineHost/" },
+        },
+        {
+            name: "layering",
+            severity: "error",
+            comment: "Playground does not depend on extension-side editor packages",
+            from: { path: "^src/markdownInline/playground/" },
+            to: { path: "^src/mermaidEditor/" },
         },
     ],
     options: {

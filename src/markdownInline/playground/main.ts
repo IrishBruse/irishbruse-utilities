@@ -1,6 +1,6 @@
 import "../lib/styles/editor.css";
-import { mountInlineEditor } from "../lib/editor";
-import { isSkillMarkdownPath } from "../lib/skill";
+import { mountInlineEditor } from "..";
+import { isSkillMarkdownPath } from "../skill";
 
 const DOCS_PREFIX = "../../../docs/tests/markdown/";
 const TESTS_PREFIX = "../tests/";

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+## 0.26.0
+
+-   **Fix**: Extension keyboard shortcuts bind to the intended commands.
+-   **Remove**: Jira row and workflow from Git Helpers.
+-   **Add**: Git Helpers keeps per-repository panel data in cache when you switch repos.
+
 ## 0.25.1
 
 -   **Change**: The extension package includes only the files the editor loads.

@@ -45,6 +45,7 @@ export default [
             ".tmp/**",
             "out/**",
             "dist/**",
+            "**/dist/**",
             "node_modules/**",
             "media/**",
             "!media/mermaidPreview/preview.js",

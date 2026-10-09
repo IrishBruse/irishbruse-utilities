@@ -221,3 +221,65 @@ describe("blockquote down into a quote", () => {
         expect(edited).toContain("> Quote line.!");
     });
 });
+
+describe("blockquote wrap indent", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground("blockquote/fixtures/case-3.md", "Alpha");
+        browser = opened.browser;
+        page = opened.page;
+        await page.evaluate(() => {
+            const api = (window as unknown as {
+                __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+            }).__inlineMarkdown;
+            api.setCursor(api.getDocument().length);
+        });
+        await page.waitForFunction(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const lines = [...document.querySelectorAll("#editor .view-line")].filter((entry) => fold(entry.textContent).trim().length > 0);
+            return lines.length >= 2 && fold(lines[0]?.textContent ?? "").includes("Alpha");
+        });
+    });
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("indents a wrapped quote line with the quote words", async () => {
+        const edges = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const letterLeft = (line: Element | undefined): number => {
+                if (!(line instanceof HTMLElement)) {
+                    return 0;
+                }
+                const span = [...line.querySelectorAll("span")]
+                    .filter((entry) => /[A-Za-z]/.test(fold(entry.textContent)) && entry.childElementCount === 0)
+                    .sort((left, right) => left.getBoundingClientRect().left - right.getBoundingClientRect().left)[0];
+                return span?.getBoundingClientRect().left ?? 0;
+            };
+            const lines = [...document.querySelectorAll("#editor .view-line")].filter((entry) => fold(entry.textContent).trim().length > 0);
+            const first = lines[0];
+            const wrap = lines[1];
+            return {
+                lineLeft: first instanceof HTMLElement ? first.getBoundingClientRect().left : 0,
+                quoteTextLeft: letterLeft(first),
+                wrapLeft: letterLeft(wrap),
+                wrapCount: lines.length,
+            };
+        });
+        expect(edges.wrapCount).toBeGreaterThan(1);
+        expect(edges.wrapLeft).toBeGreaterThan(edges.lineLeft + 4);
+        expect(Math.abs(edges.wrapLeft - edges.quoteTextLeft)).toBeLessThan(2);
+    });
+
+    it("matches the saved picture of a wrapped quote", async () => {
+        const clip = await expectLineRangeShot(page, join(here, "screenshots", "blockquote-wrap.png"), {
+            from: "Alpha",
+            to: "next line.",
+        });
+        expect(clip.width).toBeGreaterThan(40);
+        expect(clip.height).toBeGreaterThan(20);
+    });
+});

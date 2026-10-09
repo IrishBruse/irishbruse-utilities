@@ -26,6 +26,8 @@ export default defineConfig({
                 "src/scm/**",
                 "src/snippetEditor/**",
                 "src/utils/**",
+                "src/lib/**",
+                "src/ports/**",
                 "src/test/**",
                 "src/extension.ts",
                 "src/global.d.ts",

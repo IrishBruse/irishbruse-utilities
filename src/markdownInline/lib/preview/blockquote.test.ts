@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./blockquote";
+import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth, blockquoteWrapIndentColumns } from "./blockquote";
 
 describe("blockquoteLineDepth", () => {
     it("counts nested markers", () => {
@@ -27,6 +27,19 @@ describe("blockquoteContentIndex", () => {
         expect(blockquoteContentIndex("> Quote")).toBe(2);
         expect(blockquoteContentIndex("> > Nested")).toBe(4);
         expect(blockquoteContentIndex(">")).toBe(1);
+    });
+});
+
+describe("blockquoteWrapIndentColumns", () => {
+    it("counts the quote marks that are not already line indent", () => {
+        expect(blockquoteWrapIndentColumns("> Quote", 4)).toBe(2);
+        expect(blockquoteWrapIndentColumns("> > Nested", 4)).toBe(4);
+        expect(blockquoteWrapIndentColumns("  > Quote", 4)).toBe(2);
+        expect(blockquoteWrapIndentColumns("\t> Quote", 4)).toBe(2);
+        expect(blockquoteWrapIndentColumns(">", 4)).toBe(1);
+        expect(blockquoteWrapIndentColumns("plain", 4)).toBe(0);
+        expect(blockquoteWrapIndentColumns("  plain", 4)).toBe(0);
+        expect(blockquoteWrapIndentColumns("> Quote", 0)).toBe(2);
     });
 });
 

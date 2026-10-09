@@ -106,6 +106,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         readOnly: options.readOnly === true,
         automaticLayout: false,
         wordWrap: "on",
+        wrappingIndent: "same",
         wrappingStrategy: "advanced",
         scrollBeyondLastColumn: 0,
         lineNumbers: "on",

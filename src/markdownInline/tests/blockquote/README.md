@@ -7,3 +7,4 @@ The quote marks stay hidden.
 The bar hides while a quote mark is showing.
 A nested quote has a second bar, set in from the first.
 From the blank line above a quote, Down moves into that quote and the quote mark stays hidden, so the line can be edited.
+When a quote wraps, the next line starts in line with the quote words.

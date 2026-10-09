@@ -1,5 +1,5 @@
 import * as monaco from "monaco-editor/editor/editor.api";
-import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth } from "./preview/blockquote";
+import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth, blockquoteWrapIndentColumns } from "./preview/blockquote";
 import { applyHeadingFontScales, headingLineHeightMultiplier, headingSelectionPadPx } from "./headingLayout";
 import { listGapPaints, listLineHeightMultiplier, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
@@ -684,6 +684,20 @@ export class InlinePresentation {
                 decorations.push({
                     range: new monaco.Range(lineNumber, start + 1, lineNumber, content.length + 1),
                     options: { inlineClassName: "inline-md-quote-text" },
+                });
+            }
+            const indentColumns = blockquoteWrapIndentColumns(content, model.getOptions().tabSize);
+            if (indentColumns > 0 && content.length > 0) {
+                decorations.push({
+                    range: new monaco.Range(lineNumber, 1, lineNumber, 2),
+                    options: {
+                        before: {
+                            content: " ".repeat(indentColumns),
+                            inlineClassName: "inline-md-hidden",
+                            inlineClassNameAffectsLetterSpacing: true,
+                            cursorStops: monaco.editor.InjectedTextCursorStops.None,
+                        },
+                    },
                 });
             }
         }

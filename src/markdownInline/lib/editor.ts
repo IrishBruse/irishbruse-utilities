@@ -164,6 +164,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     });
 
     let applyingHostUpdate = false;
+    let scrollHold = 0;
     let refreshing = false;
     let refreshQueued = false;
     const presentation = new InlinePresentation(editor, options.documentUrl, {
@@ -259,7 +260,15 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         editor.focus();
     };
 
+    const placeScroll = (scrollTop: number): void => {
+        const max = Math.max(0, parent.scrollHeight - parent.clientHeight);
+        parent.scrollTop = Math.min(scrollTop, max);
+    };
+
     const revealInParent = (position: monaco.IPosition, center: boolean): void => {
+        if (scrollHold !== 0) {
+            return;
+        }
         const node = editor.getDomNode();
         if (!node || parent.clientHeight === 0) {
             return;
@@ -543,6 +552,14 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             const selection = editor.getSelection();
             const anchor = selection ? model.getOffsetAt(selection.getSelectionStart()) : 0;
             const head = selection ? model.getOffsetAt(selection.getPosition()) : 0;
+            const scrollTop = parent.scrollTop;
+            const hold = ++scrollHold;
+            const restoreScroll = (): void => {
+                if (scrollHold !== hold) {
+                    return;
+                }
+                placeScroll(scrollTop);
+            };
             applyingHostUpdate = true;
             try {
                 model.setEOL(endOfLine(text));
@@ -553,6 +570,16 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
                 editor.setSelection(monaco.Selection.fromPositions(start, end));
             } finally {
                 applyingHostUpdate = false;
+                restoreScroll();
+                requestAnimationFrame(() => {
+                    restoreScroll();
+                    requestAnimationFrame(() => {
+                        restoreScroll();
+                        if (scrollHold === hold) {
+                            scrollHold = 0;
+                        }
+                    });
+                });
             }
         },
         getDocument() {

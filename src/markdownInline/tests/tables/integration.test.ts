@@ -88,7 +88,7 @@ describe("tables", () => {
                 return false;
             }
             const hit = document.elementFromPoint(box.left + 28, box.top + box.height / 2);
-            return hit?.closest(".inline-md-table") != null;
+            return (hit?.closest(".inline-md-table") ?? null) !== null;
         });
         expect(covered).toBe(true);
     });

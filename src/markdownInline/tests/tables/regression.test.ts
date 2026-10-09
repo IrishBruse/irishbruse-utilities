@@ -46,7 +46,7 @@ describe("table layout", () => {
                 return false;
             }
             const hit = document.elementFromPoint(box.left + 28, box.top + box.height / 2);
-            return hit?.closest(".inline-md-table") != null;
+            return (hit?.closest(".inline-md-table") ?? null) !== null;
         });
         const report = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
@@ -74,7 +74,7 @@ describe("table layout", () => {
                 appleHeight: appleBox?.height ?? 0,
                 plainHeight: plain?.getBoundingClientRect().height ?? 0,
                 inZone: document.querySelector(".inline-md-table[monaco-view-zone]") !== null,
-                hitTable: hit?.closest(".inline-md-table") != null,
+                hitTable: (hit?.closest(".inline-md-table") ?? null) !== null,
                 covered,
                 ruleBorder: Number.parseFloat(ruleStyle?.borderTopWidth ?? "0"),
                 bodyLeft: Number.parseFloat(bodyStyle?.borderLeftWidth ?? "0"),

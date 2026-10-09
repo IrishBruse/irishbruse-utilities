@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.27.0
+
+-   **Remove**: The legacy Markdown Editor; `.md` files use Inline Markdown only.
+-   **Fix**: Inline Markdown keeps scroll position when the file changes on disk.
+-   **Fix**: A click below the last line places the caret at the end of that line.
+-   **Fix**: The table grid stays aligned with the pipe-table source lines.
+-   **Fix**: Mermaid preview lines up with the fenced code block; **Open Preview** sits above the diagram.
+-   **Fix**: Wrapped blockquote lines indent with the opening quote marks.
+-   **Add**: `SKILL.md` front matter shows Agent Skills spec errors and autocompletes the supported fields.
+-   **Change**: Skill front matter validation and autocomplete apply only to `SKILL.md`.
+
 ## 0.26.0
 
 -   **Fix**: Extension keyboard shortcuts bind to the intended commands.

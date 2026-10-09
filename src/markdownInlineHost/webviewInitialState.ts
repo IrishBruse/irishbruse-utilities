@@ -1,17 +1,5 @@
 export const FAST_OPEN_MAX_CHARS = 64 * 1024;
 
-export interface MarkdownEditorInitialState {
-    readonly content: string;
-    readonly documentVersion: number;
-    readonly readonly: boolean;
-    readonly tables: {
-        readonly maxColumnWidth: number;
-        readonly style: "wrapped" | "compact";
-    };
-    readonly skillFrontMatter: boolean;
-    readonly skillFolderName: string;
-}
-
 export function isSkillMarkdownPath(path: string): boolean {
     const file = path.split(/[/\\]/).pop() ?? "";
     return file === "SKILL.md";
@@ -24,11 +12,6 @@ export function skillFolderNameFromPath(path: string): string {
     }
     return parts[parts.length - 2] ?? "";
 }
-
-export function encodeWebviewInitialState(state: MarkdownEditorInitialState): string {
-    return encodeURIComponent(JSON.stringify(state));
-}
-
 
 export function prefixMarkdownForFastOpen(text: string, maxChars = FAST_OPEN_MAX_CHARS): string {
     if (text.length <= maxChars) {

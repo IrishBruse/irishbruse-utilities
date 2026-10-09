@@ -123,7 +123,7 @@ def fib(n: int) -> list[int]:
 ```
 
 ```bash
-npm run build-markdown-editor
+npm run build-markdown-inline
 ```
 
 ```gherkin

@@ -12,7 +12,7 @@ describe("diskConflict/getActiveFileUri", () => {
 
     it("returns the URI from a custom editor tab", () => {
         const uri = Uri.file("/proj/readme.md");
-        const input = Object.assign(new TabInputCustom(), { viewType: "ib-utilities.markdownEditor", uri });
+        const input = Object.assign(new TabInputCustom(), { viewType: "ib-utilities.markdownInline", uri });
         vi.mocked(window.tabGroups).activeTabGroup = {
             activeTab: { input },
         } as typeof window.tabGroups.activeTabGroup;

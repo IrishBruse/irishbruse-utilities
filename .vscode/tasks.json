@@ -11,36 +11,13 @@
         },
         {
             "type": "npm",
-            "script": "build-markdown-editor",
-            "group": "build",
-            "problemMatcher": []
-        },
-        {
-            "type": "npm",
             "script": "build-markdown-inline",
             "group": "build",
             "problemMatcher": []
         },
         {
             "type": "npm",
-            "script": "sync-markdown-editor",
-            "group": "build",
-            "problemMatcher": []
-        },
-        {
-            "type": "npm",
             "script": "watch",
-            "problemMatcher": [],
-            "isBackground": true,
-            "presentation": {
-                "reveal": "never",
-                "group": "watchers"
-            },
-            "runOptions": { "runOn": "folderOpen" }
-        },
-        {
-            "type": "npm",
-            "script": "watch-markdown-editor",
             "problemMatcher": [],
             "isBackground": true,
             "presentation": {

@@ -3,7 +3,8 @@ name: markdown-inline
 description: "Inline Markdown editor and playground work under src/markdownInline. Use when changing reveal, caret, preview, or other editor behavior. Before the first edit, state the Change line and the Hold line, then continue."
 ---
 
-Scope work to `src/markdownInline`, not `src/markdownEditor`.
+Scope editor behavior to `src/markdownInline`.
+VS Code host integration lives in `src/markdownInlineHost`.
 Imports from `lib/` stay inside this package. `lib/packageBoundary.test.ts` is that rule.
 
 ## Modules

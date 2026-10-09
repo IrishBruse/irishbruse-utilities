@@ -21,7 +21,7 @@ export default defineConfig({
                 "src/git/**",
                 "src/gitHelpers/**",
                 "src/jira/**",
-                "src/markdownEditor/**",
+                "src/markdownInlineHost/**",
                 "src/mermaidEditor/**",
                 "src/scm/**",
                 "src/snippetEditor/**",

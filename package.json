@@ -20,7 +20,6 @@
         "onStartupFinished",
         "onView:ib-utilities.gitHelpers",
         "onView:ib-utilities.localPorts",
-        "onCustomEditor:ib-utilities.markdownEditor",
         "onCustomEditor:ib-utilities.markdownInline"
     ],
     "workspaces": [
@@ -28,12 +27,8 @@
     ],
     "scripts": {
         "vscode:prepublish": "npm run build-markdown-inline && npm run package",
-        "build": "node esbuild.mjs && npm run build-markdown-editor && node src/markdownInline/build.mjs",
+        "build": "node esbuild.mjs && node src/markdownInline/build.mjs",
         "watch": "node esbuild.mjs --watch",
-        "build-markdown-editor": "node src/markdownEditor/build.mjs",
-        "watch-markdown-editor": "node src/markdownEditor/build.mjs --watch",
-        "sync-markdown-editor": "node src/markdownEditor/build.mjs --sync-vscode",
-        "watch-markdown-editor:vscode": "node src/markdownEditor/build.mjs --watch --sync-vscode",
         "build-markdown-inline": "npm run build --workspace @ib-utilities/markdown-inline",
         "watch-markdown-inline": "npm run watch --workspace @ib-utilities/markdown-inline",
         "dev:markdown-inline": "npm run dev --workspace @ib-utilities/markdown-inline",
@@ -42,7 +37,7 @@
         "test:markdown-inline-browser": "vitest run --config vitest.markdownInline.config.mts",
         "e2e:markdown-inline": "npm run e2e --workspace @ib-utilities/markdown-inline",
         "verify:markdown-inline": "npm run verify --workspace @ib-utilities/markdown-inline",
-        "package": "node esbuild.mjs --production && npm run build-markdown-editor && node src/markdownInline/build.mjs",
+        "package": "node esbuild.mjs --production && node src/markdownInline/build.mjs",
         "lint": "eslint . && tsc --noEmit && npm run lint:boundaries",
         "lint:boundaries": "depcruise src",
         "test": "vitest run",
@@ -99,16 +94,6 @@
             }
         },
         "customEditors": [
-            {
-                "viewType": "ib-utilities.markdownEditor",
-                "displayName": "Markdown Editor (ib-utilities)",
-                "selector": [
-                    {
-                        "filenamePattern": "*.md"
-                    }
-                ],
-                "priority": "option"
-            },
             {
                 "viewType": "ib-utilities.markdownInline",
                 "displayName": "Inline Markdown (ib-utilities)",
@@ -330,12 +315,6 @@
                 "shortTitle": "Terminal paste"
             },
             {
-                "command": "ib-utilities.openMarkdownEditor",
-                "title": "Open Markdown Editor",
-                "shortTitle": "Markdown Editor",
-                "icon": "$(markdown)"
-            },
-            {
                 "command": "ib-utilities.openMarkdownInline",
                 "title": "Open Inline Markdown",
                 "shortTitle": "Inline Markdown",
@@ -454,18 +433,8 @@
                     "group": "navigation"
                 },
                 {
-                    "command": "ib-utilities.openMarkdownEditor",
-                    "when": "resourceExtname == .md && !inDiffEditor && resourceScheme != git && activeCustomEditorId != 'ib-utilities.markdownEditor'",
-                    "group": "navigation"
-                },
-                {
                     "command": "ib-utilities.openMarkdownInline",
                     "when": "resourceExtname == .md && !inDiffEditor && resourceScheme != git && activeCustomEditorId != 'ib-utilities.markdownInline'",
-                    "group": "navigation"
-                },
-                {
-                    "command": "ib-utilities.openMarkdownSource",
-                    "when": "resourceExtname == .md && activeCustomEditorId == 'ib-utilities.markdownEditor'",
                     "group": "navigation"
                 },
                 {

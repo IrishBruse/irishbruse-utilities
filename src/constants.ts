@@ -31,8 +31,6 @@ export const Commands = {
 
     TerminalPaste: `ib-utilities.terminalPaste`,
 
-    OpenMarkdownEditor: `ib-utilities.openMarkdownEditor`,
-
     OpenMarkdownInline: `ib-utilities.openMarkdownInline`,
 
     OpenMarkdownSource: `ib-utilities.openMarkdownSource`,

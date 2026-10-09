@@ -131,8 +131,9 @@ body {
 	display: block;
 }
 
-.md-mermaid {
-	padding-top: 22px;
+.md-mermaid.md-code-block {
+	overflow: visible;
+	padding-top: 4px;
 }
 
 .md-mermaid-diagram svg {
@@ -153,12 +154,10 @@ body {
 
 .ib-mermaid-open-preview {
 	display: none;
-	position: absolute;
-	top: 4px;
-	right: 8px;
+	position: static;
 	z-index: 8;
-	margin: 0;
-	padding: 2px 4px;
+	margin: 0 0 4px;
+	padding: 0;
 	border: 0;
 	background: transparent;
 	font-family: var(--vscode-font-family, sans-serif);

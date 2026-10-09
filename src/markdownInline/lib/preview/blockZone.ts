@@ -299,6 +299,7 @@ export function createMermaidZone(
     });
     const diagram = document.createElement("div");
     diagram.className = "inline-md-mermaid-diagram";
+    frame.append(openPreview);
     frame.append(diagram);
     const zone: monaco.editor.IViewZone = {
         afterLineNumber: lineNumber - 1,

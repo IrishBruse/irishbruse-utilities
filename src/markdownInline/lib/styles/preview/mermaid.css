@@ -1,23 +1,26 @@
+.inline-md-root:has(.inline-md-mermaid) .codelens-decoration {
+    display: none !important;
+}
+
 .inline-md-mermaid {
     position: relative;
     box-sizing: border-box;
     width: calc(100% - 16px);
     margin: 0 0 0 16px;
-    padding: 26px 10px 10px;
+    padding: 4px 8px 8px;
     border-radius: 4px;
     background: var(--ib-md-code-block-background);
-    overflow: hidden;
+    overflow: visible;
     pointer-events: auto;
     cursor: text;
 }
 
 .inline-md-mermaid-open-preview {
-    position: absolute;
-    top: 4px;
-    right: 8px;
+    display: block;
+    position: static;
     z-index: 2;
-    margin: 0;
-    padding: 2px 4px;
+    margin: 0 0 4px;
+    padding: 0;
     border: 0;
     background: transparent;
     font-family: var(--vscode-font-family, sans-serif);
@@ -36,7 +39,7 @@
 }
 
 .inline-md-mermaid-diagram {
-    overflow: hidden;
+    overflow: visible;
     max-width: 100%;
 }
 

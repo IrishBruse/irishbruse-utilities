@@ -41,6 +41,13 @@ graph TD
         expect(fence?.source).toBe("b");
     });
 
+    it("writes an indented fence as the diagram body", () => {
+        const text = "- item\n\n  ```mermaid\n  graph TD\n    A --> B\n  ```\n";
+        const fences = parseMarkdownMermaidFences(text);
+        expect(fences).toHaveLength(1);
+        expect(fences[0]?.source).toBe("graph TD\n  A --> B");
+    });
+
     it("finds a fence from a line inside the block", () => {
         const text = "```mermaid\ngraph TD\n  A --> B\n```\n";
         expect(findMarkdownMermaidFenceContainingLine(text, 1)?.source).toContain("graph TD");

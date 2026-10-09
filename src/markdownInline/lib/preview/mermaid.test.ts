@@ -137,7 +137,7 @@ describe("renderMermaidDiagram", () => {
         expect(host.innerHTML).toContain('id="cached"');
         expect(host.dataset.mermaidSource).toBe("graph TD;A-->B");
         expect(host.isConnected).toBe(false);
-        expect(height).toBe(68);
+        expect(height).toBe(40);
     });
 
     it("inserts the svg on a cold render while the diagram is disconnected", async () => {
@@ -149,7 +149,7 @@ describe("renderMermaidDiagram", () => {
         const height = await pending;
         expect(host.innerHTML).toContain('id="cold"');
         expect(host.dataset.mermaidSource).toBe("graph LR;X-->Y");
-        expect(height).toBe(68);
+        expect(height).toBe(40);
     });
 
     it("does not let a late render replace a newer painted source", async () => {
@@ -167,7 +167,7 @@ describe("renderMermaidDiagram", () => {
         const follow = diagram();
         const height = await renderMermaidDiagram(follow as unknown as HTMLElement, "sequenceDiagram");
         expect(follow.innerHTML).toContain('id="stale"');
-        expect(height).toBe(108);
+        expect(height).toBe(80);
     });
 
     it("remeasures a cached diagram that is connected", async () => {
@@ -177,7 +177,7 @@ describe("renderMermaidDiagram", () => {
         const height = await renderMermaidDiagram(host as unknown as HTMLElement, "graph TD;A-->B");
         expect(pendingRenders).toHaveLength(0);
         expect(host.innerHTML).toContain('id="cached"');
-        expect(height).toBe(68);
+        expect(height).toBe(40);
     });
 
     it("skips mermaid when the diagram already shows that source", async () => {
@@ -188,7 +188,7 @@ describe("renderMermaidDiagram", () => {
         const height = await renderMermaidDiagram(host as unknown as HTMLElement, "graph TD;A-->B");
         expect(pendingRenders).toHaveLength(0);
         expect(host.innerHTML).toContain('id="already"');
-        expect(height).toBe(48);
+        expect(height).toBe(15);
     });
 
     it("falls through to the cache when the source matches but the svg is gone", async () => {
@@ -198,7 +198,7 @@ describe("renderMermaidDiagram", () => {
         const height = await renderMermaidDiagram(host as unknown as HTMLElement, "graph TD;A-->B");
         expect(pendingRenders).toHaveLength(0);
         expect(host.innerHTML).toContain('id="cached"');
-        expect(height).toBe(68);
+        expect(height).toBe(40);
     });
 
     it("paints a connected diagram and keeps that svg on the next call", async () => {
@@ -211,10 +211,10 @@ describe("renderMermaidDiagram", () => {
         const height = await pending;
         expect(host.innerHTML).toContain('id="live"');
         expect(host.attributes["aria-busy"]).toBe("false");
-        expect(height).toBe(78);
+        expect(height).toBe(50);
         const again = await renderMermaidDiagram(host as unknown as HTMLElement, "graph TD;connected");
         expect(pendingRenders).toHaveLength(0);
-        expect(again).toBe(78);
+        expect(again).toBe(50);
     });
 
     it("measures the visible diagram when a stale render finishes while connected", async () => {
@@ -228,11 +228,11 @@ describe("renderMermaidDiagram", () => {
         resolve({ svg: `<svg height="90" id="ignored"></svg>` });
         const height = await pending;
         expect(host.innerHTML).toContain('id="visible"');
-        expect(height).toBe(48);
+        expect(height).toBe(12);
         const follow = diagram();
         const cached = await renderMermaidDiagram(follow as unknown as HTMLElement, "graph TD;stale-connected");
         expect(follow.innerHTML).toContain('id="ignored"');
-        expect(cached).toBe(118);
+        expect(cached).toBe(90);
     });
 
     it("measures the incoming svg when the painted source is cleared before lookup", async () => {
@@ -252,7 +252,7 @@ describe("renderMermaidDiagram", () => {
         resolve({ svg: `<svg height="64" id="measured"></svg>` });
         const height = await pending;
         expect(host.innerHTML).toContain('id="kept"');
-        expect(height).toBe(92);
+        expect(height).toBe(64);
     });
 
     it("returns the height of the source still on screen when a stale render is disconnected", async () => {
@@ -265,18 +265,18 @@ describe("renderMermaidDiagram", () => {
         resolve({ svg: `<svg height="200" id="unpainted"></svg>` });
         const height = await pending;
         expect(host.innerHTML).toContain('id="kept"');
-        expect(height).toBe(68);
+        expect(height).toBe(40);
     });
 
     it("measures height from the viewBox, the bbox, and the scroll height", async () => {
         const { renderMermaidDiagram } = await import("./mermaid");
         const cases = [
             { source: "graph TD;no-svg", svg: `<div id="no-svg"></div>`, height: 120 },
-            { source: "graph TD;zero-height", svg: `<svg height="0" id="zero"></svg>`, height: 48 },
-            { source: "graph TD;bad-height", svg: `<svg height="auto" id="bad"></svg>`, height: 48 },
-            { source: "graph TD;viewbox", svg: `<svg viewBox="0 0 20 80" id="view"></svg>`, height: 108 },
-            { source: "graph TD;bbox", svg: `<svg data-bbox="30" id="bbox"></svg>`, height: 58 },
-            { source: "graph TD;nan-bbox", svg: `<svg data-bbox="NaN" id="nan"></svg>`, height: 48 },
+            { source: "graph TD;zero-height", svg: `<svg height="0" id="zero"></svg>`, height: 10 },
+            { source: "graph TD;bad-height", svg: `<svg height="auto" id="bad"></svg>`, height: 10 },
+            { source: "graph TD;viewbox", svg: `<svg viewBox="0 0 20 80" id="view"></svg>`, height: 80 },
+            { source: "graph TD;bbox", svg: `<svg data-bbox="30" id="bbox"></svg>`, height: 30 },
+            { source: "graph TD;nan-bbox", svg: `<svg data-bbox="NaN" id="nan"></svg>`, height: 10 },
         ];
         for (const entry of cases) {
             const host = diagram();
@@ -300,7 +300,7 @@ describe("renderMermaidDiagram", () => {
         const connectedHeight = await connectedRender;
         expect(connected.innerHTML).toContain('id="safe"');
         expect(connected.classes.has("inline-md-mermaid-error")).toBe(false);
-        expect(connectedHeight).toBe(68);
+        expect(connectedHeight).toBe(40);
 
         const detached = diagram();
         const detachedRender = renderMermaidDiagram(detached as unknown as HTMLElement, "graph TD;error-keep-off");

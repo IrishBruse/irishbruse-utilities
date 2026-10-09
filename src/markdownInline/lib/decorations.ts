@@ -3,6 +3,7 @@ import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth, bloc
 import { applyHeadingFontScales, headingLineHeightMultiplier, headingSelectionPadPx } from "./headingLayout";
 import { listGapPaints, listLineHeightMultiplier, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
+import { mermaidDiagramSource } from "../../mermaidEditor/mermaidDiagramSource";
 import { isMermaidCodeBlock } from "./preview/mermaid";
 import { previewContentClass, previewContentRange } from "./preview/paint";
 import { refreshMermaidCodeLens, setHiddenAreas } from "./monaco";
@@ -724,7 +725,7 @@ export class InlinePresentation {
         this.scheduleSelectionHeights();
         const mermaidLensKey = scopes
             .filter((scope) => scope.kind === "codeBlock" && isMermaidCodeBlock(scope.language))
-            .map((scope) => `${scope.start}:${scope.end}:${text.slice(scope.contentStart, scope.contentEnd).trim()}`)
+            .map((scope) => `${scope.start}:${scope.end}:${mermaidDiagramSource(text.slice(scope.contentStart, scope.contentEnd))}`)
             .join("|");
         if (mermaidLensKey !== this.mermaidLensKey) {
             this.mermaidLensKey = mermaidLensKey;
@@ -848,7 +849,7 @@ export class InlinePresentation {
     }
 
     private ensureMermaidZone(scope: Scope, source: string, lineNumber: number): ZoneRecord {
-        const content = source.slice(scope.contentStart, scope.contentEnd).trim();
+        const content = mermaidDiagramSource(source.slice(scope.contentStart, scope.contentEnd));
         const key = `mermaid:${scope.start}:${scope.end}:${content}`;
         const existing = this.mermaidZones.get(key);
         if (existing) {

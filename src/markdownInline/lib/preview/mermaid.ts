@@ -39,16 +39,16 @@ function measureDiagramHeight(diagram: HTMLElement): number {
     if (heightAttr) {
         const parsed = Number.parseFloat(heightAttr);
         if (Number.isFinite(parsed) && parsed > 0) {
-            return Math.max(48, Math.ceil(parsed) + 28);
+            return Math.ceil(parsed);
         }
     }
     const viewBox = svgNode.viewBox.baseVal;
     if (viewBox.height > 0) {
-        return Math.max(48, Math.ceil(viewBox.height) + 28);
+        return Math.ceil(viewBox.height);
     }
     const box = svgNode.getBBox();
     const height = Number.isFinite(box.height) && box.height > 0 ? Math.ceil(box.height) : diagram.scrollHeight;
-    return Math.max(48, height + 28);
+    return Math.ceil(height);
 }
 
 function writeDiagramSvg(diagram: HTMLElement, source: string, svg: string): void {

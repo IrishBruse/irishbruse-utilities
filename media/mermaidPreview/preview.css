@@ -1,0 +1,387 @@
+/* ==========================================================================
+   Base Viewport & Editor Integration
+   ========================================================================== */
+html,
+body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: var(--vscode-editor-background);
+    color: var(--vscode-editor-foreground);
+    font-family: var(--vscode-editor-font-family, "Cascadia Code NF", monospace);
+}
+
+#viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    touch-action: none;
+    cursor: grab;
+    background-image: radial-gradient(var(--vscode-editorIndentGuide-background) 1px, transparent 1px);
+    background-size: 24px 24px;
+}
+
+#viewport.panning,
+#viewport.panning * {
+    cursor: grabbing !important;
+}
+
+#canvas {
+    display: inline-block;
+    transform-origin: 0 0;
+}
+
+#canvas.panning {
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+#diagram {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    white-space: normal;
+}
+
+#diagram svg {
+    display: block;
+    max-width: none;
+    font-family: var(--ib-font-family, var(--vscode-font-family, var(--vscode-editor-font-family, sans-serif))) !important;
+}
+
+#diagram svg text {
+    fill: var(--ib-fg);
+}
+
+#diagram svg .flowchartTitleText,
+#diagram svg .titleText,
+#diagram svg .pieTitleText,
+#diagram svg .gitTitleText,
+#diagram svg .classDiagramTitleText,
+#diagram svg .requirementDiagramTitleText,
+#diagram svg .erDiagramTitleText,
+#diagram svg .blockDiagramTitleText,
+#diagram svg .statediagramTitleText,
+#diagram svg .cluster-label text,
+#diagram svg .cluster-label span,
+#diagram svg .cluster text,
+#diagram svg .venn-title {
+    fill: var(--ib-fg) !important;
+    color: var(--ib-fg) !important;
+}
+
+#diagram svg * {
+    cursor: inherit;
+}
+
+/* Make diagram text selectable except on linked / clickable nodes */
+#diagram svg text,
+#diagram foreignObject,
+#diagram foreignObject * {
+    user-select: text;
+    -webkit-user-select: text;
+    cursor: text;
+}
+
+#diagram a text,
+#diagram a tspan,
+#diagram a foreignObject,
+#diagram a foreignObject * {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+}
+
+#diagram .clickable text,
+#diagram .clickable tspan,
+#diagram .clickable foreignObject,
+#diagram .clickable foreignObject * {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+}
+
+#diagram .ib-diagram-link,
+#diagram .ib-diagram-link text,
+#diagram .ib-diagram-link tspan,
+#diagram .ib-diagram-link foreignObject,
+#diagram .ib-diagram-link foreignObject * {
+    user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
+}
+
+#diagram g.ib-diagram-link > * {
+    pointer-events: auto;
+}
+
+#diagram a[href],
+#diagram a[xlink\:href],
+#diagram svg a,
+#diagram .clickable,
+#diagram .ib-diagram-link {
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   Link hover tooltip (replaces native SVG title tooltips)
+   ========================================================================== */
+#link-tooltip.link-tooltip {
+    position: fixed;
+    z-index: 25;
+    max-width: min(360px, calc(100vw - 24px));
+    padding: 6px 10px;
+    border: 1px solid var(--vscode-editorWidget-border, var(--vscode-panel-border));
+    border-radius: 6px;
+    background: var(--vscode-editorHoverWidget-background, var(--vscode-editorWidget-background));
+    color: var(--vscode-editorHoverWidget-foreground, var(--vscode-foreground));
+    font-family: var(--vscode-editor-font-family);
+    font-size: 12px;
+    line-height: 1.35;
+    white-space: pre-wrap;
+    word-break: break-word;
+    pointer-events: none;
+    box-shadow: 0 4px 12px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.25));
+}
+
+#link-tooltip.link-tooltip[hidden] {
+    display: none;
+}
+
+/* ==========================================================================
+   Error toast
+   ========================================================================== */
+#error.error-toast {
+    position: fixed;
+    left: 16px;
+    bottom: 16px;
+    z-index: 15;
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    max-width: min(420px, calc(100% - 32px));
+    padding: 8px 10px;
+    border: 1px solid var(--vscode-inputValidation-errorBorder);
+    border-radius: 6px;
+    color: var(--vscode-errorForeground);
+    background: var(--vscode-inputValidation-errorBackground);
+    font-size: 12px;
+    line-height: 1.4;
+    font-family: var(--vscode-editor-font-family);
+    box-shadow: 0 4px 12px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.25));
+}
+
+#error.error-toast[hidden] {
+    display: none;
+}
+
+.error-message {
+    flex: 1;
+    min-width: 0;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.error-dismiss {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--vscode-errorForeground);
+    font-size: 16px;
+    line-height: 1;
+    cursor: pointer;
+    opacity: 0.8;
+}
+
+.error-dismiss:hover {
+    background: var(--vscode-toolbar-hoverBackground);
+    opacity: 1;
+}
+
+/* ==========================================================================
+   Floating Glass Toolbar
+   ========================================================================== */
+#toolbar {
+    position: fixed;
+    top: 16px;
+    right: 16px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border));
+    border-radius: 8px;
+    background: var(--vscode-editorWidget-background);
+    box-shadow: 0 4px 12px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.25));
+    pointer-events: auto;
+    transition: none;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+#toolbar button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--vscode-icon-foreground, var(--vscode-foreground));
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1;
+    cursor: pointer;
+    transition: transform 0.15s ease, opacity 0.15s ease;
+}
+
+#toolbar button:hover:not(:disabled) {
+    background: var(--vscode-toolbar-hoverBackground);
+    color: var(--vscode-toolbar-hoverOutline, var(--vscode-foreground));
+}
+
+#toolbar button:active:not(:disabled) {
+    background: var(--vscode-toolbar-activeBackground);
+    transform: scale(0.96);
+}
+
+#toolbar button:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.toolbar-icon {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+.toolbar-separator {
+    width: 1px;
+    height: 20px;
+    margin: 0 4px;
+    background: var(--vscode-widget-border, var(--vscode-panel-border));
+    opacity: 0.6;
+}
+
+/* ==========================================================================
+   Mermaid structural exceptions (colors via --ib-* tokens from vsCodeTheme)
+   ========================================================================== */
+
+#diagram .clickable {
+    cursor: pointer;
+}
+
+/* Node depth — not expressible via themeVariables */
+#diagram .node:not(:has(.divider)) rect,
+#diagram .node:not(:has(.divider)) circle,
+#diagram .node:not(:has(.divider)) ellipse,
+#diagram .node:not(:has(.divider)) polygon,
+#diagram .node:not(:has(.divider)) path {
+    filter: drop-shadow(0 2px 4px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.12)));
+    transition: fill 0.2s ease, stroke 0.2s ease;
+}
+
+/* Sequence autonumber markers */
+#diagram marker[id$="-sequencenumber"] {
+    fill: none;
+    opacity: 1;
+}
+
+#diagram marker[id$="-sequencenumber"] circle {
+    fill: var(--ib-bg) !important;
+    fill-opacity: 1 !important;
+    opacity: 1 !important;
+    stroke: var(--ib-fg);
+    stroke-width: 1px;
+}
+
+#diagram text.sequenceNumber {
+    fill: var(--ib-fg) !important;
+    stroke: none;
+    font-weight: bold;
+}
+
+/* ER entity tables — unique grid DOM */
+#diagram .node:has(.divider) {
+    filter: drop-shadow(0 2px 6px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.24)));
+}
+
+#diagram .node:has(.divider) .outer-path path {
+    fill: var(--ib-surface-alt) !important;
+    stroke: var(--ib-border);
+    stroke-width: 1px;
+}
+
+#diagram .node:has(.divider) .row-rect-odd path {
+    fill: var(--ib-sidebar) !important;
+    stroke: var(--ib-border);
+    stroke-width: 1px;
+}
+
+#diagram .node:has(.divider) .row-rect-even path {
+    fill: var(--ib-surface-alt) !important;
+    stroke: var(--ib-border);
+    stroke-width: 1px;
+}
+
+#diagram .node:has(.divider) .divider path {
+    fill: var(--ib-border);
+    stroke: var(--ib-border);
+    stroke-width: 1px;
+}
+
+#diagram .node:has(.divider) .label,
+#diagram .node:has(.divider) .label span,
+#diagram .node:has(.divider) text,
+#diagram .node:has(.divider) .attribute-type,
+#diagram .node:has(.divider) .attribute-name,
+#diagram .node:has(.divider) .attribute-keys {
+    fill: var(--ib-fg) !important;
+    color: var(--ib-fg) !important;
+    font-family: inherit;
+}
+
+#diagram .node:has(.divider) .name {
+    font-weight: 600;
+}
+
+/* Pie slice % labels — readability halo */
+#diagram svg[aria-roledescription="pie"] .slice {
+    fill: var(--ib-fg) !important;
+    font-weight: 600;
+    paint-order: stroke fill;
+    stroke: var(--ib-bg);
+    stroke-width: 4px;
+    stroke-linejoin: round;
+}
+
+/* Git commit labels on branch lines */
+#diagram svg[aria-roledescription="git"] .commit-label {
+    font-weight: 500;
+    paint-order: stroke fill;
+    stroke: var(--ib-bg);
+    stroke-width: 3px;
+    stroke-linejoin: round;
+}
+
+#diagram svg[aria-roledescription="git"] .commit-label-bkg {
+    opacity: 0.92 !important;
+}

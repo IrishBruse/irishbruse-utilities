@@ -1,4 +1,5 @@
 import { Range } from "vscode";
+import { mermaidDiagramSource } from "./mermaidDiagramSource";
 
 export interface MarkdownMermaidFence {
     
@@ -51,7 +52,7 @@ export function parseMarkdownMermaidFences(text: string): MarkdownMermaidFence[]
             continue;
         }
 
-        const source = lines.slice(contentStartLine, closeLine).join("\n");
+        const source = mermaidDiagramSource(lines.slice(contentStartLine, closeLine).join("\n"));
         fences.push({
             openLine: lineIndex,
             closeLine,

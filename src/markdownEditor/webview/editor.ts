@@ -20,6 +20,7 @@ import {
 	recordMeasuredHeights,
 	setViewportBox,
 } from './viewportVirtualization';
+import { mermaidDiagramSource } from '../../mermaidEditor/mermaidDiagramSource';
 import {
 	applyWorkbenchMermaidTokens,
 	getWorkbenchMermaidInit,
@@ -148,14 +149,15 @@ class Editor extends Disposable {
 				div.className = 'md-mermaid';
 				const diagram = document.createElement('div');
 				diagram.className = 'md-mermaid-diagram';
-				diagram.textContent = content;
+				const source = mermaidDiagramSource(content);
+				diagram.textContent = source;
 				diagram.setAttribute('aria-busy', 'true');
 				div.appendChild(diagram);
 				const id = `mermaid-${this.#mermaidCounter++}`;
 				loadMermaid()
 					.then(mermaid => {
 						configureMermaid(mermaid);
-						return mermaid.render(id, content);
+						return mermaid.render(id, source);
 					})
 					.then(({ svg }) => {
 						diagram.innerHTML = svg;
@@ -165,7 +167,7 @@ class Editor extends Disposable {
 					.catch(error => {
 						const message = error instanceof Error ? error.message : String(error);
 						diagram.classList.add('ib-mermaid-error');
-						diagram.textContent = `Mermaid render failed: ${message}\n\n${content}`;
+						diagram.textContent = `Mermaid render failed: ${message}\n\n${source}`;
 						diagram.setAttribute('aria-busy', 'false');
 						console.error('Failed to render Mermaid diagram:', message);
 					});

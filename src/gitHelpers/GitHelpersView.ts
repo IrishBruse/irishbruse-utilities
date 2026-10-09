@@ -25,8 +25,8 @@ import { pickBaseBranchTarget } from "../lib/git/pickBaseBranch";
 import { isMainlineBranch, isSameBranch, resolveBaseBranch } from "../lib/git/resolveBaseBranch";
 import { wireGitRepositories } from "../lib/git/wireGitRepositories";
 import { markPullRequestReady } from "../lib/git/markPrReady";
-import { openPR } from "../commands/openPR";
-import { openRepo } from "../commands/openRepo";
+import { openPR } from "../lib/git/openPR";
+import { openRepo } from "../lib/git/openRepo";
 import {
     formatPrFileChangeLabel,
     formatPrLineChangeDescription,

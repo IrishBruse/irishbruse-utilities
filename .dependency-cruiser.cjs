@@ -3,8 +3,22 @@ const PACKAGE_PATTERN = "(markdownInline|markdownInlineHost)";
 
 const packageRoot = `${PACKAGES_ROOT}/${PACKAGE_PATTERN}`;
 
+const FEATURE_FOLDER = "^src/([^/]+)/";
+const NON_FEATURE_FOLDERS = "lib|commands";
+
 module.exports = {
     forbidden: [
+        {
+            name: "no-cross-feature",
+            severity: "error",
+            comment:
+                "Feature folders under src/ do not import sibling folders; put shared code in src/lib and wire commands from src/commands",
+            from: { path: FEATURE_FOLDER, pathNot: `^src/(${NON_FEATURE_FOLDERS})/` },
+            to: {
+                path: FEATURE_FOLDER,
+                pathNot: [`^src/$1/`, `^src/(${NON_FEATURE_FOLDERS})/`],
+            },
+        },
         {
             name: "entry-point-boundary",
             severity: "error",
@@ -41,11 +55,11 @@ module.exports = {
         {
             name: "lib-contained",
             severity: "error",
-            comment: "markdownInline lib/ stays inside the package except mermaidEditor",
+            comment: "markdownInline lib/ stays inside the package except src/lib",
             from: { path: "^src/markdownInline/lib/" },
             to: {
                 path: "^src/",
-                pathNot: ["^src/markdownInline/", "^src/mermaidEditor/"],
+                pathNot: ["^src/markdownInline/", "^src/lib/"],
             },
         },
         {
@@ -53,20 +67,6 @@ module.exports = {
             severity: "error",
             from: { path: `^${packageRoot}/` },
             to: { circular: true },
-        },
-        {
-            name: "layering",
-            severity: "error",
-            comment: "Editor package does not depend on the VS Code host layer",
-            from: { path: "^src/markdownInline/" },
-            to: { path: "^src/markdownInlineHost/" },
-        },
-        {
-            name: "layering",
-            severity: "error",
-            comment: "Playground does not depend on extension-side editor packages",
-            from: { path: "^src/markdownInline/playground/" },
-            to: { path: "^src/mermaidEditor/" },
         },
     ],
     options: {

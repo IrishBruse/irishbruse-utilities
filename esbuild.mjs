@@ -65,7 +65,7 @@ const extensionConfig = {
 
 
 const mermaidThemeConfig = {
-    entryPoints: ["src/mermaidEditor/vsCodeTheme.browser.ts"],
+    entryPoints: ["src/lib/mermaid/vsCodeTheme.browser.ts"],
     bundle: true,
     platform: "browser",
     target: "es2020",

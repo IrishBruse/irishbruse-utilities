@@ -1,5 +1,5 @@
 import { Range } from "vscode";
-import { mermaidDiagramSource } from "./mermaidDiagramSource";
+import { mermaidDiagramSource } from "../lib/mermaid/mermaidDiagramSource";
 
 export interface MarkdownMermaidFence {
     

@@ -41,13 +41,13 @@ It does not import `lib/` or another package's subfolder.
 Dependencies in this package do not form a cycle.
 
 **Lib containment.**
-Files under `lib/` do not import outside this package except `src/mermaidEditor/`.
+Files under `lib/` do not import outside this package except `src/lib/`.
 
 **Playground through entry points.**
 Files under `playground/` import only this package's entry points and other files under `playground/`.
 
-**Layering.**
-This package does not import `src/markdownInlineHost/`.
-The playground does not import `src/mermaidEditor/`.
+**No cross-feature imports.**
+Sibling folders under `src/` do not import each other.
+Shared code lives in `src/lib/`.
 
 Run the check with `npm run lint:boundaries`.

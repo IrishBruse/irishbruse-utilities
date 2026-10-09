@@ -3,7 +3,7 @@ import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth, bloc
 import { applyHeadingFontScales, headingLineHeightMultiplier, headingSelectionPadPx } from "./headingLayout";
 import { listGapPaints, listLineHeightMultiplier, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
 import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
-import { mermaidDiagramSource } from "../../mermaidEditor/mermaidDiagramSource";
+import { mermaidDiagramSource } from "../../lib/mermaid/mermaidDiagramSource";
 import { isMermaidCodeBlock } from "./preview/mermaid";
 import { previewContentClass, previewContentRange } from "./preview/paint";
 import { refreshMermaidCodeLens, setHiddenAreas } from "./monaco";

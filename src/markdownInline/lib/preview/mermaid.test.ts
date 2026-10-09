@@ -15,7 +15,7 @@ vi.mock("mermaid", () => ({
     },
 }));
 
-vi.mock("../../../mermaidEditor/vsCodeTheme.browser", () => ({
+vi.mock("../../../lib/mermaid/vsCodeTheme.browser", () => ({
     applyWorkbenchMermaidTokens: () => ({}),
     getWorkbenchMermaidInit: () => ({ themeVariables: {}, themeCSS: "" }),
 }));

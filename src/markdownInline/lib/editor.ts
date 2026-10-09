@@ -388,6 +388,31 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         options.onLink(href);
     };
     editor.getDomNode()?.addEventListener("mousedown", openRenderedLink, true);
+    const placeCaretBelowLastLine = (event: MouseEvent): void => {
+        if (event.button !== 0 || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
+            return;
+        }
+        const target = event.target instanceof Element ? event.target : event.target instanceof Node ? event.target.parentElement : null;
+        if (!(target instanceof Element) || !parent.contains(target)) {
+            return;
+        }
+        if (target.closest("a, button, input, textarea, .inline-md-link, .inline-md-task, .inline-md-image, .inline-md-image-fallback")) {
+            return;
+        }
+        const last = [...column.querySelectorAll(".view-line")].at(-1);
+        if (!(last instanceof HTMLElement) || event.clientY <= last.getBoundingClientRect().bottom) {
+            return;
+        }
+        const currentModel = editor.getModel();
+        if (!currentModel) {
+            return;
+        }
+        const lineNumber = currentModel.getLineCount();
+        event.preventDefault();
+        editor.focus();
+        editor.setPosition({ lineNumber, column: currentModel.getLineMaxColumn(lineNumber) });
+    };
+    parent.addEventListener("mousedown", placeCaretBelowLastLine);
     let selectionClick: { x: number; y: number; lineNumber: number; column: number } | undefined;
     const mouseListener = editor.onMouseDown((event) => {
         selectionClick = undefined;
@@ -535,6 +560,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             mouseListener.dispose();
             mouseUpListener.dispose();
             editor.getDomNode()?.removeEventListener("mousedown", openRenderedLink, true);
+            parent.removeEventListener("mousedown", placeCaretBelowLastLine);
             mermaidLens.dispose();
             presentation.dispose();
             editor.dispose();

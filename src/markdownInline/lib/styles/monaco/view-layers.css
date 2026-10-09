@@ -25,6 +25,10 @@
     z-index: 1;
 }
 
+.inline-md-root .monaco-editor .lines-content {
+    cursor: text;
+}
+
 .inline-md-root .monaco-editor .view-lines {
     position: relative;
     z-index: 3;

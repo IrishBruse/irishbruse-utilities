@@ -335,7 +335,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 ? repoPath
                 : repoPath?.rootUri?.fsPath ?? (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
         const sourceControl = repoPath && typeof repoPath !== "string" ? repoPath : undefined;
@@ -365,7 +365,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                   ? item.rootUri?.fsPath
                   : (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
         const sourceControl = item && typeof item !== "string" && "rootUri" in item ? item : undefined;
@@ -378,7 +378,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 ? item
                 : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
         if (isGitHelpersDebugMode() && repoRoot === MOCK_REPO_ROOT) {
@@ -398,7 +398,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 ? item
                 : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
 
@@ -409,7 +409,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
         const branch = repository?.state.HEAD?.name;
         if (!repository || !branch) {
-            window.showWarningMessage("No named branch checked out.");
+            void window.showWarningMessage("No named branch checked out.");
             return;
         }
 
@@ -444,7 +444,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 ? item
                 : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
 
@@ -453,13 +453,13 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
             const branch = repository?.state.HEAD?.name;
             if (!branch) {
-                window.showWarningMessage("No named branch checked out.");
+                void window.showWarningMessage("No named branch checked out.");
                 return;
             }
 
             const pr = await getPrInfo(repoRoot, branch);
             if (!pr) {
-                window.showWarningMessage("No pull request found for the current branch.");
+                void window.showWarningMessage("No pull request found for the current branch.");
                 return;
             }
 
@@ -467,7 +467,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
 
         if (!reviewUrl) {
-            window.showWarningMessage("No PR review activity to open.");
+            void window.showWarningMessage("No PR review activity to open.");
             return;
         }
 
@@ -484,7 +484,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 ? item
                 : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
 
@@ -496,13 +496,13 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
             const branch = repository?.state.HEAD?.name;
             if (!branch) {
-                window.showWarningMessage("No named branch checked out.");
+                void window.showWarningMessage("No named branch checked out.");
                 return;
             }
 
             const pr = await getPrInfo(repoRoot, branch);
             if (!pr) {
-                window.showWarningMessage("No pull request found for the current branch.");
+                void window.showWarningMessage("No pull request found for the current branch.");
                 return;
             }
 
@@ -510,7 +510,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
 
         if (!checksUrl) {
-            window.showWarningMessage("No PR checks available.");
+            void window.showWarningMessage("No PR checks available.");
             return;
         }
 
@@ -520,7 +520,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     private async runCopyPrUrl(item: GitHelperTreeItem | string | undefined): Promise<void> {
         if (isGitHelpersDebugMode()) {
             await env.clipboard.writeText(getGitHelpersMockState().pr.url);
-            window.showInformationMessage("PR URL copied to clipboard.");
+            void window.showInformationMessage("PR URL copied to clipboard.");
             return;
         }
 
@@ -529,7 +529,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 ? item
                 : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
 
@@ -538,19 +538,19 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
             const branch = repository?.state.HEAD?.name;
             if (!branch) {
-                window.showWarningMessage("No named branch checked out.");
+                void window.showWarningMessage("No named branch checked out.");
                 return;
             }
             url = (await getPrInfo(repoRoot, branch))?.url;
         }
 
         if (!url) {
-            window.showWarningMessage("No pull request URL available.");
+            void window.showWarningMessage("No pull request URL available.");
             return;
         }
 
         await env.clipboard.writeText(url);
-        window.showInformationMessage("PR URL copied to clipboard.");
+        void window.showInformationMessage("PR URL copied to clipboard.");
     }
 
     private async runMarkPrReady(item: GitHelperTreeItem | string | undefined): Promise<void> {
@@ -563,7 +563,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 ? item
                 : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
-            window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage("No active git repository. Select one in Source Control.");
             return;
         }
 
@@ -574,7 +574,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
         const branch = repository?.state.HEAD?.name;
         if (!repository || !branch) {
-            window.showWarningMessage("No named branch checked out.");
+            void window.showWarningMessage("No named branch checked out.");
             return;
         }
 

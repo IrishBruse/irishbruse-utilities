@@ -50,6 +50,6 @@ export function activate(context: ExtensionContext) {
     LocalPortsViewProvider.activate(context);
 }
 
-export function deactivate() {
-    SnippetViewProvider.deactivate();
+export function deactivate(): Promise<void> {
+    return SnippetViewProvider.deactivate();
 }

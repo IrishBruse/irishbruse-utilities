@@ -6,7 +6,7 @@ type Rule = monaco.languages.IMonarchLanguageRule;
 const backtickWithLanguage = "^\\s*```\\s*((?:\\w|[\\/\\-#])+).*$";
 const backtickBare = "^\\s*```\\s*$";
 const tildeOpen = "^\\s*~~~\\s*((?:\\w|[\\/\\-#])+)?\\s*$";
-const listMarkerLine = /^\s*([\*\-+:]|\d+\.)\s/;
+const listMarkerLine = new RegExp("^\\s*([\\*\\-+:]|\\d+\\.)\\s");
 
 const languageName = "(?:\\w|[\\/\\-#])+";
 

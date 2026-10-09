@@ -4,7 +4,7 @@ export const GIT_HELPERS_DEBUG_MODE_CONTEXT = "ib-utilities.gitHelpers.debugMode
 const GIT_HELPERS_DEBUG_CONFIG = "ib-utilities.gitHelpers.debugMode";
 
 export function isGitHelpersDebugMode(): boolean {
-    return workspace.getConfiguration("ib-utilities").get<boolean>("gitHelpers.debugMode") === true;
+    return workspace.getConfiguration().get<boolean>(GIT_HELPERS_DEBUG_CONFIG) === true;
 }
 
 export async function syncGitHelpersDebugModeContext(): Promise<void> {

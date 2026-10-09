@@ -1,7 +1,7 @@
 import {
     commands,
     ExtensionContext,
-    FileSystemWatcher,
+    Disposable,
     TextDocument,
     Uri,
     window,
@@ -16,7 +16,7 @@ export const DISK_EDITOR_CONFLICT_CONTEXT = "ib-utilities.diskEditorConflict";
 
 const baselineByUri = new Map<string, string>();
 const currentDiskByUri = new Map<string, string>();
-const watchers = new Map<string, FileSystemWatcher>();
+const watchers = new Map<string, Disposable>();
 
 function uriKey(uri: Uri): string {
     return uri.toString();
@@ -89,18 +89,21 @@ function ensureWatcher(uri: Uri, context: ExtensionContext): void {
     }
 
     const watcher = workspace.createFileSystemWatcher(uri.fsPath);
-    watcher.onDidChange((changed) => {
-        void onDiskChange(changed);
-    });
-    watcher.onDidCreate((changed) => {
-        void onDiskChange(changed);
-    });
-    watcher.onDidDelete((changed) => {
-        currentDiskByUri.delete(uriKey(changed));
-        void refreshConflictContext();
-    });
-    watchers.set(key, watcher);
-    context.subscriptions.push(watcher);
+    const subscription = Disposable.from(
+        watcher,
+        watcher.onDidChange((changed) => {
+            void onDiskChange(changed);
+        }),
+        watcher.onDidCreate((changed) => {
+            void onDiskChange(changed);
+        }),
+        watcher.onDidDelete((changed) => {
+            currentDiskByUri.delete(uriKey(changed));
+            void refreshConflictContext();
+        }),
+    );
+    watchers.set(key, subscription);
+    context.subscriptions.push(subscription);
 }
 
 function trackDocument(document: TextDocument, context: ExtensionContext): void {

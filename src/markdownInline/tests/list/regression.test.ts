@@ -213,7 +213,6 @@ describe("task list label spacing", () => {
 
     it("keeps space between the checkbox and the label", async () => {
         const gap = await page.evaluate(() => {
-            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
             const checkbox = document.querySelector(".inline-md-task");
             if (!(checkbox instanceof HTMLElement)) {
                 return null;

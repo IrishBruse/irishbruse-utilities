@@ -168,7 +168,7 @@ describe("installWebviewThemeSync", () => {
         vi.stubGlobal("MutationObserver", RecordingObserver);
 
         let htmlStyle: string | null = null;
-        let bodyStyle: string | null = "";
+        const bodyStyle: string | null = "";
         vi.stubGlobal("document", {
             documentElement: { getAttribute: () => htmlStyle },
             body: { getAttribute: () => bodyStyle },

@@ -83,7 +83,7 @@ function activeBranchDiffEditor(): TextEditor | undefined {
 export async function revertBranchDiffHunk(): Promise<void> {
     const editor = activeBranchDiffEditor();
     if (!editor) {
-        window.showWarningMessage("Open a changed file in Diff vs base to revert.");
+        void window.showWarningMessage("Open a changed file in Diff vs base to revert.");
         return;
     }
 
@@ -91,7 +91,7 @@ export async function revertBranchDiffHunk(): Promise<void> {
     await commands.executeCommand("diffEditor.revert");
 
     if (editor.document.version === beforeVersion) {
-        window.showInformationMessage("Place the cursor in a change hunk to revert.");
+        void window.showInformationMessage("Place the cursor in a change hunk to revert.");
         return;
     }
 
@@ -101,18 +101,18 @@ export async function revertBranchDiffHunk(): Promise<void> {
 export async function revertBranchDiffSelection(): Promise<void> {
     const editor = activeBranchDiffEditor();
     if (!editor) {
-        window.showWarningMessage("Open a changed file in Diff vs base to revert.");
+        void window.showWarningMessage("Open a changed file in Diff vs base to revert.");
         return;
     }
 
     if (editor.selection.isEmpty) {
-        window.showInformationMessage("Select the lines you want to revert to the base branch.");
+        void window.showInformationMessage("Select the lines you want to revert to the base branch.");
         return;
     }
 
     const session = getBranchDiffSession();
     if (!session) {
-        window.showWarningMessage("Open Diff vs base to revert changes.");
+        void window.showWarningMessage("Open Diff vs base to revert changes.");
         return;
     }
 
@@ -134,7 +134,7 @@ export async function revertBranchDiffSelection(): Promise<void> {
         editBuilder.replace(range, replacement);
     });
     if (!applied) {
-        window.showWarningMessage("Could not revert the selected lines.");
+        void window.showWarningMessage("Could not revert the selected lines.");
         return;
     }
 

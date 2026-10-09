@@ -1,7 +1,7 @@
 import { readFileSync } from "fs";
 import { readdir } from "fs/promises";
 import path from "path";
-import { commands, Range, TabInputText, Uri, ViewColumn, window, workspace } from "vscode";
+import { Range, TabInputText, Uri, ViewColumn, window, workspace } from "vscode";
 import { UserPath } from "../extension";
 import { getLineCommentSyntax } from "../lib/languages/languages";
 import { Snippet, Snippets } from "./SnippetView";
@@ -200,13 +200,13 @@ export class SnippetParser {
 
         const languageId = SnippetParser.extractDirective(lines[0], SnippetParser.directive("languageId"));
         if (!languageId) {
-            window.showErrorMessage(`missing ${SnippetParser.directive("languageId")} directive`);
+            void window.showErrorMessage(`missing ${SnippetParser.directive("languageId")} directive`);
             return null;
         }
 
         const prefix = SnippetParser.extractDirective(lines[1], SnippetParser.directive("prefix"));
         if (prefix === undefined) {
-            window.showErrorMessage(`missing ${SnippetParser.directive("prefix")} directive`);
+            void window.showErrorMessage(`missing ${SnippetParser.directive("prefix")} directive`);
             return null;
         }
 

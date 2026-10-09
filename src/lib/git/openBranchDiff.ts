@@ -7,24 +7,24 @@ import { resolveBaseBranch, resolveMergeBaseSha } from "./resolveBaseBranch";
 export async function openBranchDiff(repoRoot: string): Promise<void> {
     const repository = getRepositoryByRoot(repoRoot);
     if (!repository) {
-        window.showWarningMessage("Git repository not found.");
+        void window.showWarningMessage("Git repository not found.");
         return;
     }
 
     const head = repository.state.HEAD;
     if (!head?.name) {
-        window.showWarningMessage("Repository has no current branch.");
+        void window.showWarningMessage("Repository has no current branch.");
         return;
     }
 
     const base = await resolveBaseBranch(repository);
     if (!base) {
-        window.showWarningMessage("Could not determine a base branch.");
+        void window.showWarningMessage("Could not determine a base branch.");
         return;
     }
 
     if (head.name === base.name || head.name === base.name.split("/").pop()) {
-        window.showInformationMessage(`Already on ${base.name}.`);
+        void window.showInformationMessage(`Already on ${base.name}.`);
         return;
     }
 
@@ -33,7 +33,7 @@ export async function openBranchDiff(repoRoot: string): Promise<void> {
     try {
         const changes = await repository.diffBetweenWithStats(mergeBase, "HEAD");
         if (changes.length === 0) {
-            window.showInformationMessage(`No changes between ${base.name} and ${head.name}.`);
+            void window.showInformationMessage(`No changes between ${base.name} and ${head.name}.`);
             return;
         }
 
@@ -56,6 +56,6 @@ export async function openBranchDiff(repoRoot: string): Promise<void> {
             resources,
         });
     } catch (error) {
-        window.showErrorMessage(`Failed to open branch diff: ${(error as Error).message}`);
+        void window.showErrorMessage(`Failed to open branch diff: ${(error as Error).message}`);
     }
 }

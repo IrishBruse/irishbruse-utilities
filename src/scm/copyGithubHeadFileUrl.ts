@@ -24,21 +24,6 @@ async function isDirectoryResource(resource: ScmResourceContext): Promise<boolea
     }
 }
 
-async function copyGithubHeadFileUrls(repoRoot: string, relativePaths: GithubHeadPath[]): Promise<void> {
-    const urls = await getGithubHeadFileUrls(repoRoot, relativePaths);
-    if (!urls?.length) {
-        window.showWarningMessage("Could not build GitHub head URL for the selected file(s).");
-        return;
-    }
-
-    await env.clipboard.writeText(urls.join("\n"));
-    const message =
-        urls.length === 1
-            ? "GitHub head URL copied to clipboard."
-            : `${urls.length} GitHub head URLs copied to clipboard.`;
-    window.showInformationMessage(message);
-}
-
 async function copyResourcesGithubHeadFileUrl(resources: ScmResourceContext[]): Promise<void> {
     if (!resources.length) {
         return;
@@ -69,7 +54,7 @@ async function copyResourcesGithubHeadFileUrl(resources: ScmResourceContext[]): 
     }
 
     if (!grouped.size) {
-        window.showWarningMessage("Could not build GitHub head URL for the selected file(s).");
+        void window.showWarningMessage("Could not build GitHub head URL for the selected file(s).");
         return;
     }
 
@@ -82,7 +67,7 @@ async function copyResourcesGithubHeadFileUrl(resources: ScmResourceContext[]): 
     }
 
     if (!allUrls.length) {
-        window.showWarningMessage("Could not build GitHub head URL for the selected file(s).");
+        void window.showWarningMessage("Could not build GitHub head URL for the selected file(s).");
         return;
     }
 
@@ -91,7 +76,7 @@ async function copyResourcesGithubHeadFileUrl(resources: ScmResourceContext[]): 
         allUrls.length === 1
             ? "GitHub head URL copied to clipboard."
             : `${allUrls.length} GitHub head URLs copied to clipboard.`;
-    window.showInformationMessage(message);
+    void window.showInformationMessage(message);
 }
 
 export async function copyGithubHeadFileUrl(

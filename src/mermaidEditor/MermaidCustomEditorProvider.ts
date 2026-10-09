@@ -2,7 +2,6 @@ import {
     CancellationToken,
     CustomTextEditorProvider,
     ExtensionContext,
-    TabInputCustom,
     TextDocument,
     Uri,
     WebviewPanel,
@@ -39,12 +38,12 @@ export class MermaidCustomEditorProvider implements CustomTextEditorProvider {
         let lastSentVersion = -1;
 
         const postTheme = () => {
-            webviewPanel.webview.postMessage({ type: "theme" });
+            void webviewPanel.webview.postMessage({ type: "theme" });
         };
 
         const postUpdate = () => {
             lastSentVersion = document.version;
-            webviewPanel.webview.postMessage({
+            void webviewPanel.webview.postMessage({
                 type: "update",
                 source: document.getText(),
             });
@@ -96,18 +95,18 @@ export class MermaidCustomEditorProvider implements CustomTextEditorProvider {
                     postUpdate();
                 }
             }),
+        ];
+
+        this.context.subscriptions.push(
             webviewPanel.onDidDispose(() => {
                 if (updateTimer) {
                     clearTimeout(updateTimer);
                 }
+                for (const disposable of disposables) {
+                    disposable.dispose();
+                }
             }),
-        ];
-
-        webviewPanel.onDidDispose(() => {
-            for (const disposable of disposables) {
-                disposable.dispose();
-            }
-        });
+        );
     }
 }
 

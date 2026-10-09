@@ -14,7 +14,7 @@ type BaseBranchPickItem = QuickPickItem & {
 export async function pickBaseBranchTarget(repoRoot?: string): Promise<void> {
     const repository = repoRoot ? getRepositoryByRoot(repoRoot) : await getActiveRepository();
     if (!repository) {
-        window.showWarningMessage("No active git repository. Select one in Source Control.");
+        void window.showWarningMessage("No active git repository. Select one in Source Control.");
         return;
     }
 
@@ -78,7 +78,7 @@ export async function pickBaseBranchTarget(repoRoot?: string): Promise<void> {
 
         const resolved = await resolveRefTarget(repository, activeRepoRoot, custom.trim());
         if (!resolved) {
-            window.showWarningMessage(`Could not resolve "${custom.trim()}".`);
+            void window.showWarningMessage(`Could not resolve "${custom.trim()}".`);
             return;
         }
 

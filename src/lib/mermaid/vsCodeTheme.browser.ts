@@ -59,15 +59,6 @@ function pickColor(...varNames: string[]): string | undefined {
     return undefined;
 }
 
-function buildTheme() {
-    const tokens = getTokens(pickColor, readCssVar, isDarkVsCodeTheme);
-    return {
-        tokens,
-        themeVariables: getThemeVariables(tokens, pickColor),
-        themeCSS: getThemeCSS(tokens),
-    };
-}
-
 declare global {
     interface Window {
         IbMermaidVsCodeTheme: {

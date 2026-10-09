@@ -6,7 +6,7 @@ import { getPrInfo, type GhPrInfo } from "./githubUrl";
 export async function pushBranchToOrigin(repoRoot: string, branch: string): Promise<boolean> {
     const result = await asyncSpawn("git", ["push", "-u", "origin", branch], { cwd: repoRoot });
     if (result.status !== 0) {
-        window.showErrorMessage(`Failed to push branch: ${result.stderr || result.stdout}`);
+        void window.showErrorMessage(`Failed to push branch: ${result.stderr || result.stdout}`);
         return false;
     }
     return true;
@@ -35,7 +35,7 @@ export async function createBlankDraftPullRequest(
     ]);
 
     if (result.status !== 0) {
-        window.showErrorMessage(`Failed to create draft PR: ${result.stderr || result.stdout}`);
+        void window.showErrorMessage(`Failed to create draft PR: ${result.stderr || result.stdout}`);
         return undefined;
     }
 

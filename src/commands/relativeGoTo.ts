@@ -81,7 +81,7 @@ function peek(value: string): string | InputBoxValidationMessage | undefined | n
         lineNumber += inputNumber;
     }
 
-    let targetPosition = new Position(lineNumber, 0);
+    const targetPosition = new Position(lineNumber, 0);
     const range = new Range(targetPosition, targetPosition);
     editor.setDecorations(lineHighlight, [range]);
     editor.selection = new Selection(targetPosition, targetPosition);

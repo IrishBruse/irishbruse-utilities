@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+        "module": "ESNext",
+        "moduleResolution": "Bundler",
+        "target": "ES2022",
+        "lib": ["ES2022", "DOM"],
+        "strict": true,
+        "noEmit": true,
+        "skipLibCheck": true,
+        "types": ["node", "vitest/globals"]
+    },
+    "include": [
+        "src/**/*.test.ts",
+        "src/**/*.browser.ts",
+        "src/test/**/*.ts",
+        "vitest.config.mts",
+        "vitest.markdownInline.config.mts"
+    ],
+    "exclude": ["src/markdownInline/**"]
+}

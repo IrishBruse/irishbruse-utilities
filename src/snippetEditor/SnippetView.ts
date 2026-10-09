@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, readdirSync, rmSync } from "fs";
+import { existsSync, mkdirSync, rmSync } from "fs";
 import { readFile, writeFile } from "fs/promises";
 import os from "os";
 import path from "path";
@@ -208,11 +208,11 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
     
     openSnippet = async (key: string, snippet: Snippet): Promise<void> => {
         if (!key) {
-            window.showErrorMessage("Missing key argument");
+            void window.showErrorMessage("Missing key argument");
             return;
         }
         if (!snippet) {
-            window.showErrorMessage("Missing snippet argument");
+            void window.showErrorMessage("Missing snippet argument");
             return;
         }
 
@@ -286,7 +286,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         try {
             await window.showTextDocument(Uri.file(path.join(SnippetsPath, `${languageId}.json`)));
         } catch (error) {
-            window.showErrorMessage("Failed to open snippet file: " + error);
+            void window.showErrorMessage("Failed to open snippet file: " + error);
         }
     }
 
@@ -301,7 +301,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         const snippetLanguageId = args?.[1]?.languageId ?? languageId;
 
         if (!key || typeof key !== "string") {
-            window.showErrorMessage("Invalid snippet key");
+            void window.showErrorMessage("Invalid snippet key");
             return;
         }
 
@@ -318,7 +318,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             const snippets = getSnippetsFile(snippetLanguageId);
 
             if (!snippets || !Object.prototype.hasOwnProperty.call(snippets, key)) {
-                window.showErrorMessage(`Snippet '${key}' not found for '${snippetLanguageId}'`);
+                void window.showErrorMessage(`Snippet '${key}' not found for '${snippetLanguageId}'`);
                 return;
             }
 
@@ -327,15 +327,15 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             await regenerateDependentSnippets(snippetLanguageId);
 
             this.refresh();
-            window.showInformationMessage(`Deleted snippet '${key}' from '${snippetLanguageId}'`);
+            void window.showInformationMessage(`Deleted snippet '${key}' from '${snippetLanguageId}'`);
         } catch (err) {
-            window.showErrorMessage(`Failed to delete snippet: ${String(err)}`);
+            void window.showErrorMessage(`Failed to delete snippet: ${String(err)}`);
         }
     }
 
     private static requireLabel(item: SnippetTreeItem | undefined, context: string): string | null {
         if (!item) {
-            window.showErrorMessage(`Only call ${context} on languages in snippet manager`);
+            void window.showErrorMessage(`Only call ${context} on languages in snippet manager`);
             return null;
         }
         return item.label;
@@ -347,7 +347,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         const snippet = await SnippetParser.parse(text.toString());
 
         if (!snippet) {
-            window.showErrorMessage("Failed to parse snippet");
+            void window.showErrorMessage("Failed to parse snippet");
             return;
         }
 

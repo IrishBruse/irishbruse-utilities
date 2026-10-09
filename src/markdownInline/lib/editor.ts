@@ -208,7 +208,6 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         try {
             const currentModel = editor.getModel();
             if (currentModel) {
-                const text = currentModel.getValue();
                 const nextLanguage = usesSkillMarkdown() ? skillMarkdownLanguageId : "markdown";
                 if (currentModel.getLanguageId() !== nextLanguage) {
                     monaco.editor.setModelLanguage(currentModel, nextLanguage);

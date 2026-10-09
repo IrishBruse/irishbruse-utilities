@@ -75,6 +75,28 @@ describe("mermaid open preview", () => {
         expect(boxes!.lensOverlap).toBe(false);
     });
 
+    it("lines the diagram up with the code block", async () => {
+        const edges = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const code = [...document.querySelectorAll("#editor .view-line")].find((line) => fold(line.textContent).includes("const value"));
+            const text = code ? [...code.querySelectorAll("span")].find((node) => fold(node.textContent).includes("const")) : undefined;
+            const frame = document.querySelector(".inline-md-mermaid");
+            const svg = frame?.querySelector(".inline-md-mermaid-diagram svg");
+            if (!(code instanceof HTMLElement) || !(text instanceof HTMLElement) || !(frame instanceof HTMLElement) || !(svg instanceof SVGElement)) {
+                return null;
+            }
+            return {
+                codeLeft: code.getBoundingClientRect().left,
+                textLeft: text.getBoundingClientRect().left,
+                frameLeft: frame.getBoundingClientRect().left,
+                svgLeft: svg.getBoundingClientRect().left,
+            };
+        });
+        expect(edges).not.toBeNull();
+        expect(Math.abs(edges!.frameLeft - edges!.codeLeft)).toBeLessThanOrEqual(1);
+        expect(Math.abs(edges!.svgLeft - edges!.textLeft)).toBeLessThanOrEqual(1);
+    });
+
     it("shows Open Preview above the diagram", async () => {
         await expectLocatorShot(page.locator(".inline-md-mermaid"), join(here, "screenshots", "mermaid.png"));
     });

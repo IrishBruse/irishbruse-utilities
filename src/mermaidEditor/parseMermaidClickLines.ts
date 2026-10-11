@@ -1,8 +1,6 @@
 import { normalizeGblClickPair } from "./mermaidClickTarget";
 
-
-const GBL_CLICK_HREF_LINE =
-    /^\s*click\s+(\S+)\s+href\s+"([^"]*)"\s+"([^"]*)"\s*$/;
+const GBL_CLICK_HREF_LINE = /^\s*click\s+(\S+)\s+href\s+"([^"]*)"\s+"([^"]*)"\s*$/;
 
 export interface MermaidClickHrefLine {
     nodeId: string;
@@ -29,7 +27,7 @@ export function parseMermaidClickHrefLines(source: string): MermaidClickHrefLine
 
 export function getClickTargetFromMap(
     map: Map<string, { href: string; tooltip: string }>,
-    nodeId: string
+    nodeId: string,
 ): { href: string; tooltip: string } | undefined {
     const direct = map.get(nodeId);
     if (direct) {
@@ -44,7 +42,9 @@ export function getClickTargetFromMap(
     return undefined;
 }
 
-export function buildMermaidClickTargetMap(source: string): Map<string, { href: string; tooltip: string }> {
+export function buildMermaidClickTargetMap(
+    source: string,
+): Map<string, { href: string; tooltip: string }> {
     const map = new Map<string, { href: string; tooltip: string }>();
     for (const { nodeId, href, tooltip } of parseMermaidClickHrefLines(source)) {
         map.set(nodeId, normalizeGblClickPair(href, tooltip));
@@ -52,13 +52,12 @@ export function buildMermaidClickTargetMap(source: string): Map<string, { href: 
     return map;
 }
 
-
 export function resolveFlowchartNodeIdFromDomId(domId: string): string {
     const trimmed = domId.trim();
     if (!trimmed) {
         return "";
     }
-    
+
     const flowchartMatch = /flowchart-(.+)-\d+$/i.exec(trimmed);
     if (flowchartMatch) {
         return flowchartMatch[1];

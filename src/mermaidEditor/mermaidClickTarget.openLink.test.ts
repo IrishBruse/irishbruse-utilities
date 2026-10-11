@@ -1,7 +1,7 @@
 import { mkdtempSync, mkdirSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const {
     openExternal,
@@ -23,7 +23,12 @@ vi.mock("vscode", () => ({
     env: { openExternal },
     commands: { executeCommand },
     Uri: {
-        file: (fsPath: string) => ({ scheme: "file", fsPath, path: fsPath, toString: () => fsPath }),
+        file: (fsPath: string) => ({
+            scheme: "file",
+            fsPath,
+            path: fsPath,
+            toString: () => fsPath,
+        }),
         parse: (value: string) => ({ scheme: "https", fsPath: value, toString: () => value }),
     },
     window: { showErrorMessage, showTextDocument },
@@ -35,13 +40,13 @@ vi.mock("vscode", () => ({
     Position: class {
         constructor(
             public readonly line: number,
-            public readonly character: number
+            public readonly character: number,
         ) {}
     },
     Range: class {
         constructor(
             public readonly start: { line: number; character: number },
-            public readonly end: { line: number; character: number }
+            public readonly end: { line: number; character: number },
         ) {}
     },
 }));
@@ -93,7 +98,9 @@ describe("mermaidEditor/mermaidClickTarget openLink", () => {
         openTextDocument.mockResolvedValue({ uri: docUri });
 
         const mermaidUri = Uri.file(mmdPath);
-        const mainClick = parseMermaidClickHrefLines(readFileSync(mmdPath, "utf8")).find((c) => c.nodeId === "Main");
+        const mainClick = parseMermaidClickHrefLines(readFileSync(mmdPath, "utf8")).find(
+            (c) => c.nodeId === "Main",
+        );
         expect(mainClick).toBeDefined();
 
         const target = parseMermaidClickTarget(mainClick!.tooltip, mainClick!.href);
@@ -111,7 +118,7 @@ describe("mermaidEditor/mermaidClickTarget openLink", () => {
                 selection: expect.objectContaining({
                     start: expect.objectContaining({ line: 0, character: 0 }),
                 }),
-            })
+            }),
         );
         expect(openExternal).not.toHaveBeenCalled();
     });
@@ -147,7 +154,7 @@ describe("mermaidEditor/mermaidClickTarget openLink", () => {
             "vscode.openWith",
             expect.objectContaining({ fsPath: mmdPath }),
             "ib-utilities.mermaidPreview",
-            expect.objectContaining({ preview: false })
+            expect.objectContaining({ preview: false }),
         );
         expect(showTextDocument).not.toHaveBeenCalled();
     });
@@ -163,7 +170,7 @@ describe("mermaidEditor/mermaidClickTarget openLink", () => {
         openTextDocument.mockResolvedValue({ uri: { fsPath: txtPath } });
 
         const otherClick = parseMermaidClickHrefLines(readFileSync(mmdPath, "utf8")).find(
-            (c) => c.nodeId === "Other"
+            (c) => c.nodeId === "Other",
         );
         expect(otherClick).toBeDefined();
 
@@ -178,7 +185,7 @@ describe("mermaidEditor/mermaidClickTarget openLink", () => {
                 selection: expect.objectContaining({
                     start: expect.objectContaining({ line: 2, character: 1 }),
                 }),
-            })
+            }),
         );
     });
 
@@ -201,7 +208,7 @@ describe("mermaidEditor/mermaidClickTarget openLink", () => {
             expect.objectContaining({
                 viewColumn: ViewColumn.Beside,
                 preview: false,
-            })
+            }),
         );
     });
 });

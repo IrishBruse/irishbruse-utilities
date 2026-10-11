@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { applyHeadingFontScales, headingLineHeightMultiplier, headingSelectionPadPx } from "./headingLayout";
+import { describe, expect, it } from "vite-plus/test";
+import {
+    applyHeadingFontScales,
+    headingLineHeightMultiplier,
+    headingSelectionPadPx,
+} from "./headingLayout";
 
 describe("applyHeadingFontScales", () => {
     it("writes a scale for each heading level", () => {

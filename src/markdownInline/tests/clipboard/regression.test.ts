@@ -1,11 +1,14 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
-const sample = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "fixtures", "case-1.md"), "utf8");
+const sample = readFileSync(
+    join(dirname(fileURLToPath(import.meta.url)), "fixtures", "case-1.md"),
+    "utf8",
+);
 
 describe("clipboard commands", () => {
     let browser: Browser;

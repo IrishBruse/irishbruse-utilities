@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
-import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth, blockquoteWrapIndentColumns } from "./blockquote";
+import { describe, expect, it } from "vite-plus/test";
+import {
+    blockquoteContentIndex,
+    blockquoteDepthClass,
+    blockquoteLineDepth,
+    blockquoteWrapIndentColumns,
+} from "./blockquote";
 
 describe("blockquoteLineDepth", () => {
     it("counts nested markers", () => {

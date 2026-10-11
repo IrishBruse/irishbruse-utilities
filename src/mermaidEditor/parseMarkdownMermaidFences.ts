@@ -2,13 +2,12 @@ import { Range } from "vscode";
 import { mermaidDiagramSource } from "../lib/mermaid/mermaidDiagramSource";
 
 export interface MarkdownMermaidFence {
-    
     openLine: number;
-    
+
     closeLine: number;
-    
+
     source: string;
-    
+
     languageTagRange: Range;
 }
 
@@ -17,7 +16,6 @@ const OPEN_FENCE_RE = /^(\s*)(`{3,}|~{3,})\s*(mermaid)\b(.*)$/i;
 function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
-
 
 export function parseMarkdownMermaidFences(text: string): MarkdownMermaidFence[] {
     const lines = text.split(/\r?\n/);
@@ -68,11 +66,10 @@ export function parseMarkdownMermaidFences(text: string): MarkdownMermaidFence[]
 
 export function findMarkdownMermaidFenceAtOpenLine(
     text: string,
-    openLine: number
+    openLine: number,
 ): MarkdownMermaidFence | undefined {
     return parseMarkdownMermaidFences(text).find((fence) => fence.openLine === openLine);
 }
-
 
 export function findMarkdownMermaidFenceContainingLine(
     text: string,

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { paintYamlFrontMatter, skillMarkdownLanguageId } from "./skillYaml";
 
 const source = `---
@@ -19,7 +19,9 @@ function text(className: string): string {
 
 describe("paintYamlFrontMatter", () => {
     it("colors keys, strings, booleans, and fences", () => {
-        expect(text("inline-md-yaml-key")).toBe("name|description|disable-model-invocation|license");
+        expect(text("inline-md-yaml-key")).toBe(
+            "name|description|disable-model-invocation|license",
+        );
         expect(text("inline-md-yaml-string")).toContain("markdown-skill-fixture");
         expect(text("inline-md-yaml-string")).toContain("Manual fixture");
         expect(text("inline-md-yaml-boolean")).toBe("true");
@@ -44,10 +46,11 @@ describe("paintYamlFrontMatter", () => {
             "   ",
             "",
         ].join("\n");
-        const painted = (className: string) => paintYamlFrontMatter(sample, 0, sample.length)
-            .filter((paint) => paint.className === className)
-            .map((paint) => sample.slice(paint.start, paint.end))
-            .join("|");
+        const painted = (className: string) =>
+            paintYamlFrontMatter(sample, 0, sample.length)
+                .filter((paint) => paint.className === className)
+                .map((paint) => sample.slice(paint.start, paint.end))
+                .join("|");
         expect(painted("inline-md-yaml-number")).toContain("-1.5e2");
         expect(painted("inline-md-yaml-number")).toContain(".5");
         expect(painted("inline-md-yaml-boolean")).toContain("false");
@@ -68,13 +71,29 @@ describe("paintYamlFrontMatter", () => {
         expect(blockText).toContain("two");
 
         const crlf = "name: alpha\r\ncount: 3\r\n";
-        expect(paintYamlFrontMatter(crlf, 0, crlf.length).some((paint) => crlf.slice(paint.start, paint.end) === "3")).toBe(true);
+        expect(
+            paintYamlFrontMatter(crlf, 0, crlf.length).some(
+                (paint) => crlf.slice(paint.start, paint.end) === "3",
+            ),
+        ).toBe(true);
 
-        expect(paintYamlFrontMatter("name: alpha", 0, "name: alpha".length).map((paint) => paint.className)).toContain("inline-md-yaml-key");
-        expect(paintYamlFrontMatter("body: |\n  line", 0, "body: |\n  line".length).map((paint) => paint.className)).toContain("inline-md-yaml-string");
+        expect(
+            paintYamlFrontMatter("name: alpha", 0, "name: alpha".length).map(
+                (paint) => paint.className,
+            ),
+        ).toContain("inline-md-yaml-key");
+        expect(
+            paintYamlFrontMatter("body: |\n  line", 0, "body: |\n  line".length).map(
+                (paint) => paint.className,
+            ),
+        ).toContain("inline-md-yaml-string");
 
         const cut = "name: alpha\nname: beta\n";
-        expect(paintYamlFrontMatter(cut, 0, "name: alpha".length).map((paint) => cut.slice(paint.start, paint.end))).toContain("name");
+        expect(
+            paintYamlFrontMatter(cut, 0, "name: alpha".length).map((paint) =>
+                cut.slice(paint.start, paint.end),
+            ),
+        ).toContain("name");
         expect(paintYamlFrontMatter(cut, 4, 4)).toEqual([]);
     });
 
@@ -107,7 +126,9 @@ describe("paintYamlFrontMatter", () => {
                 }
                 return match;
             } as typeof RegExp.prototype.exec;
-            expect(paintYamlFrontMatter("name: value\n", 0, "name: value\n".length).length).toBeGreaterThan(0);
+            expect(
+                paintYamlFrontMatter("name: value\n", 0, "name: value\n".length).length,
+            ).toBeGreaterThan(0);
         } finally {
             RegExp.prototype.exec = originalExec;
             String.prototype.indexOf = originalIndexOf;

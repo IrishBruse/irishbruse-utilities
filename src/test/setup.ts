@@ -1,4 +1,5 @@
-import { vi } from "vitest";
+import { vi } from "vite-plus/test";
+import type { Uri } from "vscode";
 
 vi.mock("vscode", () => ({
     workspace: {
@@ -93,7 +94,7 @@ vi.mock("vscode", () => ({
             public readonly startLine: number,
             public readonly startChar: number,
             public readonly endLine: number,
-            public readonly endChar: number
+            public readonly endChar: number,
         ) {}
         get start() {
             return { line: this.startLine, character: this.startChar };
@@ -114,7 +115,9 @@ vi.mock("vscode", () => ({
     TreeItem: class {},
     Event: class {},
     EventEmitter: class {
-        event() { return vi.fn(); }
+        event() {
+            return vi.fn();
+        }
         fire() {}
     },
     TreeItemCollapsibleState: {
@@ -122,9 +125,16 @@ vi.mock("vscode", () => ({
         Collapsed: 1,
         Expanded: 2,
     },
-    TabInputText: class {},
+    TabInputText: class {
+        constructor(public readonly uri: Uri) {}
+    },
     TabInputTextDiff: class {},
-    TabInputCustom: class {},
+    TabInputCustom: class {
+        constructor(
+            public readonly uri: Uri,
+            public readonly viewType: string,
+        ) {}
+    },
     ViewColumn: {
         Beside: 2,
         Active: 1,

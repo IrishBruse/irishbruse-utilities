@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import {
     completeSkillPropertyKeys,
     emptyProperty,
@@ -28,7 +28,11 @@ describe("emptyProperty", () => {
             value: true,
         });
         expect(emptyProperty("metadata")).toEqual({ key: "metadata", kind: "map", entries: [] });
-        expect(emptyProperty("description")).toEqual({ key: "description", kind: "string", value: "" });
+        expect(emptyProperty("description")).toEqual({
+            key: "description",
+            kind: "string",
+            value: "",
+        });
         expect(emptyProperty("name")).toEqual({ key: "name", kind: "string", value: "" });
     });
 });
@@ -77,7 +81,7 @@ describe("parseSkillFrontMatter", () => {
 
     it("unquotes scalars and reads booleans", () => {
         expect(parseSkillFrontMatter('name: "say \\"hi\\"\\nnext"\n')).toEqual([
-            { key: "name", kind: "string", value: "say \"hi\"\nnext" },
+            { key: "name", kind: "string", value: 'say "hi"\nnext' },
         ]);
         expect(parseSkillFrontMatter("name: 'it''s'\n")).toEqual([
             { key: "name", kind: "string", value: "it's" },
@@ -89,13 +93,13 @@ describe("parseSkillFrontMatter", () => {
             { key: "name", kind: "string", value: "" },
         ]);
         expect(parseSkillFrontMatter('name: "nope\n')).toEqual([
-            { key: "name", kind: "string", value: "\"nope" },
+            { key: "name", kind: "string", value: '"nope' },
         ]);
         expect(parseSkillFrontMatter("name: '\n")).toEqual([
             { key: "name", kind: "string", value: "'" },
         ]);
         expect(parseSkillFrontMatter('name: "\n')).toEqual([
-            { key: "name", kind: "string", value: "\"" },
+            { key: "name", kind: "string", value: '"' },
         ]);
         expect(parseSkillFrontMatter("name: plain\n")).toEqual([
             { key: "name", kind: "string", value: "plain" },
@@ -126,7 +130,9 @@ describe("parseSkillFrontMatter", () => {
         expect(parseSkillFrontMatter("custom: {}\n")).toEqual([
             { key: "custom", kind: "map", entries: [] },
         ]);
-        expect(parseSkillFrontMatter("metadata:\n  alpha: beta\n  blank: \"\"\n\nlicense: MIT\n")).toEqual([
+        expect(
+            parseSkillFrontMatter('metadata:\n  alpha: beta\n  blank: ""\n\nlicense: MIT\n'),
+        ).toEqual([
             {
                 key: "metadata",
                 kind: "map",
@@ -148,7 +154,7 @@ describe("parseSkillFrontMatter", () => {
         expect(parseSkillFrontMatter("metadata:\n  quote: 'it''s'\n")).toEqual([
             { key: "metadata", kind: "map", entries: [{ key: "quote", value: "it's" }] },
         ]);
-        const common = "metadata:\n  author: example-org\n  version: \"1.0\"\n";
+        const common = 'metadata:\n  author: example-org\n  version: "1.0"\n';
         expect(serializeSkillFrontMatter(parseSkillFrontMatter(common))).toBe(common);
     });
 
@@ -197,25 +203,27 @@ describe("parseSkillFrontMatter", () => {
 describe("serializeSkillFrontMatter", () => {
     it("writes booleans, maps, and inline strings", () => {
         expect(serializeSkillFrontMatter([])).toBe("");
-        expect(serializeSkillFrontMatter([
-            { key: "disable-model-invocation", kind: "boolean", value: true },
-            { key: "flag", kind: "boolean", value: false },
-        ])).toBe("disable-model-invocation: true\nflag: false\n");
-        expect(serializeSkillFrontMatter([
-            { key: "metadata", kind: "map", entries: [] },
-        ])).toBe("metadata: {}\n");
-        expect(serializeSkillFrontMatter([
-            { key: "license", kind: "string", value: "" },
-        ])).toBe("license: \"\"\n");
-        expect(serializeSkillFrontMatter([
-            { key: "license", kind: "string", value: "a:b" },
-        ])).toBe("license: \"a:b\"\n");
-        expect(serializeSkillFrontMatter([
-            { key: "description", kind: "string", value: "short" },
-        ])).toBe("description: short\n");
-        expect(serializeSkillFrontMatter([
-            { key: "name", kind: "string", value: "n".repeat(90) },
-        ])).toBe(`name: ${"n".repeat(90)}\n`);
+        expect(
+            serializeSkillFrontMatter([
+                { key: "disable-model-invocation", kind: "boolean", value: true },
+                { key: "flag", kind: "boolean", value: false },
+            ]),
+        ).toBe("disable-model-invocation: true\nflag: false\n");
+        expect(serializeSkillFrontMatter([{ key: "metadata", kind: "map", entries: [] }])).toBe(
+            "metadata: {}\n",
+        );
+        expect(serializeSkillFrontMatter([{ key: "license", kind: "string", value: "" }])).toBe(
+            'license: ""\n',
+        );
+        expect(serializeSkillFrontMatter([{ key: "license", kind: "string", value: "a:b" }])).toBe(
+            'license: "a:b"\n',
+        );
+        expect(
+            serializeSkillFrontMatter([{ key: "description", kind: "string", value: "short" }]),
+        ).toBe("description: short\n");
+        expect(
+            serializeSkillFrontMatter([{ key: "name", kind: "string", value: "n".repeat(90) }]),
+        ).toBe(`name: ${"n".repeat(90)}\n`);
 
         const yaml = serializeSkillFrontMatter([
             {
@@ -231,28 +239,28 @@ describe("serializeSkillFrontMatter", () => {
                     { key: "pad", value: " hello" },
                     { key: "tail", value: "hello " },
                     { key: "multi", value: "a\nb" },
-                    { key: "quote", value: "say \"hi\"" },
+                    { key: "quote", value: 'say "hi"' },
                     { key: "slash", value: "a\\b" },
                 ],
             },
         ]);
         expect(yaml).toContain("plain: hello\n");
-        expect(yaml).toContain("empty: \"\"\n");
-        expect(yaml).toContain("flag: \"true\"\n");
-        expect(yaml).toContain("yes: \"YES\"\n");
-        expect(yaml).toContain("note: \"a:b\"\n");
-        expect(yaml).toContain("pad: \" hello\"\n");
-        expect(yaml).toContain("tail: \"hello \"\n");
-        expect(yaml).toContain("multi: \"a\\nb\"\n");
-        expect(yaml).toContain("quote: \"say \\\"hi\\\"\"\n");
+        expect(yaml).toContain('empty: ""\n');
+        expect(yaml).toContain('flag: "true"\n');
+        expect(yaml).toContain('yes: "YES"\n');
+        expect(yaml).toContain('note: "a:b"\n');
+        expect(yaml).toContain('pad: " hello"\n');
+        expect(yaml).toContain('tail: "hello "\n');
+        expect(yaml).toContain('multi: "a\\nb"\n');
+        expect(yaml).toContain('quote: "say \\"hi\\""\n');
         expect(yaml).toContain("slash: a\\b\n");
         expect(yaml).not.toContain("skip");
     });
 
     it("folds long descriptions and preserves newlines as literal blocks", () => {
-        expect(serializeSkillFrontMatter([
-            { key: "license", kind: "string", value: "line1\nline2" },
-        ])).toBe("license: |\n  line1\n  line2\n");
+        expect(
+            serializeSkillFrontMatter([{ key: "license", kind: "string", value: "line1\nline2" }]),
+        ).toBe("license: |\n  line1\n  line2\n");
 
         const long = "alpha ".repeat(20).trim();
         const folded = serializeSkillFrontMatter([
@@ -272,9 +280,11 @@ describe("serializeSkillFrontMatter", () => {
             { key: "description", kind: "string", value: wrapped },
         ]);
 
-        expect(serializeSkillFrontMatter([
-            { key: "description", kind: "string", value: " ".repeat(81) },
-        ])).toBe("description: >-\n  \n");
+        expect(
+            serializeSkillFrontMatter([
+                { key: "description", kind: "string", value: " ".repeat(81) },
+            ]),
+        ).toBe("description: >-\n  \n");
     });
 });
 

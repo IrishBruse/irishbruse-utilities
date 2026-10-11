@@ -30,7 +30,7 @@ class MarkdownMermaidCodeLensProvider implements CodeLensProvider {
                     title: "Open Preview",
                     command: Commands.OpenMermaidMarkdownPreview,
                     arguments: [document.uri.toString(), fence.openLine],
-                })
+                }),
         );
     }
 }
@@ -39,10 +39,12 @@ class MarkdownMermaidDocumentLinkProvider implements DocumentLinkProvider {
     provideDocumentLinks(document: { getText(): string; uri: Uri }): DocumentLink[] {
         const fences = parseMarkdownMermaidFences(document.getText());
         return fences.map((fence) => {
-            const args = encodeURIComponent(JSON.stringify([document.uri.toString(), fence.openLine]));
+            const args = encodeURIComponent(
+                JSON.stringify([document.uri.toString(), fence.openLine]),
+            );
             const link = new DocumentLink(
                 fence.languageTagRange,
-                Uri.parse(`command:${Commands.OpenMermaidMarkdownPreview}?${args}`)
+                Uri.parse(`command:${Commands.OpenMermaidMarkdownPreview}?${args}`),
             );
             link.tooltip = "Open Mermaid preview";
             return link;
@@ -50,7 +52,10 @@ class MarkdownMermaidDocumentLinkProvider implements DocumentLinkProvider {
     }
 }
 
-async function openMermaidMarkdownPreview(markdownUriString: string, openLine: number): Promise<void> {
+async function openMermaidMarkdownPreview(
+    markdownUriString: string,
+    openLine: number,
+): Promise<void> {
     const markdownUri = Uri.parse(markdownUriString);
     let document;
     try {
@@ -67,7 +72,12 @@ async function openMermaidMarkdownPreview(markdownUriString: string, openLine: n
     }
 
     const context = getMarkdownMermaidContext();
-    const previewUri = await ensureMarkdownMermaidPreviewFile(context, markdownUri, fence.openLine, fence.source);
+    const previewUri = await ensureMarkdownMermaidPreviewFile(
+        context,
+        markdownUri,
+        fence.openLine,
+        fence.source,
+    );
 
     const activeTab = window.tabGroups.activeTabGroup.activeTab;
     await commands.executeCommand("vscode.openWith", previewUri, MERMAID_PREVIEW_VIEW_TYPE, {
@@ -93,11 +103,11 @@ export function registerMarkdownMermaidFeatures(context: ExtensionContext): void
     context.subscriptions.push(
         languages.registerCodeLensProvider(
             { language: "markdown" },
-            new MarkdownMermaidCodeLensProvider()
+            new MarkdownMermaidCodeLensProvider(),
         ),
         languages.registerDocumentLinkProvider(
             { language: "markdown" },
-            new MarkdownMermaidDocumentLinkProvider()
-        )
+            new MarkdownMermaidDocumentLinkProvider(),
+        ),
     );
 }

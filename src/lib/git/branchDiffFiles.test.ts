@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it } from "vite-plus/test";
 import { Uri } from "vscode";
 import {
     clearBranchDiffSession,
@@ -27,8 +27,8 @@ describe("branchDiffFiles", () => {
         setBranchDiffSession("/repo", "abc123", ["/repo/src/a.ts"]);
         expect(
             isBranchDiffWorkingTreeFile(
-                Uri.from({ scheme: "git", path: "/repo/src/a.ts", query: "{}" })
-            )
+                Uri.from({ scheme: "git", path: "/repo/src/a.ts", query: "{}" }),
+            ),
         ).toBe(false);
     });
 

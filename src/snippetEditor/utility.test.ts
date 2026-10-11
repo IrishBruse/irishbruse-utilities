@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 type Snippet = {
     languageId: string;
@@ -49,7 +49,11 @@ describe("snippetEditor/utility", () => {
         });
 
         it("should preserve content in the middle", () => {
-            expect(trimStringArray(["", "line1", "line2", "line3", ""])).toEqual(["line1", "line2", "line3"]);
+            expect(trimStringArray(["", "line1", "line2", "line3", ""])).toEqual([
+                "line1",
+                "line2",
+                "line3",
+            ]);
         });
 
         it("should handle single element array", () => {
@@ -133,7 +137,9 @@ describe("snippetEditor/utility", () => {
         });
 
         it("should reverse single key-value pair", () => {
-            expect(reverseMap({ typescript: ["javascript"] })).toEqual({ javascript: ["typescript"] });
+            expect(reverseMap({ typescript: ["javascript"] })).toEqual({
+                javascript: ["typescript"],
+            });
         });
 
         it("should reverse multiple values for single key", () => {

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -76,7 +76,9 @@ describe("vscodeUserThemeFromSettings", () => {
         expect(theme.css).toContain("--vscode-textLink-foreground: #35A854;");
         expect(theme.css).toContain("--ib-md-heading-1: #D19A66;");
         expect(theme.css).toContain("--ib-md-inline-code-background: #21252bA0;");
-        expect(theme.css).toContain('--markdown-font-family: "Cascadia Code", "Symbols Nerd Font";');
+        expect(theme.css).toContain(
+            '--markdown-font-family: "Cascadia Code", "Symbols Nerd Font";',
+        );
         expect(theme.css).toContain("--markdown-font-size: 12px;");
         expect(theme.css).toContain("font-variant-ligatures: common-ligatures;");
         expect(theme.css).not.toContain("evil");
@@ -90,7 +92,7 @@ describe("vscodeUserThemeFromSettings", () => {
                 "dropdown.border": "#21252B",
                 "button.background": "#35A854",
                 "button.foreground": "#ffffff",
-                "focusBorder": "#35A854",
+                focusBorder: "#35A854",
             },
         });
         expect(theme.css).toContain("--vscode-checkbox-background: #353b45;");

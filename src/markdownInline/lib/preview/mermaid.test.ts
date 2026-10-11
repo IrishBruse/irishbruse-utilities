@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vite-plus/test";
 
 const pendingRenders: Array<{
     resolve: (value: { svg: string }) => void;
@@ -165,7 +165,10 @@ describe("renderMermaidDiagram", () => {
         expect(host.innerHTML).not.toContain("stale");
         expect(host.dataset.mermaidSource).toBe("flowchart");
         const follow = diagram();
-        const height = await renderMermaidDiagram(follow as unknown as HTMLElement, "sequenceDiagram");
+        const height = await renderMermaidDiagram(
+            follow as unknown as HTMLElement,
+            "sequenceDiagram",
+        );
         expect(follow.innerHTML).toContain('id="stale"');
         expect(height).toBe(80);
     });
@@ -212,7 +215,10 @@ describe("renderMermaidDiagram", () => {
         expect(host.innerHTML).toContain('id="live"');
         expect(host.attributes["aria-busy"]).toBe("false");
         expect(height).toBe(50);
-        const again = await renderMermaidDiagram(host as unknown as HTMLElement, "graph TD;connected");
+        const again = await renderMermaidDiagram(
+            host as unknown as HTMLElement,
+            "graph TD;connected",
+        );
         expect(pendingRenders).toHaveLength(0);
         expect(again).toBe(50);
     });
@@ -221,7 +227,10 @@ describe("renderMermaidDiagram", () => {
         const { renderMermaidDiagram } = await import("./mermaid");
         const host = diagram();
         host.isConnected = true;
-        const pending = renderMermaidDiagram(host as unknown as HTMLElement, "graph TD;stale-connected");
+        const pending = renderMermaidDiagram(
+            host as unknown as HTMLElement,
+            "graph TD;stale-connected",
+        );
         host.dataset.mermaidSource = "graph TD;A-->B";
         host.innerHTML = `<svg height="12" id="visible"></svg>`;
         const resolve = await flushRender();
@@ -230,7 +239,10 @@ describe("renderMermaidDiagram", () => {
         expect(host.innerHTML).toContain('id="visible"');
         expect(height).toBe(12);
         const follow = diagram();
-        const cached = await renderMermaidDiagram(follow as unknown as HTMLElement, "graph TD;stale-connected");
+        const cached = await renderMermaidDiagram(
+            follow as unknown as HTMLElement,
+            "graph TD;stale-connected",
+        );
         expect(follow.innerHTML).toContain('id="ignored"');
         expect(cached).toBe(90);
     });
@@ -238,7 +250,10 @@ describe("renderMermaidDiagram", () => {
     it("measures the incoming svg when the painted source is cleared before lookup", async () => {
         const { renderMermaidDiagram } = await import("./mermaid");
         const host = diagram();
-        const pending = renderMermaidDiagram(host as unknown as HTMLElement, "graph TD;source-dropped");
+        const pending = renderMermaidDiagram(
+            host as unknown as HTMLElement,
+            "graph TD;source-dropped",
+        );
         let reads = 0;
         Object.defineProperty(host, "dataset", {
             configurable: true,
@@ -258,7 +273,10 @@ describe("renderMermaidDiagram", () => {
     it("returns the height of the source still on screen when a stale render is disconnected", async () => {
         const { renderMermaidDiagram } = await import("./mermaid");
         const host = diagram();
-        const pending = renderMermaidDiagram(host as unknown as HTMLElement, "graph TD;stale-cached");
+        const pending = renderMermaidDiagram(
+            host as unknown as HTMLElement,
+            "graph TD;stale-cached",
+        );
         host.dataset.mermaidSource = "graph TD;A-->B";
         host.innerHTML = `<svg height="12" id="kept"></svg>`;
         const resolve = await flushRender();
@@ -273,10 +291,22 @@ describe("renderMermaidDiagram", () => {
         const cases = [
             { source: "graph TD;no-svg", svg: `<div id="no-svg"></div>`, height: 120 },
             { source: "graph TD;zero-height", svg: `<svg height="0" id="zero"></svg>`, height: 10 },
-            { source: "graph TD;bad-height", svg: `<svg height="auto" id="bad"></svg>`, height: 10 },
-            { source: "graph TD;viewbox", svg: `<svg viewBox="0 0 20 80" id="view"></svg>`, height: 80 },
+            {
+                source: "graph TD;bad-height",
+                svg: `<svg height="auto" id="bad"></svg>`,
+                height: 10,
+            },
+            {
+                source: "graph TD;viewbox",
+                svg: `<svg viewBox="0 0 20 80" id="view"></svg>`,
+                height: 80,
+            },
             { source: "graph TD;bbox", svg: `<svg data-bbox="30" id="bbox"></svg>`, height: 30 },
-            { source: "graph TD;nan-bbox", svg: `<svg data-bbox="NaN" id="nan"></svg>`, height: 10 },
+            {
+                source: "graph TD;nan-bbox",
+                svg: `<svg data-bbox="NaN" id="nan"></svg>`,
+                height: 10,
+            },
         ];
         for (const entry of cases) {
             const host = diagram();
@@ -293,7 +323,10 @@ describe("renderMermaidDiagram", () => {
         const { renderMermaidDiagram } = await import("./mermaid");
         const connected = diagram();
         connected.isConnected = true;
-        const connectedRender = renderMermaidDiagram(connected as unknown as HTMLElement, "graph TD;error-keep");
+        const connectedRender = renderMermaidDiagram(
+            connected as unknown as HTMLElement,
+            "graph TD;error-keep",
+        );
         connected.dataset.mermaidSource = "graph TD;A-->B";
         connected.innerHTML = `<svg height="40" id="safe"></svg>`;
         (await rejectRender())(new Error("late"));
@@ -303,7 +336,10 @@ describe("renderMermaidDiagram", () => {
         expect(connectedHeight).toBe(40);
 
         const detached = diagram();
-        const detachedRender = renderMermaidDiagram(detached as unknown as HTMLElement, "graph TD;error-keep-off");
+        const detachedRender = renderMermaidDiagram(
+            detached as unknown as HTMLElement,
+            "graph TD;error-keep-off",
+        );
         detached.dataset.mermaidSource = "flowchart";
         detached.innerHTML = `<svg height="40" id="safe-off"></svg>`;
         (await rejectRender())(new Error("late"));
@@ -314,14 +350,20 @@ describe("renderMermaidDiagram", () => {
     it("reports a failed render on a connected diagram and ignores a detached one", async () => {
         const { renderMermaidDiagram } = await import("./mermaid");
         const detached = diagram();
-        const detachedRender = renderMermaidDiagram(detached as unknown as HTMLElement, "graph TD;error-off");
+        const detachedRender = renderMermaidDiagram(
+            detached as unknown as HTMLElement,
+            "graph TD;error-off",
+        );
         (await rejectRender())(new Error("missing"));
         expect(await detachedRender).toBe(0);
         expect(detached.textContent).toBe("");
 
         const connected = diagram();
         connected.isConnected = true;
-        const connectedRender = renderMermaidDiagram(connected as unknown as HTMLElement, "graph TD;error-on");
+        const connectedRender = renderMermaidDiagram(
+            connected as unknown as HTMLElement,
+            "graph TD;error-on",
+        );
         (await rejectRender())(new Error("syntax"));
         expect(await connectedRender).toBe(80);
         expect(connected.classes.has("inline-md-mermaid-error")).toBe(true);
@@ -331,7 +373,10 @@ describe("renderMermaidDiagram", () => {
 
         const other = diagram();
         other.isConnected = true;
-        const otherRender = renderMermaidDiagram(other as unknown as HTMLElement, "graph TD;error-string");
+        const otherRender = renderMermaidDiagram(
+            other as unknown as HTMLElement,
+            "graph TD;error-string",
+        );
         (await rejectRender())("boom");
         expect(await otherRender).toBe(80);
         expect(other.textContent).toBe("Mermaid render failed: boom");

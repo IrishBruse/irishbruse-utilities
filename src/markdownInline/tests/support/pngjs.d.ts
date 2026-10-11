@@ -8,5 +8,15 @@ declare module "pngjs" {
             read(buffer: Buffer): PNG;
             write(png: PNG): Buffer;
         };
+        static bitblt(
+            src: PNG,
+            dst: PNG,
+            srcX: number,
+            srcY: number,
+            width: number,
+            height: number,
+            deltaX: number,
+            deltaY: number,
+        ): void;
     }
 }

@@ -1,27 +1,26 @@
 import { commands, Uri, ViewColumn, window, workspace } from "vscode";
 
-const DIRECT_EDIT_SCHEMES = new Set([
-    "file",
-    "untitled",
-    "vscode-remote",
-    "vscode-vfs",
-]);
+const DIRECT_EDIT_SCHEMES = new Set(["file", "untitled", "vscode-remote", "vscode-vfs"]);
 
 export function isDirectMarkdownEditUri(uri: Uri): boolean {
     return DIRECT_EDIT_SCHEMES.has(uri.scheme);
 }
 
 function sameResource(left: Uri, right: Uri): boolean {
-    return left.scheme === right.scheme
-        && left.path === right.path
-        && (left.query ?? "") === (right.query ?? "");
+    return (
+        left.scheme === right.scheme &&
+        left.path === right.path &&
+        (left.query ?? "") === (right.query ?? "")
+    );
 }
 
 function isUriLike(value: unknown): value is Uri {
-    return !!value
-        && typeof value === "object"
-        && typeof (value as Uri).scheme === "string"
-        && typeof (value as Uri).path === "string";
+    return (
+        !!value &&
+        typeof value === "object" &&
+        typeof (value as Uri).scheme === "string" &&
+        typeof (value as Uri).path === "string"
+    );
 }
 
 const DIFF_URI_KEYS = ["original", "modified", "base", "input1", "input2", "result"] as const;
@@ -75,9 +74,11 @@ function hasNonDirectMarkdownCounterpart(uri: Uri): boolean {
 }
 
 export function shouldUseMarkdownCustomEditor(uri: Uri): boolean {
-    return isDirectMarkdownEditUri(uri)
-        && !isMarkdownUriInDiffTab(uri)
-        && !hasNonDirectMarkdownCounterpart(uri);
+    return (
+        isDirectMarkdownEditUri(uri) &&
+        !isMarkdownUriInDiffTab(uri) &&
+        !hasNonDirectMarkdownCounterpart(uri)
+    );
 }
 
 const rawOpenInFlight = new Set<string>();
@@ -90,9 +91,11 @@ export async function openMarkdownWithRawEditor(uri: Uri, viewColumn?: ViewColum
     rawOpenInFlight.add(key);
     try {
         const counterpart = [...(workspace.textDocuments ?? [])].find((document) => {
-            return document.uri.path === uri.path
-                && !sameResource(document.uri, uri)
-                && !isDirectMarkdownEditUri(document.uri);
+            return (
+                document.uri.path === uri.path &&
+                !sameResource(document.uri, uri) &&
+                !isDirectMarkdownEditUri(document.uri)
+            );
         })?.uri;
         if (counterpart && !isMarkdownUriInDiffTab(uri)) {
             const original = isDirectMarkdownEditUri(uri) ? counterpart : uri;

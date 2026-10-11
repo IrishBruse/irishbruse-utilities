@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import type { Scope } from "../document/types";
 
 vi.mock("./mermaid", () => ({
@@ -33,7 +33,9 @@ class FakeElement {
         if (node === this) {
             return true;
         }
-        return this.kids.some((kid) => kid === node || (kid instanceof FakeElement && kid.contains(node)));
+        return this.kids.some(
+            (kid) => kid === node || (kid instanceof FakeElement && kid.contains(node)),
+        );
     }
 
     closest(selector: string): FakeElement | null {
@@ -111,7 +113,9 @@ class TestElement extends TestNode {
         if (node === this) {
             return true;
         }
-        return this.childNodes.some((kid) => kid === node || (kid instanceof TestElement && kid.contains(node)));
+        return this.childNodes.some(
+            (kid) => kid === node || (kid instanceof TestElement && kid.contains(node)),
+        );
     }
 
     matches(selector: string): boolean {
@@ -187,25 +191,17 @@ const computedStyle = {
 let runFrames = true;
 let queuedFrame: FrameRequestCallback | undefined;
 
-const priorDocument = globalThis.document;
-const priorElement = globalThis.Element;
-const priorHtmlElement = globalThis.HTMLElement;
-const priorNode = globalThis.Node;
-const priorImage = globalThis.Image;
-const priorGetComputedStyle = globalThis.getComputedStyle;
-const priorRequestAnimationFrame = globalThis.requestAnimationFrame;
-
 function installDom(
     caret: { offsetNode: unknown; offset: number } | null,
     range: { startContainer: unknown; startOffset: number } | null = null,
 ): void {
     const ElementCtor = FakeElement as unknown as typeof Element;
-    globalThis.Element = ElementCtor;
-    globalThis.HTMLElement = ElementCtor as unknown as typeof HTMLElement;
-    globalThis.document = {
+    vi.stubGlobal("Element", ElementCtor);
+    vi.stubGlobal("HTMLElement", ElementCtor as unknown as typeof HTMLElement);
+    vi.stubGlobal("document", {
         caretPositionFromPoint: () => caret,
         caretRangeFromPoint: () => range,
-    } as unknown as Document;
+    } as unknown as Document);
 }
 
 function installRichDom(): void {
@@ -217,20 +213,20 @@ function installRichDom(): void {
     computedStyle.paddingBottom = "0px";
     computedStyle.borderTopWidth = "0px";
     computedStyle.borderBottomWidth = "0px";
-    globalThis.Node = TestNode as unknown as typeof Node;
-    globalThis.Element = TestElement as unknown as typeof Element;
-    globalThis.HTMLElement = TestElement as unknown as typeof HTMLElement;
-    globalThis.Image = TestImage as unknown as typeof Image;
-    globalThis.getComputedStyle = (() => computedStyle) as unknown as typeof getComputedStyle;
-    globalThis.requestAnimationFrame = ((callback: FrameRequestCallback) => {
+    vi.stubGlobal("Node", TestNode as unknown as typeof Node);
+    vi.stubGlobal("Element", TestElement as unknown as typeof Element);
+    vi.stubGlobal("HTMLElement", TestElement as unknown as typeof HTMLElement);
+    vi.stubGlobal("Image", TestImage as unknown as typeof Image);
+    vi.stubGlobal("getComputedStyle", (() => computedStyle) as unknown as typeof getComputedStyle);
+    vi.stubGlobal("requestAnimationFrame", ((callback: FrameRequestCallback) => {
         if (runFrames) {
             callback(0);
         } else {
             queuedFrame = callback;
         }
         return 1;
-    }) as typeof requestAnimationFrame;
-    globalThis.document = {
+    }) as typeof requestAnimationFrame);
+    vi.stubGlobal("document", {
         createElement: (tag: string) => {
             const node = new TestElement(tag);
             created.push(node);
@@ -238,7 +234,7 @@ function installRichDom(): void {
         },
         caretPositionFromPoint: () => null,
         caretRangeFromPoint: () => null,
-    } as unknown as Document;
+    } as unknown as Document);
 }
 
 function scope(overrides: Partial<Scope> & Pick<Scope, "kind">): Scope {
@@ -282,13 +278,7 @@ async function flush(): Promise<void> {
 }
 
 afterEach(() => {
-    globalThis.document = priorDocument;
-    globalThis.Element = priorElement;
-    globalThis.HTMLElement = priorHtmlElement;
-    globalThis.Node = priorNode;
-    globalThis.Image = priorImage;
-    globalThis.getComputedStyle = priorGetComputedStyle;
-    globalThis.requestAnimationFrame = priorRequestAnimationFrame;
+    vi.unstubAllGlobals();
     vi.mocked(renderMermaidDiagram).mockReset();
 });
 
@@ -325,9 +315,15 @@ describe("contentClass", () => {
 
 describe("imageZoneKey", () => {
     it("keys a resolved url and a missing image", () => {
-        expect(imageZoneKey("./pic.png", 4, "http://doc.test/readme.md")).toBe("image:4:http://doc.test/pic.png");
-        expect(imageZoneKey("https://cdn.test/a.png", 2, "")).toBe("image:2:https://cdn.test/a.png");
-        expect(imageZoneKey("javascript:alert(1)", 8, "http://doc.test/readme.md")).toBe("image:8:missing");
+        expect(imageZoneKey("./pic.png", 4, "http://doc.test/readme.md")).toBe(
+            "image:4:http://doc.test/pic.png",
+        );
+        expect(imageZoneKey("https://cdn.test/a.png", 2, "")).toBe(
+            "image:2:https://cdn.test/a.png",
+        );
+        expect(imageZoneKey("javascript:alert(1)", 8, "http://doc.test/readme.md")).toBe(
+            "image:8:missing",
+        );
         expect(imageZoneKey(undefined, 3, "http://doc.test/readme.md")).toBe("image:3:missing");
         expect(imageZoneKey("", 3, "http://doc.test/readme.md")).toBe("image:3:missing");
     });
@@ -339,13 +335,25 @@ describe("tableCellOffset", () => {
         const cell = new FakeElement();
         cell.dataset.start = "15";
         cell.dataset.end = "20";
-        expect(tableCellOffset({ clientX: 0, clientY: 0 } as MouseEvent, cell as unknown as HTMLElement, 99)).toBe(15);
+        expect(
+            tableCellOffset(
+                { clientX: 0, clientY: 0 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                99,
+            ),
+        ).toBe(15);
     });
 
     it("uses the fallback when data-start is missing", () => {
         installDom(null);
         const cell = new FakeElement();
-        expect(tableCellOffset({ clientX: 0, clientY: 0 } as MouseEvent, cell as unknown as HTMLElement, 40)).toBe(40);
+        expect(
+            tableCellOffset(
+                { clientX: 0, clientY: 0 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                40,
+            ),
+        ).toBe(40);
     });
 
     it("uses the source offset of a caret node inside the cell", () => {
@@ -356,7 +364,13 @@ describe("tableCellOffset", () => {
         text.dataset.from = "12";
         cell.append(text);
         installDom({ offsetNode: text, offset: 2 });
-        expect(tableCellOffset({ clientX: 1, clientY: 1 } as MouseEvent, cell as unknown as HTMLElement, 10)).toBe(14);
+        expect(
+            tableCellOffset(
+                { clientX: 1, clientY: 1 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                10,
+            ),
+        ).toBe(14);
     });
 
     it("reads a caret range when caretPositionFromPoint is absent", () => {
@@ -369,12 +383,18 @@ describe("tableCellOffset", () => {
         marked.append(text);
         cell.append(marked);
         const ElementCtor = FakeElement as unknown as typeof Element;
-        globalThis.Element = ElementCtor;
-        globalThis.HTMLElement = ElementCtor as unknown as typeof HTMLElement;
-        globalThis.document = {
+        vi.stubGlobal("Element", ElementCtor);
+        vi.stubGlobal("HTMLElement", ElementCtor as unknown as typeof HTMLElement);
+        vi.stubGlobal("document", {
             caretRangeFromPoint: () => ({ startContainer: text, startOffset: 2 }),
-        } as unknown as Document;
-        expect(tableCellOffset({ clientX: 1, clientY: 1 } as MouseEvent, cell as unknown as HTMLElement, 10)).toBe(20);
+        } as unknown as Document);
+        expect(
+            tableCellOffset(
+                { clientX: 1, clientY: 1 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                10,
+            ),
+        ).toBe(20);
     });
 
     it("uses a range when caretPositionFromPoint returns null", () => {
@@ -385,7 +405,13 @@ describe("tableCellOffset", () => {
         marked.dataset.from = "10";
         cell.append(marked);
         installDom(null, { startContainer: marked, startOffset: 0 });
-        expect(tableCellOffset({ clientX: 1, clientY: 1 } as MouseEvent, cell as unknown as HTMLElement, 4)).toBe(10);
+        expect(
+            tableCellOffset(
+                { clientX: 1, clientY: 1 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                4,
+            ),
+        ).toBe(10);
     });
 
     it("returns data-start when the caret is outside the cell or the marker is unusable", () => {
@@ -395,18 +421,36 @@ describe("tableCellOffset", () => {
         const outside = new FakeElement();
         outside.dataset.from = "12";
         installDom({ offsetNode: outside, offset: 1 });
-        expect(tableCellOffset({ clientX: 0, clientY: 0 } as MouseEvent, cell as unknown as HTMLElement, 3)).toBe(10);
+        expect(
+            tableCellOffset(
+                { clientX: 0, clientY: 0 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                3,
+            ),
+        ).toBe(10);
 
         const unmarked = new FakeElement();
         cell.append(unmarked);
         installDom({ offsetNode: unmarked, offset: 1 });
-        expect(tableCellOffset({ clientX: 0, clientY: 0 } as MouseEvent, cell as unknown as HTMLElement, 3)).toBe(10);
+        expect(
+            tableCellOffset(
+                { clientX: 0, clientY: 0 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                3,
+            ),
+        ).toBe(10);
 
         const bad = new FakeElement();
         bad.dataset.from = "nope";
         cell.append(bad);
         installDom({ offsetNode: bad, offset: 1 });
-        expect(tableCellOffset({ clientX: 0, clientY: 0 } as MouseEvent, cell as unknown as HTMLElement, 3)).toBe(10);
+        expect(
+            tableCellOffset(
+                { clientX: 0, clientY: 0 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                3,
+            ),
+        ).toBe(10);
     });
 
     it("rejects caret offsets outside the cell range", () => {
@@ -417,13 +461,25 @@ describe("tableCellOffset", () => {
         early.dataset.from = "4";
         cell.append(early);
         installDom({ offsetNode: early, offset: 0 });
-        expect(tableCellOffset({ clientX: 0, clientY: 0 } as MouseEvent, cell as unknown as HTMLElement, 3)).toBe(10);
+        expect(
+            tableCellOffset(
+                { clientX: 0, clientY: 0 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                3,
+            ),
+        ).toBe(10);
 
         const late = new FakeElement();
         late.dataset.from = "19";
         cell.append(late);
         installDom({ offsetNode: late, offset: 4 });
-        expect(tableCellOffset({ clientX: 0, clientY: 0 } as MouseEvent, cell as unknown as HTMLElement, 3)).toBe(10);
+        expect(
+            tableCellOffset(
+                { clientX: 0, clientY: 0 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                3,
+            ),
+        ).toBe(10);
     });
 
     it("returns data-start when the cell end is not a number and the fallback when the start is not", () => {
@@ -433,14 +489,26 @@ describe("tableCellOffset", () => {
         marked.dataset.from = "12";
         cell.append(marked);
         installDom({ offsetNode: marked, offset: 1 });
-        expect(tableCellOffset({ clientX: 0, clientY: 0 } as MouseEvent, cell as unknown as HTMLElement, 7)).toBe(10);
+        expect(
+            tableCellOffset(
+                { clientX: 0, clientY: 0 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                7,
+            ),
+        ).toBe(10);
 
         const open = new FakeElement();
         const inside = new FakeElement();
         inside.dataset.from = "12";
         open.append(inside);
         installDom({ offsetNode: inside, offset: 1 });
-        expect(tableCellOffset({ clientX: 0, clientY: 0 } as MouseEvent, open as unknown as HTMLElement, 7)).toBe(7);
+        expect(
+            tableCellOffset(
+                { clientX: 0, clientY: 0 } as MouseEvent,
+                open as unknown as HTMLElement,
+                7,
+            ),
+        ).toBe(7);
     });
 
     it("ignores a marker that is not an HTMLElement", () => {
@@ -451,8 +519,14 @@ describe("tableCellOffset", () => {
         text.dataset.from = "12";
         cell.append(text);
         installDom({ offsetNode: text, offset: 2 });
-        globalThis.HTMLElement = class {} as unknown as typeof HTMLElement;
-        expect(tableCellOffset({ clientX: 1, clientY: 1 } as MouseEvent, cell as unknown as HTMLElement, 10)).toBe(10);
+        vi.stubGlobal("HTMLElement", class {} as unknown as typeof HTMLElement);
+        expect(
+            tableCellOffset(
+                { clientX: 1, clientY: 1 } as MouseEvent,
+                cell as unknown as HTMLElement,
+                10,
+            ),
+        ).toBe(10);
     });
 });
 
@@ -460,20 +534,49 @@ describe("tableRow", () => {
     it("trims surrounding spaces and tabs and renders nested inline scopes", () => {
         installRichDom();
         const source = " \tabcdefghij\t ";
-        const row = element(tableRow(source, [
-            scope({ kind: "heading", start: 0, end: 4, contentStart: 1, contentEnd: 3, level: 2 }),
-            scope({ kind: "emphasis", start: -1, end: 4, contentStart: 0, contentEnd: 1 }),
-            scope({ kind: "inlineCode", start: 1, end: 50, contentStart: 1, contentEnd: 2 }),
-            scope({ kind: "link", start: 2, end: 2, contentStart: 2, contentEnd: 2 }),
-            scope({ kind: "strong", start: 4, end: 10, contentStart: 5, contentEnd: 9 }),
-            scope({ kind: "emphasis", start: 5, end: 8, contentStart: 6, contentEnd: 7 }),
-            scope({ kind: "inlineCode", start: 5, end: 7, contentStart: 6, contentEnd: 6 }),
-            scope({ kind: "link", start: 10, end: 12, contentStart: 11, contentEnd: 12, url: "https://example.com/a" }),
-        ], [{ start: 0, end: source.length }], "td"));
+        const row = element(
+            tableRow(
+                source,
+                [
+                    scope({
+                        kind: "heading",
+                        start: 0,
+                        end: 4,
+                        contentStart: 1,
+                        contentEnd: 3,
+                        level: 2,
+                    }),
+                    scope({ kind: "emphasis", start: -1, end: 4, contentStart: 0, contentEnd: 1 }),
+                    scope({
+                        kind: "inlineCode",
+                        start: 1,
+                        end: 50,
+                        contentStart: 1,
+                        contentEnd: 2,
+                    }),
+                    scope({ kind: "link", start: 2, end: 2, contentStart: 2, contentEnd: 2 }),
+                    scope({ kind: "strong", start: 4, end: 10, contentStart: 5, contentEnd: 9 }),
+                    scope({ kind: "emphasis", start: 5, end: 8, contentStart: 6, contentEnd: 7 }),
+                    scope({ kind: "inlineCode", start: 5, end: 7, contentStart: 6, contentEnd: 6 }),
+                    scope({
+                        kind: "link",
+                        start: 10,
+                        end: 12,
+                        contentStart: 11,
+                        contentEnd: 12,
+                        url: "https://example.com/a",
+                    }),
+                ],
+                [{ start: 0, end: source.length }],
+                "td",
+            ),
+        );
         const cell = element(row.childNodes[0]);
         expect(cell.dataset.start).toBe("2");
         expect(cell.dataset.end).toBe("12");
-        const top = cell.childNodes.filter((node): node is TestElement => node instanceof TestElement);
+        const top = cell.childNodes.filter(
+            (node): node is TestElement => node instanceof TestElement,
+        );
         expect(top.map((node) => node.className || node.textContent)).toEqual([
             "inline-md-link",
             "b",
@@ -481,8 +584,13 @@ describe("tableRow", () => {
             "inline-md-link",
         ]);
         expect(top[0]?.dataset.href).toBeUndefined();
-        const strong = top[2]?.childNodes.filter((node): node is TestElement => node instanceof TestElement) ?? [];
-        expect(strong.map((node) => node.className || node.textContent)).toEqual(["inline-md-em", "g"]);
+        const strong =
+            top[2]?.childNodes.filter((node): node is TestElement => node instanceof TestElement) ??
+            [];
+        expect(strong.map((node) => node.className || node.textContent)).toEqual([
+            "inline-md-em",
+            "g",
+        ]);
         expect(element(strong[0]?.childNodes[0]).dataset.from).toBe("6");
         expect(element(strong[0]?.childNodes[0]).textContent).toBe("e");
         expect(top[3]?.dataset.href).toBe("https://example.com/a");
@@ -491,16 +599,26 @@ describe("tableRow", () => {
 
     it("emits plain text when the next scope starts at the cell end or lies outside it", () => {
         installRichDom();
-        const boundary = element(tableRow("abcd", [
-            scope({ kind: "strong", start: 4, end: 4, contentStart: 4, contentEnd: 4 }),
-        ], [{ start: 0, end: 4 }], "th"));
+        const boundary = element(
+            tableRow(
+                "abcd",
+                [scope({ kind: "strong", start: 4, end: 4, contentStart: 4, contentEnd: 4 })],
+                [{ start: 0, end: 4 }],
+                "th",
+            ),
+        );
         const boundaryCell = element(boundary.childNodes[0]);
         expect(boundaryCell.childNodes).toHaveLength(1);
         expect(element(boundaryCell.childNodes[0]).textContent).toBe("abcd");
 
-        const plain = element(tableRow("ab", [
-            scope({ kind: "strong", start: 5, end: 6, contentStart: 5, contentEnd: 6 }),
-        ], [{ start: 0, end: 2 }], "td"));
+        const plain = element(
+            tableRow(
+                "ab",
+                [scope({ kind: "strong", start: 5, end: 6, contentStart: 5, contentEnd: 6 })],
+                [{ start: 0, end: 2 }],
+                "td",
+            ),
+        );
         expect(element(element(plain.childNodes[0]).childNodes[0]).textContent).toBe("ab");
 
         const empty = element(tableRow("   ", [], [{ start: 0, end: 3 }], "td"));
@@ -540,18 +658,32 @@ describe("blockZone", () => {
 
         const blankAlt = blockZone(scope({ kind: "image", alt: "", url: "   " }), 4, 2, host);
         expect(blankAlt.key).toBe("image:4:missing");
-        expect(element(blankAlt.zone.domNode).find(".inline-md-image-fallback")?.textContent).toBe("Image");
+        expect(element(blankAlt.zone.domNode).find(".inline-md-image-fallback")?.textContent).toBe(
+            "Image",
+        );
 
-        const labeled = blockZone(scope({ kind: "image", alt: "Shot", url: "javascript:alert(1)" }), 6, 2, host);
+        const labeled = blockZone(
+            scope({ kind: "image", alt: "Shot", url: "javascript:alert(1)" }),
+            6,
+            2,
+            host,
+        );
         expect(labeled.key).toBe("image:6:missing");
-        expect(element(labeled.zone.domNode).find(".inline-md-image-fallback")?.textContent).toBe("Shot");
+        expect(element(labeled.zone.domNode).find(".inline-md-image-fallback")?.textContent).toBe(
+            "Shot",
+        );
         expect(probes).toHaveLength(0);
     });
 
     it("fits a loaded image and ignores a second load once settled", () => {
         installRichDom();
         const host = createHost();
-        const record = blockZone(scope({ kind: "image", alt: "Shot", url: "./pic.png" }), 9, 4, host);
+        const record = blockZone(
+            scope({ kind: "image", alt: "Shot", url: "./pic.png" }),
+            9,
+            4,
+            host,
+        );
         expect(record.key).toBe("image:9:http://doc.test/pic.png");
         const probe = probes[0];
         expect(probe?.src).toBe("http://doc.test/pic.png");
@@ -578,7 +710,12 @@ describe("blockZone", () => {
     it("asks for layout when the fitted height differs and when height was cleared", () => {
         installRichDom();
         const host = createHost();
-        const grown = blockZone(scope({ kind: "image", url: "https://cdn.test/a.png" }), 2, 1, host);
+        const grown = blockZone(
+            scope({ kind: "image", url: "https://cdn.test/a.png" }),
+            2,
+            1,
+            host,
+        );
         const grownProbe = probes[0];
         grownProbe!.naturalWidth = 960;
         grownProbe!.naturalHeight = 480;
@@ -586,7 +723,12 @@ describe("blockZone", () => {
         expect(grown.zone.heightInPx).toBe(240);
         expect(host.onLayout).toHaveBeenCalledWith(grown.key);
 
-        const cleared = blockZone(scope({ kind: "image", url: "https://cdn.test/b.png" }), 3, 1, host);
+        const cleared = blockZone(
+            scope({ kind: "image", url: "https://cdn.test/b.png" }),
+            3,
+            1,
+            host,
+        );
         cleared.zone.heightInPx = undefined;
         const clearedProbe = probes[1];
         clearedProbe!.naturalWidth = 10;
@@ -599,10 +741,17 @@ describe("blockZone", () => {
     it("falls back when the image errors or reports an empty size", () => {
         installRichDom();
         const host = createHost();
-        const broken = blockZone(scope({ kind: "image", alt: "Gone", url: "https://cdn.test/missing.png" }), 7, 2, host);
+        const broken = blockZone(
+            scope({ kind: "image", alt: "Gone", url: "https://cdn.test/missing.png" }),
+            7,
+            2,
+            host,
+        );
         const brokenProbe = probes[0];
         brokenProbe!.fire("error", {});
-        expect(element(broken.zone.domNode).find(".inline-md-image-fallback")?.textContent).toBe("Gone");
+        expect(element(broken.zone.domNode).find(".inline-md-image-fallback")?.textContent).toBe(
+            "Gone",
+        );
         brokenProbe!.naturalWidth = 40;
         brokenProbe!.naturalHeight = 40;
         brokenProbe!.fire("load", {});
@@ -610,13 +759,25 @@ describe("blockZone", () => {
         expect(element(broken.zone.domNode).find(".inline-md-image")).toBeUndefined();
         expect(host.onLayout).not.toHaveBeenCalled();
 
-        const empty = blockZone(scope({ kind: "image", url: "https://cdn.test/empty.png" }), 8, 2, host);
+        const empty = blockZone(
+            scope({ kind: "image", url: "https://cdn.test/empty.png" }),
+            8,
+            2,
+            host,
+        );
         const emptyProbe = probes[1];
         emptyProbe!.naturalWidth = 0;
         emptyProbe!.naturalHeight = 30;
         emptyProbe!.fire("load", {});
-        expect(element(empty.zone.domNode).find(".inline-md-image-fallback")?.textContent).toBe("Image");
-        const flat = blockZone(scope({ kind: "image", url: "https://cdn.test/flat.png" }), 11, 2, host);
+        expect(element(empty.zone.domNode).find(".inline-md-image-fallback")?.textContent).toBe(
+            "Image",
+        );
+        const flat = blockZone(
+            scope({ kind: "image", url: "https://cdn.test/flat.png" }),
+            11,
+            2,
+            host,
+        );
         const flatProbe = probes[2];
         flatProbe!.naturalWidth = 30;
         flatProbe!.naturalHeight = 0;
@@ -631,7 +792,13 @@ describe("createMermaidZone", () => {
         installRichDom();
         vi.mocked(renderMermaidDiagram).mockResolvedValue(90);
         const host = createHost({ onOpenMermaidPreview: vi.fn() });
-        const record = createMermaidZone(scope({ kind: "codeBlock", contentStart: 8 }), "graph TD;", "mermaid:8", 5, host);
+        const record = createMermaidZone(
+            scope({ kind: "codeBlock", contentStart: 8 }),
+            "graph TD;",
+            "mermaid:8",
+            5,
+            host,
+        );
         const frame = element(record.zone.domNode);
         expect(record.zone.heightInPx).toBe(120);
         expect(element(record.zone.marginDomNode).textContent).toBe("5");
@@ -671,7 +838,13 @@ describe("createMermaidZone", () => {
         installRichDom();
         vi.mocked(renderMermaidDiagram).mockResolvedValue(0);
         const host = createHost();
-        const record = createMermaidZone(scope({ kind: "codeBlock", contentStart: 1 }), "graph", "mermaid:1", 2, host);
+        const record = createMermaidZone(
+            scope({ kind: "codeBlock", contentStart: 1 }),
+            "graph",
+            "mermaid:1",
+            2,
+            host,
+        );
         const button = created.find((node) => node.className === "inline-md-mermaid-open-preview");
         const event = mouse(button);
         button?.fire("mousedown", event);
@@ -687,7 +860,13 @@ describe("createMermaidZone", () => {
         runFrames = false;
         vi.mocked(renderMermaidDiagram).mockResolvedValue(80);
         const host = createHost();
-        const record = createMermaidZone(scope({ kind: "codeBlock", contentStart: 2 }), "graph", "mermaid:2", 3, host);
+        const record = createMermaidZone(
+            scope({ kind: "codeBlock", contentStart: 2 }),
+            "graph",
+            "mermaid:2",
+            3,
+            host,
+        );
         const frame = element(record.zone.domNode);
         frame.isConnected = true;
         frame.scrollHeight = 81;
@@ -719,13 +898,26 @@ describe("tableZone", () => {
     const head = [{ start: 0, end: 4 }];
     const body = [{ start: 4, end: 6 }];
     const scopes = [
-        scope({ kind: "link", start: 4, end: 6, contentStart: 5, contentEnd: 6, url: "https://example.com/go" }),
+        scope({
+            kind: "link",
+            start: 4,
+            end: 6,
+            contentStart: 5,
+            contentEnd: 6,
+            url: "https://example.com/go",
+        }),
     ];
 
     it("reveals cells, follows links, and walks text targets", () => {
         installRichDom();
         const host = createHost({ onLink: vi.fn() });
-        const record = tableZone(scope({ kind: "table", start: 3, end: 9, rows: [head, body, []] }), source, scopes, 50, host);
+        const record = tableZone(
+            scope({ kind: "table", start: 3, end: 9, rows: [head, body, []] }),
+            source,
+            scopes,
+            50,
+            host,
+        );
         expect(record.key).toBe(`table:3:9:${source.slice(3, 9)}`);
         const frame = element(record.domNode);
         const link = frame.find(".inline-md-link");
@@ -762,7 +954,13 @@ describe("tableZone", () => {
     it("reveals the cell when a link has no click handler", () => {
         installRichDom();
         const host = createHost();
-        const record = tableZone(scope({ kind: "table", rows: [head, body] }), source, scopes, 50, host);
+        const record = tableZone(
+            scope({ kind: "table", rows: [head, body] }),
+            source,
+            scopes,
+            50,
+            host,
+        );
         const frame = element(record.domNode);
         frame.fire("mousedown", mouse(frame.find(".inline-md-link")));
         expect(host.onReveal).toHaveBeenCalledWith(4);
@@ -770,12 +968,24 @@ describe("tableZone", () => {
 
     it("builds a header-only table and an empty table", () => {
         installRichDom();
-        const headerOnly = tableZone(scope({ kind: "table", start: 1, end: 2, rows: [head] }), source, [], 0, createHost());
+        const headerOnly = tableZone(
+            scope({ kind: "table", start: 1, end: 2, rows: [head] }),
+            source,
+            [],
+            0,
+            createHost(),
+        );
         const headerFrame = element(headerOnly.domNode);
         expect(headerFrame.find("th")).toBeDefined();
         expect(headerFrame.find(".inline-md-table-rule")).toBeDefined();
 
-        const empty = tableZone(scope({ kind: "table", start: 0, end: 1 }), "", [], 4, createHost());
+        const empty = tableZone(
+            scope({ kind: "table", start: 0, end: 1 }),
+            "",
+            [],
+            4,
+            createHost(),
+        );
         expect(element(empty.domNode).querySelector("table")?.childNodes).toHaveLength(0);
     });
 
@@ -784,9 +994,21 @@ describe("tableZone", () => {
         const source = "| A | B |\n| --- | ---: |\n| c | d |\n";
         expect(tableAlignments(source, 0, source.length)).toEqual(["left", "right"]);
         expect(tableAlignments("no table", 0, 8)).toEqual([]);
-        const head = [{ start: 2, end: 3 }, { start: 6, end: 7 }];
-        const body = [{ start: 24, end: 25 }, { start: 28, end: 29 }];
-        const record = tableZone(scope({ kind: "table", start: 0, end: source.length, rows: [head, body] }), source, [], 0, createHost());
+        const head = [
+            { start: 2, end: 3 },
+            { start: 6, end: 7 },
+        ];
+        const body = [
+            { start: 24, end: 25 },
+            { start: 28, end: 29 },
+        ];
+        const record = tableZone(
+            scope({ kind: "table", start: 0, end: source.length, rows: [head, body] }),
+            source,
+            [],
+            0,
+            createHost(),
+        );
         const frame = element(record.domNode);
         const header = element(frame.find("thead")?.childNodes[0]);
         expect(element(header.childNodes[1]).className).toBe("inline-md-align-right");

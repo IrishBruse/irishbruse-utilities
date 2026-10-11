@@ -9,10 +9,7 @@ export function getActiveMarkdownUri(): Uri | undefined {
     const activeTab = window.tabGroups.activeTabGroup.activeTab;
     const input = activeTab?.input;
 
-    if (
-        input instanceof TabInputCustom
-        && input.viewType === MARKDOWN_INLINE_VIEW_TYPE
-    ) {
+    if (input instanceof TabInputCustom && input.viewType === MARKDOWN_INLINE_VIEW_TYPE) {
         return input.uri;
     }
 

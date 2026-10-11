@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -42,14 +42,23 @@ async function readSelection(page: Page): Promise<LineReading> {
             right: box.right - openerBox.left,
         });
         const leaf = (line: Element, needle: string): SpanBox | null => {
-            const span = [...line.querySelectorAll("span")].find((entry) => entry.childElementCount === 0 && fold(entry.textContent) === needle);
+            const span = [...line.querySelectorAll("span")].find(
+                (entry) => entry.childElementCount === 0 && fold(entry.textContent) === needle,
+            );
             return span ? relative(span.getBoundingClientRect()) : null;
         };
         const pieces = [...document.querySelectorAll<HTMLElement>(".selected-text")]
             .map((piece) => piece.getBoundingClientRect())
-            .filter((box) => box.bottom > openerBox.top + 0.5 && box.top < openerBox.bottom - 0.5 && box.width > 0.5)
+            .filter(
+                (box) =>
+                    box.bottom > openerBox.top + 0.5 &&
+                    box.top < openerBox.bottom - 0.5 &&
+                    box.width > 0.5,
+            )
             .map(relative);
-        const label = [...document.querySelectorAll("#editor .inline-md-lang")].find((entry) => fold(entry.textContent).trim() === "yaml");
+        const label = [...document.querySelectorAll("#editor .inline-md-lang")].find(
+            (entry) => fold(entry.textContent).trim() === "yaml",
+        );
         const labelBox = label?.getBoundingClientRect();
         return {
             text: fold(opener.textContent),
@@ -88,7 +97,9 @@ describe("front matter selection", () => {
         expect(reading.pieces.some((piece) => overlaps(piece, reading.dashes!))).toBe(true);
         expect(reading.pieces.some((piece) => piece.left < reading.dashes!.left + 2)).toBe(true);
         expect(reading.pieces.every((piece) => piece.left < reading.dashes!.right - 1)).toBe(true);
-        expect(reading.pieces.every((piece) => piece.right <= reading.dashes!.right + 12)).toBe(true);
+        expect(reading.pieces.every((piece) => piece.right <= reading.dashes!.right + 12)).toBe(
+            true,
+        );
         expect(reading.name!.left).toBeLessThanOrEqual(1);
         await expectLineRangeShot(page, join(here, "screenshots", "selection.png"), {
             from: "---",
@@ -106,7 +117,9 @@ describe("front matter selection", () => {
             });
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
             const measure = (needle: string) => {
-                const line = [...document.querySelectorAll<HTMLElement>("#editor .view-line")].find((entry) => fold(entry.textContent).includes(needle));
+                const line = [...document.querySelectorAll<HTMLElement>("#editor .view-line")].find(
+                    (entry) => fold(entry.textContent).includes(needle),
+                );
                 if (!(line instanceof HTMLElement)) {
                     return null;
                 }
@@ -121,13 +134,26 @@ describe("front matter selection", () => {
                     }
                     textRight = Math.max(textRight, span.getBoundingClientRect().right);
                 }
-                const selected = [...document.querySelectorAll<HTMLElement>(".cslr.selected-text")].filter((node) => {
+                const selected = [
+                    ...document.querySelectorAll<HTMLElement>(".cslr.selected-text"),
+                ].filter((node) => {
                     const rect = node.getBoundingClientRect();
-                    return rect.bottom > bounds.top + 0.5 && rect.top < bounds.bottom - 0.5 && rect.width > 0.5;
+                    return (
+                        rect.bottom > bounds.top + 0.5 &&
+                        rect.top < bounds.bottom - 0.5 &&
+                        rect.width > 0.5
+                    );
                 });
-                const onText = selected.filter((node) => node.getBoundingClientRect().left < textRight - 1);
-                const highlightRight = onText.reduce((right, node) => Math.max(right, node.getBoundingClientRect().right), bounds.left);
-                const square = selected.find((node) => node.getBoundingClientRect().left >= textRight - 1) ?? null;
+                const onText = selected.filter(
+                    (node) => node.getBoundingClientRect().left < textRight - 1,
+                );
+                const highlightRight = onText.reduce(
+                    (right, node) => Math.max(right, node.getBoundingClientRect().right),
+                    bounds.left,
+                );
+                const square =
+                    selected.find((node) => node.getBoundingClientRect().left >= textRight - 1) ??
+                    null;
                 return {
                     pastEnd: highlightRight - textRight,
                     square: square === null ? null : square.style.width,

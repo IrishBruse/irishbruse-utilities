@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { dragSelectionClassName } from "./selection";
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -28,9 +28,15 @@ describe("mouse drag selection", () => {
 
     it("keeps the editor height stable and paints selection above line decorations", () => {
         const source = readFileSync(editorPath, "utf8");
-        const fitNow = source.slice(source.indexOf("const fitNow"), source.indexOf("const fitContent"));
+        const fitNow = source.slice(
+            source.indexOf("const fitNow"),
+            source.indexOf("const fitContent"),
+        );
         expect(fitNow).toContain("isDragSelecting");
-        const cursor = source.slice(source.indexOf("onDidChangeCursorSelection"), source.indexOf("const openRenderedLink"));
+        const cursor = source.slice(
+            source.indexOf("onDidChangeCursorSelection"),
+            source.indexOf("const openRenderedLink"),
+        );
         expect(cursor).not.toContain("isDragSelecting");
         const css = readFileSync(layersCssPath, "utf8");
         expect(css).toContain(".view-overlays > div:has(.selected-text)");

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -13,12 +13,16 @@ describe("blockquotes", () => {
         browser = opened.browser;
         page = opened.page;
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
             api.setCursor(0);
         });
-        await page.waitForFunction(() => document.querySelector(".inline-md-quote-depth-2") instanceof HTMLElement);
+        await page.waitForFunction(
+            () => document.querySelector(".inline-md-quote-depth-2") instanceof HTMLElement,
+        );
     });
 
     afterAll(async () => {
@@ -44,22 +48,35 @@ describe("blockquotes", () => {
     it("puts a bar on the left of a quote and a second bar on a nested quote", async () => {
         const bars = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Quote line."));
-            const nested = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Nested quote."));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("Quote line."),
+            );
+            const nested = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("Nested quote."),
+            );
             const barFor = (view: Element | undefined, depth: string) => {
                 if (!(view instanceof HTMLElement)) {
                     return null;
                 }
                 const top = view.getBoundingClientRect().top;
-                const mark = [...document.querySelectorAll(`.inline-md-quote-${depth}`)].find((entry) => {
-                    return Math.abs(entry.getBoundingClientRect().top - top) <= 2;
-                });
+                const mark = [...document.querySelectorAll(`.inline-md-quote-${depth}`)].find(
+                    (entry) => {
+                        return Math.abs(entry.getBoundingClientRect().top - top) <= 2;
+                    },
+                );
                 if (!(mark instanceof HTMLElement)) {
                     return null;
                 }
                 const word = [...view.querySelectorAll("span")]
-                    .filter((span) => fold(span.textContent).includes(depth === "depth-1" ? "Quote line." : "Nested quote."))
-                    .sort((left, right) => (left.textContent?.length ?? 0) - (right.textContent?.length ?? 0))[0];
+                    .filter((span) =>
+                        fold(span.textContent).includes(
+                            depth === "depth-1" ? "Quote line." : "Nested quote.",
+                        ),
+                    )
+                    .sort(
+                        (left, right) =>
+                            (left.textContent?.length ?? 0) - (right.textContent?.length ?? 0),
+                    )[0];
                 const box = mark.getBoundingClientRect();
                 const wordBox = word?.getBoundingClientRect();
                 const barHit = document.elementsFromPoint(box.left + 2, box.top + box.height / 2);
@@ -70,8 +87,12 @@ describe("blockquotes", () => {
                     image: getComputedStyle(mark).backgroundImage,
                     wordLeft: wordBox?.left ?? 0,
                     barLeft: box.left,
-                    hitIsBar: barHit.some((entry) => entry.classList.contains(`inline-md-quote-${depth}`)),
-                    wordIsQuote: wordHit instanceof Element && wordHit.classList.contains("inline-md-quote-text"),
+                    hitIsBar: barHit.some((entry) =>
+                        entry.classList.contains(`inline-md-quote-${depth}`),
+                    ),
+                    wordIsQuote:
+                        wordHit instanceof Element &&
+                        wordHit.classList.contains("inline-md-quote-text"),
                 };
             };
             return {

@@ -24,7 +24,10 @@ function bindingKey(markdownUri: Uri, openLine: number): string {
 }
 
 function previewFileName(markdownUri: Uri, openLine: number): string {
-    const hash = createHash("sha256").update(`${markdownUri.toString()}:${openLine}`).digest("hex").slice(0, 24);
+    const hash = createHash("sha256")
+        .update(`${markdownUri.toString()}:${openLine}`)
+        .digest("hex")
+        .slice(0, 24);
     return `${hash}.mmd`;
 }
 
@@ -36,7 +39,7 @@ export async function ensureMarkdownMermaidPreviewFile(
     context: ExtensionContext,
     markdownUri: Uri,
     openLine: number,
-    source: string
+    source: string,
 ): Promise<Uri> {
     const previewDir = Uri.joinPath(context.globalStorageUri, "markdown-mermaid");
     await workspace.fs.createDirectory(previewDir);

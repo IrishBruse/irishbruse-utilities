@@ -7,27 +7,38 @@ import { chromium, type Browser, type Locator, type Page } from "playwright-core
 const playground = "http://127.0.0.1:5175";
 
 async function viteOverlay(page: Page): Promise<string | undefined> {
-    const text = await page.evaluate(() => {
-        const overlay = document.querySelector("vite-error-overlay");
-        return overlay?.shadowRoot?.textContent?.replace(/\s+/g, " ").trim() ?? "";
-    }).catch(() => "");
+    const text = await page
+        .evaluate(() => {
+            const overlay = document.querySelector("vite-error-overlay");
+            return overlay?.shadowRoot?.textContent?.replace(/\s+/g, " ").trim() ?? "";
+        })
+        .catch(() => "");
     return text.length > 0 ? text : undefined;
 }
 
 async function waitForEditor(page: Page, marker: string | undefined): Promise<true | string> {
     try {
-        const handle = await page.waitForFunction((id: string | undefined) => {
-            const overlay = document.querySelector("vite-error-overlay");
-            const message = overlay?.shadowRoot?.textContent?.replace(/\s+/g, " ").trim();
-            if (message) {
-                return message;
-            }
-            if (id === undefined) {
-                return typeof (window as unknown as { __inlineMarkdown?: unknown }).__inlineMarkdown !== "undefined" ? true : false;
-            }
-            const text = (document.querySelector("#editor .view-lines")?.textContent ?? "").replaceAll("\u00a0", " ");
-            return text.includes(id) ? true : false;
-        }, marker, { timeout: 15_000 });
+        const handle = await page.waitForFunction(
+            (id: string | undefined) => {
+                const overlay = document.querySelector("vite-error-overlay");
+                const message = overlay?.shadowRoot?.textContent?.replace(/\s+/g, " ").trim();
+                if (message) {
+                    return message;
+                }
+                if (id === undefined) {
+                    return typeof (window as unknown as { __inlineMarkdown?: unknown })
+                        .__inlineMarkdown !== "undefined"
+                        ? true
+                        : false;
+                }
+                const text = (
+                    document.querySelector("#editor .view-lines")?.textContent ?? ""
+                ).replaceAll("\u00a0", " ");
+                return text.includes(id) ? true : false;
+            },
+            marker,
+            { timeout: 15_000 },
+        );
         const value = await handle.jsonValue();
         return value === true ? true : String(value);
     } catch (error) {
@@ -48,8 +59,13 @@ export interface BulletLine {
     readonly insideMargin: boolean;
 }
 
-export async function openPlayground(fixture: string, marker?: string): Promise<{ browser: Browser; page: Page }> {
-    const ready = await fetch(playground).then((response) => response.ok).catch(() => false);
+export async function openPlayground(
+    fixture: string,
+    marker?: string,
+): Promise<{ browser: Browser; page: Page }> {
+    const ready = await fetch(playground)
+        .then((response) => response.ok)
+        .catch(() => false);
     if (!ready) {
         throw new Error(`Playground is not running at ${playground}/`);
     }
@@ -58,14 +74,15 @@ export async function openPlayground(fixture: string, marker?: string): Promise<
         viewport: { width: 900, height: 700 },
         deviceScaleFactor: 1,
     });
-    const readyMarker = marker === ""
-        ? undefined
-        : marker
-            ?? (fixture.includes("list/")
-                ? "Nested bullet"
-                : fixture.includes("skill/")
+    const readyMarker =
+        marker === ""
+            ? undefined
+            : (marker ??
+              (fixture.includes("list/")
+                  ? "Nested bullet"
+                  : fixture.includes("skill/")
                     ? "markdown-skill-fixture"
-                    : "Hello");
+                    : "Hello"));
     await page.goto(`${playground}/?fixture=${fixture}`, { waitUntil: "domcontentloaded" });
     let opened = await waitForEditor(page, readyMarker);
     if (opened !== true) {
@@ -77,7 +94,8 @@ export async function openPlayground(fixture: string, marker?: string): Promise<
     }
     await page.evaluate(() => document.fonts.ready);
     await page.addStyleTag({
-        content: ".monaco-editor .cursors-layer, .monaco-editor .current-line { opacity: 0 !important; }",
+        content:
+            ".monaco-editor .cursors-layer, .monaco-editor .current-line { opacity: 0 !important; }",
     });
     return { browser, page };
 }
@@ -107,17 +125,26 @@ export async function bulletLines(page: Page, needles: readonly string[]): Promi
             if (top < 8 || top > window.innerHeight - 24) {
                 root.scrollTop += top - Math.min(200, window.innerHeight / 2);
             }
-            const shown = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes(needle));
+            const shown = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes(needle),
+            );
             const bullet = shown
-                ? [...shown.querySelectorAll(".inline-md-list-mark")].find((entry) => entry.childElementCount === 0)
+                ? [...shown.querySelectorAll(".inline-md-list-mark")].find(
+                      (entry) => entry.childElementCount === 0,
+                  )
                 : undefined;
             const box = bullet?.getBoundingClientRect();
             const word = shown
                 ? [...shown.querySelectorAll("span")]
-                    .filter((span) => fold(span.textContent).includes(needle))
-                    .sort((left, right) => (left.textContent?.length ?? 0) - (right.textContent?.length ?? 0))[0]
+                      .filter((span) => fold(span.textContent).includes(needle))
+                      .sort(
+                          (left, right) =>
+                              (left.textContent?.length ?? 0) - (right.textContent?.length ?? 0),
+                      )[0]
                 : undefined;
-            const hit = box ? document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2) : null;
+            const hit = box
+                ? document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2)
+                : null;
             const marginBox = document.querySelector("#editor .margin")?.getBoundingClientRect();
             return {
                 text: needle,
@@ -125,7 +152,11 @@ export async function bulletLines(page: Page, needles: readonly string[]): Promi
                 bulletRight: box?.right ?? 0,
                 wordLeft: word?.getBoundingClientRect().left ?? 0,
                 hitIsBullet: !!bullet && hit?.closest(".inline-md-list-mark") === bullet,
-                insideMargin: !!box && !!marginBox && box.left >= marginBox.left - 1 && box.right <= marginBox.right + 1,
+                insideMargin:
+                    !!box &&
+                    !!marginBox &&
+                    box.left >= marginBox.left - 1 &&
+                    box.right <= marginBox.right + 1,
             };
         });
     }, needles);
@@ -155,16 +186,16 @@ function alignShot(actual: PNG, expected: PNG): { actual: PNG; expected: PNG } {
         const cropped = cropY(taller, offset, height);
         const left = delta > 0 ? cropped : actual;
         const right = delta > 0 ? expected : cropped;
-        const mismatched = pixelmatch(left.data, right.data, undefined, left.width, height, { threshold: 0.1 });
+        const mismatched = pixelmatch(left.data, right.data, undefined, left.width, height, {
+            threshold: 0.1,
+        });
         if (mismatched < bestMismatch) {
             bestMismatch = mismatched;
             bestOffset = offset;
         }
     }
     const cropped = cropY(taller, bestOffset, height);
-    return delta > 0
-        ? { actual: cropped, expected }
-        : { actual, expected: cropped };
+    return delta > 0 ? { actual: cropped, expected } : { actual, expected: cropped };
 }
 
 function compareShot(buffer: Buffer, baselinePath: string): void {
@@ -177,15 +208,26 @@ function compareShot(buffer: Buffer, baselinePath: string): void {
     const actual = aligned.actual;
     const expected = aligned.expected;
     if (actual.width !== expected.width || actual.height !== expected.height) {
-        throw new Error(`Screenshot size ${actual.width}x${actual.height} does not match ${expected.width}x${expected.height}`);
+        throw new Error(
+            `Screenshot size ${actual.width}x${actual.height} does not match ${expected.width}x${expected.height}`,
+        );
     }
     const diff = new PNG({ width: actual.width, height: actual.height });
-    const mismatched = pixelmatch(expected.data, actual.data, diff.data, actual.width, actual.height, { threshold: 0.1 });
+    const mismatched = pixelmatch(
+        expected.data,
+        actual.data,
+        diff.data,
+        actual.width,
+        actual.height,
+        { threshold: 0.1 },
+    );
     const allowed = Math.round(actual.width * actual.height * 0.002);
     const diffPath = baselinePath.replace(/\.png$/, ".diff.png");
     if (mismatched > allowed) {
         writeFileSync(diffPath, PNG.sync.write(diff));
-        throw new Error(`${mismatched} pixels differ from ${baselinePath}. Diff written to ${diffPath}.`);
+        throw new Error(
+            `${mismatched} pixels differ from ${baselinePath}. Diff written to ${diffPath}.`,
+        );
     }
     if (existsSync(diffPath)) {
         unlinkSync(diffPath);
@@ -246,8 +288,14 @@ export async function featureClip(page: Page, options: LineRangeClip): Promise<P
             let hit: HTMLElement | null = null;
             let node = walker.nextNode();
             while (node) {
-                if (hasNeedle(fold(node.textContent), needle) && node.parentElement instanceof HTMLElement) {
-                    hit = node.parentElement.closest(".inline-md-table table, .inline-md-image-fallback, .view-line") ?? node.parentElement;
+                if (
+                    hasNeedle(fold(node.textContent), needle) &&
+                    node.parentElement instanceof HTMLElement
+                ) {
+                    hit =
+                        node.parentElement.closest(
+                            ".inline-md-table table, .inline-md-image-fallback, .view-line",
+                        ) ?? node.parentElement;
                     if (which === "first") {
                         return hit;
                     }
@@ -280,7 +328,8 @@ export async function featureClip(page: Page, options: LineRangeClip): Promise<P
             }
         };
         const band = { top, bottom };
-        const overlaps = (box: DOMRect): boolean => box.bottom > band.top + 0.5 && box.top < band.bottom - 0.5;
+        const overlaps = (box: DOMRect): boolean =>
+            box.bottom > band.top + 0.5 && box.top < band.bottom - 0.5;
         const centered = (box: DOMRect): boolean => {
             const center = (box.top + box.bottom) / 2;
             return center >= band.top && center <= band.bottom;
@@ -307,7 +356,9 @@ export async function featureClip(page: Page, options: LineRangeClip): Promise<P
             }
         }
         if (options.lineNumbers !== false) {
-            for (const number of document.querySelectorAll("#editor .line-numbers, #editor .inline-md-zone-number")) {
+            for (const number of document.querySelectorAll(
+                "#editor .line-numbers, #editor .inline-md-zone-number",
+            )) {
                 const box = number.getBoundingClientRect();
                 if (centered(box)) {
                     grow(box, "all");
@@ -347,8 +398,12 @@ export async function featureClip(page: Page, options: LineRangeClip): Promise<P
         const startTop = start.getBoundingClientRect().top;
         const endBottom = end.getBoundingClientRect().bottom;
         const lineBoxes = lines.map((line) => line.getBoundingClientRect());
-        const above = lineBoxes.filter((box) => box.bottom <= startTop + 0.5).sort((a, b) => b.bottom - a.bottom)[0];
-        const below = lineBoxes.filter((box) => box.top >= endBottom - 0.5).sort((a, b) => a.top - b.top)[0];
+        const above = lineBoxes
+            .filter((box) => box.bottom <= startTop + 0.5)
+            .sort((a, b) => b.bottom - a.bottom)[0];
+        const below = lineBoxes
+            .filter((box) => box.top >= endBottom - 0.5)
+            .sort((a, b) => a.top - b.top)[0];
         let y = Math.floor(Math.min(top, startTop) - pad);
         let clipBottom = Math.ceil(Math.max(bottom, endBottom) + pad);
         if (above) {
@@ -388,7 +443,11 @@ export async function expectPageClip(
     compareShot(await page.screenshot({ animations: "disabled", clip }), baselinePath);
 }
 
-export async function expectLineRangeShot(page: Page, baselinePath: string, options: LineRangeClip): Promise<PageClipBox> {
+export async function expectLineRangeShot(
+    page: Page,
+    baselinePath: string,
+    options: LineRangeClip,
+): Promise<PageClipBox> {
     const clip = await featureClip(page, options);
     await expectPageClip(page, clip, baselinePath);
     return clip;

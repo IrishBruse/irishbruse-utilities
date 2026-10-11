@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -20,15 +20,19 @@ describe("link syntax colors", () => {
         browser = opened.browser;
         page = opened.page;
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { focus(): void; setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { focus(): void; setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
             api.focus();
             api.setCursor(0);
         });
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            return [...document.querySelectorAll("#editor .view-line")].some((line) => fold(line.textContent).includes("https://example.com"));
+            return [...document.querySelectorAll("#editor .view-line")].some((line) =>
+                fold(line.textContent).includes("https://example.com"),
+            );
         });
     }, 45_000);
 
@@ -39,7 +43,9 @@ describe("link syntax colors", () => {
     it("paints tan brackets, a blue label, and a green underlined path", async () => {
         const spans = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Example link"));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("Example link"),
+            );
             return [...(line?.querySelectorAll("span") ?? [])]
                 .filter((span) => span.childElementCount === 0)
                 .map((span) => ({
@@ -54,7 +60,10 @@ describe("link syntax colors", () => {
         expect(painted("(")).toMatchObject({ color: punctuation, decoration: "none" });
         expect(painted(")")).toMatchObject({ color: punctuation, decoration: "none" });
         expect(painted("Example link")).toMatchObject({ color: label, decoration: "none" });
-        expect(painted("https://example.com")).toMatchObject({ color: path, decoration: "underline" });
+        expect(painted("https://example.com")).toMatchObject({
+            color: path,
+            decoration: "underline",
+        });
     });
 
     it("shows the colored link syntax", async () => {

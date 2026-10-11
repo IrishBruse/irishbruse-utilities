@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { Scope } from "../document/types";
 import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "./paint";
 
@@ -23,7 +23,10 @@ describe("rawGhostClass", () => {
 describe("rawHeadingBounds", () => {
     it("covers the heading through a trailing line break", () => {
         expect(rawHeadingBounds("# Title\n", heading())).toEqual({ start: 0, end: 7 });
-        expect(rawHeadingBounds("# Title\r\n", { ...heading(), end: 9 })).toEqual({ start: 0, end: 7 });
+        expect(rawHeadingBounds("# Title\r\n", { ...heading(), end: 9 })).toEqual({
+            start: 0,
+            end: 7,
+        });
         expect(rawHeadingBounds("# Title", { ...heading(), end: 7 })).toEqual({ start: 0, end: 7 });
     });
 });
@@ -70,7 +73,10 @@ describe("rawLinkSpans", () => {
             end: text.length,
             contentStart: 1,
             contentEnd: 5,
-            markers: [{ start: 0, end: 1 }, { start: 5, end: 6 }],
+            markers: [
+                { start: 0, end: 1 },
+                { start: 5, end: 6 },
+            ],
         };
         expect(rawLinkSpans(text, scope)).toEqual([
             { start: 0, end: text.length, className: "inline-md-link-label" },

@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -39,7 +39,9 @@ describe("heading line height", () => {
         const opened = await openPlayground(fixture, "Description");
         browser = opened.browser;
         page = opened.page;
-        await page.waitForFunction(() => document.querySelector(".inline-md-h2") instanceof HTMLElement);
+        await page.waitForFunction(
+            () => document.querySelector(".inline-md-h2") instanceof HTMLElement,
+        );
     });
 
     afterAll(async () => {

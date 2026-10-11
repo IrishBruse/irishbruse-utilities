@@ -22,7 +22,7 @@ export class MermaidCustomEditorProvider implements CustomTextEditorProvider {
     async resolveCustomTextEditor(
         document: TextDocument,
         webviewPanel: WebviewPanel,
-        _token: CancellationToken
+        _token: CancellationToken,
     ): Promise<void> {
         const mediaRoot = Uri.joinPath(this.context.extensionUri, "media", "mermaidPreview");
         const nonce = getNonce();
@@ -112,10 +112,14 @@ export class MermaidCustomEditorProvider implements CustomTextEditorProvider {
 
 export function registerMermaidCustomEditor(context: ExtensionContext): void {
     context.subscriptions.push(
-        window.registerCustomEditorProvider(MERMAID_PREVIEW_VIEW_TYPE, new MermaidCustomEditorProvider(context), {
-            webviewOptions: {
-                retainContextWhenHidden: true,
+        window.registerCustomEditorProvider(
+            MERMAID_PREVIEW_VIEW_TYPE,
+            new MermaidCustomEditorProvider(context),
+            {
+                webviewOptions: {
+                    retainContextWhenHidden: true,
+                },
             },
-        })
+        ),
     );
 }

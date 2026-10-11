@@ -1,39 +1,51 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const fixture = "rule/fixtures/case-1.md";
 
-async function arrowOntoRule(page: Page, direction: "down" | "up"): Promise<{ onRule: boolean; shown: boolean; offset: number; rule: number }> {
+async function arrowOntoRule(
+    page: Page,
+    direction: "down" | "up",
+): Promise<{ onRule: boolean; shown: boolean; offset: number; rule: number }> {
     await page.evaluate((dir) => {
-        const api = (window as unknown as {
-            __inlineMarkdown: {
-                focus(): void;
-                getDocument(): string;
-                setCursor(offset: number): void;
-            };
-        }).__inlineMarkdown;
+        const api = (
+            window as unknown as {
+                __inlineMarkdown: {
+                    focus(): void;
+                    getDocument(): string;
+                    setCursor(offset: number): void;
+                };
+            }
+        ).__inlineMarkdown;
         const source = api.getDocument();
         const rule = source.indexOf("---");
         api.focus();
         api.setCursor(dir === "down" ? rule - 1 : rule + 4);
     }, direction);
     await page.keyboard.press(direction === "down" ? "ArrowDown" : "ArrowUp");
-    await page.evaluate(() => new Promise((resolve) => {
-        requestAnimationFrame(() => requestAnimationFrame(resolve));
-    }));
+    await page.evaluate(
+        () =>
+            new Promise((resolve) => {
+                requestAnimationFrame(() => requestAnimationFrame(resolve));
+            }),
+    );
     return page.evaluate(() => {
-        const api = (window as unknown as {
-            __inlineMarkdown: { getCursor(): number; getDocument(): string };
-        }).__inlineMarkdown;
+        const api = (
+            window as unknown as {
+                __inlineMarkdown: { getCursor(): number; getDocument(): string };
+            }
+        ).__inlineMarkdown;
         const source = api.getDocument();
         const offset = api.getCursor();
         const rule = source.indexOf("---");
         const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-        const shown = [...document.querySelectorAll("#editor .view-line")].some((line) => fold(line.textContent).includes("---"));
+        const shown = [...document.querySelectorAll("#editor .view-line")].some((line) =>
+            fold(line.textContent).includes("---"),
+        );
         return {
             onRule: offset >= rule && offset < rule + 3,
             shown,
@@ -52,12 +64,16 @@ describe("horizontal rule spacing", () => {
         browser = opened.browser;
         page = opened.page;
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
             api.setCursor(0);
         });
-        await page.waitForFunction(() => document.querySelector(".inline-md-hr") instanceof HTMLElement);
+        await page.waitForFunction(
+            () => document.querySelector(".inline-md-hr") instanceof HTMLElement,
+        );
     });
 
     afterAll(async () => {
@@ -67,7 +83,9 @@ describe("horizontal rule spacing", () => {
     it("keeps blank lines on either side of the rule visible", async () => {
         const lines = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            return [...document.querySelectorAll("#editor .view-line")].map((line) => fold(line.textContent));
+            return [...document.querySelectorAll("#editor .view-line")].map((line) =>
+                fold(line.textContent),
+            );
         });
         const before = lines.indexOf("Before the rule.");
         const after = lines.indexOf("After the rule.");
@@ -85,7 +103,11 @@ describe("horizontal rule spacing", () => {
             const after = lines.find((line) => fold(line.textContent).includes("After the rule"));
             const rule = document.querySelector(".inline-md-hr");
             const zone = rule?.closest(".view-zones > *");
-            if (!(before instanceof HTMLElement) || !(after instanceof HTMLElement) || !(zone instanceof HTMLElement)) {
+            if (
+                !(before instanceof HTMLElement) ||
+                !(after instanceof HTMLElement) ||
+                !(zone instanceof HTMLElement)
+            ) {
                 return null;
             }
             const above = before.getBoundingClientRect();
@@ -120,12 +142,16 @@ describe("horizontal rule editing", () => {
         browser = opened.browser;
         page = opened.page;
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
             api.setCursor(0);
         });
-        await page.waitForFunction(() => document.querySelector(".inline-md-hr-line") instanceof HTMLElement);
+        await page.waitForFunction(
+            () => document.querySelector(".inline-md-hr-line") instanceof HTMLElement,
+        );
     });
 
     afterAll(async () => {
@@ -146,22 +172,34 @@ describe("horizontal rule editing", () => {
 
     it("shows the dashes when the rule line is clicked", async () => {
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
             api.setCursor(0);
         });
-        await page.waitForFunction(() => document.querySelector(".inline-md-hr-line") instanceof HTMLElement);
+        await page.waitForFunction(
+            () => document.querySelector(".inline-md-hr-line") instanceof HTMLElement,
+        );
         await page.locator(".inline-md-hr-line").click();
-        const shown = await page.waitForFunction(
-            () => (document.querySelector("#editor .view-lines")?.textContent ?? "").replaceAll("\u00a0", " ").includes("---"),
-            null,
-            { timeout: 2000 },
-        ).then(() => true).catch(() => false);
+        const shown = await page
+            .waitForFunction(
+                () =>
+                    (document.querySelector("#editor .view-lines")?.textContent ?? "")
+                        .replaceAll("\u00a0", " ")
+                        .includes("---"),
+                null,
+                { timeout: 2000 },
+            )
+            .then(() => true)
+            .catch(() => false);
         const landed = await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { getCursor(): number; getDocument(): string };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { getCursor(): number; getDocument(): string };
+                }
+            ).__inlineMarkdown;
             const source = api.getDocument();
             const rule = source.indexOf("---");
             return { offset: api.getCursor(), end: rule + "---".length };

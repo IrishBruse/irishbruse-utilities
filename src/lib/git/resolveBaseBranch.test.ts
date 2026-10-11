@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import type { Branch, Repository } from "./gitApi";
 import { RefType } from "./gitApi";
 
@@ -7,7 +7,12 @@ vi.mock("./baseBranchOverride", () => ({
 }));
 
 import { getBaseBranchOverride } from "./baseBranchOverride";
-import { formatBranchName, isMainlineBranch, isSameBranch, resolveBaseBranch } from "./resolveBaseBranch";
+import {
+    formatBranchName,
+    isMainlineBranch,
+    isSameBranch,
+    resolveBaseBranch,
+} from "./resolveBaseBranch";
 
 function mockRepository(overrides: {
     head?: Branch;
@@ -18,6 +23,10 @@ function mockRepository(overrides: {
         rootUri: { fsPath: "/repo" } as Repository["rootUri"],
         state: {
             HEAD: overrides.head,
+            onDidChange: vi.fn(),
+        },
+        ui: {
+            selected: false,
             onDidChange: vi.fn(),
         },
         getBranchBase: overrides.getBranchBase ?? vi.fn().mockRejectedValue(new Error("no base")),
@@ -94,7 +103,9 @@ describe("resolveBaseBranch", () => {
 
 describe("formatBranchName", () => {
     it("formats remote branches", () => {
-        expect(formatBranchName({ type: RefType.RemoteHead, name: "main", remote: "origin" })).toBe("origin/main");
+        expect(formatBranchName({ type: RefType.RemoteHead, name: "main", remote: "origin" })).toBe(
+            "origin/main",
+        );
     });
 });
 

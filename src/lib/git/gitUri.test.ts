@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { Uri } from "vscode";
 import { Status } from "./gitApi";
 import type { Change } from "./gitApi";
@@ -40,7 +40,7 @@ describe("toMultiFileDiffEditorUris", () => {
         const uris = toMultiFileDiffEditorUris(
             change(Status.INDEX_RENAMED, fileUri, originalUri),
             "abc123",
-            "HEAD"
+            "HEAD",
         );
         expect(uris.modifiedUri).toEqual(fileUri);
         expect(uris.originalUri?.scheme).toBe("git");

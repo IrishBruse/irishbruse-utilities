@@ -1,5 +1,9 @@
-import { describe, expect, it } from "vitest";
-import { agentPropertyCompletions, completeAgentPropertyKeys, skillPropertyInsertText } from "./skillKeys";
+import { describe, expect, it } from "vite-plus/test";
+import {
+    agentPropertyCompletions,
+    completeAgentPropertyKeys,
+    skillPropertyInsertText,
+} from "./skillKeys";
 
 describe("completeAgentPropertyKeys", () => {
     it("adds general agent properties after the skill keys", () => {
@@ -22,10 +26,16 @@ describe("completeAgentPropertyKeys", () => {
 
 describe("skillPropertyInsertText", () => {
     it("writes the boolean and the metadata map", () => {
-        expect(skillPropertyInsertText("disable-model-invocation", false)).toBe("disable-model-invocation: true");
-        expect(skillPropertyInsertText("metadata", false)).toBe("metadata:\n  author: example-org\n  version: \"1.0\"");
+        expect(skillPropertyInsertText("disable-model-invocation", false)).toBe(
+            "disable-model-invocation: true",
+        );
+        expect(skillPropertyInsertText("metadata", false)).toBe(
+            'metadata:\n  author: example-org\n  version: "1.0"',
+        );
         expect(skillPropertyInsertText("name", false)).toBe("name: ");
-        expect(skillPropertyInsertText("disable-model-invocation", true)).toBe("disable-model-invocation");
+        expect(skillPropertyInsertText("disable-model-invocation", true)).toBe(
+            "disable-model-invocation",
+        );
     });
 });
 

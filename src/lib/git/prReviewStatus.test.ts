@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { buildPrReviewStatus } from "./prReviewStatus";
 
 const basePayload = {
@@ -126,7 +126,7 @@ describe("buildPrReviewStatus", () => {
             buildPrReviewStatus({
                 ...basePayload,
                 reviewRequestsCount: 1,
-            })
+            }),
         ).toBeUndefined();
     });
 

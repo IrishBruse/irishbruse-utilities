@@ -1,9 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { isSkillMarkdownPath, skillDirectoryName } from "./skillPath";
 
 describe("skillDirectoryName", () => {
     it("reads the parent folder of SKILL.md", () => {
-        expect(skillDirectoryName("https://example.com/skills/pdf-processing/SKILL.md")).toBe("pdf-processing");
+        expect(skillDirectoryName("https://example.com/skills/pdf-processing/SKILL.md")).toBe(
+            "pdf-processing",
+        );
         expect(skillDirectoryName("file:///tmp/demo/SKILL.md")).toBe("demo");
         expect(skillDirectoryName("https://example.com/readme.md")).toBeUndefined();
         expect(skillDirectoryName("SKILL.md")).toBeUndefined();

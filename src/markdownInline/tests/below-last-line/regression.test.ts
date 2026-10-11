@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -31,28 +31,36 @@ async function belowPoint(page: Page): Promise<BelowPoint> {
     });
 }
 
-async function readCaret(page: Page): Promise<{ readonly offset: number; readonly focused: boolean }> {
+async function readCaret(
+    page: Page,
+): Promise<{ readonly offset: number; readonly focused: boolean }> {
     return page.evaluate(() => {
-        const api = (window as unknown as {
-            __inlineMarkdown: { getCursor(): number; hasTextFocus(): boolean };
-        }).__inlineMarkdown;
+        const api = (
+            window as unknown as {
+                __inlineMarkdown: { getCursor(): number; hasTextFocus(): boolean };
+            }
+        ).__inlineMarkdown;
         return { offset: api.getCursor(), focused: api.hasTextFocus() };
     });
 }
 
 async function resetCaret(page: Page): Promise<void> {
     await page.evaluate(() => {
-        const api = (window as unknown as { __inlineMarkdown: { setCursor(offset: number): void } }).__inlineMarkdown;
+        const api = (window as unknown as { __inlineMarkdown: { setCursor(offset: number): void } })
+            .__inlineMarkdown;
         api.setCursor(0);
     });
 }
 
 async function pointerCursor(page: Page, x: number, y: number): Promise<string> {
     await page.mouse.move(x, y);
-    return page.evaluate(({ x, y }) => {
-        const hit = document.elementFromPoint(x, y);
-        return hit ? getComputedStyle(hit).cursor : "";
-    }, { x, y });
+    return page.evaluate(
+        ({ x, y }) => {
+            const hit = document.elementFromPoint(x, y);
+            return hit ? getComputedStyle(hit).cursor : "";
+        },
+        { x, y },
+    );
 }
 
 describe("click below the last line", () => {

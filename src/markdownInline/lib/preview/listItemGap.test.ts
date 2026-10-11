@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import type { Scope } from "../document/types";
 import { parseScopes } from "../document/scopes";
 import {
@@ -67,7 +67,9 @@ describe("listItemGapAfterLines", () => {
         expect(listItemStartLines(model, parseScopes(source), 4)).toEqual([
             { lineNumber: 1, indentColumns: 4, contentIndentColumns: 5 },
         ]);
-        expect(listItemGapAfterLines(model, listItemStartLines(model, parseScopes(source), 4), 4)).toEqual([1]);
+        expect(
+            listItemGapAfterLines(model, listItemStartLines(model, parseScopes(source), 4), 4),
+        ).toEqual([1]);
     });
 
     it("ignores a task scope that has no marker", () => {

@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLocatorShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -17,25 +17,33 @@ describe("mermaid open preview", () => {
         browser = opened.browser;
         page = opened.page;
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
             api.setCursor(api.getDocument().indexOf("Before"));
         });
         await page.waitForFunction(() => {
             const frame = document.querySelector(".inline-md-mermaid");
             const button = frame?.querySelector(".inline-md-mermaid-open-preview");
             const svg = frame?.querySelector(".inline-md-mermaid-diagram svg");
-            if (!(frame instanceof HTMLElement) || !(button instanceof HTMLElement) || !(svg instanceof SVGElement)) {
+            if (
+                !(frame instanceof HTMLElement) ||
+                !(button instanceof HTMLElement) ||
+                !(svg instanceof SVGElement)
+            ) {
                 return false;
             }
             const frameBox = frame.getBoundingClientRect();
             const buttonBox = button.getBoundingClientRect();
             const svgBox = svg.getBoundingClientRect();
-            return buttonBox.height > 0
-                && svgBox.height > 20
-                && buttonBox.bottom <= svgBox.top + 1
-                && svgBox.bottom <= frameBox.bottom + 1;
+            return (
+                buttonBox.height > 0 &&
+                svgBox.height > 20 &&
+                buttonBox.bottom <= svgBox.top + 1 &&
+                svgBox.bottom <= frameBox.bottom + 1
+            );
         });
     }, 45_000);
 
@@ -48,19 +56,33 @@ describe("mermaid open preview", () => {
             const frame = document.querySelector(".inline-md-mermaid");
             const button = frame?.querySelector(".inline-md-mermaid-open-preview");
             const svg = frame?.querySelector(".inline-md-mermaid-diagram svg");
-            if (!(frame instanceof HTMLElement) || !(button instanceof HTMLElement) || !(svg instanceof SVGElement)) {
+            if (
+                !(frame instanceof HTMLElement) ||
+                !(button instanceof HTMLElement) ||
+                !(svg instanceof SVGElement)
+            ) {
                 return null;
             }
             const frameBox = frame.getBoundingClientRect();
             const buttonBox = button.getBoundingClientRect();
             const svgBox = svg.getBoundingClientRect();
-            const lensOverlap = [...document.querySelectorAll(".codelens-decoration")].some((node) => {
-                if (!(node instanceof HTMLElement) || !node.textContent?.includes("Open Preview")) {
-                    return false;
-                }
-                const lens = node.getBoundingClientRect();
-                return lens.width > 0 && lens.height > 0 && lens.bottom > svgBox.top && lens.top < svgBox.bottom;
-            });
+            const lensOverlap = [...document.querySelectorAll(".codelens-decoration")].some(
+                (node) => {
+                    if (
+                        !(node instanceof HTMLElement) ||
+                        !node.textContent?.includes("Open Preview")
+                    ) {
+                        return false;
+                    }
+                    const lens = node.getBoundingClientRect();
+                    return (
+                        lens.width > 0 &&
+                        lens.height > 0 &&
+                        lens.bottom > svgBox.top &&
+                        lens.top < svgBox.bottom
+                    );
+                },
+            );
             return {
                 buttonBottom: buttonBox.bottom,
                 svgTop: svgBox.top,
@@ -78,11 +100,22 @@ describe("mermaid open preview", () => {
     it("lines the diagram up with the code block", async () => {
         const edges = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const code = [...document.querySelectorAll("#editor .view-line")].find((line) => fold(line.textContent).includes("const value"));
-            const text = code ? [...code.querySelectorAll("span")].find((node) => fold(node.textContent).includes("const")) : undefined;
+            const code = [...document.querySelectorAll("#editor .view-line")].find((line) =>
+                fold(line.textContent).includes("const value"),
+            );
+            const text = code
+                ? [...code.querySelectorAll("span")].find((node) =>
+                      fold(node.textContent).includes("const"),
+                  )
+                : undefined;
             const frame = document.querySelector(".inline-md-mermaid");
             const svg = frame?.querySelector(".inline-md-mermaid-diagram svg");
-            if (!(code instanceof HTMLElement) || !(text instanceof HTMLElement) || !(frame instanceof HTMLElement) || !(svg instanceof SVGElement)) {
+            if (
+                !(code instanceof HTMLElement) ||
+                !(text instanceof HTMLElement) ||
+                !(frame instanceof HTMLElement) ||
+                !(svg instanceof SVGElement)
+            ) {
                 return null;
             }
             return {
@@ -98,6 +131,9 @@ describe("mermaid open preview", () => {
     });
 
     it("shows Open Preview above the diagram", async () => {
-        await expectLocatorShot(page.locator(".inline-md-mermaid"), join(here, "screenshots", "mermaid.png"));
+        await expectLocatorShot(
+            page.locator(".inline-md-mermaid"),
+            join(here, "screenshots", "mermaid.png"),
+        );
     });
 });

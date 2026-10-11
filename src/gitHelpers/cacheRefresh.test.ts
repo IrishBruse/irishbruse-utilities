@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { PanelDataCache } from "./panelDataCache";
 import { planGitHelperRefresh, refreshVisualHoldMs } from "./cacheRefresh";
 
@@ -24,8 +24,7 @@ describe("refreshVisualHoldMs", () => {
 
 describe("PanelDataCache", () => {
     it("returns a fresh value without a second load", async () => {
-        const now = vi.fn(() => 1_000);
-        const cache = new PanelDataCache(15_000, now);
+        const cache = new PanelDataCache(15_000, () => 1_000);
         const load = vi.fn(async () => "pr");
 
         await expect(cache.load("pr", load)).resolves.toBe("pr");
@@ -40,7 +39,7 @@ describe("PanelDataCache", () => {
             () =>
                 new Promise<string>((resolve) => {
                     release = resolve;
-                })
+                }),
         );
 
         const first = cache.load("pr", load);

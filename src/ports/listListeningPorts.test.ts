@@ -1,11 +1,14 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { killListeningProcess, labelForListener, listListeningPorts } from "./listListeningPorts";
 
 describe("labelForListener", () => {
     it("uses the working directory name", () => {
-        expect(labelForListener("MainThread", "/home/econn/git/irishbruse-utilities/src/markdownInline")).toBe(
-            "markdownInline"
-        );
+        expect(
+            labelForListener(
+                "MainThread",
+                "/home/econn/git/irishbruse-utilities/src/markdownInline",
+            ),
+        ).toBe("markdownInline");
         expect(labelForListener("MainThread", "/home/econn/dotfiles/dashboard")).toBe("dashboard");
     });
 
@@ -22,7 +25,10 @@ describe("listListeningPorts", () => {
                 stderr: "",
                 status: 0,
             }),
-            (pid) => (pid === 4653 ? "/home/econn/git/irishbruse-utilities/src/markdownInline" : undefined)
+            (pid) =>
+                pid === 4653
+                    ? "/home/econn/git/irishbruse-utilities/src/markdownInline"
+                    : undefined,
         );
 
         expect(ports).toEqual([

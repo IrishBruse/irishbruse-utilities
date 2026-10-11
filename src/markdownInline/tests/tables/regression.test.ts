@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -16,13 +16,17 @@ describe("table layout", () => {
         browser = opened.browser;
         page = opened.page;
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
             const source = api.getDocument();
             api.setCursor(source.length);
         });
-        await page.waitForFunction(() => document.querySelectorAll(".inline-md-table table").length >= 3);
+        await page.waitForFunction(
+            () => document.querySelectorAll(".inline-md-table table").length >= 3,
+        );
     });
 
     afterAll(async () => {
@@ -40,7 +44,9 @@ describe("table layout", () => {
     it("covers each source line and keeps its line number", async () => {
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Apple"));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("Apple"),
+            );
             const box = line?.getBoundingClientRect();
             if (!box || box.height <= 8) {
                 return false;
@@ -51,18 +57,30 @@ describe("table layout", () => {
         const report = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
             const lines = [...document.querySelectorAll("#editor .view-line")];
-            const line = (needle: string) => lines.find((entry) => fold(entry.textContent).includes(needle));
+            const line = (needle: string) =>
+                lines.find((entry) => fold(entry.textContent).includes(needle));
             const apple = line("Apple");
             const plain = line("Keep the caret");
             const appleBox = apple?.getBoundingClientRect();
-            const hit = appleBox && appleBox.height > 0
-                ? document.elementFromPoint(appleBox.left + 28, appleBox.top + appleBox.height / 2)
-                : null;
-            const numbers = [...document.querySelectorAll("#editor .line-numbers")].map((entry) => entry.getBoundingClientRect());
+            const hit =
+                appleBox && appleBox.height > 0
+                    ? document.elementFromPoint(
+                          appleBox.left + 28,
+                          appleBox.top + appleBox.height / 2,
+                      )
+                    : null;
+            const numbers = [...document.querySelectorAll("#editor .line-numbers")].map((entry) =>
+                entry.getBoundingClientRect(),
+            );
             const covered = ["Fruit", "---", "Apple", "Pear"].map((needle) => {
                 const box = line(needle)?.getBoundingClientRect();
                 const numbered = box
-                    ? numbers.some((entry) => entry.bottom > box.top + 1 && entry.top < box.bottom - 1 && entry.height > 0)
+                    ? numbers.some(
+                          (entry) =>
+                              entry.bottom > box.top + 1 &&
+                              entry.top < box.bottom - 1 &&
+                              entry.height > 0,
+                      )
                     : false;
                 return { needle, height: box?.height ?? 0, numbered };
             });
@@ -99,24 +117,34 @@ describe("table layout", () => {
     it("grows a wrapped cell and keeps the next line number on the next row", async () => {
         await page.setViewportSize({ width: 460, height: 700 });
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { setDocument(text: string): void; setCursor(offset: number): void };
-            }).__inlineMarkdown;
-            api.setDocument([
-                "Keep the caret here while reading.",
-                "",
-                "| Name | Note |",
-                "| --- | --- |",
-                "| Short | one two three four five six seven eight nine ten eleven twelve thirteen fourteen |",
-                "| Next | row |",
-                "",
-            ].join("\n"));
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: {
+                        setDocument(text: string): void;
+                        setCursor(offset: number): void;
+                    };
+                }
+            ).__inlineMarkdown;
+            api.setDocument(
+                [
+                    "Keep the caret here while reading.",
+                    "",
+                    "| Name | Note |",
+                    "| --- | --- |",
+                    "| Short | one two three four five six seven eight nine ten eleven twelve thirteen fourteen |",
+                    "| Next | row |",
+                    "",
+                ].join("\n"),
+            );
             api.setCursor(0);
         });
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
             const lines = [...document.querySelectorAll("#editor .view-line")];
-            const box = (needle: string) => lines.find((entry) => fold(entry.textContent).includes(needle))?.getBoundingClientRect();
+            const box = (needle: string) =>
+                lines
+                    .find((entry) => fold(entry.textContent).includes(needle))
+                    ?.getBoundingClientRect();
             const plain = box("Keep the caret");
             const wrapped = box("Short");
             const next = box("Next");
@@ -128,17 +156,25 @@ describe("table layout", () => {
         const report = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
             const lines = [...document.querySelectorAll("#editor .view-line")];
-            const line = (needle: string) => lines.find((entry) => fold(entry.textContent).includes(needle));
+            const line = (needle: string) =>
+                lines.find((entry) => fold(entry.textContent).includes(needle));
             const plain = line("Keep the caret")?.getBoundingClientRect();
             const wrapped = line("Short")?.getBoundingClientRect();
             const next = line("Next")?.getBoundingClientRect();
             const numbers = [...document.querySelectorAll("#editor .line-numbers")];
-            const numberOn = (box: DOMRect | undefined) => box
-                ? numbers.filter((entry) => {
-                    const bounds = entry.getBoundingClientRect();
-                    return bounds.height > 0 && bounds.bottom > box.top + 1 && bounds.top < box.bottom - 1;
-                }).map((entry) => (entry.textContent ?? "").trim())
-                : [];
+            const numberOn = (box: DOMRect | undefined) =>
+                box
+                    ? numbers
+                          .filter((entry) => {
+                              const bounds = entry.getBoundingClientRect();
+                              return (
+                                  bounds.height > 0 &&
+                                  bounds.bottom > box.top + 1 &&
+                                  bounds.top < box.bottom - 1
+                              );
+                          })
+                          .map((entry) => (entry.textContent ?? "").trim())
+                    : [];
             const note = document.querySelector(".inline-md-table td:last-child");
             return {
                 plainHeight: plain?.height ?? 0,
@@ -164,29 +200,40 @@ describe("table layout", () => {
     it("keeps short words on one line and wraps the long column", async () => {
         await page.setViewportSize({ width: 780, height: 700 });
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { setDocument(text: string): void; setCursor(offset: number): void };
-            }).__inlineMarkdown;
-            api.setDocument([
-                "Keep the caret here while reading.",
-                "",
-                "| Name | Role | On | Notes |",
-                "| :--- | :--- | :-: | :--- |",
-                "| Ada | Engineer | Yes | Long description that should wrap instead of stretching the column forever or forcing Role onto two lines |",
-                "| Grace | Architect | No | Another long cell |",
-                "",
-            ].join("\n"));
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: {
+                        setDocument(text: string): void;
+                        setCursor(offset: number): void;
+                    };
+                }
+            ).__inlineMarkdown;
+            api.setDocument(
+                [
+                    "Keep the caret here while reading.",
+                    "",
+                    "| Name | Role | On | Notes |",
+                    "| :--- | :--- | :-: | :--- |",
+                    "| Ada | Engineer | Yes | Long description that should wrap instead of stretching the column forever or forcing Role onto two lines |",
+                    "| Grace | Architect | No | Another long cell |",
+                    "",
+                ].join("\n"),
+            );
             api.setCursor(0);
         });
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Ada"));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("Ada"),
+            );
             const height = line?.getBoundingClientRect().height ?? 0;
             return height > 8 && height < 300;
         });
         const report = await page.evaluate(() => {
             const textHeight = (needle: string) => {
-                const cell = [...document.querySelectorAll(".inline-md-table td")].find((entry) => (entry.textContent ?? "").includes(needle));
+                const cell = [...document.querySelectorAll(".inline-md-table td")].find((entry) =>
+                    (entry.textContent ?? "").includes(needle),
+                );
                 if (!(cell instanceof HTMLElement)) {
                     return 0;
                 }
@@ -195,7 +242,9 @@ describe("table layout", () => {
                 return range.getBoundingClientRect().height;
             };
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const ada = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Ada"));
+            const ada = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("Ada"),
+            );
             const ruleNode = document.querySelector(".inline-md-table-rule");
             const rule = ruleNode?.getBoundingClientRect();
             const table = document.querySelector(".inline-md-table table")?.getBoundingClientRect();

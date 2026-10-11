@@ -19,7 +19,10 @@ import {
     getMarkdownInlineEditorColors,
     markdownInlineEditorColorsCssVars,
 } from "./markdownInlineEditorColors";
-import { openMarkdownWithRawEditor, shouldUseMarkdownCustomEditor } from "./shouldUseMarkdownCustomEditor";
+import {
+    openMarkdownWithRawEditor,
+    shouldUseMarkdownCustomEditor,
+} from "./shouldUseMarkdownCustomEditor";
 import { isSkillMarkdownPath, prefixMarkdownForFastOpen } from "./webviewInitialState";
 
 export const MARKDOWN_INLINE_VIEW_TYPE = "ib-utilities.markdownInline";
@@ -72,16 +75,18 @@ function getEditorHtml(
     const workerUri = webview.asWebviewUri(Uri.joinPath(mediaRoot, "editor.worker.js"));
     const baseUri = webview.asWebviewUri(documentUri);
     const nonce = getNonce();
-    const initialState = encodeURIComponent(JSON.stringify({
-        content,
-        documentVersion,
-        readonly: false,
-        documentUrl: baseUri.toString(),
-        skillFrontMatter: isSkillMarkdownPath(documentUri.path),
-    }));
+    const initialState = encodeURIComponent(
+        JSON.stringify({
+            content,
+            documentVersion,
+            readonly: false,
+            documentUrl: baseUri.toString(),
+            skillFrontMatter: isSkillMarkdownPath(documentUri.path),
+        }),
+    );
     const colorVars = markdownInlineEditorColorsCssVars(getMarkdownInlineEditorColors());
 
-    return  `<!DOCTYPE html>
+    return `<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
@@ -117,7 +122,7 @@ async function openMarkdownLink(href: string, documentUri: Uri): Promise<void> {
     const pathPart = hashIndex >= 0 ? href.slice(0, hashIndex) : href;
     const fragment = hashIndex >= 0 ? href.slice(hashIndex + 1) : undefined;
     const baseDir = Uri.joinPath(documentUri, "..");
-    const targetPath = pathPart.length > 0 ? pathPart : documentUri.path.split("/").pop() ?? "";
+    const targetPath = pathPart.length > 0 ? pathPart : (documentUri.path.split("/").pop() ?? "");
     const target = Uri.joinPath(baseDir, ...targetPath.split("/").filter(Boolean));
 
     if (fragment) {
@@ -196,17 +201,25 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
 
         renderHtml();
 
-        const releaseTimers = [0, 50].map((delay) => setTimeout(() => {
-            void releaseIfNotEditor();
-        }, delay));
+        const releaseTimers = [0, 50].map((delay) =>
+            setTimeout(() => {
+                void releaseIfNotEditor();
+            }, delay),
+        );
         const disposables = [
-            { dispose: () => {
-                for (const timer of releaseTimers) {
-                    clearTimeout(timer);
-                }
-            } },
+            {
+                dispose: () => {
+                    for (const timer of releaseTimers) {
+                        clearTimeout(timer);
+                    }
+                },
+            },
             editorWebview.webview.onDidReceiveMessage(async (message) => {
-                if (!message || typeof message !== "object" || message.messageSecret !== editorWebview.messageSecret) {
+                if (
+                    !message ||
+                    typeof message !== "object" ||
+                    message.messageSecret !== editorWebview.messageSecret
+                ) {
                     return;
                 }
 
@@ -214,7 +227,10 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
                     case "ready": {
                         webviewReady = true;
                         if (htmlContentIsPrefix || message.documentVersion !== document.version) {
-                            await editorWebview.postMessage({ type: "update", content: document.getText() });
+                            await editorWebview.postMessage({
+                                type: "update",
+                                content: document.getText(),
+                            });
                         }
                         break;
                     }
@@ -234,7 +250,10 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
                         break;
                     }
                     case "openMermaidPreview": {
-                        if (typeof message.openLine !== "number" || !Number.isFinite(message.openLine)) {
+                        if (
+                            typeof message.openLine !== "number" ||
+                            !Number.isFinite(message.openLine)
+                        ) {
                             break;
                         }
                         await commands.executeCommand(
@@ -249,11 +268,11 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
                         const endOffset = message.endExclusive;
                         const text = message.text;
                         if (
-                            typeof startOffset !== "number"
-                            || !Number.isFinite(startOffset)
-                            || typeof endOffset !== "number"
-                            || !Number.isFinite(endOffset)
-                            || typeof text !== "string"
+                            typeof startOffset !== "number" ||
+                            !Number.isFinite(startOffset) ||
+                            typeof endOffset !== "number" ||
+                            !Number.isFinite(endOffset) ||
+                            typeof text !== "string"
                         ) {
                             break;
                         }
@@ -283,7 +302,10 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
                 }
             }),
             workspace.onDidChangeTextDocument((event) => {
-                if (event.document.uri.toString() !== document.uri.toString() || isUpdatingFromWebview) {
+                if (
+                    event.document.uri.toString() !== document.uri.toString() ||
+                    isUpdatingFromWebview
+                ) {
                     return;
                 }
                 if (webviewReady) {
@@ -301,8 +323,12 @@ export class MarkdownInlineProvider implements CustomTextEditorProvider {
 
 export function registerMarkdownInlineEditor(context: ExtensionContext): void {
     context.subscriptions.push(
-        window.registerCustomEditorProvider(MARKDOWN_INLINE_VIEW_TYPE, new MarkdownInlineProvider(context), {
-            webviewOptions: { retainContextWhenHidden: true },
-        }),
+        window.registerCustomEditorProvider(
+            MARKDOWN_INLINE_VIEW_TYPE,
+            new MarkdownInlineProvider(context),
+            {
+                webviewOptions: { retainContextWhenHidden: true },
+            },
+        ),
     );
 }

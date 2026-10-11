@@ -1,8 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { mermaidDocsFixturePath } from "./mermaidDocsFixture";
 
 describe("mermaidEditor/mermaidDocsFixture", () => {
     it("resolves docs/tests/mermaid fixture paths from the repo root", () => {
-        expect(mermaidDocsFixturePath("call_graph.mmd")).toMatch(/docs\/tests\/mermaid\/call_graph\.mmd$/);
+        expect(mermaidDocsFixturePath("call_graph.mmd")).toMatch(
+            /docs\/tests\/mermaid\/call_graph\.mmd$/,
+        );
     });
 });

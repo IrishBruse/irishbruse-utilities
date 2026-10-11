@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("./mermaid", () => ({
     renderMermaidDiagram: vi.fn(),
@@ -15,7 +15,10 @@ describe("previewContentRange", () => {
             end: 9,
             contentStart: 2,
             contentEnd: 7,
-            markers: [{ start: 0, end: 2 }, { start: 7, end: 9 }],
+            markers: [
+                { start: 0, end: 2 },
+                { start: 7, end: 9 },
+            ],
         };
         expect(previewContentRange(scope)).toEqual({ start: 2, end: 7 });
     });

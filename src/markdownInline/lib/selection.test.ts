@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
     bindDragSelection,
     dragSelectionClassName,
@@ -16,7 +16,14 @@ import {
 
 const here = dirname(fileURLToPath(import.meta.url));
 
-function box(top: number, height: number, left = 40, width = 20, styleHeight = "", styleBottom = "0px"): SelectionBox {
+function box(
+    top: number,
+    height: number,
+    left = 40,
+    width = 20,
+    styleHeight = "",
+    styleBottom = "0px",
+): SelectionBox {
     return {
         top,
         left,
@@ -38,7 +45,9 @@ describe("selection highlight", () => {
             source.indexOf("private applySelectionHeights"),
             source.indexOf("private syncZones"),
         );
-        expect(body).not.toMatch(/for \(const piece of pieces\) \{\s*piece\.style\.bottom = "";\s*piece\.style\.height = "";\s*\}/);
+        expect(body).not.toMatch(
+            /for \(const piece of pieces\) \{\s*piece\.style\.bottom = "";\s*piece\.style\.height = "";\s*\}/,
+        );
         expect(body).toContain("stretchesSelectionLine");
 
         const paragraph = box(80, 20);
@@ -61,19 +70,13 @@ describe("selection highlight", () => {
         expect(stale.styleHeight).toBe("");
 
         const listEnd = box(60, 20);
-        layoutSelectionPieces(
-            [listEnd],
-            [{ top: 60, height: 24, stretchToLineHeight: true }],
-        );
+        layoutSelectionPieces([listEnd], [{ top: 60, height: 24, stretchToLineHeight: true }]);
         expect(listEnd.styleHeight).toBe("24px");
     });
 
     it("stretches a heading line when the selection sits on the bottom of the line", () => {
         const heading = box(52, 18);
-        layoutSelectionPieces(
-            [heading],
-            [{ top: 40, height: 34, stretchToLineHeight: true }],
-        );
+        layoutSelectionPieces([heading], [{ top: 40, height: 34, stretchToLineHeight: true }]);
         expect(heading.styleHeight).toBe("34px");
         expect(heading.styleBottom).toBe("auto");
     });
@@ -150,7 +153,10 @@ function pointerTarget() {
             listeners.set(type, [...(listeners.get(type) ?? []), listener]);
         },
         removeEventListener(type: string, listener: (event: PointerEvent) => void) {
-            listeners.set(type, (listeners.get(type) ?? []).filter((entry) => entry !== listener));
+            listeners.set(
+                type,
+                (listeners.get(type) ?? []).filter((entry) => entry !== listener),
+            );
         },
         emit(type: string, event: Partial<PointerEvent> = {}) {
             for (const listener of [...(listeners.get(type) ?? [])]) {
@@ -185,7 +191,9 @@ describe("drag selection", () => {
         const windowTarget = pointerTarget();
         vi.stubGlobal("window", windowTarget);
         const ended: number[] = [];
-        const stop = bindDragSelection(root as unknown as HTMLElement, () => ended.push(ended.length + 1));
+        const stop = bindDragSelection(root as unknown as HTMLElement, () =>
+            ended.push(ended.length + 1),
+        );
 
         expect(isDragSelecting()).toBe(false);
         windowTarget.emit("mousemove", { buttons: 0 });

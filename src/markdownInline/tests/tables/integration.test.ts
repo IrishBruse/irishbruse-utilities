@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -6,13 +6,17 @@ const fixture = "tables/fixtures/case-1.md";
 
 async function caretOutsideTables(page: Page): Promise<void> {
     await page.evaluate(() => {
-        const api = (window as unknown as {
-            __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
-        }).__inlineMarkdown;
+        const api = (
+            window as unknown as {
+                __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+            }
+        ).__inlineMarkdown;
         const source = api.getDocument();
         api.setCursor(source.length);
     });
-    await page.waitForFunction(() => document.querySelectorAll(".inline-md-table table").length >= 3);
+    await page.waitForFunction(
+        () => document.querySelectorAll(".inline-md-table table").length >= 3,
+    );
 }
 
 describe("tables", () => {
@@ -33,7 +37,9 @@ describe("tables", () => {
     it("formats inline marks in the section heading", async () => {
         const heading = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Tables:"));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("Tables:"),
+            );
             if (!line) {
                 return null;
             }
@@ -45,7 +51,10 @@ describe("tables", () => {
                 strike: fold(line.querySelector(".inline-md-strike")?.textContent ?? null),
             };
         });
-        const editor = (await page.locator("#editor .view-lines").innerText()).replaceAll("\u00a0", " ");
+        const editor = (await page.locator("#editor .view-lines").innerText()).replaceAll(
+            "\u00a0",
+            " ",
+        );
         expect(editor).toContain("Tables:");
         expect(heading?.text).not.toContain("##");
         expect(heading?.text).not.toContain("**");
@@ -57,13 +66,15 @@ describe("tables", () => {
 
     it("renders each table as a header row and body rows", async () => {
         expect(await page.locator(".inline-md-table table").count()).toBe(3);
-        expect(await page.locator(".inline-md-table thead .inline-md-strong").allInnerTexts()).toEqual(
-            expect.arrayContaining(["Fruit", "Case", "Name"]),
-        );
+        expect(
+            await page.locator(".inline-md-table thead .inline-md-strong").allInnerTexts(),
+        ).toEqual(expect.arrayContaining(["Fruit", "Case", "Name"]));
         expect(await page.locator(".inline-md-table thead .inline-md-em").allInnerTexts()).toEqual(
             expect.arrayContaining(["Qty", "Source hint", "Note"]),
         );
-        expect(await page.locator(".inline-md-table thead .inline-md-code").innerText()).toBe("Expected");
+        expect(await page.locator(".inline-md-table thead .inline-md-code").innerText()).toBe(
+            "Expected",
+        );
         const cells = await page.locator(".inline-md-table tbody td").allInnerTexts();
         expect(cells).toEqual(expect.arrayContaining(["Apple", "Pear", "Mid-sentence"]));
     });
@@ -77,12 +88,17 @@ describe("tables", () => {
     });
 
     it("covers pipe source while the caret is outside the tables", async () => {
-        const text = (await page.locator("#editor .view-lines").innerText()).replaceAll("\u00a0", " ");
+        const text = (await page.locator("#editor .view-lines").innerText()).replaceAll(
+            "\u00a0",
+            " ",
+        );
         expect(text).toContain("Keep the caret here while reading.");
         expect(text).toContain("Apple");
         const covered = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Apple"));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("Apple"),
+            );
             const box = line?.getBoundingClientRect();
             if (!box || box.height <= 0) {
                 return false;

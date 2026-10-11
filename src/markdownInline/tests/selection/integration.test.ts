@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -17,14 +17,17 @@ async function moveCaret(page: Page, offset: number): Promise<void> {
 }
 
 async function selectRange(page: Page, from: number, to: number): Promise<void> {
-    await page.evaluate(({ from, to }) => {
-        const handle = window.__inlineMarkdown;
-        if (from === to) {
-            handle.setCursor(from);
-            return;
-        }
-        handle.select(from, to);
-    }, { from, to });
+    await page.evaluate(
+        ({ from, to }) => {
+            const handle = window.__inlineMarkdown;
+            if (from === to) {
+                handle.setCursor(from);
+                return;
+            }
+            handle.select(from, to);
+        },
+        { from, to },
+    );
 }
 
 describe("selection/fixtures/case-1.md", () => {

@@ -1,24 +1,34 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { commands, Uri, window, workspace, type ExtensionContext, type TextDocument, type WebviewPanel } from "vscode";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
+import {
+    commands,
+    Uri,
+    window,
+    workspace,
+    type ExtensionContext,
+    type TextDocument,
+    type WebviewPanel,
+} from "vscode";
 import { MarkdownInlineProvider } from "./MarkdownInlineProvider";
+
+const mutableWindow = window as unknown as {
+    tabGroups: { all: { tabs: { input: unknown }[] }[] };
+};
+const mutableWorkspace = workspace as unknown as {
+    textDocuments: { uri: unknown }[];
+};
 
 describe("MarkdownInlineProvider git open", () => {
     beforeEach(() => {
-        vi.mocked(window.tabGroups).all = [];
-        workspace.textDocuments = [];
+        mutableWindow.tabGroups.all = [];
+        mutableWorkspace.textDocuments = [];
         vi.mocked(commands.executeCommand).mockClear();
     });
 
     it("reopens a git panel working tree file as a text diff and does not render", async () => {
         const modified = Uri.file("/proj/readme.md");
         const original = Uri.from({ scheme: "git", path: "/proj/readme.md" });
-        workspace.textDocuments = [
-            { uri: modified },
-            { uri: original },
-        ] as typeof workspace.textDocuments;
-        vi.mocked(window.tabGroups).all = [
-            { tabs: [{ input: undefined }] },
-        ] as typeof window.tabGroups.all;
+        mutableWorkspace.textDocuments = [{ uri: modified }, { uri: original }];
+        mutableWindow.tabGroups.all = [{ tabs: [{ input: undefined }] }];
 
         const html: string[] = [];
         const panel = {

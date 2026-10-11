@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { skillFrontMatterIssues } from "./skillFrontMatterIssues";
 
 function messages(yaml: string, directoryName?: string): string[] {
@@ -13,7 +13,7 @@ describe("skillFrontMatterIssues", () => {
             "license: Apache-2.0",
             "metadata:",
             "  author: example-org",
-            "  version: \"1.0\"",
+            '  version: "1.0"',
             "allowed-tools: Bash(git:*) Read",
             "disable-model-invocation: true",
             "user-invocable: false",
@@ -67,15 +67,18 @@ describe("skillFrontMatterIssues", () => {
         expect(messages("name: demo\ndescription: Ready.\ncompatibility:\n", "demo")).toEqual([
             "compatibility must be 1 to 500 characters.",
         ]);
-        expect(messages(`name: demo\ndescription: Ready.\ncompatibility: ${"a".repeat(501)}\n`, "demo")).toEqual([
-            "compatibility must be at most 500 characters.",
-        ]);
+        expect(
+            messages(
+                `name: demo\ndescription: Ready.\ncompatibility: ${"a".repeat(501)}\n`,
+                "demo",
+            ),
+        ).toEqual(["compatibility must be at most 500 characters."]);
         expect(messages("name: demo\ndescription: Ready.\nmetadata: hello\n", "demo")).toEqual([
             "metadata must be a map from string keys to string values.",
         ]);
-        expect(messages("name: demo\ndescription: Ready.\nallowed-tools:\n  - Read\n", "demo")).toEqual([
-            "allowed-tools must be a space-separated string.",
-        ]);
+        expect(
+            messages("name: demo\ndescription: Ready.\nallowed-tools:\n  - Read\n", "demo"),
+        ).toEqual(["allowed-tools must be a space-separated string."]);
         expect(messages("name: demo\ndescription: Ready.\nicon: bolt\n", "demo")).toEqual([
             "Unexpected field 'icon'. The spec allows name, description, license, compatibility, metadata, and allowed-tools.",
         ]);

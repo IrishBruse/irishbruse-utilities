@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -16,18 +16,30 @@ describe("image layout", () => {
         browser = opened.browser;
         page = opened.page;
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
             api.setCursor(api.getDocument().length);
         });
         await page.waitForFunction(() => {
             const image = document.querySelector("img.inline-md-image");
-            if (!(image instanceof HTMLImageElement) || !image.complete || image.naturalWidth === 0) {
+            if (
+                !(image instanceof HTMLImageElement) ||
+                !image.complete ||
+                image.naturalWidth === 0
+            ) {
                 return false;
             }
-            const labels = [...document.querySelectorAll(".inline-md-image-fallback")].map((node) => node.textContent);
-            return image.getBoundingClientRect().height >= 80 && labels.includes("Missing chart") && labels.includes("Image");
+            const labels = [...document.querySelectorAll(".inline-md-image-fallback")].map(
+                (node) => node.textContent,
+            );
+            return (
+                image.getBoundingClientRect().height >= 80 &&
+                labels.includes("Missing chart") &&
+                labels.includes("Image")
+            );
         });
     });
 
@@ -38,7 +50,9 @@ describe("image layout", () => {
     it("keeps a missing image below the picture", async () => {
         const boxes = await page.evaluate(() => {
             const image = document.querySelector("img.inline-md-image");
-            const missing = [...document.querySelectorAll(".inline-md-image-fallback")].find((node) => node.textContent === "Missing chart");
+            const missing = [...document.querySelectorAll(".inline-md-image-fallback")].find(
+                (node) => node.textContent === "Missing chart",
+            );
             if (!(image instanceof HTMLElement) || !(missing instanceof HTMLElement)) {
                 return null;
             }
@@ -59,9 +73,11 @@ describe("image layout", () => {
 
     it("keeps settled images in place while the caret moves", async () => {
         const result = await page.evaluate(async () => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
             const doc = api.getDocument();
             const picture = document.querySelector("img.inline-md-image");
             if (!(picture instanceof HTMLImageElement)) {
@@ -105,7 +121,9 @@ describe("image layout", () => {
             }
             observer.disconnect();
             const still = document.querySelector("img.inline-md-image");
-            const labels = [...document.querySelectorAll(".inline-md-image-fallback")].map((node) => node.textContent ?? "");
+            const labels = [...document.querySelectorAll(".inline-md-image-fallback")].map(
+                (node) => node.textContent ?? "",
+            );
             return {
                 foreign,
                 labels,

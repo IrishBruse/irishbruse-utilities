@@ -1,6 +1,5 @@
 import { workspace } from "vscode";
 
-
 export const DEFAULT_MARKDOWN_INLINE_EDITOR_COLORS = {
     heading1: "#D19A66",
     heading2: "#E06C75",
@@ -17,10 +16,11 @@ export type MarkdownInlineEditorColors = {
 };
 
 function readColor(configKey: string, fallback: string): string {
-    const value = workspace.getConfiguration("markdownInlineEditor").get<unknown>(`colors.${configKey}`);
+    const value = workspace
+        .getConfiguration("markdownInlineEditor")
+        .get<unknown>(`colors.${configKey}`);
     return typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
 }
-
 
 export function getMarkdownInlineEditorColors(): MarkdownInlineEditorColors {
     const defaults = DEFAULT_MARKDOWN_INLINE_EDITOR_COLORS;
@@ -35,7 +35,6 @@ export function getMarkdownInlineEditorColors(): MarkdownInlineEditorColors {
         inlineCodeBackground: readColor("inlineCodeBackground", defaults.inlineCodeBackground),
     };
 }
-
 
 export function markdownInlineEditorColorsCssVars(colors: MarkdownInlineEditorColors): string {
     return [

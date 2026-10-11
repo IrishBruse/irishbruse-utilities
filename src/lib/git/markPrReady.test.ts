@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("../asyncSpawn/asyncSpawn", () => ({
     asyncSpawn: vi.fn(),
@@ -63,7 +63,7 @@ describe("markPullRequestReady", () => {
         expect(mockAsyncSpawn).toHaveBeenCalledWith(
             "gh",
             ["pr", "ready", "feature"],
-            expect.objectContaining({ cwd: "/repo" })
+            expect.objectContaining({ cwd: "/repo" }),
         );
     });
 
@@ -76,7 +76,7 @@ describe("markPullRequestReady", () => {
 
         await expect(markPullRequestReady("/repo", "feature")).resolves.toBeUndefined();
         expect(mockShowErrorMessage).toHaveBeenCalledWith(
-            "Failed to mark PR as ready: GraphQL: Pull request is not draft"
+            "Failed to mark PR as ready: GraphQL: Pull request is not draft",
         );
     });
 });

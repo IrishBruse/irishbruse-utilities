@@ -9,12 +9,6 @@
         "skipLibCheck": true,
         "types": ["node", "vitest/globals"]
     },
-    "include": [
-        "src/**/*.test.ts",
-        "src/**/*.browser.ts",
-        "src/test/**/*.ts",
-        "vitest.config.mts",
-        "vitest.markdownInline.config.mts"
-    ],
+    "include": ["src/**/*.test.ts", "src/**/*.browser.ts", "src/test/**/*.ts", "vite.config.ts"],
     "exclude": ["src/markdownInline/**"]
 }

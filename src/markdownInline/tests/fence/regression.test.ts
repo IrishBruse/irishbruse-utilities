@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -16,16 +16,24 @@ describe("fenced code colors", () => {
         browser = opened.browser;
         page = opened.page;
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: { focus(): void; getDocument(): string; setCursor(offset: number): void };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: {
+                        focus(): void;
+                        getDocument(): string;
+                        setCursor(offset: number): void;
+                    };
+                }
+            ).__inlineMarkdown;
             const source = api.getDocument();
             api.focus();
             api.setCursor(source.indexOf("flowchart"));
         });
         await page.waitForFunction(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            return [...document.querySelectorAll("#editor .view-line")].some((line) => fold(line.textContent).includes("```mermaid"));
+            return [...document.querySelectorAll("#editor .view-line")].some((line) =>
+                fold(line.textContent).includes("```mermaid"),
+            );
         });
     }, 45_000);
 
@@ -36,27 +44,41 @@ describe("fenced code colors", () => {
     it("paints the backticks in the editor text color and the language name in cyan", async () => {
         const colors = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("```mermaid"));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("```mermaid"),
+            );
             const spans = [...(line?.querySelectorAll("span") ?? [])]
                 .filter((span) => span.childElementCount === 0)
-                .map((span) => ({ text: fold(span.textContent), color: getComputedStyle(span).color }));
+                .map((span) => ({
+                    text: fold(span.textContent),
+                    color: getComputedStyle(span).color,
+                }));
             return spans;
         });
-        expect(colors.filter((span) => span.text.includes("`") || span.text.includes("mermaid"))).toEqual([
+        expect(
+            colors.filter((span) => span.text.includes("`") || span.text.includes("mermaid")),
+        ).toEqual([
             { text: "```", color: "rgb(171, 178, 191)" },
             { text: "mermaid", color: "rgb(86, 182, 194)" },
         ]);
         const closing = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).trim() === "```");
-            const span = [...(line?.querySelectorAll("span") ?? [])].find((entry) => entry.childElementCount === 0 && fold(entry.textContent) === "```");
+            const line = [...document.querySelectorAll("#editor .view-line")].find(
+                (entry) => fold(entry.textContent).trim() === "```",
+            );
+            const span = [...(line?.querySelectorAll("span") ?? [])].find(
+                (entry) => entry.childElementCount === 0 && fold(entry.textContent) === "```",
+            );
             return span ? getComputedStyle(span).color : "";
         });
         expect(closing).toBe("rgb(171, 178, 191)");
     });
 
     it("shows the opening and closing fences", async () => {
-        await expectLineRangeShot(page, join(here, "screenshots/fence.png"), { from: "```mermaid", to: "```" });
+        await expectLineRangeShot(page, join(here, "screenshots/fence.png"), {
+            from: "```mermaid",
+            to: "```",
+        });
     });
 });
 
@@ -81,15 +103,29 @@ describe("ordered marker inside a markdown fence", () => {
             const marker = lines.find((entry) => fold(entry.textContent).includes("1. Only steps"));
             const plain = lines.find((entry) => fold(entry.textContent).trim() === "plain line");
             const afterPlain = plain ? lines[lines.indexOf(plain) + 1] : undefined;
-            if (!(marker instanceof HTMLElement) || !(plain instanceof HTMLElement) || !(afterPlain instanceof HTMLElement)) {
+            if (
+                !(marker instanceof HTMLElement) ||
+                !(plain instanceof HTMLElement) ||
+                !(afterPlain instanceof HTMLElement)
+            ) {
                 return null;
             }
             const markerBox = marker.getBoundingClientRect();
             const plainBox = plain.getBoundingClientRect();
             const afterBox = afterPlain.getBoundingClientRect();
-            const leaves = (line: Element) => [...line.querySelectorAll("span")].filter((span) => span.childElementCount === 0 && fold(span.textContent).trim().length > 0);
-            const markerLeaves = leaves(marker).map((span) => ({ text: fold(span.textContent), color: getComputedStyle(span).color }));
-            const plainLeaves = leaves(plain).map((span) => ({ text: fold(span.textContent), color: getComputedStyle(span).color }));
+            const leaves = (line: Element) =>
+                [...line.querySelectorAll("span")].filter(
+                    (span) =>
+                        span.childElementCount === 0 && fold(span.textContent).trim().length > 0,
+                );
+            const markerLeaves = leaves(marker).map((span) => ({
+                text: fold(span.textContent),
+                color: getComputedStyle(span).color,
+            }));
+            const plainLeaves = leaves(plain).map((span) => ({
+                text: fold(span.textContent),
+                color: getComputedStyle(span).color,
+            }));
             const markerSpan = markerLeaves.find((span) => span.text.includes("1."));
             const plainSpan = plainLeaves.find((span) => span.text.includes("plain"));
             return {
@@ -98,7 +134,8 @@ describe("ordered marker inside a markdown fence", () => {
                 markerColor: markerSpan?.color ?? "",
                 plainColor: plainSpan?.color ?? "",
                 listGap: marker.classList.contains("inline-md-list-gap-after"),
-                markerStep: lines[lines.indexOf(marker) + 1]!.getBoundingClientRect().top - markerBox.top,
+                markerStep:
+                    lines[lines.indexOf(marker) + 1]!.getBoundingClientRect().top - markerBox.top,
                 plainStep: afterBox.top - plainBox.top,
             };
         });

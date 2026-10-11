@@ -1,9 +1,15 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import { reveal, revealCode, revealMarker, revealMermaid, showFormatted } from "./reveal";
 import type { CursorContext, Scope } from "./document/types";
 import { markerVisibility, showsFormattedContent } from "./visibility";
 
-function cursor(head: number, lineStart: number, lineEnd: number, anchor = head, eolLength = 1): CursorContext {
+function cursor(
+    head: number,
+    lineStart: number,
+    lineEnd: number,
+    anchor = head,
+    eolLength = 1,
+): CursorContext {
     return { selectionFrom: anchor, selectionTo: head, lineStart, lineEnd, eolLength };
 }
 
@@ -25,24 +31,28 @@ describe("revealMarker", () => {
         const away = cursor(50, 40, 60);
         const line = markerLine(0, 1);
         expect(markerVisibility(table, table.markers[0]!, away, line)).toBe("hidden");
-        expect(revealMarker({
-            scope: table,
-            marker: table.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: true,
-            frontMatterEnd: undefined,
-            singleLine: true,
-        })).toBe("raw");
-        expect(reveal({
-            scope: table,
-            marker: table.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: true,
-            frontMatterEnd: undefined,
-            singleLine: true,
-        })).toEqual({ surface: "raw", ghost: false });
+        expect(
+            revealMarker({
+                scope: table,
+                marker: table.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: true,
+                frontMatterEnd: undefined,
+                singleLine: true,
+            }),
+        ).toBe("raw");
+        expect(
+            reveal({
+                scope: table,
+                marker: table.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: true,
+                frontMatterEnd: undefined,
+                singleLine: true,
+            }),
+        ).toEqual({ surface: "raw", ghost: false });
     });
 
     it("zones a table when the caret is away and nothing is found", () => {
@@ -58,24 +68,28 @@ describe("revealMarker", () => {
         const away = cursor(50, 40, 60);
         const line = markerLine(0, 1);
         expect(markerVisibility(table, table.markers[0]!, away, line)).toBe("hidden");
-        expect(revealMarker({
-            scope: table,
-            marker: table.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: undefined,
-            singleLine: false,
-        })).toBe("zone");
-        expect(reveal({
-            scope: table,
-            marker: table.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: undefined,
-            singleLine: false,
-        })).toEqual({ surface: "preview", zone: true, occupy: false });
+        expect(
+            revealMarker({
+                scope: table,
+                marker: table.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: undefined,
+                singleLine: false,
+            }),
+        ).toBe("zone");
+        expect(
+            reveal({
+                scope: table,
+                marker: table.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: undefined,
+                singleLine: false,
+            }),
+        ).toEqual({ surface: "preview", zone: true, occupy: false });
     });
 
     it("occupies a hidden thematic break inside front matter", () => {
@@ -90,24 +104,28 @@ describe("revealMarker", () => {
         const away = cursor(40, 30, 50);
         const line = markerLine(0, 1);
         expect(markerVisibility(rule, rule.markers[0]!, away, line)).toBe("hidden");
-        expect(revealMarker({
-            scope: rule,
-            marker: rule.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: 20,
-            singleLine: true,
-        })).toBe("occupy");
-        expect(reveal({
-            scope: rule,
-            marker: rule.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: 20,
-            singleLine: true,
-        })).toEqual({ surface: "preview", zone: false, occupy: true });
+        expect(
+            revealMarker({
+                scope: rule,
+                marker: rule.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: 20,
+                singleLine: true,
+            }),
+        ).toBe("occupy");
+        expect(
+            reveal({
+                scope: rule,
+                marker: rule.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: 20,
+                singleLine: true,
+            }),
+        ).toEqual({ surface: "preview", zone: false, occupy: true });
     });
 
     it("occupies a hidden thematic break inside front matter and zones one outside it", () => {
@@ -122,42 +140,50 @@ describe("revealMarker", () => {
         const away = cursor(40, 30, 50);
         const line = markerLine(0, 1);
         expect(markerVisibility(rule, rule.markers[0]!, away, line)).toBe("hidden");
-        expect(revealMarker({
-            scope: rule,
-            marker: rule.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: 20,
-            singleLine: true,
-        })).toBe("occupy");
-        expect(reveal({
-            scope: rule,
-            marker: rule.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: 20,
-            singleLine: true,
-        })).toEqual({ surface: "preview", zone: false, occupy: true });
-        expect(revealMarker({
-            scope: rule,
-            marker: rule.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: undefined,
-            singleLine: true,
-        })).toBe("zone");
-        expect(reveal({
-            scope: rule,
-            marker: rule.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: undefined,
-            singleLine: true,
-        })).toEqual({ surface: "preview", zone: true, occupy: false });
+        expect(
+            revealMarker({
+                scope: rule,
+                marker: rule.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: 20,
+                singleLine: true,
+            }),
+        ).toBe("occupy");
+        expect(
+            reveal({
+                scope: rule,
+                marker: rule.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: 20,
+                singleLine: true,
+            }),
+        ).toEqual({ surface: "preview", zone: false, occupy: true });
+        expect(
+            revealMarker({
+                scope: rule,
+                marker: rule.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: undefined,
+                singleLine: true,
+            }),
+        ).toBe("zone");
+        expect(
+            reveal({
+                scope: rule,
+                marker: rule.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: undefined,
+                singleLine: true,
+            }),
+        ).toEqual({ surface: "preview", zone: true, occupy: false });
     });
 
     it("zones a thematic break outside front matter when it covers one line", () => {
@@ -170,24 +196,28 @@ describe("revealMarker", () => {
             markers: [{ start: 10, end: 14 }],
         };
         const away = cursor(40, 30, 50);
-        expect(revealMarker({
-            scope: rule,
-            marker: rule.markers[0]!,
-            cursor: away,
-            markerLine: markerLine(0, 1),
-            findHit: false,
-            frontMatterEnd: undefined,
-            singleLine: true,
-        })).toBe("zone");
-        expect(reveal({
-            scope: rule,
-            marker: rule.markers[0]!,
-            cursor: away,
-            markerLine: markerLine(0, 1),
-            findHit: false,
-            frontMatterEnd: undefined,
-            singleLine: true,
-        })).toEqual({ surface: "preview", zone: true, occupy: false });
+        expect(
+            revealMarker({
+                scope: rule,
+                marker: rule.markers[0]!,
+                cursor: away,
+                markerLine: markerLine(0, 1),
+                findHit: false,
+                frontMatterEnd: undefined,
+                singleLine: true,
+            }),
+        ).toBe("zone");
+        expect(
+            reveal({
+                scope: rule,
+                marker: rule.markers[0]!,
+                cursor: away,
+                markerLine: markerLine(0, 1),
+                findHit: false,
+                frontMatterEnd: undefined,
+                singleLine: true,
+            }),
+        ).toEqual({ surface: "preview", zone: true, occupy: false });
     });
 
     it("keeps a ghost marker as ghost source when the caret is on its line", () => {
@@ -205,33 +235,39 @@ describe("revealMarker", () => {
         const onLine = cursor(9, 0, 10);
         const line = markerLine(0, 1);
         expect(markerVisibility(strong, strong.markers[0]!, onLine, line)).toBe("ghost");
-        expect(revealMarker({
-            scope: strong,
-            marker: strong.markers[0]!,
-            cursor: onLine,
-            markerLine: line,
-            findHit: true,
-            frontMatterEnd: undefined,
-            singleLine: false,
-        })).toBe("ghost");
-        expect(reveal({
-            scope: strong,
-            marker: strong.markers[0]!,
-            cursor: onLine,
-            markerLine: line,
-            findHit: true,
-            frontMatterEnd: undefined,
-            singleLine: false,
-        })).toEqual({ surface: "raw", ghost: true });
-        expect(revealMarker({
-            scope: strong,
-            marker: strong.markers[0]!,
-            cursor: onLine,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: undefined,
-            singleLine: false,
-        })).toBe("ghost");
+        expect(
+            revealMarker({
+                scope: strong,
+                marker: strong.markers[0]!,
+                cursor: onLine,
+                markerLine: line,
+                findHit: true,
+                frontMatterEnd: undefined,
+                singleLine: false,
+            }),
+        ).toBe("ghost");
+        expect(
+            reveal({
+                scope: strong,
+                marker: strong.markers[0]!,
+                cursor: onLine,
+                markerLine: line,
+                findHit: true,
+                frontMatterEnd: undefined,
+                singleLine: false,
+            }),
+        ).toEqual({ surface: "raw", ghost: true });
+        expect(
+            revealMarker({
+                scope: strong,
+                marker: strong.markers[0]!,
+                cursor: onLine,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: undefined,
+                singleLine: false,
+            }),
+        ).toBe("ghost");
     });
 
     it("hides an image that does not cover a single line", () => {
@@ -248,24 +284,28 @@ describe("revealMarker", () => {
         const away = cursor(50, 40, 60);
         const line = markerLine(0, 1);
         expect(markerVisibility(image, image.markers[0]!, away, line)).toBe("hidden");
-        expect(revealMarker({
-            scope: image,
-            marker: image.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: undefined,
-            singleLine: false,
-        })).toBe("hidden");
-        expect(reveal({
-            scope: image,
-            marker: image.markers[0]!,
-            cursor: away,
-            markerLine: line,
-            findHit: false,
-            frontMatterEnd: undefined,
-            singleLine: false,
-        })).toEqual({ surface: "preview", zone: false, occupy: false });
+        expect(
+            revealMarker({
+                scope: image,
+                marker: image.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: undefined,
+                singleLine: false,
+            }),
+        ).toBe("hidden");
+        expect(
+            reveal({
+                scope: image,
+                marker: image.markers[0]!,
+                cursor: away,
+                markerLine: line,
+                findHit: false,
+                frontMatterEnd: undefined,
+                singleLine: false,
+            }),
+        ).toEqual({ surface: "preview", zone: false, occupy: false });
     });
 });
 
@@ -329,7 +369,13 @@ describe("revealCode", () => {
     });
 
     it("maps mermaid source onto the raw surface", () => {
-        expect(revealCode(diagram, cursor(12, 0, 40), false)).toEqual({ surface: "raw", ghost: false });
-        expect(revealCode(diagram, cursor(80, 50, 90), true)).toEqual({ surface: "raw", ghost: false });
+        expect(revealCode(diagram, cursor(12, 0, 40), false)).toEqual({
+            surface: "raw",
+            ghost: false,
+        });
+        expect(revealCode(diagram, cursor(80, 50, 90), true)).toEqual({
+            surface: "raw",
+            ghost: false,
+        });
     });
 });

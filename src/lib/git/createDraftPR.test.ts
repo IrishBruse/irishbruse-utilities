@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const { showErrorMessage } = vi.hoisted(() => ({
     showErrorMessage: vi.fn(),
@@ -54,23 +54,13 @@ describe("createBlankDraftPullRequest", () => {
             1,
             "git",
             ["push", "-u", "origin", "feature/x"],
-            { cwd: "/repo" }
+            { cwd: "/repo" },
         );
         expect(mockAsyncSpawn).toHaveBeenNthCalledWith(
             2,
             "gh",
-            [
-                "pr",
-                "create",
-                "--draft",
-                "--base",
-                "main",
-                "--title",
-                "feature/x",
-                "--body",
-                "",
-            ],
-            expect.objectContaining({ cwd: "/repo" })
+            ["pr", "create", "--draft", "--base", "main", "--title", "feature/x", "--body", ""],
+            expect.objectContaining({ cwd: "/repo" }),
         );
         expect(mockGetPrInfo).toHaveBeenCalledWith("/repo", "feature/x");
         expect(pr).toEqual({
@@ -99,7 +89,7 @@ describe("createBlankDraftPullRequest", () => {
         expect(mockGetPrInfo).not.toHaveBeenCalled();
         expect(mockAsyncSpawn).toHaveBeenCalledTimes(1);
         expect(showErrorMessage).toHaveBeenCalledWith(
-            "Failed to push branch: fatal: no upstream configured"
+            "Failed to push branch: fatal: no upstream configured",
         );
     });
 
@@ -117,7 +107,7 @@ describe("createBlankDraftPullRequest", () => {
         expect(pr).toBeUndefined();
         expect(mockGetPrInfo).not.toHaveBeenCalled();
         expect(showErrorMessage).toHaveBeenCalledWith(
-            "Failed to create draft PR: GraphQL: Head ref must exist"
+            "Failed to create draft PR: GraphQL: Head ref must exist",
         );
     });
 });

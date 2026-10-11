@@ -1,14 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { TabInputCustom, TabInputText, Uri, window } from "vscode";
 import { MERMAID_PREVIEW_VIEW_TYPE } from "./MermaidCustomEditorProvider";
 import { getActiveMermaidUri, isMermaidUri } from "./getActiveMermaidUri";
 
+const setActiveTab = (activeTab: { input: unknown } | undefined): void => {
+    (window.tabGroups as unknown as { activeTabGroup: unknown }).activeTabGroup = { activeTab };
+};
+
 describe("mermaidEditor/getActiveMermaidUri", () => {
     beforeEach(() => {
         vi.mocked(window).activeTextEditor = undefined;
-        vi.mocked(window.tabGroups).activeTabGroup = {
-            activeTab: undefined,
-        } as typeof window.tabGroups.activeTabGroup;
+        setActiveTab(undefined);
     });
 
     describe("isMermaidUri", () => {
@@ -22,20 +24,14 @@ describe("mermaidEditor/getActiveMermaidUri", () => {
     describe("getActiveMermaidUri", () => {
         it("returns the URI from the mermaid preview custom editor tab", () => {
             const uri = Uri.file("/proj/obj/graph.mmd");
-            const input = Object.assign(new TabInputCustom(), { viewType: MERMAID_PREVIEW_VIEW_TYPE, uri });
-            vi.mocked(window.tabGroups).activeTabGroup = {
-                activeTab: { input },
-            } as typeof window.tabGroups.activeTabGroup;
+            setActiveTab({ input: new TabInputCustom(uri, MERMAID_PREVIEW_VIEW_TYPE) });
 
             expect(getActiveMermaidUri()?.toString()).toBe(uri.toString());
         });
 
         it("returns the URI from a text tab when the file is mermaid", () => {
             const uri = Uri.file("/proj/graph.mmd");
-            const input = Object.assign(new TabInputText(), { uri });
-            vi.mocked(window.tabGroups).activeTabGroup = {
-                activeTab: { input },
-            } as typeof window.tabGroups.activeTabGroup;
+            setActiveTab({ input: new TabInputText(uri) });
 
             expect(getActiveMermaidUri()?.fsPath).toBe(uri.fsPath);
         });

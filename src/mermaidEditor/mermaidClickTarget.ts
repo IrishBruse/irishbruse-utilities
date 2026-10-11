@@ -24,7 +24,6 @@ const HREF_GITHUB_LINE_RE = /#L(\d+)\b/i;
 const HREF_VSCODE_FRAGMENT_RE = /#L(\d+),(\d+)\b/i;
 const EXTERNAL_HREF_RE = /^(https?:|mailto:)/i;
 
-
 export function normalizeGblRelativePath(relativePath: string): string {
     const trimmed = relativePath.trim();
     if (!trimmed) {
@@ -110,10 +109,9 @@ function parseHrefWorkspaceLocation(href: string): MermaidClickTarget | undefine
     };
 }
 
-
 export function parseMermaidClickTarget(
     tooltip: string | undefined,
-    href: string | undefined
+    href: string | undefined,
 ): MermaidClickTarget | undefined {
     const trimmedTooltip = tooltip?.trim();
     if (trimmedTooltip) {
@@ -147,13 +145,14 @@ function parsePositiveInt(value: string, fallback: number): number {
     return parsed;
 }
 
-
 export function formatGblPathLocation(relativePath: string, line: number, column: number): string {
     return `${relativePath}:${line}:${column}`;
 }
 
-
-export function normalizeGblClickPair(href: string, tooltip?: string): { href: string; tooltip: string } {
+export function normalizeGblClickPair(
+    href: string,
+    tooltip?: string,
+): { href: string; tooltip: string } {
     const trimmedHref = href.trim();
     const trimmedTooltip = tooltip?.trim() ?? "";
 
@@ -166,7 +165,7 @@ export function normalizeGblClickPair(href: string, tooltip?: string): { href: s
         const canonical = formatGblPathLocation(
             resolved.relativePath,
             resolved.line,
-            resolved.column
+            resolved.column,
         );
         return { href: resolved.relativePath, tooltip: canonical };
     }
@@ -174,7 +173,10 @@ export function normalizeGblClickPair(href: string, tooltip?: string): { href: s
     return { href: trimmedHref, tooltip: trimmedTooltip || trimmedHref };
 }
 
-export function resolveMermaidClickTargetPath(mermaidDocumentUri: Uri, target: MermaidClickTarget): string {
+export function resolveMermaidClickTargetPath(
+    mermaidDocumentUri: Uri,
+    target: MermaidClickTarget,
+): string {
     const mermaidDir = path.dirname(mermaidDocumentUri.fsPath);
     const relativePath = normalizeGblRelativePath(target.relativePath);
     const resolved = path.resolve(mermaidDir, relativePath);
@@ -190,7 +192,7 @@ export function resolveMermaidClickTargetPath(mermaidDocumentUri: Uri, target: M
 
 export async function handleMermaidOpenLink(
     mermaidDocumentUri: Uri,
-    request: MermaidOpenLinkRequest
+    request: MermaidOpenLinkRequest,
 ): Promise<void> {
     const href = typeof request.href === "string" ? request.href.trim() : "";
     const tooltip = typeof request.tooltip === "string" ? request.tooltip : undefined;
@@ -213,7 +215,7 @@ export async function handleMermaidOpenLink(
 export async function openMermaidClickTarget(
     mermaidDocumentUri: Uri,
     target: MermaidClickTarget,
-    options: { openBeside?: boolean } = {}
+    options: { openBeside?: boolean } = {},
 ): Promise<void> {
     const absolutePath = resolveMermaidClickTargetPath(mermaidDocumentUri, target);
     const docUri = Uri.file(absolutePath);

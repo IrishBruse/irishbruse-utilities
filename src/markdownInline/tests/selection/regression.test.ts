@@ -1,7 +1,7 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { PNG } from "pngjs";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -60,7 +60,9 @@ describe("selection highlight layout", () => {
         const lines = await selectionStylesByLine(page);
         const heading = lines.find((line) => line.heading);
         const body = lines.filter((line) => line.body);
-        expect(heading?.styles.every((style) => style.bottom === "0px" || style.bottom === "auto")).toBe(true);
+        expect(
+            heading?.styles.every((style) => style.bottom === "0px" || style.bottom === "auto"),
+        ).toBe(true);
         for (const line of body) {
             for (const style of line.styles) {
                 expect(style.bottom).toBe("0px");
@@ -70,10 +72,14 @@ describe("selection highlight layout", () => {
     });
 
     it("matches the saved picture of a document-wide selection", async () => {
-        const clip = await expectLineRangeShot(page, join(here, "screenshots", "selection-all.png"), {
-            from: "Main title",
-            to: "Second paragraph",
-        });
+        const clip = await expectLineRangeShot(
+            page,
+            join(here, "screenshots", "selection-all.png"),
+            {
+                from: "Main title",
+                to: "Second paragraph",
+            },
+        );
         expect(clip.width).toBeLessThan(700);
     });
 });
@@ -88,7 +94,9 @@ async function taskLineSelectionGap(page: Page): Promise<number> {
             requestAnimationFrame(() => requestAnimationFrame(resolve));
         });
         const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-        const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Task"));
+        const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+            fold(entry.textContent).includes("Task"),
+        );
         if (!(line instanceof HTMLElement)) {
             return Number.POSITIVE_INFINITY;
         }
@@ -96,7 +104,9 @@ async function taskLineSelectionGap(page: Page): Promise<number> {
         const pieces = [...document.querySelectorAll<HTMLElement>(".selected-text")].filter(
             (piece) => Math.abs(piece.getBoundingClientRect().top - top) < 3,
         );
-        pieces.sort((left, right) => left.getBoundingClientRect().left - right.getBoundingClientRect().left);
+        pieces.sort(
+            (left, right) => left.getBoundingClientRect().left - right.getBoundingClientRect().left,
+        );
         const lineLeft = line.getBoundingClientRect().left;
         const firstPieceLeft = pieces[0]?.getBoundingClientRect().left ?? Number.POSITIVE_INFINITY;
         return Math.max(0, firstPieceLeft - lineLeft);
@@ -128,7 +138,9 @@ describe("task list selection highlight", () => {
         try {
             const revealed = await dragPage.evaluate(async () => {
                 const root = document.querySelector(".inline-md-root");
-                root?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, cancelable: true }));
+                root?.dispatchEvent(
+                    new MouseEvent("mousedown", { bubbles: true, button: 0, cancelable: true }),
+                );
                 const doc = window.__inlineMarkdown.getDocument();
                 window.__inlineMarkdown.select(0, doc.length);
                 await new Promise((resolve) => {
@@ -165,7 +177,9 @@ describe("task list selection highlight", () => {
 async function maxSelectionGapOnLine(page: Page, needle: string): Promise<number> {
     return page.evaluate((lineNeedle) => {
         const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-        const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes(lineNeedle));
+        const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+            fold(entry.textContent).includes(lineNeedle),
+        );
         if (!(line instanceof HTMLElement)) {
             return Number.POSITIVE_INFINITY;
         }
@@ -173,10 +187,14 @@ async function maxSelectionGapOnLine(page: Page, needle: string): Promise<number
         const pieces = [...document.querySelectorAll<HTMLElement>(".selected-text")].filter(
             (piece) => Math.abs(piece.getBoundingClientRect().top - top) < 3,
         );
-        pieces.sort((left, right) => left.getBoundingClientRect().left - right.getBoundingClientRect().left);
+        pieces.sort(
+            (left, right) => left.getBoundingClientRect().left - right.getBoundingClientRect().left,
+        );
         let maxGap = 0;
         for (let index = 1; index < pieces.length; index += 1) {
-            const gap = pieces[index].getBoundingClientRect().left - pieces[index - 1].getBoundingClientRect().right;
+            const gap =
+                pieces[index].getBoundingClientRect().left -
+                pieces[index - 1].getBoundingClientRect().right;
             maxGap = Math.max(maxGap, gap);
         }
         const lineLeft = line.getBoundingClientRect().left;
@@ -213,10 +231,14 @@ describe("task line selection picture", () => {
     });
 
     it("matches the saved picture of the task line selection", async () => {
-        const clip = await expectLineRangeShot(page, join(here, "screenshots", "task-line-selection.png"), {
-            from: "- [ ] Task",
-            to: "Still selected",
-        });
+        const clip = await expectLineRangeShot(
+            page,
+            join(here, "screenshots", "task-line-selection.png"),
+            {
+                from: "- [ ] Task",
+                to: "Still selected",
+            },
+        );
         expect(clip.width).toBeLessThan(500);
     });
 });
@@ -238,7 +260,9 @@ describe("untouched marks on a selected line", () => {
     it("keeps marks previewed when the selection does not touch them", async () => {
         const text = await page.evaluate(async () => {
             const root = document.querySelector(".inline-md-root");
-            root?.dispatchEvent(new MouseEvent("mousedown", { bubbles: true, button: 0, cancelable: true }));
+            root?.dispatchEvent(
+                new MouseEvent("mousedown", { bubbles: true, button: 0, cancelable: true }),
+            );
             const doc = window.__inlineMarkdown.getDocument();
             const from = doc.indexOf(" and ");
             const to = from + " and ".length;
@@ -296,9 +320,12 @@ describe("click inside a selection", () => {
         expect(target.from).toBeGreaterThanOrEqual(0);
         expect(target.pieces).toBeGreaterThan(0);
         await page.mouse.click(target.x, target.y);
-        await page.evaluate(() => new Promise((resolve) => {
-            requestAnimationFrame(() => requestAnimationFrame(resolve));
-        }));
+        await page.evaluate(
+            () =>
+                new Promise((resolve) => {
+                    requestAnimationFrame(() => requestAnimationFrame(resolve));
+                }),
+        );
         const placed = await page.evaluate(() => ({
             cursor: window.__inlineMarkdown.getCursor(),
             pieces: document.querySelectorAll(".selected-text").length,
@@ -316,9 +343,15 @@ describe("click inside a selection", () => {
                 requestAnimationFrame(() => requestAnimationFrame(resolve));
             });
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("Second paragraph"));
-            const spans = [...(line?.querySelectorAll("span") ?? [])].filter((span) => fold(span.textContent).includes("Second"));
-            spans.sort((left, right) => (left.textContent?.length ?? 0) - (right.textContent?.length ?? 0));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("Second paragraph"),
+            );
+            const spans = [...(line?.querySelectorAll("span") ?? [])].filter((span) =>
+                fold(span.textContent).includes("Second"),
+            );
+            spans.sort(
+                (left, right) => (left.textContent?.length ?? 0) - (right.textContent?.length ?? 0),
+            );
             const box = spans[0]?.getBoundingClientRect();
             return {
                 from,
@@ -330,9 +363,12 @@ describe("click inside a selection", () => {
         });
         expect(outside.at).toBeGreaterThanOrEqual(outside.to);
         await page.mouse.click(outside.x, outside.y);
-        await page.evaluate(() => new Promise((resolve) => {
-            requestAnimationFrame(() => requestAnimationFrame(resolve));
-        }));
+        await page.evaluate(
+            () =>
+                new Promise((resolve) => {
+                    requestAnimationFrame(() => requestAnimationFrame(resolve));
+                }),
+        );
         const moved = await page.evaluate(() => window.__inlineMarkdown.getCursor());
         expect(moved).toBeGreaterThanOrEqual(outside.at);
         expect(moved).toBeLessThan(outside.at + "Second".length);
@@ -344,7 +380,10 @@ describe("heading selection highlight", () => {
     let page: Page;
 
     beforeAll(async () => {
-        const opened = await openPlayground("selection/fixtures/case-7.md", "Text above the heading");
+        const opened = await openPlayground(
+            "selection/fixtures/case-7.md",
+            "Text above the heading",
+        );
         browser = opened.browser;
         page = opened.page;
         await page.evaluate(() => {
@@ -355,9 +394,12 @@ describe("heading selection highlight", () => {
             api.select(start, doc.indexOf("\n", start));
         });
         await page.waitForFunction(() => document.querySelectorAll(".selected-text").length > 0);
-        await page.evaluate(() => new Promise((resolve) => {
-            requestAnimationFrame(() => requestAnimationFrame(resolve));
-        }));
+        await page.evaluate(
+            () =>
+                new Promise((resolve) => {
+                    requestAnimationFrame(() => requestAnimationFrame(resolve));
+                }),
+        );
     });
 
     afterAll(async () => {
@@ -366,9 +408,11 @@ describe("heading selection highlight", () => {
 
     it("wraps the heading glyphs in one rounded selection", async () => {
         const layout = await page.evaluate(() => {
-            const line = [...document.querySelectorAll<HTMLElement>("#editor .view-line")].find((entry) => {
-                return (entry.textContent ?? "").replaceAll("\u00a0", " ").includes("Hello");
-            });
+            const line = [...document.querySelectorAll<HTMLElement>("#editor .view-line")].find(
+                (entry) => {
+                    return (entry.textContent ?? "").replaceAll("\u00a0", " ").includes("Hello");
+                },
+            );
             const heading = line?.querySelector(".inline-md-h1");
             const piece = document.querySelector<HTMLElement>(".selected-text");
             if (!(line instanceof HTMLElement) || !(heading instanceof HTMLElement) || !piece) {
@@ -380,10 +424,11 @@ describe("heading selection highlight", () => {
                 count: document.querySelectorAll(".selected-text").length,
                 past: band.right - text.right,
                 contains: band.top <= text.top + 1 && band.bottom >= text.bottom - 1,
-                rounded: piece.classList.contains("top-left-radius")
-                    && piece.classList.contains("top-right-radius")
-                    && piece.classList.contains("bottom-left-radius")
-                    && piece.classList.contains("bottom-right-radius"),
+                rounded:
+                    piece.classList.contains("top-left-radius") &&
+                    piece.classList.contains("top-right-radius") &&
+                    piece.classList.contains("bottom-left-radius") &&
+                    piece.classList.contains("bottom-right-radius"),
             };
         });
         expect(layout).not.toBeNull();
@@ -395,17 +440,23 @@ describe("heading selection highlight", () => {
     });
 
     it("matches the saved picture of selection across the heading", async () => {
-        const clip = await expectLineRangeShot(page, join(here, "screenshots", "heading-selection-case-7.png"), {
-            from: "Text above the heading",
-            to: "A paragraph with more text",
-            lineNumbers: true,
-        });
+        const clip = await expectLineRangeShot(
+            page,
+            join(here, "screenshots", "heading-selection-case-7.png"),
+            {
+                from: "Text above the heading",
+                to: "A paragraph with more text",
+                lineNumbers: true,
+            },
+        );
         expect(clip.height).toBeLessThan(120);
     });
 });
 
 function channelDistance(left: readonly number[], right: readonly number[]): number {
-    return Math.abs(left[0] - right[0]) + Math.abs(left[1] - right[1]) + Math.abs(left[2] - right[2]);
+    return (
+        Math.abs(left[0] - right[0]) + Math.abs(left[1] - right[1]) + Math.abs(left[2] - right[2])
+    );
 }
 
 function parseRgb(value: string): [number, number, number] {
@@ -439,12 +490,16 @@ describe("wrapped paragraph selection corners", () => {
             const endNeedle = "already open).";
             const to = doc.indexOf(endNeedle) + endNeedle.length;
             const read = () => {
-                const pieces = [...document.querySelectorAll<HTMLElement>(".cslr.selected-text")].map((piece) => {
+                const pieces = [
+                    ...document.querySelectorAll<HTMLElement>(".cslr.selected-text"),
+                ].map((piece) => {
                     const box = piece.getBoundingClientRect();
                     const mask = piece.nextElementSibling;
-                    const covered = mask instanceof HTMLElement
-                        && mask.classList.contains("monaco-editor-background")
-                        && Number(getComputedStyle(mask).zIndex) > Number(getComputedStyle(piece).zIndex);
+                    const covered =
+                        mask instanceof HTMLElement &&
+                        mask.classList.contains("monaco-editor-background") &&
+                        Number(getComputedStyle(mask).zIndex) >
+                            Number(getComputedStyle(piece).zIndex);
                     return {
                         width: box.width,
                         styleWidth: piece.style.width,
@@ -484,8 +539,10 @@ describe("wrapped paragraph selection corners", () => {
                 caps: settled.caps,
                 band: band ? { x: band.x, y: band.y } : null,
                 dpr: window.devicePixelRatio,
-                background: editor instanceof HTMLElement ? getComputedStyle(editor).backgroundColor : "",
-                selection: getComputedStyle(document.querySelector(".selected-text")!).backgroundColor,
+                background:
+                    editor instanceof HTMLElement ? getComputedStyle(editor).backgroundColor : "",
+                selection: getComputedStyle(document.querySelector(".selected-text")!)
+                    .backgroundColor,
             };
         });
         expect(sample.from).toBeGreaterThanOrEqual(0);
@@ -504,9 +561,13 @@ describe("wrapped paragraph selection corners", () => {
         };
         for (const cap of sample.caps) {
             const color = pixel(cap.x, cap.y);
-            expect(channelDistance(color, background)).toBeLessThan(channelDistance(color, selection));
+            expect(channelDistance(color, background)).toBeLessThan(
+                channelDistance(color, selection),
+            );
         }
         const bandColor = pixel(sample.band!.x, sample.band!.y);
-        expect(channelDistance(bandColor, selection)).toBeLessThan(channelDistance(bandColor, background));
+        expect(channelDistance(bandColor, selection)).toBeLessThan(
+            channelDistance(bandColor, background),
+        );
     });
 });

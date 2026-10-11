@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 const { openExternal, showWarningMessage } = vi.hoisted(() => ({
     openExternal: vi.fn(),
@@ -59,7 +59,7 @@ describe("openPR", () => {
         await openPR(undefined, "/repo");
 
         expect(openExternal).toHaveBeenCalledWith(
-            expect.objectContaining({ toString: expect.any(Function) })
+            expect.objectContaining({ toString: expect.any(Function) }),
         );
         expect(openExternal.mock.calls[0][0].toString()).toBe("https://github.com/o/r/pull/42");
     });

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import {
     formatPrFileChangeLabel,
     formatPrLineChangeDescription,
@@ -57,14 +57,14 @@ describe("githubRepoWebUrl", () => {
 
 describe("githubHeadFileWebUrl", () => {
     it("builds a blob URL for a branch and file path", () => {
-        expect(
-            githubHeadFileWebUrl("https://github.com/o/r.git", "feature", "src/foo.ts")
-        ).toBe("https://github.com/o/r/blob/feature/src/foo.ts");
+        expect(githubHeadFileWebUrl("https://github.com/o/r.git", "feature", "src/foo.ts")).toBe(
+            "https://github.com/o/r/blob/feature/src/foo.ts",
+        );
     });
 
     it("encodes branch slashes and file path segments", () => {
         expect(
-            githubHeadFileWebUrl("git@github.com:o/r.git", "feature/foo", "src/my file.ts")
+            githubHeadFileWebUrl("git@github.com:o/r.git", "feature/foo", "src/my file.ts"),
         ).toBe("https://github.com/o/r/blob/feature%2Ffoo/src/my%20file.ts");
     });
 
@@ -76,7 +76,7 @@ describe("githubHeadFileWebUrl", () => {
 describe("githubHeadTreeWebUrl", () => {
     it("builds a tree URL for a branch and folder path", () => {
         expect(
-            githubHeadTreeWebUrl("https://github.com/o/r.git", "feature", "src/components")
+            githubHeadTreeWebUrl("https://github.com/o/r.git", "feature", "src/components"),
         ).toBe("https://github.com/o/r/tree/feature/src/components");
     });
 });
@@ -94,11 +94,9 @@ describe("getHeadRef", () => {
         });
 
         await expect(getHeadRef("/repo")).resolves.toBe("feature-branch");
-        expect(mockAsyncSpawn).toHaveBeenCalledWith(
-            "git",
-            ["rev-parse", "--abbrev-ref", "HEAD"],
-            { cwd: "/repo" }
-        );
+        expect(mockAsyncSpawn).toHaveBeenCalledWith("git", ["rev-parse", "--abbrev-ref", "HEAD"], {
+            cwd: "/repo",
+        });
     });
 
     it("falls back to the commit SHA when HEAD is detached", async () => {
@@ -150,7 +148,7 @@ describe("getGithubHeadFileUrls", () => {
         });
 
         await expect(
-            getGithubHeadFileUrls("/repo", [{ relativePath: "src/components", isDirectory: true }])
+            getGithubHeadFileUrls("/repo", [{ relativePath: "src/components", isDirectory: true }]),
         ).resolves.toEqual(["https://github.com/o/r/tree/main/src/components"]);
     });
 });
@@ -168,7 +166,9 @@ describe("getOriginUrl", () => {
         });
 
         await expect(getOriginUrl("/repo")).resolves.toBe("git@github.com:owner/repo.git");
-        expect(mockAsyncSpawn).toHaveBeenCalledWith("git", ["remote", "get-url", "origin"], { cwd: "/repo" });
+        expect(mockAsyncSpawn).toHaveBeenCalledWith("git", ["remote", "get-url", "origin"], {
+            cwd: "/repo",
+        });
     });
 
     it("returns undefined when git remote fails", async () => {
@@ -200,7 +200,9 @@ describe("formatPrLineChangeDescription", () => {
 
 describe("getPrChangesUrl", () => {
     it("appends /changes to the PR web URL", () => {
-        expect(getPrChangesUrl("https://github.com/o/r/pull/7")).toBe("https://github.com/o/r/pull/7/changes");
+        expect(getPrChangesUrl("https://github.com/o/r/pull/7")).toBe(
+            "https://github.com/o/r/pull/7/changes",
+        );
     });
 });
 
@@ -236,8 +238,13 @@ describe("getPrInfo", () => {
         });
         expect(mockAsyncSpawn).toHaveBeenCalledWith(
             "gh",
-            ["pr", "view", "--json", "number,title,headRefOid,url,state,isDraft,additions,deletions,changedFiles"],
-            expect.objectContaining({ cwd: "/repo" })
+            [
+                "pr",
+                "view",
+                "--json",
+                "number,title,headRefOid,url,state,isDraft,additions,deletions,changedFiles",
+            ],
+            expect.objectContaining({ cwd: "/repo" }),
         );
     });
 
@@ -290,8 +297,14 @@ describe("getPrInfo", () => {
         await expect(getPrInfo("/repo", "feature")).resolves.toMatchObject({ number: 3 });
         expect(mockAsyncSpawn).toHaveBeenCalledWith(
             "gh",
-            ["pr", "view", "feature", "--json", "number,title,headRefOid,url,state,isDraft,additions,deletions,changedFiles"],
-            expect.objectContaining({ cwd: "/repo" })
+            [
+                "pr",
+                "view",
+                "feature",
+                "--json",
+                "number,title,headRefOid,url,state,isDraft,additions,deletions,changedFiles",
+            ],
+            expect.objectContaining({ cwd: "/repo" }),
         );
     });
 

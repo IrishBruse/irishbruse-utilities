@@ -1,30 +1,21 @@
 {
     "name": "ib-utilities",
     "displayName": "IrishBruse's Utilities",
+    "version": "0.27.0",
     "description": "A collection of utilities made by me",
-    "icon": "logo.png",
+    "categories": [
+        "Other"
+    ],
+    "license": "MIT",
+    "author": "Ethan Conneely",
     "repository": {
         "url": "https://github.com/IrishBruse/irishbruse-utilities"
     },
     "publisher": "irishbruse",
-    "author": "Ethan Conneely",
-    "version": "0.27.0",
-    "license": "MIT",
-    "engines": {
-        "vscode": "^1.125.0"
-    },
-    "categories": [
-        "Other"
-    ],
-    "activationEvents": [
-        "onStartupFinished",
-        "onView:ib-utilities.gitHelpers",
-        "onView:ib-utilities.localPorts",
-        "onCustomEditor:ib-utilities.markdownInline"
-    ],
     "workspaces": [
         "src/markdownInline"
     ],
+    "main": "./dist/extension.js",
     "scripts": {
         "vscode:prepublish": "npm run build-markdown-inline && npm run package",
         "build": "node esbuild.mjs && node src/markdownInline/build.mjs",
@@ -34,22 +25,55 @@
         "dev:markdown-inline": "npm run dev --workspace @ib-utilities/markdown-inline",
         "check:markdown-inline": "npm run check --workspace @ib-utilities/markdown-inline",
         "test:markdown-inline": "npm run test --workspace @ib-utilities/markdown-inline",
-        "test:markdown-inline-browser": "vitest run --config vitest.markdownInline.config.mts",
+        "test:markdown-inline-browser": "vp test run --project markdownInline",
         "e2e:markdown-inline": "npm run e2e --workspace @ib-utilities/markdown-inline",
         "verify:markdown-inline": "npm run verify --workspace @ib-utilities/markdown-inline",
         "package": "node esbuild.mjs --production && node src/markdownInline/build.mjs",
-        "lint": "eslint . && tsc --noEmit && npm run lint:boundaries",
+        "lint": "vp lint . && tsc --noEmit && npm run lint:boundaries",
         "lint:boundaries": "depcruise src",
-        "test": "vitest run",
-        "test:coverage": "vitest run --coverage",
+        "test": "vp test run --project unit",
+        "test:coverage": "vp test run --project unit --coverage",
         "verify": "npm run build && npm run test && npm run lint",
         "package:vsix": "vsce package --out ib-utilities-$(node -p \"require('./package.json').version\").vsix",
         "install:local": "npm run package:vsix && node scripts/install-local.mjs",
         "release": "node scripts/release.mjs",
         "fetch-markdown-large-fixtures": "node docs/tests/markdown/fetch-large-fixtures.mjs",
-        "test:watch": "vitest watch"
+        "test:watch": "vp test watch",
+        "prepare": "vp config"
     },
-    "main": "./dist/extension.js",
+    "dependencies": {
+        "mermaid": "^11.16.0",
+        "vscode-oniguruma": "^2.0.1",
+        "vscode-textmate": "^9.3.2"
+    },
+    "devDependencies": {
+        "@azure/identity": "^4.13.1",
+        "@types/mocha": "^10.0.10",
+        "@types/node": "^24.13.3",
+        "@types/vscode": "^1.125.0",
+        "@types/vscode-webview": "^1.57.0",
+        "@vitest/coverage-v8": "5.0.3",
+        "@vscode/markdown-editor": "0.0.2-110",
+        "@vscode/observables": "^0.1.1-0",
+        "@vscode/vsce": "^3.9.2",
+        "dependency-cruiser": "^18.5.0",
+        "esbuild": "0.28.1",
+        "globals": "^14.0.0",
+        "katex": "^0.16.33",
+        "pixelmatch": "^7.2.0",
+        "playwright-core": "^1.63.0",
+        "pngjs": "^7.0.0",
+        "ts-loader": "^9.6.2",
+        "typescript": "^6.0.3",
+        "vite-plus": "1.1.0",
+        "vitest": "5.0.3",
+        "webpack": "^5.108.4",
+        "webpack-cli": "^7.2.1"
+    },
+    "overrides": {
+        "vite": "npm:@voidzero-dev/vite-plus-core@1.1.0",
+        "vitest": "5.0.3"
+    },
     "contributes": {
         "configuration": {
             "type": "object",
@@ -564,35 +588,14 @@
             ]
         }
     },
-    "devDependencies": {
-        "@azure/identity": "^4.13.1",
-        "@types/mocha": "^10.0.10",
-        "@types/node": "^24.13.3",
-        "@types/vscode": "^1.125.0",
-        "@types/vscode-webview": "^1.57.0",
-        "@typescript-eslint/eslint-plugin": "^8.64.0",
-        "@typescript-eslint/parser": "^8.64.0",
-        "@vitest/coverage-v8": "^4.1.10",
-        "@vscode/markdown-editor": "0.0.2-110",
-        "@vscode/observables": "^0.1.1-0",
-        "@vscode/vsce": "^3.9.2",
-        "dependency-cruiser": "^18.5.0",
-        "esbuild": "0.28.1",
-        "eslint": "^9.39.5",
-        "globals": "^14.0.0",
-        "katex": "^0.16.33",
-        "pixelmatch": "^7.2.0",
-        "playwright-core": "^1.63.0",
-        "pngjs": "^7.0.0",
-        "ts-loader": "^9.6.2",
-        "typescript": "^6.0.3",
-        "vitest": "^4.1.10",
-        "webpack": "^5.108.4",
-        "webpack-cli": "^7.2.1"
-    },
-    "dependencies": {
-        "mermaid": "^11.16.0",
-        "vscode-oniguruma": "^2.0.1",
-        "vscode-textmate": "^9.3.2"
+    "activationEvents": [
+        "onCustomEditor:ib-utilities.markdownInline",
+        "onStartupFinished",
+        "onView:ib-utilities.gitHelpers",
+        "onView:ib-utilities.localPorts"
+    ],
+    "icon": "logo.png",
+    "engines": {
+        "vscode": "^1.125.0"
     }
 }

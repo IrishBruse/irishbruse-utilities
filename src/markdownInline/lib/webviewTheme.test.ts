@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import {
     applyWebviewThemeVariables,
     installWebviewThemeSync,
@@ -92,7 +92,11 @@ describe("webview theme targets", () => {
 
         const wrapper = new ThemeElement();
         wrapper.children = [root];
-        expect(webviewThemeTargets(wrapper as unknown as HTMLElement)).toEqual([root, editor, nested]);
+        expect(webviewThemeTargets(wrapper as unknown as HTMLElement)).toEqual([
+            root,
+            editor,
+            nested,
+        ]);
 
         expect(webviewThemeTargets(themeNode())).toEqual([]);
 
@@ -102,7 +106,10 @@ describe("webview theme targets", () => {
 
         const duplicated = new ThemeElement(["inline-md-root"]);
         duplicated.querySelectorAllOverride = [editor, editor, {}];
-        expect(webviewThemeTargets(duplicated as unknown as HTMLElement)).toEqual([duplicated, editor]);
+        expect(webviewThemeTargets(duplicated as unknown as HTMLElement)).toEqual([
+            duplicated,
+            editor,
+        ]);
     });
 });
 
@@ -151,7 +158,8 @@ describe("installWebviewThemeSync", () => {
 
     it("applies the theme to connected targets and disconnects the observers", () => {
         vi.stubGlobal("HTMLElement", ThemeElement);
-        const observers: Array<{ callback: () => void; disconnected: boolean; observes: number }> = [];
+        const observers: Array<{ callback: () => void; disconnected: boolean; observes: number }> =
+            [];
         class RecordingObserver {
             disconnected = false;
             observes = 0;

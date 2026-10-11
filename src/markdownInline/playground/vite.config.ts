@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { defineConfig, type HtmlTagDescriptor, type Plugin } from "vite";
+import { defineConfig, type HtmlTagDescriptor, type Plugin } from "vite-plus";
 import { readPlaygroundTheme } from "./vscodeUserTheme.ts";
 
 const playgroundDir = dirname(fileURLToPath(import.meta.url));
@@ -29,6 +29,13 @@ function vscodeUserThemePlugin(): Plugin {
 }
 
 export default defineConfig({
+    test: {
+        // Vitest v4 compatibility: preserve mock call history.
+        // Remove after tests no longer rely on calls from setup or earlier tests.
+        // https://viteplus.dev/guide/vitest-v5#remove-unneeded-compatibility-settings
+        // https://vitest.dev/guide/migration/#clearmocks-is-enabled-by-default
+        clearMocks: false,
+    },
     root: playgroundDir,
     define: {
         __DOCS_MARKDOWN_FS__: JSON.stringify(join(repoRoot, "docs/tests/markdown")),

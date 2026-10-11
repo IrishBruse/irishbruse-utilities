@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { bulletLines, expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -51,12 +51,16 @@ describe("list bullet column", () => {
     it("paints the bullet on the raw dash, outside the gutter", async () => {
         const placed = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("keeps reveal"));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("keeps reveal"),
+            );
             if (!(line instanceof HTMLElement)) {
                 return null;
             }
             const lineBox = line.getBoundingClientRect();
-            const bullet = [...line.querySelectorAll(".inline-md-list-mark")].find((entry) => entry.childElementCount === 0);
+            const bullet = [...line.querySelectorAll(".inline-md-list-mark")].find(
+                (entry) => entry.childElementCount === 0,
+            );
             const number = [...document.querySelectorAll("#editor .line-numbers")].find((entry) => {
                 return Math.abs(entry.getBoundingClientRect().top - lineBox.top) <= 2;
             });
@@ -78,16 +82,30 @@ describe("list bullet column", () => {
     it("shows a bullet before the label", async () => {
         const seen = await page.evaluate(() => {
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => fold(entry.textContent).includes("keeps reveal"));
+            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) =>
+                fold(entry.textContent).includes("keeps reveal"),
+            );
             if (!(line instanceof HTMLElement)) {
                 return null;
             }
-            const label = [...line.querySelectorAll("span")].find((span) => fold(span.textContent).startsWith("Change"));
-            const bullet = [...line.querySelectorAll(".inline-md-list-mark")].find((span) => span.childElementCount === 0);
+            const label = [...line.querySelectorAll("span")].find((span) =>
+                fold(span.textContent).startsWith("Change"),
+            );
+            const bullet = [...line.querySelectorAll(".inline-md-list-mark")].find(
+                (span) => span.childElementCount === 0,
+            );
             const number = [...document.querySelectorAll("#editor .line-numbers")].find((entry) => {
-                return Math.abs(entry.getBoundingClientRect().top - line.getBoundingClientRect().top) <= 2;
+                return (
+                    Math.abs(
+                        entry.getBoundingClientRect().top - line.getBoundingClientRect().top,
+                    ) <= 2
+                );
             });
-            if (!(label instanceof HTMLElement) || !(bullet instanceof HTMLElement) || !(number instanceof HTMLElement)) {
+            if (
+                !(label instanceof HTMLElement) ||
+                !(bullet instanceof HTMLElement) ||
+                !(number instanceof HTMLElement)
+            ) {
                 return null;
             }
             const bulletBox = bullet.getBoundingClientRect();
@@ -137,13 +155,21 @@ describe("list selection band", () => {
             });
             const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
             const lines = [...document.querySelectorAll<HTMLElement>("#editor .view-line")];
-            const paragraph = lines.find((line) => fold(line.textContent).includes("Paragraph stays"));
+            const paragraph = lines.find((line) =>
+                fold(line.textContent).includes("Paragraph stays"),
+            );
             const header = lines.find((line) => fold(line.textContent).includes("Header shows"));
             const edit = lines.find((line) => fold(line.textContent).includes("Edit name"));
-            if (!(paragraph instanceof HTMLElement) || !(header instanceof HTMLElement) || !(edit instanceof HTMLElement)) {
+            if (
+                !(paragraph instanceof HTMLElement) ||
+                !(header instanceof HTMLElement) ||
+                !(edit instanceof HTMLElement)
+            ) {
                 return null;
             }
-            const pieces = [...document.querySelectorAll<HTMLElement>(".selected-text")].filter((piece) => piece.getBoundingClientRect().width > 12);
+            const pieces = [...document.querySelectorAll<HTMLElement>(".selected-text")].filter(
+                (piece) => piece.getBoundingClientRect().width > 12,
+            );
             const cover = (line: HTMLElement) => {
                 const bounds = line.getBoundingClientRect();
                 const onLine = pieces.filter((piece) => {
@@ -190,7 +216,9 @@ describe("task list label spacing", () => {
         const opened = await openPlayground("list/fixtures/case-2.md", "ask");
         browser = opened.browser;
         page = opened.page;
-        await page.waitForFunction(() => document.querySelector(".inline-md-task") instanceof HTMLInputElement);
+        await page.waitForFunction(
+            () => document.querySelector(".inline-md-task") instanceof HTMLInputElement,
+        );
     });
 
     afterAll(async () => {
@@ -204,9 +232,11 @@ describe("task list label spacing", () => {
                 return null;
             }
             const top = checkbox.getBoundingClientRect().top;
-            return [...document.querySelectorAll("#editor .inline-md-list-mark, #editor .margin-view-overlays .inline-md-list-bullet")].some(
-                (bullet) => Math.abs(bullet.getBoundingClientRect().top - top) <= 2,
-            );
+            return [
+                ...document.querySelectorAll(
+                    "#editor .inline-md-list-mark, #editor .margin-view-overlays .inline-md-list-bullet",
+                ),
+            ].some((bullet) => Math.abs(bullet.getBoundingClientRect().top - top) <= 2);
         });
         expect(bulletOnTaskLine).toBe(false);
     });
@@ -218,7 +248,9 @@ describe("task list label spacing", () => {
                 return null;
             }
             const top = checkbox.getBoundingClientRect().top;
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => Math.abs(entry.getBoundingClientRect().top - top) <= 2);
+            const line = [...document.querySelectorAll("#editor .view-line")].find(
+                (entry) => Math.abs(entry.getBoundingClientRect().top - top) <= 2,
+            );
             if (!(line instanceof HTMLElement)) {
                 return null;
             }
@@ -243,19 +275,25 @@ describe("task list label spacing", () => {
     });
 
     it("matches the saved picture of checkbox padding before the label", async () => {
-        const clip = await expectLineRangeShot(page, join(here, "screenshots", "task-checkbox-padding.png"), {
-            from: "ask",
-            to: "ask",
-            lineNumbers: false,
-            pad: 8,
-        });
+        const clip = await expectLineRangeShot(
+            page,
+            join(here, "screenshots", "task-checkbox-padding.png"),
+            {
+                from: "ask",
+                to: "ask",
+                lineNumbers: false,
+                pad: 8,
+            },
+        );
         const covers = await page.evaluate((box) => {
             const checkbox = document.querySelector(".inline-md-task");
             if (!(checkbox instanceof HTMLElement)) {
                 return false;
             }
             const checkboxTop = checkbox.getBoundingClientRect().top;
-            const line = [...document.querySelectorAll("#editor .view-line")].find((entry) => Math.abs(entry.getBoundingClientRect().top - checkboxTop) <= 8);
+            const line = [...document.querySelectorAll("#editor .view-line")].find(
+                (entry) => Math.abs(entry.getBoundingClientRect().top - checkboxTop) <= 8,
+            );
             const walker = line ? document.createTreeWalker(line, NodeFilter.SHOW_TEXT) : null;
             let labelBox: DOMRect | null = null;
             let node = walker?.nextNode() ?? null;
@@ -277,12 +315,14 @@ describe("task list label spacing", () => {
             const checkboxBox = checkbox.getBoundingClientRect();
             const right = box.x + box.width;
             const bottom = box.y + box.height;
-            return checkboxBox.top >= box.y
-                && checkboxBox.bottom <= bottom
-                && checkboxBox.left >= box.x
-                && labelBox.right <= right
-                && labelBox.bottom <= bottom
-                && labelBox.left > checkboxBox.right;
+            return (
+                checkboxBox.top >= box.y &&
+                checkboxBox.bottom <= bottom &&
+                checkboxBox.left >= box.x &&
+                labelBox.right <= right &&
+                labelBox.bottom <= bottom &&
+                labelBox.left > checkboxBox.right
+            );
         }, clip);
         expect(covers).toBe(true);
         expect(clip.height).toBeLessThan(48);

@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -17,7 +17,10 @@ describe("skill front matter", () => {
     });
 
     it("keeps the YAML front matter in the editor", async () => {
-        const text = (await page.locator("#editor .view-lines").innerText()).replaceAll("\u00a0", " ");
+        const text = (await page.locator("#editor .view-lines").innerText()).replaceAll(
+            "\u00a0",
+            " ",
+        );
         expect(text).toContain("name: markdown-skill-fixture");
         expect(text).toContain("description:");
         expect(text).toContain("disable-model-invocation: true");
@@ -49,13 +52,15 @@ describe("skill front matter", () => {
 
     it("offers remaining skill properties when a new key is typed", async () => {
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: {
-                    focus(): void;
-                    getDocument(): string;
-                    setCursor(offset: number): void;
-                };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: {
+                        focus(): void;
+                        getDocument(): string;
+                        setCursor(offset: number): void;
+                    };
+                }
+            ).__inlineMarkdown;
             const source = api.getDocument();
             const at = source.indexOf("license: MIT");
             api.focus();
@@ -71,12 +76,14 @@ describe("skill front matter", () => {
 
     it("shows the spec error on an invalid name", async () => {
         await page.evaluate(() => {
-            const api = (window as unknown as {
-                __inlineMarkdown: {
-                    getDocument(): string;
-                    setDocument(text: string): void;
-                };
-            }).__inlineMarkdown;
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: {
+                        getDocument(): string;
+                        setDocument(text: string): void;
+                    };
+                }
+            ).__inlineMarkdown;
             api.setDocument(api.getDocument().replace("name: markdown-skill-fixture", "name: PDF"));
         });
         const message = page.locator(".inline-md-skill-error-message");

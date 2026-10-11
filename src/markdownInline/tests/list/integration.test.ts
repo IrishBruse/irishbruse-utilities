@@ -1,4 +1,4 @@
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { bulletLines, openPlayground, type BulletLine } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -31,14 +31,21 @@ describe("lists", () => {
         for (const name of ["Nested bullet", "Another nested"]) {
             const nested = lines.find((line) => line.text === name);
             expect(nested?.hitIsBullet).toBe(true);
-            expect(nested && parent && nested.bulletLeft).toBeGreaterThan((parent?.bulletLeft ?? 0) + 1);
-            expect(nested && nested.wordLeft).toBeGreaterThanOrEqual((nested?.bulletRight ?? 0) - 2);
+            expect(nested && parent && nested.bulletLeft).toBeGreaterThan(
+                (parent?.bulletLeft ?? 0) + 1,
+            );
+            expect(nested && nested.wordLeft).toBeGreaterThanOrEqual(
+                (nested?.bulletRight ?? 0) - 2,
+            );
             expect(nested && nested.wordLeft).toBeLessThanOrEqual((nested?.bulletRight ?? 0) + 2);
         }
     });
 
     it("keeps numbers visible on a numbered list", async () => {
-        const text = (await page.locator("#editor .view-lines").innerText()).replaceAll("\u00a0", " ");
+        const text = (await page.locator("#editor .view-lines").innerText()).replaceAll(
+            "\u00a0",
+            " ",
+        );
         expect(text).toContain("1. Ordered one");
         expect(text).toContain("1. Nested ordered");
     });

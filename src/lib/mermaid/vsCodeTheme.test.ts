@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "vite-plus/test";
 import {
     blendHex,
     buildMutedCScaleColors,
@@ -71,7 +71,12 @@ describe("mermaidEditor/vsCodeTheme", () => {
         });
 
         it("pickBlended prefers blended colors", () => {
-            const blended = pickBlended(mockPickColor, ["--vscode-editor-background"], ["--vscode-editor-foreground"], 0.5);
+            const blended = pickBlended(
+                mockPickColor,
+                ["--vscode-editor-background"],
+                ["--vscode-editor-foreground"],
+                0.5,
+            );
             expect(blended).toBeDefined();
             expect(isValidHexColor(blended!)).toBe(true);
         });

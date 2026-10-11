@@ -1,6 +1,6 @@
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { afterAll, beforeAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vite-plus/test";
 import { expectLineRangeShot, openPlayground } from "../support/browser";
 import type { Browser, Page } from "playwright-core";
 
@@ -28,32 +28,46 @@ describe("skill front matter looks like a code block", () => {
             const lines = [...document.querySelectorAll("#editor .view-line")];
             const nameLine = lines.find((line) => fold(line.textContent).includes("name:"));
             const opener = lines[0];
-            if (!(root instanceof HTMLElement) || !(editor instanceof HTMLElement) || !nameLine || !opener) {
+            if (
+                !(root instanceof HTMLElement) ||
+                !(editor instanceof HTMLElement) ||
+                !nameLine ||
+                !opener
+            ) {
                 return { backgroundMatchesCode: false, lang: "", langAtTopRight: false };
             }
             const probe = document.createElement("span");
-            probe.style.backgroundColor = getComputedStyle(root).getPropertyValue("--ib-md-code-block-background").trim();
+            probe.style.backgroundColor = getComputedStyle(root)
+                .getPropertyValue("--ib-md-code-block-background")
+                .trim();
             document.body.append(probe);
             const codeBackground = getComputedStyle(probe).backgroundColor;
             probe.remove();
             const nameBox = nameLine.getBoundingClientRect();
-            const painted = [...document.querySelectorAll("#editor .inline-md-code-line")].some((entry) => {
-                const box = entry.getBoundingClientRect();
-                return box.top <= nameBox.top + 2
-                    && box.bottom >= nameBox.bottom - 2
-                    && getComputedStyle(entry).backgroundColor === codeBackground;
-            });
-            const label = [...document.querySelectorAll("#editor .inline-md-lang")].find((entry) => fold(entry.textContent).trim() === "yaml");
+            const painted = [...document.querySelectorAll("#editor .inline-md-code-line")].some(
+                (entry) => {
+                    const box = entry.getBoundingClientRect();
+                    return (
+                        box.top <= nameBox.top + 2 &&
+                        box.bottom >= nameBox.bottom - 2 &&
+                        getComputedStyle(entry).backgroundColor === codeBackground
+                    );
+                },
+            );
+            const label = [...document.querySelectorAll("#editor .inline-md-lang")].find(
+                (entry) => fold(entry.textContent).trim() === "yaml",
+            );
             const labelBox = label?.getBoundingClientRect();
             const openerBox = opener.getBoundingClientRect();
             const gap = labelBox ? openerBox.right - labelBox.right : -1;
-            const langAtTopRight = !!labelBox
-                && labelBox.width > 0
-                && labelBox.height > 0
-                && Math.abs(labelBox.top - openerBox.top) <= 4
-                && gap >= 8
-                && gap <= 24
-                && labelBox.left > openerBox.left + openerBox.width / 2;
+            const langAtTopRight =
+                !!labelBox &&
+                labelBox.width > 0 &&
+                labelBox.height > 0 &&
+                Math.abs(labelBox.top - openerBox.top) <= 4 &&
+                gap >= 8 &&
+                gap <= 24 &&
+                labelBox.left > openerBox.left + openerBox.width / 2;
             return {
                 backgroundMatchesCode: painted,
                 lang: label ? fold(label.textContent).trim() : "",

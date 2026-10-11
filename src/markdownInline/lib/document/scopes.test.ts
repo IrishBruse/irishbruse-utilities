@@ -1,9 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vite-plus/test";
 import { parseScopes } from "./scopes";
 import type { Scope, TextRange } from "./types";
 
 const synthetic = vi.hoisted(() => ({
-    events: null as Array<["enter" | "exit", { type: string; start: { offset?: number }; end: { offset?: number } }]> | null,
+    events: null as Array<
+        ["enter" | "exit", { type: string; start: { offset?: number }; end: { offset?: number } }]
+    > | null,
 }));
 
 vi.mock("micromark", async () => {
@@ -30,12 +32,21 @@ afterEach(() => {
     synthetic.events = null;
 });
 
-function mark(type: "enter" | "exit", tokenType: string, start: number, end: number, offset = true) {
-    return [type, {
-        type: tokenType,
-        start: offset ? { offset: start } : {},
-        end: offset ? { offset: end } : {},
-    }] as ["enter" | "exit", { type: string; start: { offset?: number }; end: { offset?: number } }];
+function mark(
+    type: "enter" | "exit",
+    tokenType: string,
+    start: number,
+    end: number,
+    offset = true,
+) {
+    return [
+        type,
+        {
+            type: tokenType,
+            start: offset ? { offset: start } : {},
+            end: offset ? { offset: end } : {},
+        },
+    ] as ["enter" | "exit", { type: string; start: { offset?: number }; end: { offset?: number } }];
 }
 
 function find(source: string, kind: Scope["kind"]): Scope {
@@ -230,7 +241,13 @@ describe("parseScopes", () => {
         expect(scopes.some((scope) => scope.kind === "heading")).toBe(false);
         expect(strong && source.slice(strong.contentStart, strong.contentEnd)).toBe("");
         expect(image).toMatchObject({ alt: "", url: undefined, contentStart: 30, contentEnd: 30 });
-        expect(link).toMatchObject({ alt: "", url: undefined, contentStart: 50, contentEnd: 60, markers: [] });
+        expect(link).toMatchObject({
+            alt: "",
+            url: undefined,
+            contentStart: 50,
+            contentEnd: 60,
+            markers: [],
+        });
         expect(autolink?.url).toBe(source.slice(70, 80));
         expect(autolink?.markers).toEqual([]);
         expect(code).toMatchObject({ language: "", contentStart: 90, contentEnd: 95, markers: [] });

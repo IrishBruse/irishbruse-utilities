@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, vi } from "vite-plus/test";
 import { Uri, workspace } from "vscode";
 import { getGitApi } from "../lib/git/getGitApi";
 import {
@@ -69,7 +69,7 @@ describe("pathsFromScmResources", () => {
             pathsFromScmResources([
                 { uri: Uri.file("/repo/src/a.ts") },
                 { uri: Uri.file("/repo/src/b.ts") },
-            ])
+            ]),
         ).toEqual(["/repo/src/a.ts", "/repo/src/b.ts"]);
     });
 });
@@ -99,7 +99,9 @@ describe("relativePathsForScmResources", () => {
         vi.spyOn(workspace, "asRelativePath").mockReturnValue("/repo/src/a.ts");
         vi.mocked(getGitApi).mockReturnValue(undefined);
 
-        const paths = await relativePathsForScmResources([{ uri: Uri.file("/repo/src/a.ts"), repoRoot: "/repo" }]);
+        const paths = await relativePathsForScmResources([
+            { uri: Uri.file("/repo/src/a.ts"), repoRoot: "/repo" },
+        ]);
         expect(paths).toEqual(["src/a.ts"]);
     });
 });

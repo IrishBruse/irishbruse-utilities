@@ -1,31 +1,27 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { TabInputCustom, TabInputText, Uri, window } from "vscode";
 import { getActiveFileUri } from "./getActiveFileUri";
+
+const setActiveTab = (activeTab: { input: unknown } | undefined): void => {
+    (window.tabGroups as unknown as { activeTabGroup: unknown }).activeTabGroup = { activeTab };
+};
 
 describe("diskConflict/getActiveFileUri", () => {
     beforeEach(() => {
         vi.mocked(window).activeTextEditor = undefined;
-        vi.mocked(window.tabGroups).activeTabGroup = {
-            activeTab: undefined,
-        } as typeof window.tabGroups.activeTabGroup;
+        setActiveTab(undefined);
     });
 
     it("returns the URI from a custom editor tab", () => {
         const uri = Uri.file("/proj/readme.md");
-        const input = Object.assign(new TabInputCustom(), { viewType: "ib-utilities.markdownInline", uri });
-        vi.mocked(window.tabGroups).activeTabGroup = {
-            activeTab: { input },
-        } as typeof window.tabGroups.activeTabGroup;
+        setActiveTab({ input: new TabInputCustom(uri, "ib-utilities.markdownInline") });
 
         expect(getActiveFileUri()?.fsPath).toBe(uri.fsPath);
     });
 
     it("returns the URI from a text tab", () => {
         const uri = Uri.file("/proj/foo.ts");
-        const input = Object.assign(new TabInputText(), { uri });
-        vi.mocked(window.tabGroups).activeTabGroup = {
-            activeTab: { input },
-        } as typeof window.tabGroups.activeTabGroup;
+        setActiveTab({ input: new TabInputText(uri) });
 
         expect(getActiveFileUri()?.fsPath).toBe(uri.fsPath);
     });
@@ -41,10 +37,7 @@ describe("diskConflict/getActiveFileUri", () => {
 
     it("returns undefined for untitled editors", () => {
         const uri = Uri.from({ scheme: "untitled", path: "Untitled-1" });
-        const input = Object.assign(new TabInputText(), { uri });
-        vi.mocked(window.tabGroups).activeTabGroup = {
-            activeTab: { input },
-        } as typeof window.tabGroups.activeTabGroup;
+        setActiveTab({ input: new TabInputText(uri) });
 
         expect(getActiveFileUri()).toBeUndefined();
     });

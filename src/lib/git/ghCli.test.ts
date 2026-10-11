@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("vscode", () => ({
     workspace: {
@@ -20,7 +20,7 @@ const mockAsyncSpawn = vi.mocked(asyncSpawn);
 function mockGhPath(value: unknown): void {
     mockGetConfiguration.mockReturnValue({
         get: vi.fn().mockReturnValue(value),
-    } as ReturnType<typeof workspace.getConfiguration>);
+    } as unknown as ReturnType<typeof workspace.getConfiguration>);
 }
 
 describe("getGhCommand", () => {
@@ -66,7 +66,7 @@ describe("spawnGh", () => {
         expect(mockAsyncSpawn).toHaveBeenCalledWith(
             "/opt/homebrew/bin/gh",
             ["pr", "view"],
-            expect.objectContaining({ cwd: "/repo" })
+            expect.objectContaining({ cwd: "/repo" }),
         );
     });
 });

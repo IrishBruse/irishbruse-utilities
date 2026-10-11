@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 
 vi.mock("./githubUrl", () => ({
     getOriginUrl: vi.fn(),
@@ -141,8 +141,8 @@ describe("buildPrCheckStatus", () => {
                     },
                 ],
                 undefined,
-                "https://github.com/owner/repo/pull/7"
-            )
+                "https://github.com/owner/repo/pull/7",
+            ),
         ).toEqual({
             label: "test",
             description: "Checks failing",
@@ -163,8 +163,8 @@ describe("buildPrCheckStatus", () => {
                     },
                 ],
                 { state: "success", statuses: [] },
-                "https://github.com/owner/repo/pull/7"
-            )
+                "https://github.com/owner/repo/pull/7",
+            ),
         ).toEqual({
             label: "Checks",
             description: "All green",
@@ -175,9 +175,15 @@ describe("buildPrCheckStatus", () => {
 
     it("returns undefined when there are no check runs or commit statuses", () => {
         expect(
-            buildPrCheckStatus([], { state: "pending", statuses: [] }, "https://github.com/owner/repo/pull/7")
+            buildPrCheckStatus(
+                [],
+                { state: "pending", statuses: [] },
+                "https://github.com/owner/repo/pull/7",
+            ),
         ).toBeUndefined();
-        expect(buildPrCheckStatus([], undefined, "https://github.com/owner/repo/pull/7")).toBeUndefined();
+        expect(
+            buildPrCheckStatus([], undefined, "https://github.com/owner/repo/pull/7"),
+        ).toBeUndefined();
     });
 });
 
@@ -209,12 +215,18 @@ describe("getPrCheckStatus", () => {
                 };
             }
             if (args?.[1]?.includes("/status")) {
-                return { stdout: JSON.stringify({ state: "pending", statuses: [] }), stderr: "", status: 0 };
+                return {
+                    stdout: JSON.stringify({ state: "pending", statuses: [] }),
+                    stderr: "",
+                    status: 0,
+                };
             }
             throw new Error(`unexpected args: ${args?.join(" ")}`);
         });
 
-        await expect(getPrCheckStatus("/repo", "abc123", "https://github.com/owner/repo/pull/7")).resolves.toEqual({
+        await expect(
+            getPrCheckStatus("/repo", "abc123", "https://github.com/owner/repo/pull/7"),
+        ).resolves.toEqual({
             label: "Checks",
             description: "Pending",
             url: "https://github.com/owner/repo/pull/7/checks",
@@ -228,13 +240,17 @@ describe("getPrCheckStatus", () => {
                 return { stdout: JSON.stringify({ check_runs: [] }), stderr: "", status: 0 };
             }
             if (args?.[1]?.includes("/status")) {
-                return { stdout: JSON.stringify({ state: "pending", statuses: [] }), stderr: "", status: 0 };
+                return {
+                    stdout: JSON.stringify({ state: "pending", statuses: [] }),
+                    stderr: "",
+                    status: 0,
+                };
             }
             throw new Error(`unexpected args: ${args?.join(" ")}`);
         });
 
         await expect(
-            getPrCheckStatus("/repo", "abc123", "https://github.com/owner/repo/pull/7")
+            getPrCheckStatus("/repo", "abc123", "https://github.com/owner/repo/pull/7"),
         ).resolves.toBeUndefined();
     });
 });

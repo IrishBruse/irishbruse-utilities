@@ -1,14 +1,16 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vite-plus/test";
 import { TabInputCustom, TabInputText, Uri, window } from "vscode";
 import { MARKDOWN_INLINE_VIEW_TYPE } from "./MarkdownInlineProvider";
 import { getActiveMarkdownUri, isMarkdownUri } from "./getActiveMarkdownUri";
 
+const setActiveTab = (activeTab: { input: unknown } | undefined): void => {
+    (window.tabGroups as unknown as { activeTabGroup: unknown }).activeTabGroup = { activeTab };
+};
+
 describe("markdownInlineHost/getActiveMarkdownUri", () => {
     beforeEach(() => {
         vi.mocked(window).activeTextEditor = undefined;
-        vi.mocked(window.tabGroups).activeTabGroup = {
-            activeTab: undefined,
-        } as typeof window.tabGroups.activeTabGroup;
+        setActiveTab(undefined);
     });
 
     describe("isMarkdownUri", () => {
@@ -22,20 +24,14 @@ describe("markdownInlineHost/getActiveMarkdownUri", () => {
     describe("getActiveMarkdownUri", () => {
         it("returns the URI from the inline markdown custom editor tab", () => {
             const uri = Uri.file("/proj/readme.md");
-            const input = Object.assign(new TabInputCustom(), { viewType: MARKDOWN_INLINE_VIEW_TYPE, uri });
-            vi.mocked(window.tabGroups).activeTabGroup = {
-                activeTab: { input },
-            } as typeof window.tabGroups.activeTabGroup;
+            setActiveTab({ input: new TabInputCustom(uri, MARKDOWN_INLINE_VIEW_TYPE) });
 
             expect(getActiveMarkdownUri()?.toString()).toBe(uri.toString());
         });
 
         it("returns the URI from a text tab when the file is markdown", () => {
             const uri = Uri.file("/proj/readme.md");
-            const input = Object.assign(new TabInputText(), { uri });
-            vi.mocked(window.tabGroups).activeTabGroup = {
-                activeTab: { input },
-            } as typeof window.tabGroups.activeTabGroup;
+            setActiveTab({ input: new TabInputText(uri) });
 
             expect(getActiveMarkdownUri()?.fsPath).toBe(uri.fsPath);
         });

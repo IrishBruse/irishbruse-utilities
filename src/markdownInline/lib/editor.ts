@@ -1,7 +1,12 @@
 import * as monaco from "monaco-editor/editor/editor.api";
 import { InlinePresentation } from "./decorations";
 import { bindDragSelection, isDragSelecting } from "./selection";
-import { bindMermaidCodeLens, installInlineKeybindings, installMonaco, readEditorFontSize } from "./monaco";
+import {
+    bindMermaidCodeLens,
+    installInlineKeybindings,
+    installMonaco,
+    readEditorFontSize,
+} from "./monaco";
 import { parseScopes } from "./document/scopes";
 import { skillMarkdownLanguageId } from "./skill";
 import type { Scope } from "./document/types";
@@ -83,7 +88,10 @@ function endOfLine(text: string): monaco.editor.EndOfLineSequence {
     return monaco.editor.EndOfLineSequence.LF;
 }
 
-export function mountInlineEditor(parent: HTMLElement, options: MountInlineEditorOptions): InlineEditorHandle {
+export function mountInlineEditor(
+    parent: HTMLElement,
+    options: MountInlineEditorOptions,
+): InlineEditorHandle {
     installMonaco();
     const hadRoot = parent.classList.contains("inline-md-root");
     parent.classList.add("inline-md-root");
@@ -128,8 +136,10 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             alwaysConsumeMouseWheel: false,
         },
         renderLineHighlight: "line",
-        fontFamily: getComputedStyle(document.documentElement).getPropertyValue("--vscode-editor-font-family").trim()
-            || "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
+        fontFamily:
+            getComputedStyle(document.documentElement)
+                .getPropertyValue("--vscode-editor-font-family")
+                .trim() || "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         fontSize: readEditorFontSize(),
         lineHeight: 0,
         allowVariableLineHeights: true,
@@ -141,7 +151,9 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         stickyScroll: { enabled: false },
         codeLens: true,
         codeLensFontSize: 11,
-        quickSuggestions: usesSkillMarkdown() ? { other: true, comments: false, strings: true } : "off",
+        quickSuggestions: usesSkillMarkdown()
+            ? { other: true, comments: false, strings: true }
+            : "off",
         suggestOnTriggerCharacters: usesSkillMarkdown(),
         wordBasedSuggestions: "off",
         parameterHints: { enabled: false },
@@ -155,6 +167,9 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         fixedOverflowWidgets: true,
         editContext: false,
     });
+    const below = document.createElement("div");
+    below.className = "inline-md-below";
+    column.append(below);
     model.updateOptions({
         bracketColorizationOptions: {
             enabled: false,
@@ -166,35 +181,40 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     let scrollHold = 0;
     let refreshing = false;
     let refreshQueued = false;
-    const presentation = new InlinePresentation(editor, options.documentUrl, {
-        onToggleTask(from, to) {
-            if (editor.getOption(monaco.editor.EditorOption.readOnly)) {
-                return;
-            }
-            const currentModel = editor.getModel();
-            if (!currentModel) {
-                return;
-            }
-            const current = currentModel.getValue().slice(from, to);
-            const next = toggledTaskMarker(current);
-            if (next === current) {
-                return;
-            }
-            replace(from, to, next);
+    const presentation = new InlinePresentation(
+        editor,
+        options.documentUrl,
+        {
+            onToggleTask(from, to) {
+                if (editor.getOption(monaco.editor.EditorOption.readOnly)) {
+                    return;
+                }
+                const currentModel = editor.getModel();
+                if (!currentModel) {
+                    return;
+                }
+                const current = currentModel.getValue().slice(from, to);
+                const next = toggledTaskMarker(current);
+                if (next === current) {
+                    return;
+                }
+                replace(from, to, next);
+            },
+            onReveal(offset) {
+                revealOffset(offset);
+            },
+            onReplace(from, to, text) {
+                replace(from, to, text);
+            },
+            onLink(href) {
+                options.onLink?.(href);
+            },
+            onOpenMermaidPreview(openLine) {
+                options.onOpenMermaidPreview?.(openLine);
+            },
         },
-        onReveal(offset) {
-            revealOffset(offset);
-        },
-        onReplace(from, to, text) {
-            replace(from, to, text);
-        },
-        onLink(href) {
-            options.onLink?.(href);
-        },
-        onOpenMermaidPreview(openLine) {
-            options.onOpenMermaidPreview?.(openLine);
-        },
-    }, options.skillFrontMatter === true);
+        options.skillFrontMatter === true,
+    );
     const mermaidLens = bindMermaidCodeLens(model, (openLine) => {
         options.onOpenMermaidPreview?.(openLine);
     });
@@ -213,7 +233,9 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
                     monaco.editor.setModelLanguage(currentModel, nextLanguage);
                     const suggestions = usesSkillMarkdown();
                     editor.updateOptions({
-                        quickSuggestions: suggestions ? { other: true, comments: false, strings: true } : false,
+                        quickSuggestions: suggestions
+                            ? { other: true, comments: false, strings: true }
+                            : false,
                         suggestOnTriggerCharacters: suggestions,
                     });
                 }
@@ -235,10 +257,12 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         }
         const start = currentModel.getPositionAt(from);
         const end = currentModel.getPositionAt(to);
-        editor.executeEdits("inline-md", [{
-            range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
-            text,
-        }]);
+        editor.executeEdits("inline-md", [
+            {
+                range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
+                text,
+            },
+        ]);
     };
 
     const setCursor = (offset: number): void => {
@@ -272,8 +296,13 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             return;
         }
         const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight);
-        const top = editor.getTopForPosition(position.lineNumber, position.column) - editor.getScrollTop();
-        const lineTop = node.getBoundingClientRect().top - parent.getBoundingClientRect().top + parent.scrollTop + top;
+        const top =
+            editor.getTopForPosition(position.lineNumber, position.column) - editor.getScrollTop();
+        const lineTop =
+            node.getBoundingClientRect().top -
+            parent.getBoundingClientRect().top +
+            parent.scrollTop +
+            top;
         const viewTop = parent.scrollTop;
         const viewBottom = viewTop + parent.clientHeight;
         if (center) {
@@ -293,7 +322,13 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     }
     const removeKeybindings = installInlineKeybindings(editor, column);
     const stopOnHiddenLine = (event: KeyboardEvent): void => {
-        if (event.defaultPrevented || event.altKey || event.ctrlKey || event.metaKey || event.isComposing) {
+        if (
+            event.defaultPrevented ||
+            event.altKey ||
+            event.ctrlKey ||
+            event.metaKey ||
+            event.isComposing
+        ) {
             return;
         }
         const direction = event.key === "ArrowDown" ? 1 : event.key === "ArrowUp" ? -1 : 0;
@@ -308,7 +343,10 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         const position = selection.getPosition();
         const here = editor.getTopForPosition(position.lineNumber, position.column);
         if (direction > 0) {
-            const endTop = editor.getTopForPosition(position.lineNumber, currentModel.getLineMaxColumn(position.lineNumber));
+            const endTop = editor.getTopForPosition(
+                position.lineNumber,
+                currentModel.getLineMaxColumn(position.lineNumber),
+            );
             if (here + 1 < endTop) {
                 return;
             }
@@ -322,12 +360,14 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         const column = Math.min(position.column, currentModel.getLineMaxColumn(next));
         presentation.prepareReveal(currentModel.getOffsetAt({ lineNumber: next, column }));
         if (event.shiftKey) {
-            editor.setSelection(new monaco.Selection(
-                selection.selectionStartLineNumber,
-                selection.selectionStartColumn,
-                next,
-                column,
-            ));
+            editor.setSelection(
+                new monaco.Selection(
+                    selection.selectionStartLineNumber,
+                    selection.selectionStartColumn,
+                    next,
+                    column,
+                ),
+            );
         } else {
             editor.setPosition({ lineNumber: next, column });
         }
@@ -359,11 +399,12 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             return;
         }
         const target = event.target;
-        const element = target instanceof Element
-            ? target
-            : target instanceof Node
-                ? target.parentElement
-                : null;
+        const element =
+            target instanceof Element
+                ? target
+                : target instanceof Node
+                  ? target.parentElement
+                  : null;
         const link = element?.closest(".inline-md-link");
         if (!(link instanceof HTMLElement)) {
             return;
@@ -387,18 +428,36 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
     };
     editor.getDomNode()?.addEventListener("mousedown", openRenderedLink, true);
     const placeCaretBelowLastLine = (event: MouseEvent): void => {
-        if (event.button !== 0 || event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) {
+        if (
+            event.button !== 0 ||
+            event.shiftKey ||
+            event.altKey ||
+            event.ctrlKey ||
+            event.metaKey
+        ) {
             return;
         }
-        const target = event.target instanceof Element ? event.target : event.target instanceof Node ? event.target.parentElement : null;
+        const target =
+            event.target instanceof Element
+                ? event.target
+                : event.target instanceof Node
+                  ? event.target.parentElement
+                  : null;
         if (!(target instanceof Element) || !parent.contains(target)) {
             return;
         }
-        if (target.closest("a, button, input, textarea, .inline-md-link, .inline-md-task, .inline-md-image, .inline-md-image-fallback")) {
+        if (
+            target.closest(
+                "a, button, input, textarea, .inline-md-link, .inline-md-task, .inline-md-image, .inline-md-image-fallback",
+            )
+        ) {
             return;
         }
         const last = [...column.querySelectorAll(".view-line")].at(-1);
-        if (!(last instanceof HTMLElement) || event.clientY <= last.getBoundingClientRect().bottom) {
+        if (
+            !(last instanceof HTMLElement) ||
+            event.clientY <= last.getBoundingClientRect().bottom
+        ) {
             return;
         }
         const currentModel = editor.getModel();
@@ -417,20 +476,21 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         const down = event.event;
         const selection = editor.getSelection();
         const position = event.target.position;
-        const onText = event.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT
-            || event.target.type === monaco.editor.MouseTargetType.CONTENT_EMPTY;
+        const onText =
+            event.target.type === monaco.editor.MouseTargetType.CONTENT_TEXT ||
+            event.target.type === monaco.editor.MouseTargetType.CONTENT_EMPTY;
         if (
-            down.leftButton
-            && down.detail === 1
-            && !down.shiftKey
-            && !down.altKey
-            && !down.ctrlKey
-            && !down.metaKey
-            && onText
-            && selection
-            && position
-            && !selection.isEmpty()
-            && selection.containsPosition(position)
+            down.leftButton &&
+            down.detail === 1 &&
+            !down.shiftKey &&
+            !down.altKey &&
+            !down.ctrlKey &&
+            !down.metaKey &&
+            onText &&
+            selection &&
+            position &&
+            !selection.isEmpty() &&
+            selection.containsPosition(position)
         ) {
             selectionClick = {
                 x: down.browserEvent.clientX,
@@ -472,6 +532,13 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
 
     let fitting = false;
     let fitFrame = 0;
+    const placeBelow = (): void => {
+        const gap = Math.max(
+            0,
+            parent.getBoundingClientRect().bottom - column.getBoundingClientRect().bottom,
+        );
+        below.style.height = `${gap}px`;
+    };
     const fitNow = (): void => {
         if (isDragSelecting() || fitting || parent.clientWidth === 0 || parent.clientHeight === 0) {
             return;
@@ -479,12 +546,18 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         fitting = true;
         try {
             const style = getComputedStyle(column);
-            const pad = (Number.parseFloat(style.paddingLeft) || 0) + (Number.parseFloat(style.paddingRight) || 0);
+            const pad =
+                (Number.parseFloat(style.paddingLeft) || 0) +
+                (Number.parseFloat(style.paddingRight) || 0);
             const width = Math.max(0, column.clientWidth - pad);
             const height = Math.max(1, Math.ceil(editor.getContentHeight()));
             const info = editor.getLayoutInfo();
             const heightMatches = column.style.height === `${height}px`;
-            if (Math.abs(info.width - width) <= 1 && Math.abs(info.height - height) <= 1 && heightMatches) {
+            if (
+                Math.abs(info.width - width) <= 1 &&
+                Math.abs(info.height - height) <= 1 &&
+                heightMatches
+            ) {
                 return;
             }
             if (!heightMatches) {
@@ -493,6 +566,7 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
             editor.layout({ width, height });
         } finally {
             fitting = false;
+            placeBelow();
         }
     };
     const fitContent = (): void => {
@@ -508,7 +582,10 @@ export function mountInlineEditor(parent: HTMLElement, options: MountInlineEdito
         const rootRect = parent.getBoundingClientRect();
         const columnRect = column.getBoundingClientRect();
         parent.style.setProperty("--ib-find-top", `${rootRect.top}px`);
-        parent.style.setProperty("--ib-find-right", `${Math.max(0, window.innerWidth - columnRect.right)}px`);
+        parent.style.setProperty(
+            "--ib-find-right",
+            `${Math.max(0, window.innerWidth - columnRect.right)}px`,
+        );
     };
     const findController = editor.getContribution("editor.contrib.findController") as {
         getState(): { onFindReplaceStateChange(listener: () => void): monaco.IDisposable };

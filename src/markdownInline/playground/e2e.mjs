@@ -1,5 +1,6 @@
 import { spawn, spawnSync } from "node:child_process";
 import { mkdirSync } from "node:fs";
+import { createRequire } from "node:module";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -43,14 +44,14 @@ const PLACE_CARET_SCRIPT = `(() => {
     }
 })()`;
 
-const RAW_HEADING_FN = 'document.querySelector(".inline-md-h1") != null && document.querySelector(".view-lines") != null && document.querySelector(".view-lines").innerText.includes("#")';
+const RAW_HEADING_FN =
+    'document.querySelector(".inline-md-h1") != null && document.querySelector(".view-lines") != null && document.querySelector(".view-lines").innerText.includes("#")';
 
 function delay(ms) {
     return new Promise((resolve) => {
         setTimeout(resolve, ms);
     });
 }
-
 
 function fail(message, page) {
     console.error(message);
@@ -60,7 +61,6 @@ function fail(message, page) {
     error.pagePrinted = true;
     throw error;
 }
-
 
 function agentBrowser(args, input) {
     const result = spawnSync("agent-browser", ["--session", "markdown-inline", ...args], {
@@ -96,11 +96,13 @@ function closeBrowser() {
     }
 }
 
-
 function parsePage(stdout) {
     const text = stdout.trim();
     const candidates = [text];
-    const lastLine = text.split("\n").filter((line) => line.trim() !== "").at(-1);
+    const lastLine = text
+        .split("\n")
+        .filter((line) => line.trim() !== "")
+        .at(-1);
     if (lastLine && lastLine !== text) {
         candidates.push(lastLine);
     }
@@ -110,12 +112,15 @@ function parsePage(stdout) {
             if (typeof value === "string") {
                 value = JSON.parse(value);
             }
-            if (value && typeof value === "object" && Array.isArray(value.images) && Array.isArray(value.fallbacks)) {
+            if (
+                value &&
+                typeof value === "object" &&
+                Array.isArray(value.images) &&
+                Array.isArray(value.fallbacks)
+            ) {
                 return value;
             }
-        } catch {
-            
-        }
+        } catch {}
     }
     return null;
 }
@@ -140,7 +145,6 @@ function safeReadPage() {
     }
 }
 
-
 function stopVite(vite) {
     if (vite.exitCode !== null || vite.signalCode !== null || !vite.pid) {
         return;
@@ -150,16 +154,16 @@ function stopVite(vite) {
     } catch {
         try {
             vite.kill("SIGTERM");
-        } catch {
-            
-        }
+        } catch {}
     }
 }
 
 function startVite() {
+    const require = createRequire(join(packageDir, "package.json"));
+    const vpBin = join(dirname(require.resolve("vite-plus/package.json")), "bin", "vp");
     const vite = spawn(
-        "npx",
-        ["vite", "--config", "playground/vite.config.ts", "--port", "5175", "--strictPort"],
+        vpBin,
+        ["dev", "--config", "playground/vite.config.ts", "--port", "5175", "--strictPort"],
         {
             cwd: packageDir,
             stdio: "pipe",
@@ -182,14 +186,15 @@ function startVite() {
     return { vite, ready, log: () => log };
 }
 
-
 async function waitForPlayground(server) {
     await server.ready;
     const deadline = Date.now() + 20_000;
     let last = "no response";
     while (Date.now() < deadline) {
         if (server.vite.exitCode !== null) {
-            throw new Error(`Vite exited with code ${server.vite.exitCode} before HTTP 200.\n${server.log()}`);
+            throw new Error(
+                `Vite exited with code ${server.vite.exitCode} before HTTP 200.\n${server.log()}`,
+            );
         }
         try {
             const response = await fetch(pageUrl, { signal: AbortSignal.timeout(2000) });
@@ -205,7 +210,6 @@ async function waitForPlayground(server) {
     throw new Error(`Playground did not return HTTP 200 within 20s (${last}).\n${server.log()}`);
 }
 
-
 function headingStartsWithHash(page) {
     if (typeof page.content !== "string") {
         return true;
@@ -214,28 +218,29 @@ function headingStartsWithHash(page) {
     return firstLine.trimStart().startsWith("#");
 }
 
-
 function isRawHeading(page) {
     return page.heading !== null && typeof page.content === "string" && page.content.includes("#");
 }
 
-
 function assertRendered(page) {
     const problems = [];
     if (!page.images.some((src) => src.includes("w3.org/Icons/valid-xhtml10"))) {
-        problems.push('Expected an img.inline-md-image whose src includes "w3.org/Icons/valid-xhtml10".');
+        problems.push(
+            'Expected an img.inline-md-image whose src includes "w3.org/Icons/valid-xhtml10".',
+        );
     }
     if (!String(page.heading ?? "").includes("Hello")) {
         problems.push('Expected .inline-md-h1 text to include "Hello".');
     }
     if (headingStartsWithHash(page)) {
-        problems.push('Expected the heading hash to be hidden (.view-lines innerText should not include "#" at the start of the heading).');
+        problems.push(
+            'Expected the heading hash to be hidden (.view-lines innerText should not include "#" at the start of the heading).',
+        );
     }
     if (problems.length > 0) {
         fail(problems.join("\n"), page);
     }
 }
-
 
 function assertRawHeading(page) {
     const problems = [];
@@ -249,7 +254,6 @@ function assertRawHeading(page) {
         fail(problems.join("\n"), page);
     }
 }
-
 
 function assertMissingImage(page) {
     if (!page.fallbacks.some((text) => text.includes("Missing"))) {
@@ -281,7 +285,9 @@ async function revealRawHeading() {
             clickMessage ? `click: ${clickMessage}` : "",
             `caret: ${caret}`,
             error instanceof Error ? error.message : String(error),
-        ].filter((line) => line !== "").join("\n");
+        ]
+            .filter((line) => line !== "")
+            .join("\n");
         fail(detail, safeReadPage());
     }
 }

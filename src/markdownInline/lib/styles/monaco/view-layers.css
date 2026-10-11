@@ -25,7 +25,9 @@
     z-index: 1;
 }
 
-.inline-md-root .monaco-editor .lines-content {
+.inline-md-root .monaco-editor .lines-content,
+.inline-md-root .monaco-editor .margin-view-overlays,
+.inline-md-root .monaco-editor .margin-view-overlays .line-numbers {
     cursor: text;
 }
 
@@ -45,6 +47,7 @@
 
 .inline-md-root .monaco-editor .view-line {
     pointer-events: auto;
+    cursor: text;
 }
 
 .inline-md-block,
@@ -54,6 +57,7 @@
 .inline-md-hr,
 .inline-md-table {
     pointer-events: auto;
+    cursor: text;
 }
 
 .inline-md-root .monaco-editor .selected-text {

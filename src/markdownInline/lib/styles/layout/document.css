@@ -17,16 +17,23 @@ body {
 
 .inline-md-root {
     overflow: auto;
-    cursor: text;
+    cursor: default;
     box-sizing: border-box;
     width: 100%;
     height: 100%;
     scrollbar-color: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4)) transparent;
     background: var(--vscode-editor-background, #1e1e1e);
     color: var(--vscode-editor-foreground, #d4d4d4);
-    font-family: var(--vscode-editor-font-family, ui-monospace, SFMono-Regular, Menlo, Consolas, monospace);
+    font-family: var(
+        --vscode-editor-font-family,
+        ui-monospace,
+        SFMono-Regular,
+        Menlo,
+        Consolas,
+        monospace
+    );
     font-size: var(--vscode-editor-font-size, 14px);
-    --ib-md-link: var(--vscode-textLink-foreground, #35A854);
+    --ib-md-link: var(--vscode-textLink-foreground, #35a854);
     --ib-md-link-label: #61afef;
     --ib-md-link-punctuation: #d19a66;
     --ib-md-code-block-background: var(--vscode-textCodeBlock-background, #21252b);
@@ -51,9 +58,20 @@ body {
 }
 
 .inline-md-column {
+    --ib-md-inline-pad: clamp(0px, calc((100% - 804px) / 2), 48px);
+    position: relative;
     box-sizing: border-box;
     width: min(900px, 100%);
     height: auto;
     margin-inline: auto;
-    padding-inline: clamp(0px, calc((100% - 804px) / 2), 48px);
+    padding-inline: var(--ib-md-inline-pad);
+}
+
+.inline-md-below {
+    position: absolute;
+    left: var(--ib-md-inline-pad);
+    right: var(--ib-md-inline-pad);
+    top: 100%;
+    height: 0;
+    cursor: text;
 }

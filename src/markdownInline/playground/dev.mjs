@@ -6,15 +6,15 @@ import { fileURLToPath } from "node:url";
 const playgroundDir = dirname(fileURLToPath(import.meta.url));
 const packageDir = join(playgroundDir, "..");
 const require = createRequire(join(packageDir, "package.json"));
-const viteRoot = dirname(require.resolve("vite/package.json"));
-const viteBin = join(viteRoot, "bin", "vite.js");
-const viteArgs = [viteBin, "--config", "playground/vite.config.ts"];
+const vpRoot = dirname(require.resolve("vite-plus/package.json"));
+const vpBin = join(vpRoot, "bin", "vp");
+const vpArgs = ["dev", "--config", "playground/vite.config.ts"];
 
 let child = null;
 let stopping = false;
 
 function start() {
-    child = spawn(process.execPath, viteArgs, {
+    child = spawn(vpBin, vpArgs, {
         cwd: packageDir,
         stdio: "inherit",
         env: process.env,

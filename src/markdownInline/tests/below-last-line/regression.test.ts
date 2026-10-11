@@ -99,5 +99,12 @@ describe("click below the last line", () => {
 
         expect(await pointerCursor(page, point.belowX, point.paddingY)).toBe("text");
         expect(await pointerCursor(page, point.belowX, point.rootY)).toBe("text");
+
+        const width = page.viewportSize()?.width ?? 0;
+        expect(width).toBeGreaterThan(0);
+        expect(await pointerCursor(page, 8, point.endY)).toBe("default");
+        expect(await pointerCursor(page, width - 8, point.endY)).toBe("default");
+        expect(await pointerCursor(page, 8, point.rootY)).toBe("default");
+        expect(await pointerCursor(page, width - 8, point.rootY)).toBe("default");
     });
 });

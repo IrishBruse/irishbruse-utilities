@@ -64,7 +64,10 @@ function prContextValue(isDraft: boolean): string {
 
 function childrenSignature(items: readonly GitHelperTreeItem[]): string {
     return items
-        .map((item) => `${item.id ?? ""}:${item.label}:${item.description ?? ""}:${item.contextValue ?? ""}`)
+        .map((item) => {
+            const label = typeof item.label === "string" ? item.label : (item.label?.label ?? "");
+            return `${item.id ?? ""}:${label}:${item.description ?? ""}:${item.contextValue ?? ""}`;
+        })
         .join("|");
 }
 
@@ -150,7 +153,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         if (this.cachedChildren.some((item) => item.id === "info:loading")) {
             return false;
         }
-        if (this.cachedChildren.length > 0 && (!activeRoot || !this.displayedRepoRoot || this.displayedRepoRoot === activeRoot)) {
+        if (
+            this.cachedChildren.length > 0 &&
+            (!activeRoot || !this.displayedRepoRoot || this.displayedRepoRoot === activeRoot)
+        ) {
             return false;
         }
         return planGitHelperRefresh(false) === "loading";
@@ -294,15 +300,23 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 await vscodeCommands.executeCommand("workbench.view.scm");
                 await vscodeCommands.executeCommand(`${Views.IbUtilitiesGitHelpers}.focus`);
             },
-            context
+            context,
         );
         registerCommandIB(Commands.DiffWithBase, (item) => provider.runDiffWithBase(item), context);
-        registerCommandIB(Commands.SetBaseBranch, (item?: GitHelperTreeItem) => pickBaseBranchTarget(item?.repoRoot), context);
+        registerCommandIB(
+            Commands.SetBaseBranch,
+            (item?: GitHelperTreeItem) => pickBaseBranchTarget(item?.repoRoot),
+            context,
+        );
         registerCommandIB(Commands.OpenPR, (item) => provider.runOpenPr(item), context);
         registerCommandIB(Commands.OpenRepo, (repoPath) => provider.runOpenRepo(repoPath), context);
         registerCommandIB(Commands.RefreshGitHelpers, () => provider.refresh(true), context);
         registerCommandIB(Commands.GitHelpersRefreshing, () => provider.refresh(true), context);
-        registerCommandIB(Commands.CreateDraftPR, (item) => provider.runCreateDraftPr(item), context);
+        registerCommandIB(
+            Commands.CreateDraftPR,
+            (item) => provider.runCreateDraftPr(item),
+            context,
+        );
         registerCommandIB(Commands.MarkPrReady, (item) => provider.runMarkPrReady(item), context);
         registerCommandIB(Commands.CopyPrUrl, (item) => provider.runCopyPrUrl(item), context);
         registerCommandIB(Commands.OpenPrReview, (item) => provider.runOpenPrReview(item), context);
@@ -319,7 +333,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                     void syncGitHelpersDebugModeContext();
                     provider.refresh(true);
                 }
-            })
+            }),
         );
 
         return provider;
@@ -333,9 +347,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot =
             typeof repoPath === "string"
                 ? repoPath
-                : repoPath?.rootUri?.fsPath ?? (await getActiveRepository())?.rootUri.fsPath;
+                : (repoPath?.rootUri?.fsPath ?? (await getActiveRepository())?.rootUri.fsPath);
         if (!repoRoot) {
-            void window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage(
+                "No active git repository. Select one in Source Control.",
+            );
             return;
         }
         const sourceControl = repoPath && typeof repoPath !== "string" ? repoPath : undefined;
@@ -365,10 +381,13 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                   ? item.rootUri?.fsPath
                   : (await getActiveRepository())?.rootUri.fsPath;
         if (!repoRoot) {
-            void window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage(
+                "No active git repository. Select one in Source Control.",
+            );
             return;
         }
-        const sourceControl = item && typeof item !== "string" && "rootUri" in item ? item : undefined;
+        const sourceControl =
+            item && typeof item !== "string" && "rootUri" in item ? item : undefined;
         await openPR(sourceControl, repoRoot);
     }
 
@@ -376,9 +395,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot =
             typeof item === "string"
                 ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+                : (item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath);
         if (!repoRoot) {
-            void window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage(
+                "No active git repository. Select one in Source Control.",
+            );
             return;
         }
         if (isGitHelpersDebugMode() && repoRoot === MOCK_REPO_ROOT) {
@@ -396,9 +417,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot =
             typeof item === "string"
                 ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+                : (item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath);
         if (!repoRoot) {
-            void window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage(
+                "No active git repository. Select one in Source Control.",
+            );
             return;
         }
 
@@ -442,9 +465,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot =
             typeof item === "string"
                 ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+                : (item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath);
         if (!repoRoot) {
-            void window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage(
+                "No active git repository. Select one in Source Control.",
+            );
             return;
         }
 
@@ -482,9 +507,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot =
             typeof item === "string"
                 ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+                : (item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath);
         if (!repoRoot) {
-            void window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage(
+                "No active git repository. Select one in Source Control.",
+            );
             return;
         }
 
@@ -527,9 +554,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot =
             typeof item === "string"
                 ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+                : (item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath);
         if (!repoRoot) {
-            void window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage(
+                "No active git repository. Select one in Source Control.",
+            );
             return;
         }
 
@@ -561,9 +590,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot =
             typeof item === "string"
                 ? item
-                : item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath;
+                : (item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath);
         if (!repoRoot) {
-            void window.showWarningMessage("No active git repository. Select one in Source Control.");
+            void window.showWarningMessage(
+                "No active git repository. Select one in Source Control.",
+            );
             return;
         }
 
@@ -640,17 +671,21 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 
     private loadCachedPrInfo(repoRoot: string, branch: string) {
-        return this.panelDataCache.load(`pr:${repoRoot}:${branch}`, () => getPrInfo(repoRoot, branch));
+        return this.panelDataCache.load(`pr:${repoRoot}:${branch}`, () =>
+            getPrInfo(repoRoot, branch),
+        );
     }
 
     private loadCachedCheckStatus(repoRoot: string, headRefOid: string, prUrl: string) {
         return this.panelDataCache.load(`checks:${repoRoot}:${headRefOid}`, () =>
-            getPrCheckStatus(repoRoot, headRefOid, prUrl)
+            getPrCheckStatus(repoRoot, headRefOid, prUrl),
         );
     }
 
     private loadCachedReviewStatus(repoRoot: string, prNumber: number) {
-        return this.panelDataCache.load(`review:${repoRoot}:${prNumber}`, () => getPrReviewStatus(repoRoot, prNumber));
+        return this.panelDataCache.load(`review:${repoRoot}:${prNumber}`, () =>
+            getPrReviewStatus(repoRoot, prNumber),
+        );
     }
 
     getTreeItem(element: GitHelperTreeItem): GitHelperTreeItem {
@@ -661,7 +696,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 "Creating draft PR…",
                 element.collapsibleState ?? TreeItemCollapsibleState.None,
                 element.id ?? `${element.repoRoot}:createDraftPr`,
-                element.action
+                element.action,
             );
             item.contextValue = "action-createDraftPr-loading";
             item.iconPath = new ThemeIcon("sync~spin");
@@ -675,7 +710,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 element.collapsibleState ?? TreeItemCollapsibleState.None,
                 element.id ?? `${element.repoRoot}:openPr`,
                 element.action,
-                element.description as string | undefined
+                element.description as string | undefined,
             );
             item.contextValue = element.contextValue ?? "action-openPr-markReady-loading";
             item.iconPath = new ThemeIcon("sync~spin");
@@ -684,12 +719,16 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         }
         if (element.action === "openPr") {
             const item = element;
-            item.iconPath = new ThemeIcon(element.isDraftPr ? "git-pull-request-draft" : "git-pull-request");
+            item.iconPath = new ThemeIcon(
+                element.isDraftPr ? "git-pull-request-draft" : "git-pull-request",
+            );
             return item;
         }
         if (element.action === "openPrChecks") {
             const item = element;
-            item.iconPath = new ThemeIcon(element.contextValue === "action-openPrChecks-failing" ? "error" : "run-all");
+            item.iconPath = new ThemeIcon(
+                element.contextValue === "action-openPrChecks-failing" ? "error" : "run-all",
+            );
             return item;
         }
         return element;
@@ -743,7 +782,9 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             if (selected.length >= 1) {
                 repository = selected[0];
             } else if (this.lastRepoRoot) {
-                repository = api.repositories.find((repo) => repo.rootUri.fsPath === this.lastRepoRoot);
+                repository = api.repositories.find(
+                    (repo) => repo.rootUri.fsPath === this.lastRepoRoot,
+                );
             }
         }
         if (!repository) {
@@ -774,12 +815,16 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                     TreeItemCollapsibleState.None,
                     `${repoRoot}:openPr:${pr.number}`,
                     "openPr",
-                    pr.title
+                    pr.title,
                 );
                 prItem.isDraftPr = pr.isDraft;
                 prItem.contextValue = prContextValue(pr.isDraft);
                 prItem.prUrl = pr.url;
-                prItem.command = { command: Commands.OpenPR, title: "Open PR", arguments: [prItem] };
+                prItem.command = {
+                    command: Commands.OpenPR,
+                    title: "Open PR",
+                    arguments: [prItem],
+                };
                 items.push(prItem);
 
                 const [diffItems, checkStatus, reviewStatus] = await Promise.all([
@@ -806,14 +851,17 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                             command: Commands.OpenPrReview,
                             title: "Open PR review",
                             arguments: [repoRoot],
-                        }
+                        },
                     );
                     reviewItem.reviewUrl = reviewStatus.url;
                     items.push(reviewItem);
                 }
             } else {
                 this.applyCheckStatus(undefined);
-                if (!isMainlineBranch(head.name) && (!base || !isSameBranch(head.name, base.name))) {
+                if (
+                    !isMainlineBranch(head.name) &&
+                    (!base || !isSameBranch(head.name, base.name))
+                ) {
                     items.push(
                         new GitHelperTreeItem(
                             "action",
@@ -827,8 +875,8 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                                 command: Commands.CreateDraftPR,
                                 title: "Create draft PR",
                                 arguments: [repoRoot],
-                            }
-                        )
+                            },
+                        ),
                     );
                     if (base) {
                         items.push(...(await diffAndChangesItems(repoRoot, base.name)));
@@ -845,7 +893,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 }
 
-async function diffAndChangesItems(repoRoot: string, baseName: string): Promise<GitHelperTreeItem[]> {
+async function diffAndChangesItems(
+    repoRoot: string,
+    baseName: string,
+): Promise<GitHelperTreeItem[]> {
     const items: GitHelperTreeItem[] = [
         actionItem(repoRoot, "Diff", "diffWithBase", Commands.DiffWithBase, baseName),
     ];
@@ -865,7 +916,7 @@ function changesItem(repoRoot: string, summary: BranchChangesSummary): GitHelper
         `${repoRoot}:showChanges`,
         "showChanges",
         formatPrLineChangeDescription(summary.additions, summary.deletions),
-        { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] }
+        { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] },
     );
 }
 
@@ -880,7 +931,7 @@ function actionItem(
     label: string,
     action: "diffWithBase",
     commandId: Commands,
-    description?: string
+    description?: string,
 ): GitHelperTreeItem {
     return new GitHelperTreeItem(
         "action",
@@ -890,6 +941,6 @@ function actionItem(
         `${repoRoot}:${action}`,
         action,
         description,
-        { command: commandId, title: label, arguments: [repoRoot] }
+        { command: commandId, title: label, arguments: [repoRoot] },
     );
 }

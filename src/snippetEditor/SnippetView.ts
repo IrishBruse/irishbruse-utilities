@@ -63,13 +63,11 @@ class SnippetTreeItem extends TreeItem {
         public readonly collapsibleState: TreeItemCollapsibleState,
         public readonly description: string | undefined,
         public readonly iconPath: ThemeIcon,
-        public readonly command?: Command
+        public readonly command?: Command,
     ) {
         super(label, collapsibleState);
 
         this.contextValue = type;
-        this.description = description;
-        this.command = command;
 
         if (type === "folder") {
             this.tooltip = "snippets/" + label + ".json";
@@ -79,7 +77,6 @@ class SnippetTreeItem extends TreeItem {
         } else {
             this.tooltip = description ?? label;
             this.resourceUri = Uri.parse("file:///" + label + ".snippet");
-            this.iconPath = iconPath;
         }
     }
 
@@ -94,7 +91,7 @@ class SnippetTreeItem extends TreeItem {
                 title: "Open Snippet",
                 command: Commands.OpenSnippet,
                 arguments: [key, snippet],
-            }
+            },
         );
     }
 
@@ -105,7 +102,7 @@ class SnippetTreeItem extends TreeItem {
             "folder",
             TreeItemCollapsibleState.Collapsed,
             isGenerated ? GENERATED_LABEL : undefined,
-            ThemeIcon.Folder
+            ThemeIcon.Folder,
         );
     }
 }
@@ -116,7 +113,10 @@ async function regenerateDependentSnippets(languageId: string): Promise<void> {
 
     if (dependents) {
         for (const dependentLanguageId of dependents) {
-            await generateSnippetsForLanguage(dependentLanguageId, GeneratedMap[dependentLanguageId]);
+            await generateSnippetsForLanguage(
+                dependentLanguageId,
+                GeneratedMap[dependentLanguageId],
+            );
         }
     }
 }
@@ -135,11 +135,10 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         registerCommandIB(
             Commands.ShowSnippetView,
             () => commands.executeCommand(Commands.ViewSnippetContainer),
-            context
+            context,
         );
         registerCommandIB(Commands.RefreshSnippetView, () => provider.refresh(), context);
 
-        
         registerCommandIB(Commands.OpenSnippet, provider.openSnippet, context);
 
         registerCommandIB(Commands.AddSnippet, (i) => provider.addSnippet(i), context);
@@ -205,7 +204,6 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             });
     }
 
-    
     openSnippet = async (key: string, snippet: Snippet): Promise<void> => {
         if (!key) {
             void window.showErrorMessage("Missing key argument");
@@ -222,15 +220,18 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         const editor = await window.showTextDocument(Uri.file(snippetPath), { preview: true });
 
         if (GeneratedMap[snippet.languageId]) {
-            await commands.executeCommand("workbench.action.files.setActiveEditorReadonlyInSession");
+            await commands.executeCommand(
+                "workbench.action.files.setActiveEditorReadonlyInSession",
+            );
         }
 
         try {
             const langIds = getLanguageIdMappings();
-            await languages.setTextDocumentLanguage(editor.document, langIds[snippet.languageId] ?? snippet.languageId);
-        } catch {
-            
-        }
+            await languages.setTextDocumentLanguage(
+                editor.document,
+                langIds[snippet.languageId] ?? snippet.languageId,
+            );
+        } catch {}
     };
 
     async save(file: TextDocument): Promise<void> {
@@ -248,7 +249,10 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             return;
         }
 
-        const key = await window.showInputBox({ prompt: "Snippet name (key)", placeHolder: "mySnippet" });
+        const key = await window.showInputBox({
+            prompt: "Snippet name (key)",
+            placeHolder: "mySnippet",
+        });
         if (!key) {
             return;
         }
@@ -268,10 +272,11 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
 
         const langIds = getLanguageIdMappings();
         try {
-            await languages.setTextDocumentLanguage(editor.document, langIds[languageId] ?? languageId);
-        } catch {
-            
-        }
+            await languages.setTextDocumentLanguage(
+                editor.document,
+                langIds[languageId] ?? languageId,
+            );
+        } catch {}
 
         await SnippetViewProvider.saveSnippetFile(snippetPath);
         this.refresh();
@@ -308,7 +313,7 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
         const answer = await window.showWarningMessage(
             `Delete snippet '${key}' from '${snippetLanguageId}'? This cannot be undone.`,
             { modal: true },
-            "Delete"
+            "Delete",
         );
         if (answer !== "Delete") {
             return;
@@ -318,7 +323,9 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             const snippets = getSnippetsFile(snippetLanguageId);
 
             if (!snippets || !Object.prototype.hasOwnProperty.call(snippets, key)) {
-                void window.showErrorMessage(`Snippet '${key}' not found for '${snippetLanguageId}'`);
+                void window.showErrorMessage(
+                    `Snippet '${key}' not found for '${snippetLanguageId}'`,
+                );
                 return;
             }
 
@@ -327,7 +334,9 @@ export class SnippetViewProvider implements TreeDataProvider<SnippetTreeItem> {
             await regenerateDependentSnippets(snippetLanguageId);
 
             this.refresh();
-            void window.showInformationMessage(`Deleted snippet '${key}' from '${snippetLanguageId}'`);
+            void window.showInformationMessage(
+                `Deleted snippet '${key}' from '${snippetLanguageId}'`,
+            );
         } catch (err) {
             void window.showErrorMessage(`Failed to delete snippet: ${String(err)}`);
         }

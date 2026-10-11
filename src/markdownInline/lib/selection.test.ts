@@ -159,7 +159,7 @@ function pointerTarget() {
             );
         },
         emit(type: string, event: Partial<PointerEvent> = {}) {
-            for (const listener of [...(listeners.get(type) ?? [])]) {
+            for (const listener of listeners.get(type) ?? []) {
                 listener({ button: 0, buttons: 0, ...event });
             }
         },

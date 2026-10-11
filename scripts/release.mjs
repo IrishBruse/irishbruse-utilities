@@ -1,4 +1,3 @@
-
 import { InteractiveBrowserCredential } from "@azure/identity";
 import { execSync, spawn } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
@@ -106,12 +105,17 @@ function changelogHasVersion(version) {
 }
 
 function changelogHistory() {
-    const versions = [...readText("CHANGELOG.md").matchAll(/^## (\d+\.\d+\.\d+)/gm)].map((match) => match[1]);
+    const versions = [...readText("CHANGELOG.md").matchAll(/^## (\d+\.\d+\.\d+)/gm)].map(
+        (match) => match[1],
+    );
     const previous = versions[0];
     if (!previous) {
         return execSync("git log --oneline -20", { cwd: root, encoding: "utf8" }).trim();
     }
-    const rev = execSync(`git rev-list -n 1 --grep=^${previous}$ HEAD`, { cwd: root, encoding: "utf8" }).trim();
+    const rev = execSync(`git rev-list -n 1 --grep=^${previous}$ HEAD`, {
+        cwd: root,
+        encoding: "utf8",
+    }).trim();
     if (rev.length === 0) {
         return execSync("git log --oneline -20", { cwd: root, encoding: "utf8" }).trim();
     }
@@ -121,23 +125,30 @@ function changelogHistory() {
 function runAgent(prompt) {
     console.log("\n> agent --print --output-format stream-json (release)");
     return new Promise((resolve, reject) => {
-        const child = spawn("agent", [
-            "--print",
-            "--trust",
-            "--force",
-            "--model",
-            "composer-2.5",
-            "--output-format",
-            "stream-json",
-            "--stream-partial-output",
-            prompt,
-        ], {
-            cwd: root,
-            stdio: ["ignore", "pipe", "inherit"],
-        });
-        const printer = createAgentPrinter((chunk) => {
-            process.stdout.write(chunk);
-        }, { color: process.stdout.isTTY === true });
+        const child = spawn(
+            "agent",
+            [
+                "--print",
+                "--trust",
+                "--force",
+                "--model",
+                "composer-2.5",
+                "--output-format",
+                "stream-json",
+                "--stream-partial-output",
+                prompt,
+            ],
+            {
+                cwd: root,
+                stdio: ["ignore", "pipe", "inherit"],
+            },
+        );
+        const printer = createAgentPrinter(
+            (chunk) => {
+                process.stdout.write(chunk);
+            },
+            { color: process.stdout.isTTY === true },
+        );
         let buffer = "";
         child.stdout.setEncoding("utf8");
         child.stdout.on("data", (chunk) => {
@@ -212,7 +223,9 @@ async function promptVersionBump(current) {
 
 async function promptPublish(version) {
     const rl = createInterface({ input, output });
-    const answer = (await rl.question(`\nPublish ${version} to the VS Code Marketplace? [y/N] `)).trim();
+    const answer = (
+        await rl.question(`\nPublish ${version} to the VS Code Marketplace? [y/N] `)
+    ).trim();
     rl.close();
     return /^y(es)?$/i.test(answer);
 }
@@ -220,8 +233,8 @@ async function promptPublish(version) {
 function hasServicePrincipalAuth() {
     return Boolean(
         process.env.AZURE_CLIENT_ID &&
-            process.env.AZURE_CLIENT_SECRET &&
-            process.env.AZURE_TENANT_ID,
+        process.env.AZURE_CLIENT_SECRET &&
+        process.env.AZURE_TENANT_ID,
     );
 }
 
@@ -395,7 +408,9 @@ async function main() {
     } catch (error) {
         if (!published && packageSnapshot !== null) {
             restoreWorkingTreeFiles(packageSnapshot, lockSnapshot);
-            console.error("\nRestored package.json and package-lock.json to their pre-stamp versions.");
+            console.error(
+                "\nRestored package.json and package-lock.json to their pre-stamp versions.",
+            );
         }
 
         console.error(`\nRelease failed: ${error.message}`);
@@ -409,4 +424,4 @@ if (!hasVersionArg && process.argv.includes("--publish")) {
     process.exit(1);
 }
 
-main();
+void main();

@@ -1,8 +1,29 @@
 import * as monaco from "monaco-editor/editor/editor.api";
-import { blockquoteContentIndex, blockquoteDepthClass, blockquoteLineDepth, blockquoteWrapIndentColumns } from "./preview/blockquote";
-import { applyHeadingFontScales, headingLineHeightMultiplier, headingSelectionPadPx } from "./headingLayout";
-import { listGapPaints, listLineHeightMultiplier, listMarkerIsTask, monacoLineModel } from "./preview/listItemGap";
-import { blockZone as buildBlockZone, createMermaidZone as buildMermaidZone, headingLevel, imageZoneKey, tableZone as buildTableZone, type BlockZoneHost } from "./preview/blockZone";
+import {
+    blockquoteContentIndex,
+    blockquoteDepthClass,
+    blockquoteLineDepth,
+    blockquoteWrapIndentColumns,
+} from "./preview/blockquote";
+import {
+    applyHeadingFontScales,
+    headingLineHeightMultiplier,
+    headingSelectionPadPx,
+} from "./headingLayout";
+import {
+    listGapPaints,
+    listLineHeightMultiplier,
+    listMarkerIsTask,
+    monacoLineModel,
+} from "./preview/listItemGap";
+import {
+    blockZone as buildBlockZone,
+    createMermaidZone as buildMermaidZone,
+    headingLevel,
+    imageZoneKey,
+    tableZone as buildTableZone,
+    type BlockZoneHost,
+} from "./preview/blockZone";
 import { mermaidDiagramSource } from "../../lib/mermaid/mermaidDiagramSource";
 import { isMermaidCodeBlock } from "./preview/mermaid";
 import { previewContentClass, previewContentRange } from "./preview/paint";
@@ -10,16 +31,27 @@ import { refreshMermaidCodeLens, setHiddenAreas } from "./monaco";
 import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "./raw/paint";
 import { reveal, revealCode, showFormatted } from "./reveal";
 import { parseScopes } from "./document/scopes";
-import { clipSelectionToText, extendHeadingSelectionPastText, layoutSelectionPieces, selectionHeadingSelector, stretchesSelectionLine } from "./selection";
-import { readFrontMatter, skillDirectoryName, skillFrontMatterIssues, type FrontMatterSpan } from "./skill";
+import {
+    clipSelectionToText,
+    extendHeadingSelectionPastText,
+    layoutSelectionPieces,
+    selectionHeadingSelector,
+    stretchesSelectionLine,
+} from "./selection";
+import {
+    readFrontMatter,
+    skillDirectoryName,
+    skillFrontMatterIssues,
+    type FrontMatterSpan,
+} from "./skill";
 import type { CursorContext, Scope, TextRange } from "./document/types";
 
 export interface InlinePresentationHandlers {
     onToggleTask(from: number, to: number): void;
     onReveal(offset: number): void;
     onReplace(from: number, to: number, text: string): void;
-    onLink?(href: string): void;
-    onOpenMermaidPreview?(openLine: number): void;
+    onLink?: (href: string) => void;
+    onOpenMermaidPreview?: (openLine: number) => void;
 }
 
 interface ZoneRecord {
@@ -95,7 +127,10 @@ class TableOverlayWidget implements monaco.editor.IContentWidget {
         private readonly node: HTMLElement,
         lines: readonly number[],
         private readonly editor: monaco.editor.IStandaloneCodeEditor,
-        private readonly onMeasure: (lines: readonly number[], heights: ReadonlyMap<number, number>) => void,
+        private readonly onMeasure: (
+            lines: readonly number[],
+            heights: ReadonlyMap<number, number>,
+        ) => void,
         private readonly scaleFor: (line: number) => number,
     ) {
         this.lines = lines;
@@ -161,7 +196,9 @@ class TableOverlayWidget implements monaco.editor.IContentWidget {
         const frameMax = this.node.style.maxWidth;
         this.node.style.width = "max-content";
         this.node.style.maxWidth = "none";
-        const rows = [...table.rows].filter((row) => !row.classList.contains("inline-md-table-rule"));
+        const rows = [...table.rows].filter(
+            (row) => !row.classList.contains("inline-md-table-rule"),
+        );
         const count = rows.reduce((max, row) => Math.max(max, row.cells.length), 0);
         if (count === 0) {
             this.node.style.width = frameWidth;
@@ -180,10 +217,10 @@ class TableOverlayWidget implements monaco.editor.IContentWidget {
         const pad = (cell: HTMLTableCellElement): number => {
             const style = getComputedStyle(cell);
             return Math.ceil(
-                (Number.parseFloat(style.paddingLeft) || 0)
-                + (Number.parseFloat(style.paddingRight) || 0)
-                + (Number.parseFloat(style.borderLeftWidth) || 0)
-                + (Number.parseFloat(style.borderRightWidth) || 0),
+                (Number.parseFloat(style.paddingLeft) || 0) +
+                    (Number.parseFloat(style.paddingRight) || 0) +
+                    (Number.parseFloat(style.borderLeftWidth) || 0) +
+                    (Number.parseFloat(style.borderRightWidth) || 0),
             );
         };
         const maxWidths = Array.from({ length: count }, () => 0);
@@ -197,7 +234,12 @@ class TableOverlayWidget implements monaco.editor.IContentWidget {
                 const text = cell.innerText.replaceAll("\u00a0", " ").trim();
                 const extra = pad(cell);
                 const full = text.length > 0 ? textWidth(text) + extra : extra;
-                const word = text.split(/\s+/).reduce((wide, part) => Math.max(wide, part.length > 0 ? textWidth(part) : 0), 0);
+                const word = text
+                    .split(/\s+/)
+                    .reduce(
+                        (wide, part) => Math.max(wide, part.length > 0 ? textWidth(part) : 0),
+                        0,
+                    );
                 maxWidths[index] = Math.max(maxWidths[index] ?? 0, full);
                 minWidths[index] = Math.max(minWidths[index] ?? 1, word + extra);
             }
@@ -213,7 +255,10 @@ class TableOverlayWidget implements monaco.editor.IContentWidget {
         const sumMax = maxWidths.reduce((sum, width) => sum + width, 0);
         const sizes = maxWidths.slice();
         if (sumMax > available) {
-            const widest = maxWidths.reduce((best, width, index) => width > (maxWidths[best] ?? 0) ? index : best, 0);
+            const widest = maxWidths.reduce(
+                (best, width, index) => (width > (maxWidths[best] ?? 0) ? index : best),
+                0,
+            );
             const others = sumMax - (maxWidths[widest] ?? 0);
             const floor = minWidths[widest] ?? 1;
             sizes[widest] = Math.max(floor, available - others);
@@ -245,13 +290,21 @@ class TableOverlayWidget implements monaco.editor.IContentWidget {
                 return;
             }
             row.style.height = "auto";
-            const cells = [...row.children].filter((cell): cell is HTMLElement => cell instanceof HTMLElement);
+            const cells = [...row.children].filter(
+                (cell): cell is HTMLElement => cell instanceof HTMLElement,
+            );
             for (const cell of cells) {
                 cell.style.height = "auto";
             }
-            const content = Math.max(lineHeight, ...cells.map((cell) => Math.ceil(cell.scrollHeight)));
+            const content = Math.max(
+                lineHeight,
+                ...cells.map((cell) => Math.ceil(cell.scrollHeight)),
+            );
             const applied = this.scaleFor(line);
-            const rendered = Math.max(lineHeight, this.editor.getBottomForLineNumber(line) - this.editor.getTopForLineNumber(line));
+            const rendered = Math.max(
+                lineHeight,
+                this.editor.getBottomForLineNumber(line) - this.editor.getTopForLineNumber(line),
+            );
             const wraps = Math.max(1, Math.round(rendered / Math.max(1, applied * lineHeight)));
             const natural = wraps * lineHeight;
             const needed = Math.max(natural, content);
@@ -294,14 +347,20 @@ class TaskWidget implements monaco.editor.IContentWidget {
     }
 }
 
-function markerLineAt(model: monaco.editor.ITextModel, offset: number): { lineStart: number; lineEnd: number } {
+function markerLineAt(
+    model: monaco.editor.ITextModel,
+    offset: number,
+): { lineStart: number; lineEnd: number } {
     const length = model.getValueLength();
     const position = model.getPositionAt(clampOffset(offset, length));
     const lineStart = model.getOffsetAt({ lineNumber: position.lineNumber, column: 1 });
     return { lineStart, lineEnd: lineStart + model.getLineLength(position.lineNumber) };
 }
 
-function cursorContext(editor: monaco.editor.IStandaloneCodeEditor, model: monaco.editor.ITextModel): CursorContext {
+function cursorContext(
+    editor: monaco.editor.IStandaloneCodeEditor,
+    model: monaco.editor.ITextModel,
+): CursorContext {
     const selection = editor.getSelection();
     const head = selection?.getPosition() ?? { lineNumber: 1, column: 1 };
     const start = selection
@@ -377,7 +436,11 @@ function paintInline(
     }
 }
 
-function lineNumbersCovering(model: monaco.editor.ITextModel, text: string, range: TextRange): number[] {
+function lineNumbersCovering(
+    model: monaco.editor.ITextModel,
+    text: string,
+    range: TextRange,
+): number[] {
     if (range.end <= range.start) {
         return [];
     }
@@ -406,7 +469,10 @@ function findHits(range: TextRange, finds: readonly TextRange[]): boolean {
     return finds.some((hit) => hit.start < range.end && hit.end > range.start);
 }
 
-function findRevealRanges(editor: monaco.editor.IStandaloneCodeEditor, model: monaco.editor.ITextModel): TextRange[] {
+function findRevealRanges(
+    editor: monaco.editor.IStandaloneCodeEditor,
+    model: monaco.editor.ITextModel,
+): TextRange[] {
     const controller = editor.getContribution("editor.contrib.findController") as {
         getState(): {
             searchString: string;
@@ -423,18 +489,20 @@ function findRevealRanges(editor: monaco.editor.IStandaloneCodeEditor, model: mo
     const wordSeparators = state.wholeWord
         ? editor.getOption(monaco.editor.EditorOption.wordSeparators)
         : null;
-    return model.findMatches(
-        state.searchString,
-        false,
-        state.isRegex,
-        state.matchCase,
-        wordSeparators,
-        false,
-        500,
-    ).map((match) => ({
-        start: model.getOffsetAt(match.range.getStartPosition()),
-        end: model.getOffsetAt(match.range.getEndPosition()),
-    }));
+    return model
+        .findMatches(
+            state.searchString,
+            false,
+            state.isRegex,
+            state.matchCase,
+            wordSeparators,
+            false,
+            500,
+        )
+        .map((match) => ({
+            start: model.getOffsetAt(match.range.getStartPosition()),
+            end: model.getOffsetAt(match.range.getEndPosition()),
+        }));
 }
 
 function clampOffset(offset: number, length: number): number {
@@ -447,7 +515,11 @@ function clampOffset(offset: number, length: number): number {
     return offset;
 }
 
-function rangeFromOffsets(model: monaco.editor.ITextModel, start: number, end: number): monaco.Range {
+function rangeFromOffsets(
+    model: monaco.editor.ITextModel,
+    start: number,
+    end: number,
+): monaco.Range {
     const length = model.getValueLength();
     const from = model.getPositionAt(clampOffset(start, length));
     const to = model.getPositionAt(clampOffset(end, length));
@@ -470,7 +542,9 @@ function coveredLine(model: monaco.editor.ITextModel, marker: TextRange): number
     return undefined;
 }
 
-function hideOptions(before?: monaco.editor.InjectedTextOptions): monaco.editor.IModelDecorationOptions {
+function hideOptions(
+    before?: monaco.editor.InjectedTextOptions,
+): monaco.editor.IModelDecorationOptions {
     return {
         inlineClassName: "inline-md-hidden",
         inlineClassNameAffectsLetterSpacing: true,
@@ -575,7 +649,13 @@ export class InlinePresentation {
         const hiddenLines = new Set<number>();
         const zones: ZoneRecord[] = [];
         const tables: { key: string; domNode: HTMLElement; lines: readonly number[] }[] = [];
-        const tasks: { id: string; from: number; to: number; checked: boolean; position: monaco.IPosition }[] = [];
+        const tasks: {
+            id: string;
+            from: number;
+            to: number;
+            checked: boolean;
+            position: monaco.IPosition;
+        }[] = [];
         const hits: { id: string; text: string; offset: number; position: monaco.IPosition }[] = [];
 
         const addHidden = (scope: Scope): void => {
@@ -603,10 +683,18 @@ export class InlinePresentation {
                 if (bounds.end <= bounds.start || bounds.start < 0 || bounds.end > text.length) {
                     continue;
                 }
-                if (replaced.some((range) => spansOverlap(bounds.start, bounds.end, range.start, range.end))) {
+                if (
+                    replaced.some((range) =>
+                        spansOverlap(bounds.start, bounds.end, range.start, range.end),
+                    )
+                ) {
                     continue;
                 }
-                if (!decision.zone && !decision.occupy && (scope.kind === "image" || scope.kind === "thematicBreak")) {
+                if (
+                    !decision.zone &&
+                    !decision.occupy &&
+                    (scope.kind === "image" || scope.kind === "thematicBreak")
+                ) {
                     decision = reveal({
                         scope,
                         marker,
@@ -657,14 +745,16 @@ export class InlinePresentation {
                     }
                     continue;
                 }
-                const before = scope.kind === "blockquoteMarker"
-                    ? undefined
-                    : this.replacement(scope, marker, index, scopes, tasks, model);
+                const before =
+                    scope.kind === "blockquoteMarker"
+                        ? undefined
+                        : this.replacement(scope, marker, index, scopes, tasks, model);
                 decorations.push({
                     range: rangeFromOffsets(model, bounds.start, bounds.end),
-                    options: scope.kind === "blockquoteMarker"
-                        ? { inlineClassName: "inline-md-quote-marker" }
-                        : hideOptions(before),
+                    options:
+                        scope.kind === "blockquoteMarker"
+                            ? { inlineClassName: "inline-md-quote-marker" }
+                            : hideOptions(before),
                 });
             }
         };
@@ -725,26 +815,30 @@ export class InlinePresentation {
 
         for (const scope of scopes) {
             const formatted = showFormatted(scope, cursor, findHits(scope, finds));
-            const sourceLink = scope.kind === "link" && scope.markers.some((marker) => {
-                const shown = reveal({
-                    scope,
-                    marker,
-                    cursor,
-                    markerLine: markerLineAt(model, marker.start),
-                    findHit: findHits(scope, finds),
-                    frontMatterEnd: this.frontMatter?.end,
-                    singleLine: false,
+            const sourceLink =
+                scope.kind === "link" &&
+                scope.markers.some((marker) => {
+                    const shown = reveal({
+                        scope,
+                        marker,
+                        cursor,
+                        markerLine: markerLineAt(model, marker.start),
+                        findHit: findHits(scope, finds),
+                        frontMatterEnd: this.frontMatter?.end,
+                        singleLine: false,
+                    });
+                    return shown.surface === "raw";
                 });
-                return shown.surface === "raw";
-            });
             const rawHeading = scope.kind === "heading" && !formatted;
             const className = rawHeading
                 ? rawHeadingClass(scope)
                 : formatted && !sourceLink
-                    ? previewContentClass(scope)
-                    : undefined;
+                  ? previewContentClass(scope)
+                  : undefined;
             if (className) {
-                const range = rawHeading ? rawHeadingBounds(text, scope) : previewContentRange(scope);
+                const range = rawHeading
+                    ? rawHeadingBounds(text, scope)
+                    : previewContentRange(scope);
                 const start = range.start;
                 const end = range.end;
                 if (end > start) {
@@ -768,7 +862,15 @@ export class InlinePresentation {
             }
             if (sourceLink) {
                 for (const span of rawLinkSpans(text, scope)) {
-                    paintInline(decorations, model, text, span.start, span.end, replaced, span.className);
+                    paintInline(
+                        decorations,
+                        model,
+                        text,
+                        span.start,
+                        span.end,
+                        replaced,
+                        span.className,
+                    );
                 }
             }
             for (const marker of scope.markers) {
@@ -793,8 +895,8 @@ export class InlinePresentation {
             }
             this.addLineDecorations(model, scope, decorations);
             if (
-                scope.kind === "codeBlock"
-                && scope.markers.some((marker) => {
+                scope.kind === "codeBlock" &&
+                scope.markers.some((marker) => {
                     const hidden = reveal({
                         scope,
                         marker,
@@ -805,8 +907,11 @@ export class InlinePresentation {
                         singleLine: false,
                     });
                     return hidden.surface === "preview" && !hidden.zone && !hidden.occupy;
-                })
-                && !(isMermaidCodeBlock(scope.language) && revealCode(scope, cursor, false).surface === "preview")
+                }) &&
+                !(
+                    isMermaidCodeBlock(scope.language) &&
+                    revealCode(scope, cursor, false).surface === "preview"
+                )
             ) {
                 const codeText = text.slice(scope.contentStart, scope.contentEnd).trim();
                 if (codeText.length > 0) {
@@ -831,7 +936,9 @@ export class InlinePresentation {
                 continue;
             }
             const quoteStart = model.getPositionAt(clampOffset(scope.start, text.length));
-            const quoteEnd = model.getPositionAt(clampOffset(Math.max(scope.start, scope.end - 1), text.length));
+            const quoteEnd = model.getPositionAt(
+                clampOffset(Math.max(scope.start, scope.end - 1), text.length),
+            );
             for (let line = quoteStart.lineNumber; line <= quoteEnd.lineNumber; line += 1) {
                 const depth = blockquoteLineDepth(model.getLineContent(line));
                 if (depth <= 0) {
@@ -919,7 +1026,10 @@ export class InlinePresentation {
         this.scheduleSelectionHeights();
         const mermaidLensKey = scopes
             .filter((scope) => scope.kind === "codeBlock" && isMermaidCodeBlock(scope.language))
-            .map((scope) => `${scope.start}:${scope.end}:${mermaidDiagramSource(text.slice(scope.contentStart, scope.contentEnd))}`)
+            .map(
+                (scope) =>
+                    `${scope.start}:${scope.end}:${mermaidDiagramSource(text.slice(scope.contentStart, scope.contentEnd))}`,
+            )
             .join("|");
         if (mermaidLensKey !== this.mermaidLensKey) {
             this.mermaidLensKey = mermaidLensKey;
@@ -930,12 +1040,15 @@ export class InlinePresentation {
     }
 
     private writeHiddenAreas(model: monaco.editor.ITextModel): void {
-        setHiddenAreas(this.editor, [...this.hiddenLineNumbers].map((lineNumber) => ({
-            startLineNumber: lineNumber,
-            startColumn: 1,
-            endLineNumber: lineNumber,
-            endColumn: model.getLineMaxColumn(lineNumber),
-        })));
+        setHiddenAreas(
+            this.editor,
+            [...this.hiddenLineNumbers].map((lineNumber) => ({
+                startLineNumber: lineNumber,
+                startColumn: 1,
+                endLineNumber: lineNumber,
+                endColumn: model.getLineMaxColumn(lineNumber),
+            })),
+        );
     }
 
     dispose(): void {
@@ -976,7 +1089,13 @@ export class InlinePresentation {
         marker: TextRange,
         index: number,
         scopes: readonly Scope[],
-        tasks: { id: string; from: number; to: number; checked: boolean; position: monaco.IPosition }[],
+        tasks: {
+            id: string;
+            from: number;
+            to: number;
+            checked: boolean;
+            position: monaco.IPosition;
+        }[],
         model: monaco.editor.ITextModel,
     ): monaco.editor.InjectedTextOptions | undefined {
         switch (scope.kind) {
@@ -986,7 +1105,9 @@ export class InlinePresentation {
                 }
                 return injected("• ", "inline-md-list-mark");
             case "task": {
-                const position = model.getPositionAt(clampOffset(marker.start, model.getValueLength()));
+                const position = model.getPositionAt(
+                    clampOffset(marker.start, model.getValueLength()),
+                );
                 tasks.push({
                     id: `task-${marker.start}-${marker.end}`,
                     from: marker.start,
@@ -1000,7 +1121,10 @@ export class InlinePresentation {
                 if (index !== 0) {
                     return undefined;
                 }
-                return injected(scope.language && scope.language.length > 0 ? scope.language : "text", "inline-md-lang");
+                return injected(
+                    scope.language && scope.language.length > 0 ? scope.language : "text",
+                    "inline-md-lang",
+                );
             default:
                 return undefined;
         }
@@ -1015,13 +1139,13 @@ export class InlinePresentation {
             },
             onLink: onLink
                 ? (href) => {
-                    this.handlers.onLink?.(href);
-                }
+                      this.handlers.onLink?.(href);
+                  }
                 : undefined,
             onOpenMermaidPreview: onOpenMermaidPreview
                 ? (openLine) => {
-                    this.handlers.onOpenMermaidPreview?.(openLine);
-                }
+                      this.handlers.onOpenMermaidPreview?.(openLine);
+                  }
                 : undefined,
             onLayout: (key) => {
                 this.layoutZone(key);
@@ -1059,20 +1183,23 @@ export class InlinePresentation {
         return record;
     }
 
-    private createMermaidZone(scope: Scope, content: string, key: string, lineNumber: number): ZoneRecord {
+    private createMermaidZone(
+        scope: Scope,
+        content: string,
+        key: string,
+        lineNumber: number,
+    ): ZoneRecord {
         return buildMermaidZone(scope, content, key, lineNumber, this.zoneHost());
     }
 
-    private tableZone(
-        scope: Scope,
-        source: string,
-        scopes: readonly Scope[],
-        from: number,
-    ) {
+    private tableZone(scope: Scope, source: string, scopes: readonly Scope[], from: number) {
         return buildTableZone(scope, source, scopes, from, this.zoneHost());
     }
 
-    private applyTableHeights(lines: readonly number[], heights: ReadonlyMap<number, number>): void {
+    private applyTableHeights(
+        lines: readonly number[],
+        heights: ReadonlyMap<number, number>,
+    ): void {
         let changed = false;
         for (const line of lines) {
             const next = heights.get(line);
@@ -1094,7 +1221,9 @@ export class InlinePresentation {
         }
     }
 
-    private syncTables(tables: readonly { key: string; domNode: HTMLElement; lines: readonly number[] }[]): void {
+    private syncTables(
+        tables: readonly { key: string; domNode: HTMLElement; lines: readonly number[] }[],
+    ): void {
         const next = new Set(tables.map((table) => table.key));
         for (const [key, widget] of this.tableWidgets) {
             if (!next.has(key)) {
@@ -1153,17 +1282,28 @@ export class InlinePresentation {
         for (let line = start.lineNumber; line <= end.lineNumber; line += 1) {
             decorations.push({
                 range: new monaco.Range(line, 1, line, 1),
-                options: { isWholeLine: true, className: "inline-md-code-line inline-md-front-matter-line" },
+                options: {
+                    isWholeLine: true,
+                    className: "inline-md-code-line inline-md-front-matter-line",
+                },
             });
         }
         this.syncYamlLabel(start.lineNumber);
-        for (const issue of skillFrontMatterIssues(span.yaml, skillDirectoryName(this.documentUrl))) {
+        for (const issue of skillFrontMatterIssues(
+            span.yaml,
+            skillDirectoryName(this.documentUrl),
+        )) {
             const from = issue.start < 0 ? 0 : span.yamlStart + issue.start;
             const to = issue.start < 0 ? Math.min(3, length) : span.yamlStart + issue.end;
             const issueStart = model.getPositionAt(clampOffset(from, length));
             const issueEnd = model.getPositionAt(clampOffset(Math.max(from, to), length));
             decorations.push({
-                range: new monaco.Range(issueStart.lineNumber, issueStart.column, issueEnd.lineNumber, issueEnd.column),
+                range: new monaco.Range(
+                    issueStart.lineNumber,
+                    issueStart.column,
+                    issueEnd.lineNumber,
+                    issueEnd.column,
+                ),
                 options: {
                     inlineClassName: "inline-md-skill-error",
                     after: injected(` ${issue.message}`, "inline-md-skill-error-message"),
@@ -1208,7 +1348,15 @@ export class InlinePresentation {
         }
     }
 
-    private syncTasks(tasks: readonly { id: string; from: number; to: number; checked: boolean; position: monaco.IPosition }[]): void {
+    private syncTasks(
+        tasks: readonly {
+            id: string;
+            from: number;
+            to: number;
+            checked: boolean;
+            position: monaco.IPosition;
+        }[],
+    ): void {
         const next = new Set(tasks.map((task) => task.id));
         for (const [id, widget] of this.widgets) {
             if (!next.has(id)) {
@@ -1255,7 +1403,9 @@ export class InlinePresentation {
         }
     }
 
-    private syncHits(hits: readonly { id: string; text: string; offset: number; position: monaco.IPosition }[]): void {
+    private syncHits(
+        hits: readonly { id: string; text: string; offset: number; position: monaco.IPosition }[],
+    ): void {
         const next = new Set(hits.map((hit) => hit.id));
         for (const [id, widget] of this.hits) {
             if (!next.has(id)) {
@@ -1333,11 +1483,18 @@ export class InlinePresentation {
                 stretchToLineHeight: stretchesSelectionLine(viewLine),
             };
         });
-        layoutSelectionPieces(boxes.filter((box) => box.width > 12), lines);
-        const frontMatterRows = [...dom.querySelectorAll<HTMLElement>(".inline-md-front-matter-line")].map((row) => row.getBoundingClientRect());
+        layoutSelectionPieces(
+            boxes.filter((box) => box.width > 12),
+            lines,
+        );
+        const frontMatterRows = [
+            ...dom.querySelectorAll<HTMLElement>(".inline-md-front-matter-line"),
+        ].map((row) => row.getBoundingClientRect());
         for (const viewLine of viewLines) {
             const bounds = viewLine.getBoundingClientRect();
-            const inFrontMatter = frontMatterRows.some((row) => bounds.top < row.bottom - 0.5 && bounds.bottom > row.top + 0.5);
+            const inFrontMatter = frontMatterRows.some(
+                (row) => bounds.top < row.bottom - 0.5 && bounds.bottom > row.top + 0.5,
+            );
             if (!inFrontMatter) {
                 continue;
             }
@@ -1360,16 +1517,24 @@ export class InlinePresentation {
                 }
                 clipSelectionToText(box, textRight, newlinePx);
             }
-            for (const mask of dom.querySelectorAll<HTMLElement>(".cslr.monaco-editor-background")) {
+            for (const mask of dom.querySelectorAll<HTMLElement>(
+                ".cslr.monaco-editor-background",
+            )) {
                 const rect = mask.getBoundingClientRect();
                 const centerY = rect.top + rect.height / 2;
-                if (centerY < bounds.top || centerY >= bounds.bottom || rect.left < textRight - 0.5) {
+                if (
+                    centerY < bounds.top ||
+                    centerY >= bounds.bottom ||
+                    rect.left < textRight - 0.5
+                ) {
                     continue;
                 }
                 mask.style.width = "0px";
             }
         }
-        const pad = headingSelectionPadPx(this.editor.getOption(monaco.editor.EditorOption.fontSize));
+        const pad = headingSelectionPadPx(
+            this.editor.getOption(monaco.editor.EditorOption.fontSize),
+        );
         for (const viewLine of viewLines) {
             const heading = viewLine.querySelector(selectionHeadingSelector);
             if (!(heading instanceof HTMLElement)) {
@@ -1427,9 +1592,9 @@ export class InlinePresentation {
                 if (existing?.id && existing.zone.domNode === zone.zone.domNode) {
                     const line = zone.zone.afterLineNumber;
                     const height = zone.zone.heightInPx;
-                    const moved = existing.placedAfter !== line || (
-                        existing.placedHeight !== undefined && existing.placedHeight !== height
-                    );
+                    const moved =
+                        existing.placedAfter !== line ||
+                        (existing.placedHeight !== undefined && existing.placedHeight !== height);
                     existing.zone.afterLineNumber = line;
                     if (height !== undefined) {
                         existing.zone.heightInPx = height;

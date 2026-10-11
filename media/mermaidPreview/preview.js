@@ -1,28 +1,26 @@
-
 (function () {
     const vscode = acquireVsCodeApi();
 
-    
     const viewport = document.getElementById("viewport");
-    
+
     const canvas = document.getElementById("canvas");
-    
+
     const diagram = document.getElementById("diagram");
-    
+
     const errorEl = document.getElementById("error");
-    
+
     const errorMessageEl = document.getElementById("error-message");
-    
+
     const errorDismissBtn = document.getElementById("error-dismiss");
-    
+
     const zoomOutBtn = document.getElementById("zoom-out");
-    
+
     const zoomFitBtn = document.getElementById("zoom-fit");
-    
+
     const zoomInBtn = document.getElementById("zoom-in");
-    
+
     const copyPngBtn = document.getElementById("copy-png");
-    
+
     const linkTooltipEl = document.getElementById("link-tooltip");
 
     let scale = 1;
@@ -36,9 +34,9 @@
     let currentSource = "";
     let hasRenderedDiagram = false;
     let renderId = 0;
-    
+
     let clickTargetMap = new Map();
-    
+
     let lastLinkClick = { openBeside: false };
     let windowOpenHookInstalled = false;
 
@@ -46,7 +44,6 @@
     const PNG_EXPORT_MIN_SCALE = 2;
     const PNG_EXPORT_MAX_DIMENSION = 8192;
 
-    
     function getPngExportScale(width, height) {
         const baseScale = Math.max(window.devicePixelRatio || 1, PNG_EXPORT_MIN_SCALE);
         const maxDimension = Math.max(width, height);
@@ -77,12 +74,13 @@
         applyTransform();
     }
 
-    
     function svgToPngBytes(svg) {
-        const clone =  (svg.cloneNode(true));
+        const clone = svg.cloneNode(true);
         const viewBox = clone.viewBox?.baseVal;
-        const width = viewBox?.width || clone.width.baseVal.value || svg.getBoundingClientRect().width;
-        const height = viewBox?.height || clone.height.baseVal.value || svg.getBoundingClientRect().height;
+        const width =
+            viewBox?.width || clone.width.baseVal.value || svg.getBoundingClientRect().width;
+        const height =
+            viewBox?.height || clone.height.baseVal.value || svg.getBoundingClientRect().height;
 
         clone.setAttribute("width", String(width));
         clone.setAttribute("height", String(height));
@@ -116,7 +114,9 @@
                         reject(new Error("Could not create PNG"));
                         return;
                     }
-                    blob.arrayBuffer().then((buffer) => resolve(new Uint8Array(buffer))).catch(reject);
+                    blob.arrayBuffer()
+                        .then((buffer) => resolve(new Uint8Array(buffer)))
+                        .catch(reject);
                 }, "image/png");
             };
             image.onerror = () => reject(new Error("Could not load diagram image"));
@@ -139,7 +139,6 @@
         }
     }
 
-    
     function stabilizeSvgSize(svg) {
         const viewBox = svg.viewBox?.baseVal;
         const width = viewBox?.width || svg.width?.baseVal?.value;
@@ -202,7 +201,6 @@
         };
     }
 
-    
     function postOpenLink(href, tooltip, openBeside) {
         vscode.postMessage({
             type: "openLink",
@@ -219,7 +217,6 @@
     const EXTERNAL_HREF_RE = /^(https?:|mailto:)/i;
     const LINK_TOOLTIP_OFFSET_PX = 14;
 
-    
     function parentElementNode(node) {
         const parent = node?.parentNode ?? null;
         return parent instanceof Element ? parent : null;
@@ -233,7 +230,6 @@
         return trimmed.replace(/^\.\//, "");
     }
 
-    
     function parseGblLocationString(value) {
         const trimmed = value.trim();
         if (!trimmed || EXTERNAL_HREF_RE.test(trimmed)) {
@@ -272,7 +268,6 @@
         return { href: trimmedHref, tooltip: trimmedTooltip || trimmedHref };
     }
 
-    
     function resolveHrefWorkspaceLocation(href) {
         const trimmedHref = href.trim();
         if (!trimmedHref || EXTERNAL_HREF_RE.test(trimmedHref)) {
@@ -312,7 +307,6 @@
         return { relativePath: normalizeGblRelativePath(pathPart), line: 1, column: 1 };
     }
 
-    
     function rebuildClickTargetMap(source) {
         clickTargetMap = new Map();
         for (const line of source.split(/\r?\n/)) {
@@ -325,7 +319,6 @@
         }
     }
 
-    
     function getClickTargetEntry(nodeId) {
         const direct = clickTargetMap.get(nodeId);
         if (direct) {
@@ -390,7 +383,6 @@
         }
     }
 
-    
     let linkedNodeHandlerDisposers = [];
 
     function attachLinkedNodeClickHandlers() {
@@ -410,34 +402,31 @@
             }
 
             for (const el of nodesToWire) {
-            
-            const openFromNode = (event) => {
-                if ("button" in event && event.button !== 0) {
-                    return;
-                }
-                const entry = lookupNodeClickTarget(nodeGroup);
-                if (!entry) {
-                    return;
-                }
-                event.preventDefault();
-                event.stopPropagation();
-                lastLinkClick.openBeside = event.ctrlKey || event.metaKey;
-                activateDiagramLink(entry, lastLinkClick.openBeside);
-            };
+                const openFromNode = (event) => {
+                    if ("button" in event && event.button !== 0) {
+                        return;
+                    }
+                    const entry = lookupNodeClickTarget(nodeGroup);
+                    if (!entry) {
+                        return;
+                    }
+                    event.preventDefault();
+                    event.stopPropagation();
+                    lastLinkClick.openBeside = event.ctrlKey || event.metaKey;
+                    activateDiagramLink(entry, lastLinkClick.openBeside);
+                };
 
-            el.addEventListener("click", openFromNode);
-            linkedNodeHandlerDisposers.push(() => {
-                el.removeEventListener("click", openFromNode);
-            });
+                el.addEventListener("click", openFromNode);
+                linkedNodeHandlerDisposers.push(() => {
+                    el.removeEventListener("click", openFromNode);
+                });
             }
         }
     }
 
     function unwrapMermaidNodeAnchors() {
         for (const nodeGroup of diagram.querySelectorAll("g.ib-diagram-link")) {
-            
-            
-            for (const anchor of [...nodeGroup.querySelectorAll("a")]) {
+            for (const anchor of nodeGroup.querySelectorAll("a")) {
                 const parent = anchor.parentNode;
                 if (!parent) {
                     continue;
@@ -450,7 +439,6 @@
         }
     }
 
-    
     function pointerHitLinkedNode(event) {
         const hit = document.elementFromPoint(event.clientX, event.clientY);
         if (!(hit instanceof Element)) {
@@ -470,7 +458,6 @@
         return null;
     }
 
-    
     function pointerEventDiagramTarget(event) {
         const raw = event.target;
         if (raw instanceof Element && raw !== viewport && raw !== canvas && diagram.contains(raw)) {
@@ -483,7 +470,6 @@
         return raw;
     }
 
-    
     function resolveFlowchartNodeIdFromDomId(domId) {
         const trimmed = domId.trim();
         if (!trimmed) {
@@ -496,9 +482,11 @@
         return trimmed;
     }
 
-    
     function findFlowchartNodeGroup(target) {
-        let el = target instanceof Element ? target : parentElementNode(target instanceof Node ? target : null);
+        let el =
+            target instanceof Element
+                ? target
+                : parentElementNode(target instanceof Node ? target : null);
         while (el && el !== diagram) {
             if (el.classList.contains("node")) {
                 return el;
@@ -508,7 +496,6 @@
         return null;
     }
 
-    
     function isUsableDiagramHref(href) {
         const trimmed = href.trim();
         if (!trimmed || trimmed === "#") {
@@ -517,7 +504,6 @@
         return !/^javascript:/i.test(trimmed);
     }
 
-    
     function lookupNodeClickTarget(nodeGroup) {
         const ibNodeId = nodeGroup.getAttribute("data-ib-node-id");
         if (ibNodeId) {
@@ -540,7 +526,6 @@
         return { href: entry.href, tooltip: entry.tooltip };
     }
 
-    
     function resolveClickLinkFromTarget(target) {
         const nodeGroup = findFlowchartNodeGroup(target);
         if (nodeGroup) {
@@ -558,14 +543,15 @@
         return null;
     }
 
-    
     function isInteractiveDiagramTarget(target) {
         return resolveClickLinkFromTarget(target) !== null;
     }
 
-    
     function findClickableLinkElement(target) {
-        let el = target instanceof Element ? target : parentElementNode(target instanceof Node ? target : null);
+        let el =
+            target instanceof Element
+                ? target
+                : parentElementNode(target instanceof Node ? target : null);
         while (el && el !== diagram) {
             const tag = el.localName ?? el.tagName;
             if (tag === "a") {
@@ -579,7 +565,6 @@
         return null;
     }
 
-    
     function getAnchorLink(anchor) {
         const href = anchor.getAttribute("href") ?? anchor.getAttributeNS(XLINK_NS, "href") ?? "";
         const tooltip =
@@ -587,7 +572,6 @@
         return { href, tooltip };
     }
 
-    
     function formatLinkHoverText(tooltip, href) {
         const trimmedTooltip = tooltip?.trim();
         if (trimmedTooltip) {
@@ -624,7 +608,6 @@
         return "";
     }
 
-    
     function stripNativeDiagramTitles(root) {
         const titled = root.querySelectorAll("[title]");
         for (const el of titled) {
@@ -644,7 +627,6 @@
         linkTooltipEl.hidden = true;
     }
 
-    
     function showLinkTooltip(text, clientX, clientY) {
         if (!linkTooltipEl || !text) {
             hideLinkTooltip();
@@ -692,7 +674,7 @@
                 }
                 showLinkTooltip(label, event.clientX, event.clientY);
             },
-            true
+            true,
         );
 
         diagram.addEventListener(
@@ -700,13 +682,12 @@
             () => {
                 hideLinkTooltip();
             },
-            true
+            true,
         );
     }
 
-  
     let pendingDiagramLink = null;
-    
+
     let activeLinkPress = null;
     const DIAGRAM_LINK_DRAG_THRESHOLD_PX = 6;
 
@@ -744,7 +725,7 @@
                 }
                 activeLinkPress = { link: entry, x: event.clientX, y: event.clientY };
             },
-            true
+            true,
         );
 
         window.addEventListener(
@@ -759,7 +740,10 @@
 
                 const dx = event.clientX - press.x;
                 const dy = event.clientY - press.y;
-                if (dx * dx + dy * dy > DIAGRAM_LINK_DRAG_THRESHOLD_PX * DIAGRAM_LINK_DRAG_THRESHOLD_PX) {
+                if (
+                    dx * dx + dy * dy >
+                    DIAGRAM_LINK_DRAG_THRESHOLD_PX * DIAGRAM_LINK_DRAG_THRESHOLD_PX
+                ) {
                     return;
                 }
 
@@ -768,7 +752,7 @@
                 event.stopPropagation();
                 activateDiagramLink(press.link, lastLinkClick.openBeside);
             },
-            true
+            true,
         );
 
         window.addEventListener(
@@ -777,7 +761,7 @@
                 activeLinkPress = null;
                 pendingDiagramLink = null;
             },
-            true
+            true,
         );
     }
 
@@ -790,11 +774,9 @@
                     return;
                 }
                 const link = resolveClickLinkFromTarget(pointerEventDiagramTarget(event));
-                pendingDiagramLink = link
-                    ? { link, x: event.clientX, y: event.clientY }
-                    : null;
+                pendingDiagramLink = link ? { link, x: event.clientX, y: event.clientY } : null;
             },
-            true
+            true,
         );
 
         diagram.addEventListener(
@@ -808,7 +790,10 @@
 
                 const dx = event.clientX - pending.x;
                 const dy = event.clientY - pending.y;
-                if (dx * dx + dy * dy > DIAGRAM_LINK_DRAG_THRESHOLD_PX * DIAGRAM_LINK_DRAG_THRESHOLD_PX) {
+                if (
+                    dx * dx + dy * dy >
+                    DIAGRAM_LINK_DRAG_THRESHOLD_PX * DIAGRAM_LINK_DRAG_THRESHOLD_PX
+                ) {
                     return;
                 }
 
@@ -817,7 +802,7 @@
                 event.stopPropagation();
                 activateDiagramLink(pending.link, lastLinkClick.openBeside);
             },
-            true
+            true,
         );
 
         diagram.addEventListener(
@@ -825,7 +810,7 @@
             () => {
                 pendingDiagramLink = null;
             },
-            true
+            true,
         );
 
         diagram.addEventListener(
@@ -838,7 +823,7 @@
                 event.preventDefault();
                 event.stopPropagation();
             },
-            true
+            true,
         );
     }
 
@@ -847,7 +832,6 @@
     setupDiagramClickDelegation();
     setupLinkTooltipHover();
 
-    
     function isMermaidErrorSvg(svg) {
         if (!svg) {
             return false;
@@ -855,7 +839,6 @@
         return svg.querySelector(".error-icon, .error-text") !== null;
     }
 
-    
     function formatErrorMessage(message) {
         const trimmed = message.trim();
         const withoutVersion = trimmed.replace(/\s*mermaid version\s+[\d.]+/gi, "").trim();
@@ -995,14 +978,13 @@
             scale = nextScale;
             applyTransform();
         },
-        { passive: false }
+        { passive: false },
     );
 
     viewport.addEventListener("dragstart", (event) => {
         event.preventDefault();
     });
 
-    
     function isOverSelectableText(target) {
         if (!(target instanceof Element)) {
             return false;
@@ -1014,17 +996,6 @@
             return true;
         }
         return target.closest("text, foreignObject") !== null;
-    }
-
-    
-    function shouldStartPan(button, target) {
-        if (button === 1) {
-            return true;
-        }
-        if (button === 0 && isInteractiveDiagramTarget(target)) {
-            return false;
-        }
-        return button === 0 && !isOverSelectableText(target);
     }
 
     function shouldStartPanForEvent(event) {

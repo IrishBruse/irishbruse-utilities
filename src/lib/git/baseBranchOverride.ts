@@ -17,13 +17,16 @@ export function getBaseBranchOverride(repoRoot: string): string | undefined {
     return overrides[normalizeRepoRoot(repoRoot)];
 }
 
-export async function setBaseBranchOverride(repoRoot: string, ref: string | undefined): Promise<void> {
+export async function setBaseBranchOverride(
+    repoRoot: string,
+    ref: string | undefined,
+): Promise<void> {
     if (!workspaceState) {
         return;
     }
 
     const key = normalizeRepoRoot(repoRoot);
-    const overrides = { ...(workspaceState.get<Record<string, string>>(OVERRIDE_KEY) ?? {}) };
+    const overrides = { ...workspaceState.get<Record<string, string>>(OVERRIDE_KEY) };
     if (ref) {
         overrides[key] = ref;
     } else {

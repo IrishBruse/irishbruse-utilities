@@ -4,7 +4,7 @@ import { renderMermaidDiagram } from "./mermaid";
 import type { Scope, TextRange } from "../document/types";
 
 export interface BlockZoneHost {
-    onReveal(offset: number): void;
+    onReveal: (offset: number) => void;
     onLink?: (href: string) => void;
     onOpenMermaidPreview?: (openLine: number) => void;
     onLayout(key: string): void;
@@ -17,7 +17,13 @@ export interface BlockZoneRecord {
     readonly zone: monaco.editor.IViewZone;
 }
 
-const INLINE_CELL = new Set<Scope["kind"]>(["strong", "emphasis", "strikethrough", "inlineCode", "link"]);
+const INLINE_CELL = new Set<Scope["kind"]>([
+    "strong",
+    "emphasis",
+    "strikethrough",
+    "inlineCode",
+    "link",
+]);
 
 export function headingLevel(scope: Scope): number {
     const raw = scope.level ?? 1;
@@ -88,8 +94,15 @@ export function tableCellOffset(event: MouseEvent, cell: HTMLElement, fallback: 
     const start = Number(cell.dataset.start);
     const end = Number(cell.dataset.end);
     const caret = caretIn(event.clientX, event.clientY);
-    const fromCaret = caret && cell.contains(caret.node) ? sourceOffsetAt(caret.node, caret.offset) : undefined;
-    if (fromCaret !== undefined && Number.isFinite(start) && Number.isFinite(end) && fromCaret >= start && fromCaret <= end) {
+    const fromCaret =
+        caret && cell.contains(caret.node) ? sourceOffsetAt(caret.node, caret.offset) : undefined;
+    if (
+        fromCaret !== undefined &&
+        Number.isFinite(start) &&
+        Number.isFinite(end) &&
+        fromCaret >= start &&
+        fromCaret <= end
+    ) {
         return fromCaret;
     }
     if (Number.isFinite(start)) {
@@ -98,7 +111,13 @@ export function tableCellOffset(event: MouseEvent, cell: HTMLElement, fallback: 
     return fallback;
 }
 
-function appendFormatted(parent: HTMLElement, source: string, start: number, end: number, scopes: readonly Scope[]): void {
+function appendFormatted(
+    parent: HTMLElement,
+    source: string,
+    start: number,
+    end: number,
+    scopes: readonly Scope[],
+): void {
     const relevant = scopes
         .filter((scope) => INLINE_CELL.has(scope.kind) && scope.start >= start && scope.end <= end)
         .sort((left, right) => left.start - right.start || right.end - left.end);
@@ -160,7 +179,11 @@ function imageLabel(alt: string): string {
     return "Image";
 }
 
-function fallbackElement(alt: string, from: number, onReveal: (offset: number) => void): HTMLSpanElement {
+function fallbackElement(
+    alt: string,
+    from: number,
+    onReveal: (offset: number) => void,
+): HTMLSpanElement {
     const fallback = document.createElement("span");
     fallback.className = "inline-md-image-fallback";
     fallback.textContent = imageLabel(alt);
@@ -173,7 +196,12 @@ function fallbackElement(alt: string, from: number, onReveal: (offset: number) =
     return fallback;
 }
 
-export function blockZone(scope: Scope, from: number, lineNumber: number, host: BlockZoneHost): BlockZoneRecord {
+export function blockZone(
+    scope: Scope,
+    from: number,
+    lineNumber: number,
+    host: BlockZoneHost,
+): BlockZoneRecord {
     if (scope.kind === "thematicBreak") {
         const frame = document.createElement("div");
         frame.className = "inline-md-hr-line";
@@ -281,7 +309,10 @@ export function createMermaidZone(
         host.onOpenMermaidPreview?.(openLine);
     });
     frame.addEventListener("mousedown", (event) => {
-        if (event.target instanceof HTMLElement && event.target.closest(".inline-md-mermaid-open-preview")) {
+        if (
+            event.target instanceof HTMLElement &&
+            event.target.closest(".inline-md-mermaid-open-preview")
+        ) {
             return;
         }
         event.preventDefault();
@@ -325,7 +356,10 @@ export type TableAlign = "left" | "center" | "right";
 export function tableAlignments(source: string, start: number, end: number): TableAlign[] {
     const lines = source.slice(start, end).split(/\r?\n/);
     for (const line of lines) {
-        const parts = line.split("|").map((cell) => cell.trim()).filter((cell) => cell.length > 0);
+        const parts = line
+            .split("|")
+            .map((cell) => cell.trim())
+            .filter((cell) => cell.length > 0);
         if (parts.length === 0 || !parts.every((cell) => /^:?-+:?$/.test(cell))) {
             continue;
         }
@@ -398,11 +432,12 @@ export function tableZone(
     const frame = document.createElement("div");
     frame.className = "inline-md-table";
     frame.addEventListener("mousedown", (event) => {
-        const element = event.target instanceof Element
-            ? event.target
-            : event.target instanceof Node
-                ? event.target.parentElement
-                : null;
+        const element =
+            event.target instanceof Element
+                ? event.target
+                : event.target instanceof Node
+                  ? event.target.parentElement
+                  : null;
         const link = element?.closest(".inline-md-link");
         const href = link instanceof HTMLElement ? link.dataset.href : undefined;
         event.preventDefault();
@@ -412,9 +447,8 @@ export function tableZone(
             return;
         }
         const cell = element?.closest("td, th");
-        const offset = cell instanceof HTMLElement
-            ? tableCellOffset(event, cell, from + 1)
-            : from + 1;
+        const offset =
+            cell instanceof HTMLElement ? tableCellOffset(event, cell, from + 1) : from + 1;
         host.onReveal(offset);
     });
     const table = document.createElement("table");

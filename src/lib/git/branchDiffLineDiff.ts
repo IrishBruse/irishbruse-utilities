@@ -3,12 +3,14 @@ type BasicLineDiffOp =
     | { kind: "insert"; count: number }
     | { kind: "delete"; count: number };
 
-export type LineDiffOp = BasicLineDiffOp | { kind: "replace"; deleteCount: number; insertCount: number };
+export type LineDiffOp =
+    | BasicLineDiffOp
+    | { kind: "replace"; deleteCount: number; insertCount: number };
 
 function lcsTable(baseLines: readonly string[], modLines: readonly string[]): number[][] {
     const rows = baseLines.length + 1;
     const cols = modLines.length + 1;
-    const table = Array.from({ length: rows }, () => new Array<number>(cols).fill(0));
+    const table = Array.from({ length: rows }, () => Array.from({ length: cols }, () => 0));
 
     for (let baseIndex = baseLines.length - 1; baseIndex >= 0; baseIndex--) {
         for (let modIndex = modLines.length - 1; modIndex >= 0; modIndex--) {
@@ -17,7 +19,7 @@ function lcsTable(baseLines: readonly string[], modLines: readonly string[]): nu
             } else {
                 table[baseIndex]![modIndex] = Math.max(
                     table[baseIndex + 1]![modIndex]!,
-                    table[baseIndex]![modIndex + 1]!
+                    table[baseIndex]![modIndex + 1]!,
                 );
             }
         }
@@ -26,7 +28,10 @@ function lcsTable(baseLines: readonly string[], modLines: readonly string[]): nu
     return table;
 }
 
-export function computeLineDiffOps(baseLines: readonly string[], modLines: readonly string[]): LineDiffOp[] {
+export function computeLineDiffOps(
+    baseLines: readonly string[],
+    modLines: readonly string[],
+): LineDiffOp[] {
     const table = lcsTable(baseLines, modLines);
     const ops: BasicLineDiffOp[] = [];
     let baseIndex = 0;
@@ -97,7 +102,7 @@ export function replacementTextForModifiedLineRange(
     modLines: readonly string[],
     startLine: number,
     endLine: number,
-    eol: string
+    eol: string,
 ): string {
     const ops = computeLineDiffOps(baseLines, modLines);
     const chunks: string[] = [];

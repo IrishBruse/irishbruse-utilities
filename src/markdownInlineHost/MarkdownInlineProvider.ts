@@ -96,8 +96,8 @@ function getEditorHtml(
     <meta name="inline-md-message-secret" content="${messageSecret}" />
     <meta name="inline-md-worker" content="${workerUri.toString().replace(/&/g, "&amp;").replace(/"/g, "&quot;")}" />
     <meta id="inline-md-state" content="${initialState}" />
-    <base href="${baseUri}" />
-    <link rel="stylesheet" href="${styleUri}" />
+    <base href="${baseUri.toString()}" />
+    <link rel="stylesheet" href="${styleUri.toString()}" />
     <style>
         :root {
             ${colorVars}
@@ -107,7 +107,7 @@ function getEditorHtml(
 </head>
 <body>
     <div id="editor"></div>
-    <script nonce="${nonce}" type="module" src="${scriptUri}"></script>
+    <script nonce="${nonce}" type="module" src="${scriptUri.toString()}"></script>
 </body>
 </html>`;
 }

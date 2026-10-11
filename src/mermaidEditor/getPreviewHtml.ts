@@ -23,7 +23,7 @@ export function getPreviewHtml(webview: Webview, context: ExtensionContext, nonc
     <meta charset="UTF-8" />
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src ${cspSource} 'unsafe-inline'; script-src 'nonce-${nonce}'; img-src data: blob:;" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="${styleUri}" />
+    <link rel="stylesheet" href="${styleUri.toString()}" />
     <title>Mermaid Preview</title>
 </head>
 <body>
@@ -51,9 +51,9 @@ export function getPreviewHtml(webview: Webview, context: ExtensionContext, nonc
         <span id="error-message" class="error-message"></span>
         <button type="button" id="error-dismiss" class="error-dismiss" title="Dismiss" aria-label="Dismiss error">&times;</button>
     </div>
-    <script nonce="${nonce}" src="${mermaidUri}"></script>
-    <script nonce="${nonce}" src="${themeUri}"></script>
-    <script nonce="${nonce}" src="${scriptUri}"></script>
+    <script nonce="${nonce}" src="${mermaidUri.toString()}"></script>
+    <script nonce="${nonce}" src="${themeUri.toString()}"></script>
+    <script nonce="${nonce}" src="${scriptUri.toString()}"></script>
 </body>
 </html>`;
 }

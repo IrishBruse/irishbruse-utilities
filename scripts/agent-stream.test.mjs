@@ -14,11 +14,17 @@ function capture(lines) {
     return { text, printer };
 }
 
-test("streams assistant text and tool lines", () => {
+void test("streams assistant text and tool lines", () => {
     const { text } = capture([
         JSON.stringify({ type: "system", subtype: "init", model: "Composer" }),
-        JSON.stringify({ type: "user", message: { content: [{ type: "text", text: "hidden prompt" }] } }),
-        JSON.stringify({ type: "assistant", message: { content: [{ type: "text", text: "Hel" }] } }),
+        JSON.stringify({
+            type: "user",
+            message: { content: [{ type: "text", text: "hidden prompt" }] },
+        }),
+        JSON.stringify({
+            type: "assistant",
+            message: { content: [{ type: "text", text: "Hel" }] },
+        }),
         JSON.stringify({ type: "assistant", message: { content: [{ type: "text", text: "lo" }] } }),
         JSON.stringify({
             type: "tool_call",
@@ -28,21 +34,25 @@ test("streams assistant text and tool lines", () => {
         JSON.stringify({
             type: "tool_call",
             subtype: "completed",
-            tool_call: { shellToolCall: { args: { command: "git status" }, result: { success: {} } } },
+            tool_call: {
+                shellToolCall: { args: { command: "git status" }, result: { success: {} } },
+            },
         }),
-        JSON.stringify({ type: "result", subtype: "success", is_error: false, duration_ms: 4200, result: "Hello" }),
+        JSON.stringify({
+            type: "result",
+            subtype: "success",
+            is_error: false,
+            duration_ms: 4200,
+            result: "Hello",
+        }),
     ]);
-    assert.equal(text, [
-        "model  Composer",
-        "Hello",
-        "→ Shell  git status",
-        "← Shell",
-        "done  4.2s",
-        "",
-    ].join("\n"));
+    assert.equal(
+        text,
+        ["model  Composer", "Hello", "→ Shell  git status", "← Shell", "done  4.2s", ""].join("\n"),
+    );
 });
 
-test("marks a failed result", () => {
+void test("marks a failed result", () => {
     const { text, printer } = capture([
         JSON.stringify({ type: "result", subtype: "error", is_error: true, result: "boom" }),
     ]);

@@ -1,7 +1,7 @@
 function channelByte(raw: string): number {
     const trimmed = raw.trim();
     const value = trimmed.endsWith("%")
-        ? Number(trimmed.slice(0, -1)) / 100 * 255
+        ? (Number(trimmed.slice(0, -1)) / 100) * 255
         : Number(trimmed);
     if (!Number.isFinite(value)) {
         return Number.NaN;
@@ -11,9 +11,7 @@ function channelByte(raw: string): number {
 
 function alphaByte(raw: string): number {
     const trimmed = raw.trim();
-    const value = trimmed.endsWith("%")
-        ? Number(trimmed.slice(0, -1)) / 100
-        : Number(trimmed);
+    const value = trimmed.endsWith("%") ? Number(trimmed.slice(0, -1)) / 100 : Number(trimmed);
     if (!Number.isFinite(value)) {
         return Number.NaN;
     }
@@ -28,12 +26,14 @@ export function toMonacoColor(value: string): string | undefined {
     const trimmed = value.trim();
     const short = trimmed.match(/^#([0-9a-fA-F]{3,4})$/);
     if (short) {
-        return `#${[...short[1]].map((digit) => digit + digit).join("")}`;
+        return `#${short[1].replace(/(.)/g, "$1$1")}`;
     }
     if (/^#[0-9a-fA-F]{6}(?:[0-9a-fA-F]{2})?$/.test(trimmed)) {
         return trimmed;
     }
-    const rgb = trimmed.match(/^rgba?\(\s*([^,)\s]+)\s*,\s*([^,)\s]+)\s*,\s*([^,)\s]+)(?:\s*,\s*([^)]+))?\s*\)$/i);
+    const rgb = trimmed.match(
+        /^rgba?\(\s*([^,)\s]+)\s*,\s*([^,)\s]+)\s*,\s*([^,)\s]+)(?:\s*,\s*([^)]+))?\s*\)$/i,
+    );
     if (!rgb) {
         return undefined;
     }

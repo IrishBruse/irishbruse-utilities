@@ -1,16 +1,14 @@
-export function changelogPrompt(version, history) {
+export function changelogInstructions(version, history) {
     return [
-        `Write ## ${version} in CHANGELOG.md. Be fast. Stop when that section is saved.`,
-        "Read CHANGELOG.md only. Do not open, search, or read any other file.",
-        "Do not run git. The history since the previous release is below.",
-        `If ## ${version} is missing, add it immediately below ## Unreleased.`,
+        `CHANGELOG.md is missing a "## ${version}" section.`,
+        `Add it directly below "## Unreleased", then run the release again.`,
+        "",
         "One bullet per theme. Prefixes: **Add** / **Fix** / **Remove** / **Change**.",
         "Drop refactors, tests, dev tooling, and agent churn unless users see it.",
-        "Patch: 1–3 bullets. Minor: 3–8 bullets.",
-        `Move reviewed bullets under ## ${version}. Leave ## Unreleased empty.`,
-        "Do not edit README.md. Do not commit. Do not change package.json or package-lock.json.",
+        "Patch: 1-3 bullets. Minor: 3-8 bullets.",
+        "Do not edit README.md, package.json, or package-lock.json.",
         "",
-        "Git history:",
+        "Git history since the previous release:",
         history.length > 0 ? history : "(no commits since the previous release)",
     ].join("\n");
 }

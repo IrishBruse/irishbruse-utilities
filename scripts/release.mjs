@@ -1,12 +1,11 @@
 import { InteractiveBrowserCredential } from "@azure/identity";
-import { execSync, spawn } from "node:child_process";
+import { execSync } from "node:child_process";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
 import { dirname, join } from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
-import { createAgentPrinter } from "./agent-stream.mjs";
-import { changelogPrompt } from "./release-prompts.mjs";
+import { changelogInstructions } from "./release-prompts.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const semverPattern = /^\d+\.\d+\.\d+(-[\w.]+)?$/;
@@ -89,17 +88,6 @@ function parseArgs(argv) {
     return { versionArg, publishOnly };
 }
 
-function assertChangelog(version) {
-    const changelog = readFileSync(join(root, "CHANGELOG.md"), "utf8");
-    const section = `## ${version}`;
-
-    if (!changelog.includes(section)) {
-        throw new Error(
-            `CHANGELOG.md is missing a "${section}" section. Update the changelog before running release.`,
-        );
-    }
-}
-
 function changelogHasVersion(version) {
     return readText("CHANGELOG.md").includes(`## ${version}`);
 }
@@ -122,76 +110,17 @@ function changelogHistory() {
     return execSync(`git log --oneline ${rev}..HEAD`, { cwd: root, encoding: "utf8" }).trim();
 }
 
-function runAgent(prompt) {
-    console.log("\n> agent --print --output-format stream-json (release)");
-    return new Promise((resolve, reject) => {
-        const child = spawn(
-            "agent",
-            [
-                "--print",
-                "--trust",
-                "--force",
-                "--model",
-                "composer-2.5",
-                "--output-format",
-                "stream-json",
-                "--stream-partial-output",
-                prompt,
-            ],
-            {
-                cwd: root,
-                stdio: ["ignore", "pipe", "inherit"],
-            },
-        );
-        const printer = createAgentPrinter(
-            (chunk) => {
-                process.stdout.write(chunk);
-            },
-            { color: process.stdout.isTTY === true },
-        );
-        let buffer = "";
-        child.stdout.setEncoding("utf8");
-        child.stdout.on("data", (chunk) => {
-            buffer += chunk;
-            const lines = buffer.split("\n");
-            buffer = lines.pop() ?? "";
-            for (const line of lines) {
-                if (line.trim().length === 0) {
-                    continue;
-                }
-                printer.writeLine(line);
-            }
-        });
-        child.on("error", reject);
-        child.on("close", (status) => {
-            if (buffer.trim().length > 0) {
-                printer.writeLine(buffer);
-            }
-            printer.finish();
-            if (printer.failed) {
-                reject(new Error(printer.failureMessage));
-                return;
-            }
-            if (status !== 0) {
-                reject(new Error("Command failed: agent --print (release)"));
-                return;
-            }
-            resolve();
-        });
-    });
-}
-
-async function ensureChangelog(version) {
+function ensureChangelog(version) {
     if (changelogHasVersion(version)) {
         return;
     }
 
-    await runAgent(changelogPrompt(version, changelogHistory()));
-    assertChangelog(version);
+    console.error(`\n${changelogInstructions(version, changelogHistory())}`);
+    process.exit(1);
 }
 
-async function prepareForStamp(version) {
-    await ensureChangelog(version);
+function prepareForStamp(version) {
+    ensureChangelog(version);
     run("npm run verify");
 }
 
@@ -382,7 +311,7 @@ async function main() {
 
         if (publishOnly && !isRetry) {
             console.log(`Preparing and publishing ${version}`);
-            await prepareForStamp(version);
+            prepareForStamp(version);
             stampVersion(version);
             await doPublish(version);
             published = true;
@@ -395,7 +324,7 @@ async function main() {
         }
 
         console.log(`Preparing ${version}`);
-        await prepareForStamp(version);
+        prepareForStamp(version);
         stampVersion(version);
 
         const approved = await promptPublish(version);

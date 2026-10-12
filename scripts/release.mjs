@@ -6,6 +6,7 @@ import { dirname, join } from "node:path";
 import { stdin as input, stdout as output } from "node:process";
 import { fileURLToPath } from "node:url";
 import { changelogInstructions } from "./release-prompts.mjs";
+import { select } from "./select.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const semverPattern = /^\d+\.\d+\.\d+(-[\w.]+)?$/;
@@ -127,21 +128,19 @@ function prepareForStamp(version) {
 async function promptVersionBump(current) {
     const nextMinor = nextVersion(current, "minor");
     const nextPatch = nextVersion(current, "patch");
+    const choice = await select(`Current version is ${current}. Which release bump?`, [
+        { label: `Minor (${nextMinor})`, value: "minor" },
+        { label: `Patch (${nextPatch})`, value: "patch" },
+        { label: "Custom version", value: "custom" },
+    ]);
+
+    if (choice !== "custom") {
+        return choice;
+    }
+
     const rl = createInterface({ input, output });
-
-    console.log(`\nCurrent version is ${current}. Which release bump?`);
-    console.log(`  1) Minor (${nextMinor})`);
-    console.log(`  2) Patch (${nextPatch})`);
-    const answer = (await rl.question("Enter 1, 2, or an explicit semver: ")).trim();
+    const answer = (await rl.question("Enter semver: ")).trim();
     rl.close();
-
-    if (answer === "1") {
-        return "minor";
-    }
-
-    if (answer === "2") {
-        return "patch";
-    }
 
     if (semverPattern.test(answer)) {
         return answer;
@@ -247,7 +246,12 @@ function releaseFiles() {
         files.push("README.md");
     }
 
-    for (const path of ["scripts/release.mjs", "scripts/release-prompts.mjs", "AGENTS.md"]) {
+    for (const path of [
+        "scripts/release.mjs",
+        "scripts/release-prompts.mjs",
+        "scripts/select.mjs",
+        "AGENTS.md",
+    ]) {
         if (existsSync(join(root, path)) && fileChanged(path)) {
             files.push(path);
         }

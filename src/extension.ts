@@ -1,4 +1,4 @@
-import { ExtensionContext, Uri, window } from "vscode";
+import { ExtensionContext, window } from "vscode";
 import { activateDiskEditorConflict } from "./diskConflict/activateDiskEditorConflict";
 import { activateBranchDiffRevert } from "./lib/git/branchDiffRevert";
 import { syncBranchDiffWorkingTreeFiles } from "./lib/git/branchDiffFiles";
@@ -9,7 +9,7 @@ import { openMermaidSource } from "./commands/openMermaidSource";
 import { relativeGoTo } from "./commands/relativeGoTo";
 import { terminalPaste } from "./commands/terminalPaste";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
-import { registerMarkdownInlineEditor } from "./markdownInlineHost";
+import { registerMarkdownInlineEditor } from "./markdownInline/host";
 import { registerMermaidCustomEditor } from "./mermaidEditor/MermaidCustomEditorProvider";
 import { registerMarkdownMermaidFeatures } from "./mermaidEditor/registerMarkdownMermaid";
 import { LocalPortsViewProvider } from "./ports/LocalPortsView";
@@ -17,17 +17,11 @@ import { SnippetViewProvider } from "./snippetEditor/SnippetView";
 import { copyScmResourcePath, copyScmResourceRelativePath } from "./scm/copyResourcePath";
 import { copyGithubHeadFileUrl } from "./scm/copyGithubHeadFileUrl";
 import { registerCommandIB } from "./lib/vscode/vscode";
+import { setStoragePaths } from "./lib/vscode/storagePaths";
 import { Commands } from "./constants";
 
-export let UserPath: string = null!;
-export let SnippetsPath: string = null!;
-
 export function activate(context: ExtensionContext) {
-    const userFolderUri = Uri.joinPath(context.globalStorageUri, "../..");
-    UserPath = userFolderUri.fsPath;
-
-    const snippetsFolderUri = Uri.joinPath(userFolderUri, "snippets");
-    SnippetsPath = snippetsFolderUri.fsPath;
+    setStoragePaths(context.globalStorageUri);
 
     registerCommandIB(Commands.RelativeGoTo, relativeGoTo, context);
     registerCommandIB(Commands.TerminalPaste, terminalPaste, context);
@@ -45,7 +39,9 @@ export function activate(context: ExtensionContext) {
     SnippetViewProvider.activate(context);
     activateDiskEditorConflict(context);
     activateBranchDiffRevert(context);
-    context.subscriptions.push(window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()));
+    context.subscriptions.push(
+        window.tabGroups.onDidChangeTabs(() => syncBranchDiffWorkingTreeFiles()),
+    );
     GitHelpersViewProvider.activate(context);
     LocalPortsViewProvider.activate(context);
 }

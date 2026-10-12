@@ -7,7 +7,7 @@ const setActiveTab = (activeTab: { input: unknown } | undefined): void => {
     (window.tabGroups as unknown as { activeTabGroup: unknown }).activeTabGroup = { activeTab };
 };
 
-describe("markdownInlineHost/getActiveMarkdownUri", () => {
+describe("markdownInline/host/getActiveMarkdownUri", () => {
     beforeEach(() => {
         vi.mocked(window).activeTextEditor = undefined;
         setActiveTab(undefined);

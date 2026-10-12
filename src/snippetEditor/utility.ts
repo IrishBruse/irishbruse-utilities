@@ -2,9 +2,9 @@ import { readFileSync } from "fs";
 import { readdir } from "fs/promises";
 import path from "path";
 import { Range, TabInputText, Uri, ViewColumn, window, workspace } from "vscode";
-import { UserPath } from "../extension";
+import { UserPath } from "../lib/vscode/storagePaths";
 import { getLineCommentSyntax } from "../lib/languages/languages";
-import { Snippet, Snippets } from "./SnippetView";
+import { Snippet, Snippets } from "./types";
 
 export const GeneratedMap = getGeneratedIdMappings();
 
@@ -116,7 +116,10 @@ export function getSnippetsFile(languageId: string): Snippets {
     return JSON.parse(stripJsonComments(content)) as Snippets;
 }
 
-export async function setSnippetsByLanguageId(languageId: string, snippets: Snippets): Promise<void> {
+export async function setSnippetsByLanguageId(
+    languageId: string,
+    snippets: Snippets,
+): Promise<void> {
     const snippetPath = path.join(UserPath, "snippets", `${languageId}.json`);
     await updateSnippetFile(Uri.file(snippetPath), JSON.stringify(snippets, null, 2));
 }
@@ -143,12 +146,18 @@ export function getGeneratedIdMappings(): Record<string, string[]> {
                 .filter(Boolean);
             return acc;
         },
-        {} as Record<string, string[]>
+        {} as Record<string, string[]>,
     );
 }
 
-export async function generateSnippetsForLanguage(languageId: string, dependencies: string[] = []): Promise<void> {
-    const generatedSnippets = dependencies.reduce<Snippets>((acc, dep) => ({ ...acc, ...getSnippetsFile(dep) }), {});
+export async function generateSnippetsForLanguage(
+    languageId: string,
+    dependencies: string[] = [],
+): Promise<void> {
+    const generatedSnippets = dependencies.reduce<Snippets>(
+        (acc, dep) => ({ ...acc, ...getSnippetsFile(dep) }),
+        {},
+    );
     await setSnippetsByLanguageId(languageId, generatedSnippets);
 }
 
@@ -198,9 +207,14 @@ export class SnippetParser {
     static async parse(text: string): Promise<Snippet | null> {
         const lines = text.split("\n");
 
-        const languageId = SnippetParser.extractDirective(lines[0], SnippetParser.directive("languageId"));
+        const languageId = SnippetParser.extractDirective(
+            lines[0],
+            SnippetParser.directive("languageId"),
+        );
         if (!languageId) {
-            void window.showErrorMessage(`missing ${SnippetParser.directive("languageId")} directive`);
+            void window.showErrorMessage(
+                `missing ${SnippetParser.directive("languageId")} directive`,
+            );
             return null;
         }
 
@@ -210,8 +224,11 @@ export class SnippetParser {
             return null;
         }
 
-        const description = SnippetParser.extractDirective(lines[2], SnippetParser.directive("description")) ?? "";
-        const fileTemplate = SnippetParser.extractDirective(lines[3], SnippetParser.directive("isFileTemplate")) ?? "";
+        const description =
+            SnippetParser.extractDirective(lines[2], SnippetParser.directive("description")) ?? "";
+        const fileTemplate =
+            SnippetParser.extractDirective(lines[3], SnippetParser.directive("isFileTemplate")) ??
+            "";
 
         const c = await getLineCommentSyntax(languageId);
         let startLine = 0;

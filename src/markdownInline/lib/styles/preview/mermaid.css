@@ -38,6 +38,11 @@
     text-decoration: underline;
 }
 
+.inline-md-mermaid-diagram .node,
+.inline-md-mermaid-diagram .node * {
+    cursor: pointer;
+}
+
 .inline-md-mermaid-diagram {
     overflow: visible;
     max-width: 100%;

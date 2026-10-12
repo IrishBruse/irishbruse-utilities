@@ -4,18 +4,18 @@ description: "Inline Markdown editor and playground work under src/markdownInlin
 ---
 
 Scope editor behavior to `src/markdownInline`.
-VS Code host integration lives in `src/markdownInlineHost`.
-Imports from `lib/` stay inside this package. `npm run lint:boundaries` enforces that rule and playground entry-point imports.
+VS Code host integration lives in `src/markdownInline/host`.
+Imports from `lib/` stay inside this package. `npm run lint` at the repo root enforces that rule and playground entry-point imports.
 
 ## Modules
 
-| Behavior | File |
-| --- | --- |
-| Which mark is raw or hidden | `lib/visibility.ts`, `lib/reveal.ts` |
-| Rule, image, and table zones | `lib/preview/blockZone.ts` |
-| Bullets and task marks | `lib/decorations.ts`, `lib/styles/preview/list.css` |
-| Caret and click | `lib/editor.ts`, `lib/selection.ts` |
-| 10px `.cslr.selected-text` corner. The next `.cslr.monaco-editor-background` covers it | `lib/styles/monaco/view-layers.css` |
+| Behavior                                                                               | File                                                |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------- |
+| Which mark is raw or hidden                                                            | `lib/visibility.ts`, `lib/reveal.ts`                |
+| Rule, image, and table zones                                                           | `lib/preview/blockZone.ts`                          |
+| Bullets and task marks                                                                 | `lib/decorations.ts`, `lib/styles/preview/list.css` |
+| Caret and click                                                                        | `lib/editor.ts`, `lib/selection.ts`                 |
+| 10px `.cslr.selected-text` corner. The next `.cslr.monaco-editor-background` covers it | `lib/styles/monaco/view-layers.css`                 |
 
 Keep the mask `z-index` above `.selected-text`.
 

@@ -20,8 +20,9 @@ import {
     workspace,
 } from "vscode";
 import { Commands, Views } from "../constants";
-import { SnippetsPath } from "../extension";
+import { SnippetsPath } from "../lib/vscode/storagePaths";
 import { registerCommandIB } from "../lib/vscode/vscode";
+import { Snippet, SnippetOpenCommandArgs, Snippets } from "./types";
 import {
     GeneratedMap,
     generateSnippetsForLanguage,
@@ -39,18 +40,6 @@ const snippetDir = path.join(os.tmpdir(), "ib-utilities_snippet-editor");
 if (!existsSync(snippetDir)) {
     mkdirSync(snippetDir);
 }
-
-export type Snippet = {
-    languageId: string;
-    prefix?: string;
-    body: string[];
-    isFileTemplate?: boolean;
-    description?: string;
-};
-
-export type Snippets = Record<string, Snippet>;
-
-export type SnippetOpenCommandArgs = [key: string, snippet: Snippet];
 
 const GENERATED_LABEL = "(generated)";
 const ICON_SNIPPET = "symbol-snippet";

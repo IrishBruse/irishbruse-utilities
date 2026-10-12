@@ -3,7 +3,7 @@ import {
     getActiveMarkdownUri,
     MARKDOWN_INLINE_VIEW_TYPE,
     shouldUseMarkdownCustomEditor,
-} from "../markdownInlineHost";
+} from "../markdownInline/host";
 
 export async function openMarkdownInline(): Promise<void> {
     const uri = getActiveMarkdownUri();

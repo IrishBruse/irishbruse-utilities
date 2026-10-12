@@ -14,5 +14,13 @@
         "sourceMap": true,
         "types": ["vite/client", "node"]
     },
-    "include": ["*.ts", "lib/**/*.ts", "lib/**/*.d.ts", "playground/**/*.ts", "playground/**/*.d.ts", "tests/**/*.ts"]
+    "include": [
+        "*.ts",
+        "host/**/*.ts",
+        "lib/**/*.ts",
+        "lib/**/*.d.ts",
+        "playground/**/*.ts",
+        "playground/**/*.d.ts",
+        "tests/**/*.ts"
+    ]
 }

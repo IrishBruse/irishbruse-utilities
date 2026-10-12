@@ -14,7 +14,7 @@ import {
     window,
     workspace,
 } from "vscode";
-import { Commands } from "../constants";
+import { Commands } from "../../constants";
 import {
     getMarkdownInlineEditorColors,
     markdownInlineEditorColorsCssVars,

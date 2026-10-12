@@ -1,5 +1,26 @@
 import { defineConfig } from "vite-plus";
 
+const boundaryOptions = {
+    packagesRoot: "src",
+    packages: ["markdownInline"],
+    features: [
+        "clipboard",
+        "diskConflict",
+        "gitHelpers",
+        "markdownInline",
+        "mermaidEditor",
+        "ports",
+        "scm",
+        "snippetEditor",
+        "test",
+    ],
+    testsFolder: "tests",
+    playgroundFolder: "playground",
+    excludeExtensions: [".css", ".ttf", ".woff", ".woff2", ".svg", ".png", ".md"],
+    excludeFolders: ["node_modules"],
+    contained: { package: "markdownInline", folder: "lib", sharedRoots: ["lib"] },
+};
+
 export default defineConfig({
     staged: {
         "*": "vp check --fix",
@@ -48,7 +69,7 @@ export default defineConfig({
     },
     fmt: {},
     lint: {
-        plugins: ["oxc", "typescript", "unicorn"],
+        plugins: ["oxc", "typescript", "unicorn", "import"],
         categories: {
             correctness: "warn",
         },
@@ -130,6 +151,12 @@ export default defineConfig({
             "use-isnan": "error",
             "valid-typeof": "error",
             "vite-plus/prefer-vite-plus-imports": "error",
+            "import/no-cycle": "error",
+            "boundaries/entry-point-boundary": ["error", boundaryOptions],
+            "boundaries/no-cross-feature": ["error", boundaryOptions],
+            "boundaries/tests-through-entrypoints": ["error", boundaryOptions],
+            "boundaries/playground-through-entrypoints": ["error", boundaryOptions],
+            "boundaries/lib-contained": ["error", boundaryOptions],
         },
         overrides: [
             {
@@ -388,6 +415,10 @@ export default defineConfig({
             {
                 name: "vite-plus",
                 specifier: "vite-plus/oxlint-plugin",
+            },
+            {
+                name: "boundaries",
+                specifier: "./lint/dependencyBoundaries.js",
             },
         ],
     },

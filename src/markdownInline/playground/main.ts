@@ -3,7 +3,7 @@ import { mountInlineEditor } from "..";
 import { isSkillMarkdownPath } from "../skill";
 
 const DOCS_PREFIX = "../../../docs/tests/markdown/";
-const TESTS_PREFIX = "../tests/";
+const LIB_PREFIX = "../lib/";
 const DEFAULT_FIXTURE = "playground.md";
 
 const docsLoaders = import.meta.glob("../../../docs/tests/markdown/**/*.md", {
@@ -11,7 +11,7 @@ const docsLoaders = import.meta.glob("../../../docs/tests/markdown/**/*.md", {
     import: "default",
 });
 
-const testLoaders = import.meta.glob("../tests/**/fixtures/**/*.md", {
+const testLoaders = import.meta.glob("../lib/**/test/fixtures/**/*.md", {
     query: "?raw",
     import: "default",
 });
@@ -26,17 +26,20 @@ interface Fixture {
     id: string;
     load: () => Promise<string>;
     directory: "docs" | "tests";
+    root: "docs" | "lib";
 }
 
 function collectFixtures(
     loaders: Record<string, unknown>,
     prefix: string,
     directory: Fixture["directory"],
+    root: Fixture["root"],
 ): Fixture[] {
     return Object.entries(loaders).map(([key, load]) => ({
         id: key.startsWith(prefix) ? key.slice(prefix.length) : key,
         load: load as () => Promise<string>,
         directory,
+        root,
     }));
 }
 
@@ -61,7 +64,11 @@ function openPlaygroundLink(href: string, baseUrl: string, fixtures: readonly Fi
     window.open(resolved.href, "_blank", "noopener");
 }
 
-function fillFixtureSelect(select: HTMLSelectElement, fixtures: readonly Fixture[], selectedId: string): void {
+function fillFixtureSelect(
+    select: HTMLSelectElement,
+    fixtures: readonly Fixture[],
+    selectedId: string,
+): void {
     select.replaceChildren();
     for (const fixture of fixtures) {
         const option = document.createElement("option");
@@ -81,13 +88,13 @@ function setSourcePressed(source: HTMLElement, directory: Fixture["directory"]):
 }
 
 function documentUrl(fixture: Fixture): string {
-    const root = fixture.directory === "docs" ? __DOCS_MARKDOWN_FS__ : __INLINE_TESTS_FS__;
+    const root = fixture.root === "docs" ? __DOCS_MARKDOWN_FS__ : __INLINE_LIB_FS__;
     return new URL(`/@fs${root}/${fixture.id}`, window.location.origin).href;
 }
 
 async function main(): Promise<void> {
     const byName = (left: Fixture, right: Fixture) => left.id.localeCompare(right.id);
-    const docs = collectFixtures(docsLoaders, DOCS_PREFIX, "docs").sort((left, right) => {
+    const docs = collectFixtures(docsLoaders, DOCS_PREFIX, "docs", "docs").sort((left, right) => {
         if (left.id === DEFAULT_FIXTURE) {
             return -1;
         }
@@ -96,14 +103,21 @@ async function main(): Promise<void> {
         }
         return byName(left, right);
     });
-    const tests = collectFixtures(testLoaders, TESTS_PREFIX, "tests").sort(byName);
+    const tests = collectFixtures(testLoaders, LIB_PREFIX, "tests", "lib").sort(byName);
     const fixtures = [...docs, ...tests];
     const requested = new URLSearchParams(window.location.search).get("fixture") ?? DEFAULT_FIXTURE;
-    const selected = fixtures.find((fixture) => fixture.id === requested) ?? fixtures.find((fixture) => fixture.id === DEFAULT_FIXTURE);
+    const selected =
+        fixtures.find((fixture) => fixture.id === requested) ??
+        fixtures.find((fixture) => fixture.id === DEFAULT_FIXTURE);
     const parent = document.querySelector("#editor");
     const select = document.querySelector("#fixture");
     const source = document.querySelector("#source");
-    if (!(parent instanceof HTMLElement) || !(select instanceof HTMLSelectElement) || !(source instanceof HTMLElement) || !selected) {
+    if (
+        !(parent instanceof HTMLElement) ||
+        !(select instanceof HTMLSelectElement) ||
+        !(source instanceof HTMLElement) ||
+        !selected
+    ) {
         throw new Error("Inline markdown playground failed to start");
     }
 
@@ -112,7 +126,12 @@ async function main(): Promise<void> {
     setSourcePressed(source, selected.directory);
     source.addEventListener("click", (event) => {
         const button = event.target instanceof HTMLButtonElement ? event.target : null;
-        const directory = button?.dataset.source === "tests" ? "tests" : button?.dataset.source === "docs" ? "docs" : undefined;
+        const directory =
+            button?.dataset.source === "tests"
+                ? "tests"
+                : button?.dataset.source === "docs"
+                  ? "docs"
+                  : undefined;
         if (!directory || directory === selected.directory) {
             return;
         }

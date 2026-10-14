@@ -12,7 +12,7 @@ interface BootState {
     content: string;
     documentVersion: number;
     documentUrl: string;
-    "readonly": boolean;
+    readonly: boolean;
     skillFrontMatter?: boolean;
 }
 
@@ -21,10 +21,12 @@ function isBootState(value: unknown): value is BootState {
         return false;
     }
     const record = value as Record<string, unknown>;
-    return typeof record.content === "string"
-        && typeof record.documentVersion === "number"
-        && typeof record.readonly === "boolean"
-        && typeof record.documentUrl === "string";
+    return (
+        typeof record.content === "string" &&
+        typeof record.documentVersion === "number" &&
+        typeof record.readonly === "boolean" &&
+        typeof record.documentUrl === "string"
+    );
 }
 
 function readBootState(): BootState {

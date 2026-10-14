@@ -7,7 +7,6 @@ const packageDir = dirname(fileURLToPath(import.meta.url));
 const outDir = join(packageDir, "..", "..", "media", "markdownInline");
 const isWatch = process.argv.includes("--watch");
 
-
 const editorConfig = {
     absWorkingDir: packageDir,
     entryPoints: { editor: "lib/webview.ts" },
@@ -24,7 +23,6 @@ const editorConfig = {
     },
     logLevel: "info",
 };
-
 
 const workerConfig = {
     absWorkingDir: packageDir,

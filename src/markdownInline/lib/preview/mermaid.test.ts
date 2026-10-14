@@ -382,13 +382,3 @@ describe("renderMermaidDiagram", () => {
         expect(other.textContent).toBe("Mermaid render failed: boom");
     });
 });
-
-describe("isMermaidCodeBlock", () => {
-    it("accepts only a mermaid language id", async () => {
-        const { isMermaidCodeBlock } = await import("./mermaid");
-        expect(isMermaidCodeBlock(undefined)).toBe(false);
-        expect(isMermaidCodeBlock("")).toBe(false);
-        expect(isMermaidCodeBlock("  Mermaid  ")).toBe(true);
-        expect(isMermaidCodeBlock("graph")).toBe(false);
-    });
-});

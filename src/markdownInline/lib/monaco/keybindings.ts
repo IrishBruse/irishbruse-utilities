@@ -18,10 +18,12 @@ function wrapSelection(
     const rangeEnd = wrapped ? endOffset + after.length : endOffset;
     const start = model.getPositionAt(rangeStart);
     const end = model.getPositionAt(rangeEnd);
-    editor.executeEdits("inline-md-wrap", [{
-        range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
-        text,
-    }]);
+    editor.executeEdits("inline-md-wrap", [
+        {
+            range: new monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
+            text,
+        },
+    ]);
     if (wrapped) {
         return monaco.Selection.fromPositions(
             model.getPositionAt(startOffset - before.length),
@@ -48,7 +50,9 @@ function wrapSelections(
         return;
     }
     const ordered = [...selections].sort((left, right) => {
-        return model.getOffsetAt(right.getStartPosition()) - model.getOffsetAt(left.getStartPosition());
+        return (
+            model.getOffsetAt(right.getStartPosition()) - model.getOffsetAt(left.getStartPosition())
+        );
     });
     const next: monaco.Selection[] = [];
     for (const selection of ordered) {
@@ -63,13 +67,15 @@ function wrapSelections(
     }
 }
 
-function installHostPaste(
-    editor: monaco.editor.IStandaloneCodeEditor,
-): () => void {
+function installHostPaste(editor: monaco.editor.IStandaloneCodeEditor): () => void {
     const owner = editor.getContainerDomNode().ownerDocument;
     const native = owner.execCommand.bind(owner);
     const paste = ((commandId: string, showUI?: boolean, value?: string): boolean => {
-        if (commandId !== "paste" || !editor.hasTextFocus() || editor.getOption(monaco.editor.EditorOption.readOnly)) {
+        if (
+            commandId !== "paste" ||
+            !editor.hasTextFocus() ||
+            editor.getOption(monaco.editor.EditorOption.readOnly)
+        ) {
             return native(commandId, showUI, value);
         }
         if (native(commandId, showUI, value)) {
@@ -79,17 +85,20 @@ function installHostPaste(
         if (!clipboard) {
             return false;
         }
-        void clipboard.readText().then((text) => {
-            if (text.length === 0 || !editor.hasTextFocus()) {
-                return;
-            }
-            editor.trigger("keyboard", "paste", {
-                text,
-                pasteOnNewLine: false,
-                multicursorText: null,
-                mode: null,
-            });
-        }).catch(() => undefined);
+        void clipboard
+            .readText()
+            .then((text) => {
+                if (text.length === 0 || !editor.hasTextFocus()) {
+                    return;
+                }
+                editor.trigger("keyboard", "paste", {
+                    text,
+                    pasteOnNewLine: false,
+                    multicursorText: null,
+                    mode: null,
+                });
+            })
+            .catch(() => undefined);
         return true;
     }) as typeof owner.execCommand;
     owner.execCommand = paste;

@@ -47,7 +47,10 @@ function measureDiagramHeight(diagram: HTMLElement): number {
         return Math.ceil(viewBox.height);
     }
     const box = svgNode.getBBox();
-    const height = Number.isFinite(box.height) && box.height > 0 ? Math.ceil(box.height) : diagram.scrollHeight;
+    const height =
+        Number.isFinite(box.height) && box.height > 0
+            ? Math.ceil(box.height)
+            : diagram.scrollHeight;
     return Math.ceil(height);
 }
 
@@ -69,9 +72,7 @@ function keepPaintedSource(diagram: HTMLElement, source: string): boolean {
     return painted !== undefined && painted !== source && diagram.querySelector("svg") !== null;
 }
 
-export function isMermaidCodeBlock(language: string | undefined): boolean {
-    return (language ?? "").trim().toLowerCase() === "mermaid";
-}
+export { isMermaidCodeBlock } from "../markdown/fence/mermaid/raw";
 
 export async function renderMermaidDiagram(diagram: HTMLElement, source: string): Promise<number> {
     if (diagram.dataset.mermaidSource === source && diagram.querySelector("svg")) {
@@ -129,7 +130,8 @@ export async function renderMermaidDiagram(diagram: HTMLElement, source: string)
 
 function measureDiagramHeightFromSvg(svg: string): number {
     const probe = document.createElement("div");
-    probe.style.cssText = "position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none";
+    probe.style.cssText =
+        "position:fixed;left:-10000px;top:0;visibility:hidden;pointer-events:none";
     probe.innerHTML = svg;
     document.body.append(probe);
     const height = measureDiagramHeight(probe);

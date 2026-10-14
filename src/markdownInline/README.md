@@ -12,7 +12,7 @@ src/markdownInline/
   host.ts        entry point for the VS Code host
   lib/           editor implementation
   host/          VS Code host implementation
-  tests/         tests and their helpers
+  lib/**/test/   tests for that part
 ```
 
 Import this package through an entry point (a file at this folder's root).
@@ -34,12 +34,12 @@ Code outside this package imports only those root files.
 A path into `lib/` or any other subfolder is a failed check.
 
 **Intra-package freedom.**
-Files in this package, other than `tests/`, import each other freely.
+Files in this package import each other freely.
 `lib/` may import `lib/`.
 
-**Tests through the entry points.**
-A file under `tests/` imports entry points and other files under `tests/`.
-It does not import `lib/` or another package's subfolder.
+**Tests beside the part.**
+A test lives in a `test/` folder next to the source it covers.
+A browser check imports `lib/test/support/browser.ts`.
 
 **No cycles.**
 Dependencies in this package do not form a cycle.

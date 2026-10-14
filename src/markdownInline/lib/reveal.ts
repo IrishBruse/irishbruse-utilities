@@ -1,5 +1,10 @@
 import type { CursorContext, Scope, TextRange } from "./document/types";
-import { markerVisibility, selectionOverlaps, showsFormattedContent, type MarkerLineContext } from "./visibility";
+import {
+    markerVisibility,
+    selectionOverlaps,
+    showsFormattedContent,
+    type MarkerLineContext,
+} from "./visibility";
 
 export type RevealAction = "raw" | "ghost" | "hidden" | "zone" | "occupy";
 
@@ -50,10 +55,17 @@ export function revealMarker(input: RevealInput): RevealAction {
     if (input.scope.kind === "table") {
         return "zone";
     }
-    if (input.scope.kind === "thematicBreak" && input.frontMatterEnd !== undefined && input.marker.start < input.frontMatterEnd) {
+    if (
+        input.scope.kind === "thematicBreak" &&
+        input.frontMatterEnd !== undefined &&
+        input.marker.start < input.frontMatterEnd
+    ) {
         return "occupy";
     }
-    if ((input.scope.kind === "image" || input.scope.kind === "thematicBreak") && input.singleLine) {
+    if (
+        (input.scope.kind === "image" || input.scope.kind === "thematicBreak") &&
+        input.singleLine
+    ) {
         return "zone";
     }
     return "hidden";
@@ -63,7 +75,11 @@ export function showFormatted(scope: Scope, cursor: CursorContext, findHit: bool
     return showsFormattedContent(scope, cursor) && !findHit;
 }
 
-export function revealMermaid(scope: Scope, cursor: CursorContext, findHit: boolean): "zone" | "raw" {
+export function revealMermaid(
+    scope: Scope,
+    cursor: CursorContext,
+    findHit: boolean,
+): "zone" | "raw" {
     if (findHit || selectionOverlaps(scope, cursor)) {
         return "raw";
     }

@@ -1,16 +1,4 @@
-.inline-md-bullet {
-    display: inline-block;
-    width: 1.1em;
-    margin-left: -1.1em;
-    text-align: center;
-    color: var(--vscode-editor-foreground, #d4d4d4);
-}
-
 .inline-md-root .monaco-editor .margin {
     contain: none !important;
     z-index: 4;
-}
-
-.inline-md-list-mark {
-    color: var(--vscode-editor-foreground, #d4d4d4);
 }

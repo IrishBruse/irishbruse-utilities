@@ -2,14 +2,14 @@
     --vscode-editor-background: #1e1e1e;
     --vscode-editor-foreground: #d4d4d4;
     --vscode-editor-font-family: ui-sans-serif, system-ui, sans-serif;
-    --ib-md-heading-1: #D19A66;
-    --ib-md-heading-2: #E06C75;
-    --ib-md-heading-3: #61AFEF;
-    --ib-md-heading-4: #C678DD;
-    --ib-md-heading-5: #C678DD;
-    --ib-md-heading-6: #C678DD;
-    --ib-md-inline-code: #C678DD;
-    --ib-md-inline-code-background: #21252bA0;
+    --ib-md-heading-1: #d19a66;
+    --ib-md-heading-2: #e06c75;
+    --ib-md-heading-3: #61afef;
+    --ib-md-heading-4: #c678dd;
+    --ib-md-heading-5: #c678dd;
+    --ib-md-heading-6: #c678dd;
+    --ib-md-inline-code: #c678dd;
+    --ib-md-inline-code-background: #21252ba0;
     --vscode-textBlockQuote-background: #7f7f7f1a;
     --vscode-textBlockQuote-border: #4b5163;
     --vscode-descriptionForeground: #9da5b4;
@@ -63,8 +63,8 @@ body {
 
 #source button[aria-pressed="true"] {
     color: var(--vscode-button-foreground, #ffffff);
-    background: var(--vscode-button-background, #35A854);
-    border-color: var(--vscode-button-background, #35A854);
+    background: var(--vscode-button-background, #35a854);
+    border-color: var(--vscode-button-background, #35a854);
 }
 
 #toolbar select {

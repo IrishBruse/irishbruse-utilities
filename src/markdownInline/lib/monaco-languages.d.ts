@@ -15,4 +15,3 @@ declare module "monaco-editor/languages/definitions/typescript/typescript.js" {
     const language: import("monaco-editor").languages.IMonarchLanguage;
     export { conf, language };
 }
-

@@ -1,0 +1,22 @@
+.inline-md-root .monaco-editor .inline-md-code-line {
+    z-index: 0;
+    width: 100% !important;
+    background: var(--ib-md-code-block-background);
+}
+
+.inline-md-root .monaco-editor .view-line:has(.inline-md-lang) {
+    container-type: inline-size;
+}
+
+.inline-md-root .monaco-editor .inline-md-lang {
+    position: absolute;
+    left: calc(100cqi - 16px);
+    right: auto;
+    top: 0;
+    transform: translateX(-100%);
+    color: var(--vscode-descriptionForeground, #9da5b4) !important;
+    font-size: 11px;
+    line-height: 16px;
+    user-select: none;
+    pointer-events: none;
+}

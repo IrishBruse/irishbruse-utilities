@@ -32,7 +32,10 @@ function backtickRules(): Rule[] {
 
 function tildeRules(): Rule[] {
     return [
-        [new RegExp(`^(\\s*~{3,})(${languageName}.*)$`), ["punctuation", { token: "type", next: "@codeblock" }]],
+        [
+            new RegExp(`^(\\s*~{3,})(${languageName}.*)$`),
+            ["punctuation", { token: "type", next: "@codeblock" }],
+        ],
         [/^(\s*~{3,}\s*)$/, { token: "punctuation", next: "@codeblock" }],
     ];
 }
@@ -57,7 +60,9 @@ function recolorEmbeddedClose(rule: Rule): Rule {
 
 export function markdownFenceBody(language: Language): Language {
     const tokenizer: Language["tokenizer"] = { ...language.tokenizer };
-    tokenizer.root = (tokenizer.root ?? []).filter((rule) => sourceOf(rule) !== listMarkerLine.source);
+    tokenizer.root = (tokenizer.root ?? []).filter(
+        (rule) => sourceOf(rule) !== listMarkerLine.source,
+    );
     return { ...language, tokenizer };
 }
 

@@ -1,11 +1,12 @@
 ---
 name: markdown-inline-case
-description: "New Inline Markdown case. Use when adding a test case under src/markdownInline/tests."
+description: "New Inline Markdown case. Use when adding a test case under a part test/ folder."
 ---
 
 # markdown-inline-case
 
-One case lives in `src/markdownInline/tests/<feature-name>/`.
+One case lives in the `test/` folder beside that part.
+A list bullet case lives in `src/markdownInline/lib/markdown/list/bullet/test/`.
 
 Before the first edit, write the Change sentence and the Hold sentence from `.cursor/skills/markdown-inline/SKILL.md` in the reply, then continue in that same turn.
 
@@ -20,7 +21,7 @@ Monaco reads and screenshot pixel scans come after that file exists.
 Ask one question, then wait.
 The first write is the accepted sample.
 
-1. Which feature is this, and does `src/markdownInline/tests/<feature-name>/` already exist?
+1. Which part is this, and does its `test/` folder already exist?
    Done when the folder name is known.
 
 2. What should a person see, and what would be wrong?
@@ -51,7 +52,7 @@ Done when the README, the sample, and the chosen test file exist.
 
 Print the local playground link in the reply as soon as the fixture path is known:
 
-`http://127.0.0.1:5175/?fixture=<feature-name>/fixtures/<path>`
+`http://127.0.0.1:5175/?fixture=markdown/<part>/test/fixtures/<path>`
 
 Open that same URL.
 `npm run dev:markdown-inline` starts the playground when nothing is listening.
@@ -69,7 +70,7 @@ Done when every README sentence matches the page, and each saved picture was ope
 Run the new test file:
 
 ```bash
-npm run test:markdown-inline-browser -- src/markdownInline/tests/<feature-name>/<file>.test.ts
+npm run test:markdown-inline-browser -- src/markdownInline/lib/markdown/<part>/test/<file>.test.ts
 ```
 
 Then run `npm run test:markdown-inline-browser`.

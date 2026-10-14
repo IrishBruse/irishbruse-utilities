@@ -9,11 +9,31 @@ import "monaco-editor/editor/contrib/linesOperations/browser/linesOperations.js"
 import "monaco-editor/editor/contrib/multicursor/browser/multicursor.js";
 import "monaco-editor/editor/contrib/suggest/browser/suggestController.js";
 import "monaco-editor/editor/contrib/wordOperations/browser/wordOperations.js";
-import { conf as markdownConf, language as markdownLanguage } from "monaco-editor/languages/definitions/markdown/markdown.js";
-import { conf as typescriptConf, language as typescriptLanguage } from "monaco-editor/languages/definitions/typescript/typescript.js";
-import { conf as yamlConf, language as yamlLanguage } from "monaco-editor/languages/definitions/yaml/yaml.js";
-import { markdownFenceBody, markdownFenceLanguageId, markdownWithFenceColors } from "./markdownFences";
-import { completeAgentPropertyKeys, completeSkillPropertyKeys, parseSkillFrontMatter, readFrontMatter, skillMarkdownLanguageId, skillPropertyInsertText } from "../skill";
+import {
+    conf as markdownConf,
+    language as markdownLanguage,
+} from "monaco-editor/languages/definitions/markdown/markdown.js";
+import {
+    conf as typescriptConf,
+    language as typescriptLanguage,
+} from "monaco-editor/languages/definitions/typescript/typescript.js";
+import {
+    conf as yamlConf,
+    language as yamlLanguage,
+} from "monaco-editor/languages/definitions/yaml/yaml.js";
+import {
+    markdownFenceBody,
+    markdownFenceLanguageId,
+    markdownWithFenceColors,
+} from "./markdownFences";
+import {
+    completeAgentPropertyKeys,
+    completeSkillPropertyKeys,
+    parseSkillFrontMatter,
+    readFrontMatter,
+    skillMarkdownLanguageId,
+    skillPropertyInsertText,
+} from "../skill";
 import { installMermaidCodeLens, refreshMermaidCodeLens } from "./codeLens";
 
 export { refreshMermaidCodeLens };
@@ -25,30 +45,52 @@ export function installSkillYaml(): void {
         return;
     }
     skillYamlInstalled = true;
-    const register = (id: string, language: monaco.languages.IMonarchLanguage, conf: monaco.languages.LanguageConfiguration): void => {
+    const register = (
+        id: string,
+        language: monaco.languages.IMonarchLanguage,
+        conf: monaco.languages.LanguageConfiguration,
+    ): void => {
         monaco.languages.register({ id });
         monaco.languages.setMonarchTokensProvider(id, language);
         monaco.languages.setLanguageConfiguration(id, conf);
     };
     const markdown = markdownWithFenceColors(markdownLanguage);
     register("yaml", yamlLanguage, yamlConf);
-    register(skillMarkdownLanguageId, {
-        ...markdown,
-        tokenizer: {
-            ...markdown.tokenizer,
-            root: [
-                [/^---$/, { token: "meta.separator", switchTo: "@skillFrontMatter", nextEmbedded: "yaml" }],
-                [/^/, { token: "@rematch", switchTo: "@markdownBody" }],
-            ],
-            skillFrontMatter: [
-                [/^---$/, { token: "meta.separator", switchTo: "@markdownBody", nextEmbedded: "@pop" }],
-            ],
-            markdownBody: markdown.tokenizer.root ?? [],
+    register(
+        skillMarkdownLanguageId,
+        {
+            ...markdown,
+            tokenizer: {
+                ...markdown.tokenizer,
+                root: [
+                    [
+                        /^---$/,
+                        {
+                            token: "meta.separator",
+                            switchTo: "@skillFrontMatter",
+                            nextEmbedded: "yaml",
+                        },
+                    ],
+                    [/^/, { token: "@rematch", switchTo: "@markdownBody" }],
+                ],
+                skillFrontMatter: [
+                    [
+                        /^---$/,
+                        {
+                            token: "meta.separator",
+                            switchTo: "@markdownBody",
+                            nextEmbedded: "@pop",
+                        },
+                    ],
+                ],
+                markdownBody: markdown.tokenizer.root ?? [],
+            },
         },
-    }, {
-        ...markdownConf,
-        wordPattern: /[A-Za-z0-9_-]+/,
-    });
+        {
+            ...markdownConf,
+            wordPattern: /[A-Za-z0-9_-]+/,
+        },
+    );
     monaco.languages.registerCompletionItemProvider(skillMarkdownLanguageId, {
         provideCompletionItems(model, position) {
             return { suggestions: skillKeyCompletions(model, position) };
@@ -82,7 +124,9 @@ function skillKeyCompletions(
     }
     const existing = parseSkillFrontMatter(span.yaml).map((property) => property.key);
     const skillKeys = completeSkillPropertyKeys(existing, before);
-    const extra = completeAgentPropertyKeys(existing, before).filter((key) => !skillKeys.includes(key));
+    const extra = completeAgentPropertyKeys(existing, before).filter(
+        (key) => !skillKeys.includes(key),
+    );
     const hasColon = line.slice(keyLength).includes(":");
     const range = new monaco.Range(position.lineNumber, 1, position.lineNumber, keyLength + 1);
     return [...skillKeys, ...extra].map((key, index) => ({
@@ -96,7 +140,10 @@ function skillKeyCompletions(
 
 const hiddenAreaSource = {};
 
-export function setHiddenAreas(editor: monaco.editor.IStandaloneCodeEditor, ranges: readonly monaco.IRange[]): void {
+export function setHiddenAreas(
+    editor: monaco.editor.IStandaloneCodeEditor,
+    ranges: readonly monaco.IRange[],
+): void {
     const api = editor as monaco.editor.IStandaloneCodeEditor & {
         setHiddenAreas(next: readonly monaco.IRange[], source?: object): void;
     };
@@ -142,7 +189,11 @@ export function installMonaco(): void {
         },
     };
 
-    const register = (id: string, language: monaco.languages.IMonarchLanguage, conf: monaco.languages.LanguageConfiguration): void => {
+    const register = (
+        id: string,
+        language: monaco.languages.IMonarchLanguage,
+        conf: monaco.languages.LanguageConfiguration,
+    ): void => {
         monaco.languages.register({ id });
         monaco.languages.setMonarchTokensProvider(id, language);
         monaco.languages.setLanguageConfiguration(id, conf);
@@ -183,13 +234,22 @@ export function installMonaco(): void {
         colors: {
             "editor.background": cssColor("--vscode-editor-background", "#1e1e1e"),
             "editor.foreground": cssColor("--vscode-editor-foreground", "#d4d4d4"),
-            "editorLineNumber.foreground": cssColor("--vscode-editorLineNumber-foreground", "#858585"),
-            "editor.selectionBackground": cssColor("--vscode-editor-selectionBackground", "#3e4451"),
+            "editorLineNumber.foreground": cssColor(
+                "--vscode-editorLineNumber-foreground",
+                "#858585",
+            ),
+            "editor.selectionBackground": cssColor(
+                "--vscode-editor-selectionBackground",
+                "#3e4451",
+            ),
             "editor.inactiveSelectionBackground": cssColor(
                 "--vscode-editor-inactiveSelectionBackground",
                 cssColor("--vscode-editor-selectionBackground", "#3e4451"),
             ),
-            "editor.lineHighlightBackground": cssColor("--vscode-editor-lineHighlightBackground", "#2a2d2e"),
+            "editor.lineHighlightBackground": cssColor(
+                "--vscode-editor-lineHighlightBackground",
+                "#2a2d2e",
+            ),
             "editor.lineHighlightBorder": "#00000000",
             "editorCursor.foreground": cssColor("--vscode-editorCursor-foreground", "#aeafad"),
         },

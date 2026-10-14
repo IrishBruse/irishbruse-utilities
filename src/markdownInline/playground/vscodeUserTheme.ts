@@ -2,7 +2,6 @@ import { readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 
-
 export type VscodeThemeBodyClass =
     | "vscode-dark"
     | "vscode-light"
@@ -51,7 +50,6 @@ export interface VscodeSettingsLocation {
     readonly appData?: string;
 }
 
-
 export function vscodeUserSettingsPath(location?: VscodeSettingsLocation): string {
     const home = location?.home ?? homedir();
     const platform = location?.platform ?? process.platform;
@@ -59,13 +57,14 @@ export function vscodeUserSettingsPath(location?: VscodeSettingsLocation): strin
         return join(home, "Library", "Application Support", "Code", "User", "settings.json");
     }
     if (platform === "win32") {
-        const appData = location?.appData ?? process.env.APPDATA ?? join(home, "AppData", "Roaming");
+        const appData =
+            location?.appData ?? process.env.APPDATA ?? join(home, "AppData", "Roaming");
         return join(appData, "Code", "User", "settings.json");
     }
-    const configHome = location?.xdgConfigHome ?? process.env.XDG_CONFIG_HOME ?? join(home, ".config");
+    const configHome =
+        location?.xdgConfigHome ?? process.env.XDG_CONFIG_HOME ?? join(home, ".config");
     return join(configHome, "Code", "User", "settings.json");
 }
-
 
 export function parseSettingsJsonc(text: string): Record<string, unknown> {
     const parsed: unknown = JSON.parse(stripJsonc(text));
@@ -74,7 +73,6 @@ export function parseSettingsJsonc(text: string): Record<string, unknown> {
     }
     return parsed as Record<string, unknown>;
 }
-
 
 export function vscodeUserThemeFromSettings(settings: Record<string, unknown>): VscodeUserTheme {
     const themeName = readString(settings, "workbench.colorTheme");
@@ -85,11 +83,14 @@ export function vscodeUserThemeFromSettings(settings: Record<string, unknown>): 
         ...fontDeclarations(settings),
     ];
     return {
-        css: formatPlaygroundThemeCss(bodyClass, declarations, readBoolean(settings, "editor.fontLigatures") === true),
+        css: formatPlaygroundThemeCss(
+            bodyClass,
+            declarations,
+            readBoolean(settings, "editor.fontLigatures") === true,
+        ),
         bodyClass,
     };
 }
-
 
 export function parseIframeInjectedThemeHtml(html: string): string[] {
     const match = html.match(/<html[^>]*\sstyle="([\s\S]*?)"\s*>/i);
@@ -97,7 +98,7 @@ export function parseIframeInjectedThemeHtml(html: string): string[] {
         return [];
     }
     const decoded = match[1]
-        .replaceAll("&quot;", "\"")
+        .replaceAll("&quot;", '"')
         .replaceAll("&amp;", "&")
         .replaceAll("&lt;", "<")
         .replaceAll("&gt;", ">");
@@ -116,7 +117,6 @@ export interface ReadPlaygroundThemeOptions {
     readonly settingsPath?: string;
 }
 
-
 export function readPlaygroundTheme(options: ReadPlaygroundThemeOptions = {}): VscodeUserTheme {
     const settingsPath = options.settingsPath ?? vscodeUserSettingsPath();
     let text: string;
@@ -131,7 +131,6 @@ export function readPlaygroundTheme(options: ReadPlaygroundThemeOptions = {}): V
         return FALLBACK_THEME;
     }
 }
-
 
 export function readVscodeUserTheme(settingsPath = vscodeUserSettingsPath()): VscodeUserTheme {
     return readPlaygroundTheme({ settingsPath });
@@ -157,12 +156,14 @@ function formatPlaygroundThemeCss(
     return lines.join("\n");
 }
 
-
 export function colorIdToCssVariable(colorId: string): string {
     return `--vscode-${colorId.replaceAll(".", "-")}`;
 }
 
-function collectWorkbenchColors(settings: Record<string, unknown>, themeName: string | undefined): Map<string, string> {
+function collectWorkbenchColors(
+    settings: Record<string, unknown>,
+    themeName: string | undefined,
+): Map<string, string> {
     const raw = settings["workbench.colorCustomizations"];
     if (!isRecord(raw)) {
         return new Map();
@@ -210,7 +211,10 @@ function derivePlaygroundWorkbenchColors(colors: Map<string, string>): void {
     }
 }
 
-function workbenchColorDeclarations(settings: Record<string, unknown>, themeName: string | undefined): string[] {
+function workbenchColorDeclarations(
+    settings: Record<string, unknown>,
+    themeName: string | undefined,
+): string[] {
     const colors = collectWorkbenchColors(settings, themeName);
     derivePlaygroundWorkbenchColors(colors);
     return [...colors.entries()]
@@ -234,7 +238,8 @@ function markdownColorDeclarations(settings: Record<string, unknown>): string[] 
 
 function fontDeclarations(settings: Record<string, unknown>): string[] {
     const editorFamily = fontFamilyCss(readString(settings, "editor.fontFamily"));
-    const previewFamily = fontFamilyCss(readString(settings, "markdown.preview.fontFamily")) ?? editorFamily;
+    const previewFamily =
+        fontFamilyCss(readString(settings, "markdown.preview.fontFamily")) ?? editorFamily;
     const editorSize = fontSizeCss(settings["editor.fontSize"]);
     const previewSize = fontSizeCss(settings["markdown.preview.fontSize"]) ?? editorSize;
     const declarations: string[] = [];

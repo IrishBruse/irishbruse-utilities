@@ -1,11 +1,3 @@
-.inline-md-strong {
-    font-weight: 700;
-}
-
-.inline-md-em {
-    font-style: italic;
-}
-
-.inline-md-strike {
-    text-decoration: line-through;
-}
+@import "../../markdown/strong/strong.css";
+@import "../../markdown/emphasis/emphasis.css";
+@import "../../markdown/strike/strike.css";

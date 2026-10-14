@@ -1,6 +1,6 @@
 ---
 name: implement
-description: "Implements one change from the chat, a .tickets bug or todo, or a src/markdownInline/tests feature README. Use when the user says implement, names a .tickets file, or points at a feature test folder to build. Before the first edit, state the Change line and the Hold line, then continue."
+description: "Implements one change from the chat, a .tickets bug or todo, or a markdownInline part test README. Use when the user says implement, names a .tickets file, or points at a feature test folder to build. Before the first edit, state the Change line and the Hold line, then continue."
 ---
 
 # Implement
@@ -9,11 +9,11 @@ One run builds one source.
 
 ## Source
 
-| The message names | Source |
-| --- | --- |
+| The message names                                                                             | Source                                                               |
+| --------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
 | A path under `.tickets/bugs/` or `.tickets/todos/`, or a title that matches one ticket folder | That folder's `bug.md` or `todo.md`. Read it and every linked image. |
-| `src/markdownInline/tests/<feature>/` | That folder's `README.md`. |
-| Anything else | The message, including its images. |
+| A `test/` folder beside a markdownInline part                                                 | That folder's `README.md`.                                           |
+| Anything else                                                                                 | The message, including its images.                                   |
 
 A follow-up image of the same interaction stays on this source.
 

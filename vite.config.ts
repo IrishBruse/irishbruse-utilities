@@ -53,13 +53,19 @@ export default defineConfig({
                 test: {
                     name: "unit",
                     include: ["src/**/*.test.ts"],
-                    exclude: ["src/markdownInline/tests/**"],
+                    exclude: [
+                        "src/markdownInline/lib/**/integration.test.ts",
+                        "src/markdownInline/lib/**/regression.test.ts",
+                    ],
                 },
             },
             {
                 test: {
                     name: "markdownInline",
-                    include: ["src/markdownInline/tests/**/*.test.ts"],
+                    include: [
+                        "src/markdownInline/lib/**/integration.test.ts",
+                        "src/markdownInline/lib/**/regression.test.ts",
+                    ],
                     fileParallelism: false,
                     testTimeout: 30_000,
                     hookTimeout: 30_000,

@@ -6,13 +6,27 @@ export interface SkillFrontMatterIssue {
     readonly end: number;
 }
 
-const SPEC_FIELDS = ["name", "description", "license", "compatibility", "metadata", "allowed-tools"] as const;
+const SPEC_FIELDS = [
+    "name",
+    "description",
+    "license",
+    "compatibility",
+    "metadata",
+    "allowed-tools",
+] as const;
 
-const ALLOWED_FIELDS = new Set<string>([...SPEC_FIELDS, "disable-model-invocation", "user-invocable"]);
+const ALLOWED_FIELDS = new Set<string>([
+    ...SPEC_FIELDS,
+    "disable-model-invocation",
+    "user-invocable",
+]);
 
 const OPEN_FENCE: SkillFrontMatterIssue = { message: "", start: -1, end: -1 };
 
-export function skillFrontMatterIssues(yaml: string, directoryName: string | undefined): SkillFrontMatterIssue[] {
+export function skillFrontMatterIssues(
+    yaml: string,
+    directoryName: string | undefined,
+): SkillFrontMatterIssue[] {
     const properties = parseSkillFrontMatter(yaml);
     const issues: SkillFrontMatterIssue[] = [];
     const name = properties.find((property) => property.key === "name");
@@ -33,26 +47,45 @@ export function skillFrontMatterIssues(yaml: string, directoryName: string | und
     }
     const metadata = properties.find((property) => property.key === "metadata");
     if (metadata && metadata.kind !== "map") {
-        issues.push(fieldIssue(yaml, "metadata", "metadata must be a map from string keys to string values."));
+        issues.push(
+            fieldIssue(
+                yaml,
+                "metadata",
+                "metadata must be a map from string keys to string values.",
+            ),
+        );
     }
     const allowedTools = properties.find((property) => property.key === "allowed-tools");
-    if (allowedTools && (allowedTools.kind !== "string" || fieldIsSequence(yaml, "allowed-tools") || allowedTools.value.includes("\n"))) {
-        issues.push(fieldIssue(yaml, "allowed-tools", "allowed-tools must be a space-separated string."));
+    if (
+        allowedTools &&
+        (allowedTools.kind !== "string" ||
+            fieldIsSequence(yaml, "allowed-tools") ||
+            allowedTools.value.includes("\n"))
+    ) {
+        issues.push(
+            fieldIssue(yaml, "allowed-tools", "allowed-tools must be a space-separated string."),
+        );
     }
     for (const property of properties) {
         if (ALLOWED_FIELDS.has(property.key)) {
             continue;
         }
-        issues.push(fieldIssue(
-            yaml,
-            property.key,
-            `Unexpected field '${property.key}'. The spec allows ${specFieldList()}.`,
-        ));
+        issues.push(
+            fieldIssue(
+                yaml,
+                property.key,
+                `Unexpected field '${property.key}'. The spec allows ${specFieldList()}.`,
+            ),
+        );
     }
     return issues;
 }
 
-function nameIssues(yaml: string, property: SkillProperty, directoryName: string | undefined): SkillFrontMatterIssue[] {
+function nameIssues(
+    yaml: string,
+    property: SkillProperty,
+    directoryName: string | undefined,
+): SkillFrontMatterIssue[] {
     const value = property.kind === "string" ? property.value : "";
     if (value.trim() === "") {
         return [fieldIssue(yaml, "name", "name must be 1 to 64 characters.")];
@@ -62,7 +95,9 @@ function nameIssues(yaml: string, property: SkillProperty, directoryName: string
         issues.push(fieldIssue(yaml, "name", "name must be at most 64 characters."));
     }
     if (!/^[a-z0-9-]+$/.test(value)) {
-        issues.push(fieldIssue(yaml, "name", "name must use lowercase letters, numbers, and hyphens."));
+        issues.push(
+            fieldIssue(yaml, "name", "name must use lowercase letters, numbers, and hyphens."),
+        );
     } else {
         if (value.startsWith("-") || value.endsWith("-")) {
             issues.push(fieldIssue(yaml, "name", "name must not start or end with a hyphen."));

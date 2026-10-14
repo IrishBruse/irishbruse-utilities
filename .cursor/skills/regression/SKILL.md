@@ -34,7 +34,7 @@ The playground picture is the report of that bug. The unit test is the check.
 When the bug is visible in the Inline Markdown editor or playground, add it to that feature's folder.
 Follow `.cursor/skills/markdown-inline-case/SKILL.md` only while the scenario is still open.
 When the user already named the feature, the steps, and the wrong result, write the check in that same turn. The Change sentence and the Hold sentence are part of that reply.
-The check is `src/markdownInline/tests/<feature-name>/regression.test.ts`.
+The check is `src/markdownInline/lib/markdown/<part>/test/regression.test.ts`.
 The sample goes in that folder's `fixtures/`.
 A numbered case may be the next `case-N.md`.
 A skill sample is `<name>/SKILL.md`, and the folder name is the `name` value.
@@ -48,7 +48,7 @@ Open that picture and check it before the compare counts.
 Run only that file:
 
 ```bash
-npm run test:markdown-inline-browser -- src/markdownInline/tests/<feature-name>/regression.test.ts
+npm run test:markdown-inline-browser -- src/markdownInline/lib/markdown/<part>/test/regression.test.ts
 ```
 
 When a unit test can see the bug, put the check in the existing `*.test.ts` beside the module.

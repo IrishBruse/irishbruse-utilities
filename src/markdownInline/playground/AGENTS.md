@@ -9,7 +9,7 @@ Do not stop, kill, or restart the process (no `pkill`, port cleanup, or second `
 ## Fixtures
 
 Test markdown files live in `docs/tests/markdown/` and load via `?fixture=<path>` (default `playground.md`).
-Feature samples live in `src/markdownInline/tests/<feature>/fixtures/` and load the same way, for example `?fixture=list/fixtures/case-1.md`.
+Feature samples live in a `test/fixtures/` folder next to the part and load the same way, for example `?fixture=markdown/list/bullet/test/fixtures/case-1.md`.
 
 When you add or change a fixture for the user to check, print the full local link in the reply, for example `http://127.0.0.1:5175/?fixture=basic/fixtures/case-7.md`.
 

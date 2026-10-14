@@ -21,7 +21,11 @@ export function webviewThemeTargets(parent: HTMLElement): HTMLElement[] {
             targets.push(node);
         }
     };
-    add(parent.classList.contains("inline-md-root") ? parent : parent.querySelector(".inline-md-root"));
+    add(
+        parent.classList.contains("inline-md-root")
+            ? parent
+            : parent.querySelector(".inline-md-root"),
+    );
     const root = targets[0];
     if (root) {
         for (const node of root.querySelectorAll(".monaco-editor")) {
@@ -33,10 +37,14 @@ export function webviewThemeTargets(parent: HTMLElement): HTMLElement[] {
 
 export function applyWebviewThemeVariables(targets: readonly HTMLElement[]): void {
     const vars = new Map<string, string>();
-    for (const [name, value] of parseStyleAttributeVariables(document.documentElement.getAttribute("style") ?? "")) {
+    for (const [name, value] of parseStyleAttributeVariables(
+        document.documentElement.getAttribute("style") ?? "",
+    )) {
         vars.set(name, value);
     }
-    for (const [name, value] of parseStyleAttributeVariables(document.body.getAttribute("style") ?? "")) {
+    for (const [name, value] of parseStyleAttributeVariables(
+        document.body.getAttribute("style") ?? "",
+    )) {
         vars.set(name, value);
     }
     if (vars.size === 0) {
@@ -61,7 +69,10 @@ export function installWebviewThemeSync(getTargets: () => readonly HTMLElement[]
     const observer = new MutationObserver(() => {
         apply();
     });
-    observer.observe(document.documentElement, { attributes: true, attributeFilter: ["style", "class"] });
+    observer.observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["style", "class"],
+    });
     observer.observe(document.body, { attributes: true, attributeFilter: ["style", "class"] });
     return () => {
         observer.disconnect();

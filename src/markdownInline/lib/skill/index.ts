@@ -20,4 +20,8 @@ export {
     type SkillMapEntry,
     type SkillProperty,
 } from "./skillFrontMatterYaml";
-export { agentPropertyCompletions, completeAgentPropertyKeys, skillPropertyInsertText } from "./skillKeys";
+export {
+    agentPropertyCompletions,
+    completeAgentPropertyKeys,
+    skillPropertyInsertText,
+} from "./skillKeys";

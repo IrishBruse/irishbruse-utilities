@@ -25,7 +25,10 @@ function selectionPieceOnLine(piece: SelectionBox, line: SelectionLine): boolean
     return pieceBottom > line.top + 0.5 && piece.top < lineBottom - 0.5;
 }
 
-export function layoutSelectionPieces(pieces: SelectionBox[], lines: readonly SelectionLine[]): void {
+export function layoutSelectionPieces(
+    pieces: SelectionBox[],
+    lines: readonly SelectionLine[],
+): void {
     const stretched = new Set<SelectionBox>();
     for (const line of lines) {
         if (!line.stretchToLineHeight) {
@@ -54,9 +57,14 @@ export function layoutSelectionPieces(pieces: SelectionBox[], lines: readonly Se
     }
 }
 
-export const selectionHeadingSelector = ".inline-md-h1, .inline-md-h2, .inline-md-h3, .inline-md-h4";
+export const selectionHeadingSelector =
+    ".inline-md-h1, .inline-md-h2, .inline-md-h3, .inline-md-h4";
 
-export function extendSelectionAboveLine(piece: SelectionBox, lineHeight: number, zoneHeight: number): void {
+export function extendSelectionAboveLine(
+    piece: SelectionBox,
+    lineHeight: number,
+    zoneHeight: number,
+): void {
     if (zoneHeight <= 0) {
         return;
     }
@@ -85,7 +93,11 @@ export function clipSelectionToText(piece: SelectionBox, textRight: number, newl
     piece.width = width;
 }
 
-export function extendHeadingSelectionPastText(piece: SelectionBox, textRight: number, padPx: number): void {
+export function extendHeadingSelectionPastText(
+    piece: SelectionBox,
+    textRight: number,
+    padPx: number,
+): void {
     if (padPx <= 0 || piece.width < 1) {
         return;
     }
@@ -103,8 +115,10 @@ export function stretchesSelectionLine(viewLine: {
     querySelector(selector: string): unknown;
     classList: { contains(name: string): boolean };
 }): boolean {
-    return viewLine.querySelector(selectionHeadingSelector) !== null
-        || viewLine.classList.contains(listGapAfterClass);
+    return (
+        viewLine.querySelector(selectionHeadingSelector) !== null ||
+        viewLine.classList.contains(listGapAfterClass)
+    );
 }
 
 export const dragSelectionClassName = "inline-md-dragging";

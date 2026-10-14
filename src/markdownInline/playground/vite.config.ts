@@ -40,6 +40,7 @@ export default defineConfig({
     define: {
         __DOCS_MARKDOWN_FS__: JSON.stringify(join(repoRoot, "docs/tests/markdown")),
         __INLINE_TESTS_FS__: JSON.stringify(join(playgroundDir, "..", "tests")),
+        __INLINE_LIB_FS__: JSON.stringify(join(playgroundDir, "..", "lib")),
     },
     server: {
         port: 5175,

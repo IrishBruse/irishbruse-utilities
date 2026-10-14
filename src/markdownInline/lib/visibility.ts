@@ -29,6 +29,14 @@ function cursorOnRange(range: TextRange, cursor: CursorContext): boolean {
     return from < range.end && to > range.start;
 }
 
+function cursorOnListMarker(range: TextRange, cursor: CursorContext): boolean {
+    const { from, to } = selectionBounds(cursor);
+    if (from === to) {
+        return from >= range.start && from <= range.end;
+    }
+    return from < range.end && to > range.start;
+}
+
 function oneBreakBefore(scope: TextRange, cursor: CursorContext): boolean {
     const { from, to } = selectionBounds(cursor);
     if (from !== to) {
@@ -38,8 +46,10 @@ function oneBreakBefore(scope: TextRange, cursor: CursorContext): boolean {
 }
 
 function blockReveal(scope: TextRange, cursor: CursorContext): boolean {
-    return selectionOverlaps(scope, cursor)
-        || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd);
+    return (
+        selectionOverlaps(scope, cursor) ||
+        rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
+    );
 }
 
 export interface MarkerLineContext {
@@ -47,13 +57,19 @@ export interface MarkerLineContext {
     readonly lineEnd: number;
 }
 
-function selectionCoversMarkerLine(marker: TextRange, cursor: CursorContext, markerLine: MarkerLineContext): boolean {
+function selectionCoversMarkerLine(
+    marker: TextRange,
+    cursor: CursorContext,
+    markerLine: MarkerLineContext,
+): boolean {
     const { from, to } = selectionBounds(cursor);
     if (from === to) {
         return false;
     }
-    return rangesOverlap(marker.start, marker.end, markerLine.lineStart, markerLine.lineEnd)
-        && rangesOverlap(markerLine.lineStart, markerLine.lineEnd, from, to);
+    return (
+        rangesOverlap(marker.start, marker.end, markerLine.lineStart, markerLine.lineEnd) &&
+        rangesOverlap(markerLine.lineStart, markerLine.lineEnd, from, to)
+    );
 }
 
 export function markerVisibility(
@@ -63,23 +79,41 @@ export function markerVisibility(
     markerLine: MarkerLineContext,
 ): MarkerVisibility {
     if (scope.kind === "heading") {
-        return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
+        return selectionOverlaps(scope, cursor) ||
+            rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
             ? "raw"
             : "hidden";
     }
     if (scope.kind === "thematicBreak") {
-        return selectionOverlaps(scope, cursor) || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) ? "raw" : "hidden";
+        return selectionOverlaps(scope, cursor) ||
+            rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
+            ? "raw"
+            : "hidden";
+    }
+    if (scope.kind === "listMarker") {
+        return cursorOnListMarker(marker, cursor) ||
+            selectionCoversMarkerLine(marker, cursor, markerLine)
+            ? "raw"
+            : "hidden";
     }
     if (STRUCTURAL.has(scope.kind)) {
-        return cursorOnRange(marker, cursor) || selectionCoversMarkerLine(marker, cursor, markerLine) ? "raw" : "hidden";
+        return cursorOnRange(marker, cursor) ||
+            selectionCoversMarkerLine(marker, cursor, markerLine)
+            ? "raw"
+            : "hidden";
     }
     if (scope.kind === "image") {
         return blockReveal(scope, cursor) ? "raw" : "hidden";
     }
     if (scope.kind === "table") {
         const { from, to } = selectionBounds(cursor);
-        const overlaps = from === to ? from >= scope.start && from < scope.end : from < scope.end && to > scope.start;
-        return overlaps || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) || oneBreakBefore(scope, cursor)
+        const overlaps =
+            from === to
+                ? from >= scope.start && from < scope.end
+                : from < scope.end && to > scope.start;
+        return overlaps ||
+            rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd) ||
+            oneBreakBefore(scope, cursor)
             ? "raw"
             : "hidden";
     }
@@ -97,8 +131,8 @@ export function showsFormattedContent(scope: Scope, cursor: CursorContext): bool
     switch (scope.kind) {
         case "heading":
             return !(
-                selectionOverlaps(scope, cursor)
-                || rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
+                selectionOverlaps(scope, cursor) ||
+                rangesOverlap(scope.start, scope.end, cursor.lineStart, cursor.lineEnd)
             );
         case "codeBlock":
         case "blockquote":

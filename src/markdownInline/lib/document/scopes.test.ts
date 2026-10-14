@@ -101,7 +101,7 @@ describe("parseScopes", () => {
         const scopes = parseScopes(source);
         const markers = scopes.filter((scope) => scope.kind === "listMarker");
         expect(markers).toHaveLength(1);
-        expect(markers[0] && source.slice(markers[0].start, markers[0].end)).toBe("- ");
+        expect(markers[0] && source.slice(markers[0].start, markers[0].end)).toBe("-");
         expect(source.slice(0).includes("1.")).toBe(true);
     });
 

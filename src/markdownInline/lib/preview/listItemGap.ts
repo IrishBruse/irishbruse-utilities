@@ -3,7 +3,11 @@ import type { Scope, TextRange } from "../document/types";
 export const LIST_ITEM_GAP_PX = 4;
 export const listGapAfterClass = "inline-md-list-gap-after";
 
-export function listMarkerIndentColumns(line: string, markerColumn: number, tabSize: number): number {
+export function listMarkerIndentColumns(
+    line: string,
+    markerColumn: number,
+    tabSize: number,
+): number {
     const before = line.slice(0, Math.max(0, markerColumn - 1));
     let columns = 0;
     for (const character of before) {
@@ -37,7 +41,11 @@ export interface ListGapPaint {
     readonly className: string;
 }
 
-export function listGapPaints(model: TextLineModel, scopes: readonly Scope[], tabSize: number): ListGapPaint[] {
+export function listGapPaints(
+    model: TextLineModel,
+    scopes: readonly Scope[],
+    tabSize: number,
+): ListGapPaint[] {
     const starts = listItemStartLines(model, scopes, tabSize);
     return listItemGapAfterLines(model, starts, tabSize).map((lineNumber) => ({
         lineNumber,
@@ -60,12 +68,34 @@ export interface TextLineModel {
     positionAt(offset: number): { lineNumber: number; column: number };
 }
 
-export function listMarkerIsTask(scopes: readonly Scope[], markerEnd: number): boolean {
-    return scopes.some((scope) => scope.kind === "task" && scope.start === markerEnd);
+export function listMarkerIsTask(
+    scopes: readonly Scope[],
+    markerEnd: number,
+    source: string,
+): boolean {
+    return scopes.some((scope) => {
+        if (scope.kind !== "task" || scope.start < markerEnd) {
+            return false;
+        }
+        const between = source.slice(markerEnd, scope.start);
+        return between === "" || /^[ \t]+$/.test(between);
+    });
 }
 
-function markerIsTask(scopes: readonly Scope[], markerEnd: number): boolean {
-    return listMarkerIsTask(scopes, markerEnd);
+function markerIsTask(scopes: readonly Scope[], markerEnd: number, model: TextLineModel): boolean {
+    return scopes.some((scope) => {
+        if (scope.kind !== "task" || scope.start < markerEnd) {
+            return false;
+        }
+        const markerPos = model.positionAt(markerEnd);
+        const taskPos = model.positionAt(scope.start);
+        if (markerPos.lineNumber !== taskPos.lineNumber) {
+            return false;
+        }
+        const line = model.getLineContent(markerPos.lineNumber);
+        const between = line.slice(markerPos.column - 1, taskPos.column - 1);
+        return between === "" || /^[ \t]+$/.test(between);
+    });
 }
 
 function leadingIndentColumns(line: string, tabSize: number): number {
@@ -98,7 +128,14 @@ function startFromListMarker(
 ): ListItemStart {
     const position = model.positionAt(marker.start);
     const line = model.getLineContent(position.lineNumber);
-    const contentColumn = model.positionAt(marker.end).column;
+    let contentColumn = model.positionAt(marker.end).column;
+    while (contentColumn <= line.length) {
+        const character = line[contentColumn - 1];
+        if (character !== " " && character !== "\t") {
+            break;
+        }
+        contentColumn += 1;
+    }
     return {
         lineNumber: position.lineNumber,
         indentColumns: listMarkerIndentColumns(line, position.column, tabSize),
@@ -106,11 +143,7 @@ function startFromListMarker(
     };
 }
 
-function startFromTask(
-    model: TextLineModel,
-    marker: TextRange,
-    tabSize: number,
-): ListItemStart {
+function startFromTask(model: TextLineModel, marker: TextRange, tabSize: number): ListItemStart {
     const position = model.positionAt(marker.start);
     const line = model.getLineContent(position.lineNumber);
     const contentColumn = model.positionAt(marker.end).column;
@@ -140,7 +173,7 @@ export function listItemStartLines(
     for (const scope of scopes) {
         if (scope.kind === "listMarker") {
             const marker = scope.markers[0];
-            if (!marker || markerIsTask(scopes, marker.end)) {
+            if (!marker || markerIsTask(scopes, marker.end, model)) {
                 continue;
             }
             const start = startFromListMarker(model, marker, tabSize);
@@ -168,7 +201,13 @@ export function listItemStartLines(
             continue;
         }
         const offset = model.offsetAt(lineNumber, 1);
-        const inCode = scopes.some((scope) => scope.kind === "codeBlock" && scope.markers.length > 0 && offset >= scope.contentStart && offset < scope.contentEnd);
+        const inCode = scopes.some(
+            (scope) =>
+                scope.kind === "codeBlock" &&
+                scope.markers.length > 0 &&
+                offset >= scope.contentStart &&
+                offset < scope.contentEnd,
+        );
         if (inCode) {
             continue;
         }

@@ -19,7 +19,11 @@ function tokenize(source: string): MarkEvent[] {
     const chunks = preprocess()(source, undefined, true);
     const events = postprocess(parser.document().write(chunks));
     return events.map((event) => {
-        const token = event[1] as { type: string; start: { offset?: number }; end: { offset?: number } };
+        const token = event[1] as {
+            type: string;
+            start: { offset?: number };
+            end: { offset?: number };
+        };
         return {
             type: event[0] as "enter" | "exit",
             tokenType: token.type,
@@ -112,7 +116,10 @@ function tableRows(inner: readonly MarkEvent[]): TextRange[][] {
         if (!row) {
             continue;
         }
-        if (event.type === "enter" && (event.tokenType === "tableHeader" || event.tokenType === "tableData")) {
+        if (
+            event.type === "enter" &&
+            (event.tokenType === "tableHeader" || event.tokenType === "tableData")
+        ) {
             row.push({ start: event.start, end: event.start });
             awaitingContent = true;
             continue;
@@ -161,7 +168,13 @@ function sequenceScope(
     };
 }
 
-function buildScope(tokenType: string, start: number, end: number, inner: readonly MarkEvent[], source: string): Scope | undefined {
+function buildScope(
+    tokenType: string,
+    start: number,
+    end: number,
+    inner: readonly MarkEvent[],
+    source: string,
+): Scope | undefined {
     switch (tokenType) {
         case "atxHeading": {
             const sequences = directEnterRanges(inner, "atxHeadingSequence");
@@ -185,10 +198,19 @@ function buildScope(tokenType: string, start: number, end: number, inner: readon
         case "emphasis":
             return sequenceScope("emphasis", start, end, inner, "emphasisSequence", "emphasisText");
         case "strikethrough":
-            return sequenceScope("strikethrough", start, end, inner, "strikethroughSequence", "strikethroughText");
+            return sequenceScope(
+                "strikethrough",
+                start,
+                end,
+                inner,
+                "strikethroughSequence",
+                "strikethroughText",
+            );
         case "codeText": {
             const sequences = directEnterRanges(inner, "codeTextSequence");
-            const data = inner.filter((event) => event.type === "enter" && event.tokenType === "codeTextData");
+            const data = inner.filter(
+                (event) => event.type === "enter" && event.tokenType === "codeTextData",
+            );
             const first = data[0];
             const last = data[data.length - 1];
             return {
@@ -204,7 +226,9 @@ function buildScope(tokenType: string, start: number, end: number, inner: readon
         case "image": {
             const label = firstRange(inner, "labelText");
             const destination = lastRange(inner, "resourceDestination");
-            const url = destination ? cleanDestination(source.slice(destination.start, destination.end)) : undefined;
+            const url = destination
+                ? cleanDestination(source.slice(destination.start, destination.end))
+                : undefined;
             const alt = label ? source.slice(label.start, label.end) : "";
             if (tokenType === "image") {
                 return {
@@ -265,13 +289,21 @@ function buildScope(tokenType: string, start: number, end: number, inner: readon
             if (hasEnter(inner, "listItemValue")) {
                 return undefined;
             }
+            let markerEnd = end;
+            while (markerEnd > start) {
+                const character = source[markerEnd - 1];
+                if (character !== " " && character !== "\t") {
+                    break;
+                }
+                markerEnd -= 1;
+            }
             return {
                 kind: "listMarker",
                 start,
-                end,
-                contentStart: end,
-                contentEnd: end,
-                markers: [{ start, end }],
+                end: markerEnd,
+                contentStart: markerEnd,
+                contentEnd: markerEnd,
+                markers: [{ start, end: markerEnd }],
             };
         }
         case "taskListCheck":
@@ -314,10 +346,14 @@ function buildScope(tokenType: string, start: number, end: number, inner: readon
         case "codeFenced": {
             const fences = directEnterRanges(inner, "codeFencedFence");
             const info = firstRange(inner, "codeFencedFenceInfo");
-            const values = inner.filter((event) => event.type === "enter" && event.tokenType === "codeFlowValue");
+            const values = inner.filter(
+                (event) => event.type === "enter" && event.tokenType === "codeFlowValue",
+            );
             const firstValue = values[0];
             const lastValue = values[values.length - 1];
-            const language = info ? source.slice(info.start, info.end).trim().split(/\s+/)[0] ?? "" : "";
+            const language = info
+                ? (source.slice(info.start, info.end).trim().split(/\s+/)[0] ?? "")
+                : "";
             return {
                 kind: "codeBlock",
                 start,
@@ -375,7 +411,13 @@ export function parseScopes(source: string): Scope[] {
         if (!exit) {
             continue;
         }
-        const scope = buildScope(event.tokenType, event.start, exit.end, events.slice(index + 1, exitIndex), source);
+        const scope = buildScope(
+            event.tokenType,
+            event.start,
+            exit.end,
+            events.slice(index + 1, exitIndex),
+            source,
+        );
         if (scope && scope.end > scope.start) {
             scopes.push(scope);
         }

@@ -143,6 +143,26 @@ describe("markerVisibility", () => {
         );
     });
 
+    it("shows a list dash as raw when the caret is right after it", () => {
+        const list: Scope = {
+            kind: "listMarker",
+            start: 0,
+            end: 1,
+            contentStart: 1,
+            contentEnd: 1,
+            markers: [{ start: 0, end: 1 }],
+        };
+        expect(markerVisibility(list, list.markers[0]!, cursor(1, 0, 7), markerLine(0, 7))).toBe(
+            "raw",
+        );
+        expect(markerVisibility(list, list.markers[0]!, cursor(0, 0, 7), markerLine(0, 7))).toBe(
+            "raw",
+        );
+        expect(markerVisibility(list, list.markers[0]!, cursor(2, 0, 7), markerLine(0, 7))).toBe(
+            "hidden",
+        );
+    });
+
     it("hides a quote mark unless the cursor is touching it", () => {
         const quote: Scope = {
             kind: "blockquoteMarker",

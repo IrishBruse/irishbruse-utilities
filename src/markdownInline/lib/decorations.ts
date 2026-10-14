@@ -1105,10 +1105,10 @@ export class InlinePresentation {
     ): monaco.editor.InjectedTextOptions | undefined {
         switch (scope.kind) {
             case "listMarker":
-                if (listMarkerIsTask(scopes, marker.end)) {
+                if (listMarkerIsTask(scopes, marker.end, model.getValue())) {
                     return undefined;
                 }
-                return injected("• ", "inline-md-list-mark");
+                return injected("•", "inline-md-list-mark");
             case "task": {
                 const position = model.getPositionAt(
                     clampOffset(marker.start, model.getValueLength()),

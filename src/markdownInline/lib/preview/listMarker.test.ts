@@ -19,16 +19,18 @@ describe("listMarkerBulletClass", () => {
 
 describe("listMarkerIsTask", () => {
     it("is true when the marker is followed by a task checkbox", () => {
-        const scopes = parseScopes("- [ ] Task\n");
+        const source = "- [ ] Task\n";
+        const scopes = parseScopes(source);
         const marker = scopes.find((scope) => scope.kind === "listMarker")?.markers[0];
         expect(marker).toBeDefined();
-        expect(listMarkerIsTask(scopes, marker!.end)).toBe(true);
+        expect(listMarkerIsTask(scopes, marker!.end, source)).toBe(true);
     });
 
     it("is false for a normal bullet item", () => {
-        const scopes = parseScopes("- item\n");
+        const source = "- item\n";
+        const scopes = parseScopes(source);
         const marker = scopes.find((scope) => scope.kind === "listMarker")?.markers[0];
         expect(marker).toBeDefined();
-        expect(listMarkerIsTask(scopes, marker!.end)).toBe(false);
+        expect(listMarkerIsTask(scopes, marker!.end, source)).toBe(false);
     });
 });

@@ -112,13 +112,15 @@ describe("list bullet column", () => {
             return {
                 bulletLeft: bulletBox.left,
                 bulletRight: bulletBox.right,
+                bulletText: bullet.textContent,
                 labelLeft: label.getBoundingClientRect().left,
                 numberRight: number.getBoundingClientRect().right,
             };
         });
         expect(seen).not.toBeNull();
+        expect(seen!.bulletText).toBe("•");
         expect(seen!.bulletLeft).toBeGreaterThan(seen!.numberRight - 1);
-        expect(seen!.labelLeft).toBeGreaterThanOrEqual(seen!.bulletRight - 1);
+        expect(seen!.labelLeft).toBeGreaterThan(seen!.bulletRight + 1);
     });
 
     it("matches the saved picture of the bullet on the dash column", async () => {

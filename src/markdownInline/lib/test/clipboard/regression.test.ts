@@ -15,7 +15,7 @@ describe("clipboard commands", () => {
     let page: Page;
 
     beforeAll(async () => {
-        const opened = await openPlayground("test/basic/fixtures/case-1.md", "Main heading");
+        const opened = await openPlayground("test/clipboard/fixtures/case-1.md", "clipboard");
         browser = opened.browser;
         page = opened.page;
         await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
@@ -66,5 +66,34 @@ describe("clipboard commands", () => {
         expect(result.cutText).toBe("clipboard");
         expect(result.pasted).toBe(true);
         expect(result.afterPaste).toBe("Alpha  word.\n\nBeta line.\npasted");
+    });
+
+    it("copies through a Cmd+C keydown", async () => {
+        const result = await page.evaluate(async () => {
+            const api = window.__inlineMarkdown;
+            const doc = "Alpha clipboard word.\n";
+            api.setDocument(doc);
+            const start = doc.indexOf("clipboard");
+            api.select(start, start + "clipboard".length);
+            api.focus();
+            await navigator.clipboard.writeText("before");
+            const event = new KeyboardEvent("keydown", {
+                key: "c",
+                code: "KeyC",
+                metaKey: true,
+                bubbles: true,
+                cancelable: true,
+            });
+            window.dispatchEvent(event);
+            await new Promise((resolve) => {
+                setTimeout(resolve, 50);
+            });
+            return {
+                prevented: event.defaultPrevented,
+                text: await navigator.clipboard.readText(),
+            };
+        });
+        expect(result.prevented).toBe(true);
+        expect(result.text).toBe("clipboard");
     });
 });

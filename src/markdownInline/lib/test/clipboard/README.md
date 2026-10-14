@@ -1,7 +1,7 @@
 # Clipboard
 
-Copy, cut, and paste use the host clipboard commands.
-Those commands are Ctrl+C, Ctrl+X, and Ctrl+V in the Inline Markdown editor.
+Copy, cut, and paste use Ctrl or Cmd with C, X, and V in the Inline Markdown editor.
+That includes the macOS Cmd chord when the host does not forward clipboard menu commands.
 
 Select the word `clipboard`.
 Copy puts `clipboard` on the clipboard.

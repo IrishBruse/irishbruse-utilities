@@ -11,7 +11,7 @@ const docsLoaders = import.meta.glob("../../../docs/tests/markdown/**/*.md", {
     import: "default",
 });
 
-const testLoaders = import.meta.glob("../lib/**/test/fixtures/**/*.md", {
+const testLoaders = import.meta.glob("../lib/test/**/fixtures/**/*.md", {
     query: "?raw",
     import: "default",
 });

@@ -145,6 +145,44 @@ function typedText(event: KeyboardEvent): string | undefined {
     return event.key;
 }
 
+function clipboardAction(event: KeyboardEvent): "copy" | "cut" | "paste" | undefined {
+    if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || event.isComposing) {
+        return undefined;
+    }
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (key === "c") {
+        return "copy";
+    }
+    if (key === "x") {
+        return "cut";
+    }
+    if (key === "v") {
+        return "paste";
+    }
+    return undefined;
+}
+
+function runClipboard(
+    editor: monaco.editor.IStandaloneCodeEditor,
+    action: "copy" | "cut" | "paste",
+): void {
+    if (action === "copy") {
+        editor.trigger("keyboard", "editor.action.clipboardCopyAction", null);
+        return;
+    }
+    if (action === "cut") {
+        if (editor.getOption(monaco.editor.EditorOption.readOnly)) {
+            return;
+        }
+        editor.trigger("keyboard", "editor.action.clipboardCutAction", null);
+        return;
+    }
+    if (editor.getOption(monaco.editor.EditorOption.readOnly)) {
+        return;
+    }
+    editor.trigger("keyboard", "editor.action.clipboardPasteAction", null);
+}
+
 export function installInlineKeybindings(
     editor: monaco.editor.IStandaloneCodeEditor,
     column: HTMLElement,
@@ -168,6 +206,13 @@ export function installInlineKeybindings(
 
     const onKeyDown = (event: KeyboardEvent): void => {
         if (event.defaultPrevented) {
+            return;
+        }
+        const action = clipboardAction(event);
+        if (action && editor.hasTextFocus()) {
+            runClipboard(editor, action);
+            event.preventDefault();
+            event.stopPropagation();
             return;
         }
         const target = event.target;

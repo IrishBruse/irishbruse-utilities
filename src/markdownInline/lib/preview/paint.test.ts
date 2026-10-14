@@ -22,6 +22,21 @@ describe("previewContentRange", () => {
         };
         expect(previewContentRange(scope)).toEqual({ start: 2, end: 7 });
     });
+
+    it("covers inline code through the backticks", () => {
+        const scope: Scope = {
+            kind: "inlineCode",
+            start: 2,
+            end: 12,
+            contentStart: 3,
+            contentEnd: 11,
+            markers: [
+                { start: 2, end: 3 },
+                { start: 11, end: 12 },
+            ],
+        };
+        expect(previewContentRange(scope)).toEqual({ start: 2, end: 12 });
+    });
 });
 
 describe("previewContentClass", () => {

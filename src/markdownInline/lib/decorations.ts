@@ -832,7 +832,7 @@ export class InlinePresentation {
             const rawHeading = scope.kind === "heading" && !formatted;
             const className = rawHeading
                 ? rawHeadingClass(scope)
-                : formatted && !sourceLink
+                : (formatted || scope.kind === "inlineCode") && !sourceLink
                   ? previewContentClass(scope)
                   : undefined;
             if (className) {
@@ -883,7 +883,12 @@ export class InlinePresentation {
                     frontMatterEnd: this.frontMatter?.end,
                     singleLine: false,
                 });
-                if (ghost.surface !== "raw" || !ghost.ghost || scope.kind === "link") {
+                if (
+                    ghost.surface !== "raw" ||
+                    !ghost.ghost ||
+                    scope.kind === "link" ||
+                    scope.kind === "inlineCode"
+                ) {
                     continue;
                 }
                 for (const segment of subtractRanges(marker.start, marker.end, replaced)) {

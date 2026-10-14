@@ -35,3 +35,10 @@ A complaint that already names the feature, the steps, and the wrong result stil
 Treat `/home/econn/.config/Code/User/settings.json` as the reference for VS Code user settings when you check theme, colors, or fonts in the playground.
 The playground loads that path on Linux, match behavior to what those settings imply, not to ad hoc values in the repo.
 The playground loads `playground/vscode-iframe-injected-theme.css` (a real copy of VS Code webview iframe `--vscode-*` tokens, see `playground/AGENTS.md`), then applies settings overrides from `settings.json`.
+
+When a fixture path is known, print its local playground link in the reply so the user can open it:
+
+`http://127.0.0.1:5175/?fixture=<feature-name>/fixtures/<file>`
+
+Print it as soon as the case exists.
+Do not wait for the end of the turn.

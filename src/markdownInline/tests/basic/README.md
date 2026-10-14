@@ -21,6 +21,9 @@ A coded word uses a code face.
 The backticks stay hidden.
 The word lines up with the code mark.
 
+A multi-word code span stays one darkened piece.
+When raw shows the backticks, those marks share that darkened background.
+
 A link label is colored.
 The address stays hidden.
 The label lines up with the link mark.

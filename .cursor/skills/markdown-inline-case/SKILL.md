@@ -49,7 +49,11 @@ Done when the README, the sample, and the chosen test file exist.
 
 ## Explore
 
-Open `http://127.0.0.1:5175/?fixture=<feature-name>/fixtures/<path>`.
+Print the local playground link in the reply as soon as the fixture path is known:
+
+`http://127.0.0.1:5175/?fixture=<feature-name>/fixtures/<path>`
+
+Open that same URL.
 `npm run dev:markdown-inline` starts the playground when nothing is listening.
 When it is already up, leave that server running.
 

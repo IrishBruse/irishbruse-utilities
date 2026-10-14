@@ -11,6 +11,8 @@ Do not stop, kill, or restart the process (no `pkill`, port cleanup, or second `
 Test markdown files live in `docs/tests/markdown/` and load via `?fixture=<path>` (default `playground.md`).
 Feature samples live in `src/markdownInline/tests/<feature>/fixtures/` and load the same way, for example `?fixture=list/fixtures/case-1.md`.
 
+When you add or change a fixture for the user to check, print the full local link in the reply, for example `http://127.0.0.1:5175/?fixture=basic/fixtures/case-7.md`.
+
 ## VS Code iframe theme (`vscode-iframe-injected-theme.css`)
 
 `vscode-iframe-injected-theme.css` is a **real copy** of the CSS custom properties VS Code injects on a custom-editor webview iframe (`<html style="--vscode-…">`). The playground loads it as a normal stylesheet so Monaco and task checkboxes see the same tokens as in the extension host.

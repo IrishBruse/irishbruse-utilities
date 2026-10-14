@@ -38,6 +38,10 @@ The check is `src/markdownInline/tests/<feature-name>/regression.test.ts`.
 The sample goes in that folder's `fixtures/`.
 A numbered case may be the next `case-N.md`.
 A skill sample is `<name>/SKILL.md`, and the folder name is the `name` value.
+When the fixture path is known, print its local playground link in the reply:
+
+`http://127.0.0.1:5175/?fixture=<feature-name>/fixtures/<file>`
+
 A paint or layout bug also saves a picture under `screenshots/`.
 Open that picture and check it before the compare counts.
 

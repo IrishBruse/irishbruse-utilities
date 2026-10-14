@@ -6,5 +6,8 @@ export function previewContentClass(scope: Scope): string | undefined {
 }
 
 export function previewContentRange(scope: Scope): TextRange {
+    if (scope.kind === "inlineCode") {
+        return { start: scope.start, end: scope.end };
+    }
     return { start: scope.contentStart, end: scope.contentEnd };
 }

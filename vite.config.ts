@@ -1,4 +1,39 @@
 import { defineConfig } from "vite-plus";
+import type { PackUserConfig } from "vite-plus/pack";
+
+const pack: PackUserConfig[] = [
+    {
+        name: "extension",
+        entry: { extension: "src/extension.ts" },
+        format: "cjs",
+        platform: "node",
+        outDir: "dist",
+        target: "node20",
+        deps: { neverBundle: ["vscode"] },
+        dts: false,
+        fixedExtension: false,
+        hash: false,
+        sourcemap: true,
+    },
+    {
+        name: "mermaid-theme",
+        entry: { vsCodeTheme: "src/lib/mermaid/vsCodeTheme.browser.ts" },
+        format: "iife",
+        globalName: "IbMermaidVsCodeThemeBundle",
+        platform: "browser",
+        outDir: "media/mermaidPreview",
+        target: "es2020",
+        dts: false,
+        hash: false,
+        clean: false,
+        sourcemap: true,
+        outputOptions: (options, format) =>
+            format === "iife"
+                ? { ...options, entryFileNames: "[name].js", chunkFileNames: "[name].js" }
+                : options,
+        copy: [{ from: "node_modules/mermaid/dist/mermaid.min.js", to: "media/mermaidPreview" }],
+    },
+];
 
 const boundaryOptions = {
     packagesRoot: "src",
@@ -22,6 +57,7 @@ const boundaryOptions = {
 };
 
 export default defineConfig({
+    pack,
     staged: {
         "*": "vp check --fix",
     },

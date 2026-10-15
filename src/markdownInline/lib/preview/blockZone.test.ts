@@ -979,7 +979,7 @@ describe("tableZone", () => {
             50,
             host,
         );
-        expect(record.key).toBe(`table:3:9:${source.slice(3, 9)}`);
+        expect(record.key).toBe("table:3:9");
         const frame = element(record.domNode);
         const link = frame.find(".inline-md-link");
         const linkEvent = mouse(link);

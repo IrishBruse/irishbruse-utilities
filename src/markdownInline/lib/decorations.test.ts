@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vite-plus/test";
+import { paintLineSpan } from "./document/paintWindow";
 
 const decorationsPath = join(dirname(fileURLToPath(import.meta.url)), "decorations.ts");
 
@@ -34,6 +35,17 @@ describe("painted window", () => {
         expect(paintedWindowNeedsRebuild(100 + paintedWindowScrollPad, 460, painted)).toBe(false);
     });
 
+    it("paints the visible lines when the caret is far away", () => {
+        const span = paintLineSpan(50000, 50040, 1, 1, 200000);
+        expect(span.startLine).toBeGreaterThan(40000);
+        expect(span.endLine).toBeLessThan(51000);
+    });
+
+    it("includes a selection that overlaps the visible lines", () => {
+        const span = paintLineSpan(100, 110, 200, 250, 500);
+        expect(span.endLine).toBe(250);
+    });
+
     it("rebuilds before the first paint", () => {
         expect(paintedWindowNeedsRebuild(1, 40, { startLine: 0, endLine: 0 })).toBe(true);
     });
@@ -51,8 +63,10 @@ describe("painted window", () => {
         expect(withoutScheduledCallbacks).not.toContain("this.update()");
         expect(scheduleWindow).not.toContain("requestAnimationFrame");
         expect(scheduleWindow).toContain("clearTimeout");
-        expect(scheduleWindow).toMatch(/setTimeout\([^,]+,\s*(\w+)\)/);
-        const delayConstant = scheduleWindow.match(/setTimeout\([^,]+,\s*(\w+)\)/)?.[1];
+        expect(scheduleWindow).toMatch(/setTimeout\(\(\) => \{[\s\S]*\},\s*(\w+)\)/);
+        const delayConstant = scheduleWindow.match(
+            /setTimeout\(\(\) => \{[\s\S]*\},\s*(\w+)\)/,
+        )?.[1];
         expect(delayConstant).toBeDefined();
         const delayValue = Number(source.match(new RegExp(`const ${delayConstant} = (\\d+)`))?.[1]);
         expect(delayValue).toBeGreaterThanOrEqual(80);

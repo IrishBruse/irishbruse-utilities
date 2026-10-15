@@ -146,7 +146,7 @@ export function mountInlineEditor(
                 .trim() || "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
         fontSize: readEditorFontSize(),
         lineHeight: 0,
-        allowVariableLineHeights: true,
+        allowVariableLineHeights: !largeDocument,
         padding: { top: 0, bottom: 48 },
         occurrencesHighlight: "off",
         selectionHighlight: false,
@@ -292,17 +292,47 @@ export function mountInlineEditor(
         useShadows: false,
         verticalScrollbarSize: 0,
         horizontalScrollbarSize: 0,
+        verticalHasArrows: false,
+        horizontalHasArrows: false,
         handleMouseWheel: false,
         alwaysConsumeMouseWheel: false,
     };
-    const visibleScrollbar = {
-        vertical: "visible" as const,
+    const editorScrollbar = {
+        vertical: "hidden" as const,
         horizontal: "hidden" as const,
         useShadows: false,
-        verticalScrollbarSize: 10,
+        verticalScrollbarSize: 0,
         horizontalScrollbarSize: 0,
+        verticalHasArrows: false,
+        horizontalHasArrows: false,
         handleMouseWheel: true,
         alwaysConsumeMouseWheel: false,
+    };
+    const screenScroll = document.createElement("div");
+    screenScroll.className = "inline-md-screen-scroll";
+    const screenSpacer = document.createElement("div");
+    screenSpacer.className = "inline-md-screen-scroll-spacer";
+    screenScroll.append(screenSpacer);
+    parent.append(screenScroll);
+    let scrollSync = false;
+    const screenTrackLimit = 20000;
+
+    const screenScale = (): number => {
+        const raw = Number(screenScroll.dataset.scale);
+        return Number.isFinite(raw) && raw > 1 ? raw : 1;
+    };
+
+    const setScreenRange = (scrollHeight: number): void => {
+        const view = Math.max(1, screenScroll.clientHeight);
+        const editorMax = Math.max(0, scrollHeight - view);
+        if (editorMax + view <= screenTrackLimit) {
+            delete screenScroll.dataset.scale;
+            screenSpacer.style.height = `${scrollHeight}px`;
+            return;
+        }
+        const screenMax = Math.max(1, screenTrackLimit - view);
+        screenScroll.dataset.scale = String(editorMax / screenMax);
+        screenSpacer.style.height = `${screenTrackLimit}px`;
     };
 
     const placeScroll = (scrollTop: number): void => {
@@ -611,20 +641,29 @@ export function mountInlineEditor(
                 parent.classList.toggle("inline-md-editor-scroll", ownsScroll);
                 editor.updateOptions({
                     wrappingStrategy: ownsScroll ? "simple" : "advanced",
-                    scrollbar: ownsScroll ? visibleScrollbar : hiddenScrollbar,
+                    scrollbar: ownsScroll ? editorScrollbar : hiddenScrollbar,
                 });
             }
             if (
-                Math.abs(info.width - width) <= 1 &&
-                Math.abs(info.height - editorHeight) <= 1 &&
-                heightMatches
+                Math.abs(info.width - width) > 1 ||
+                Math.abs(info.height - editorHeight) > 1 ||
+                !heightMatches
             ) {
-                return;
+                if (!heightMatches) {
+                    column.style.height = `${columnHeight}px`;
+                }
+                editor.layout({ width, height: editorHeight });
             }
-            if (!heightMatches) {
-                column.style.height = `${columnHeight}px`;
+            if (ownsScroll) {
+                const scrollHeight = Math.max(1, Math.ceil(editor.getScrollHeight()));
+                setScreenRange(scrollHeight);
+                const top = editor.getScrollTop() / screenScale();
+                if (Math.abs(screenScroll.scrollTop - top) > 1) {
+                    scrollSync = true;
+                    screenScroll.scrollTop = top;
+                    scrollSync = false;
+                }
             }
-            editor.layout({ width, height: editorHeight });
         } finally {
             fitting = false;
             placeBelow();
@@ -653,6 +692,39 @@ export function mountInlineEditor(
     } | null;
     const findVisibilityListener = findController?.getState().onFindReplaceStateChange(() => {
         placeFindWidget();
+    });
+    let screenFrame = 0;
+    const syncEditorToScreen = (): void => {
+        screenFrame = 0;
+        if (!editorOwnsScroll || scrollSync) {
+            return;
+        }
+        const top = screenScroll.scrollTop * screenScale();
+        if (Math.abs(editor.getScrollTop() - top) <= 1) {
+            return;
+        }
+        scrollSync = true;
+        editor.setScrollTop(top);
+        scrollSync = false;
+    };
+    const onScreenScroll = (): void => {
+        if (!editorOwnsScroll || scrollSync || screenFrame !== 0) {
+            return;
+        }
+        screenFrame = requestAnimationFrame(syncEditorToScreen);
+    };
+    screenScroll.addEventListener("scroll", onScreenScroll, { passive: true });
+    const editorScrollListener = editor.onDidScrollChange(() => {
+        if (!editorOwnsScroll || scrollSync) {
+            return;
+        }
+        const top = editor.getScrollTop() / screenScale();
+        if (Math.abs(screenScroll.scrollTop - top) <= 1) {
+            return;
+        }
+        scrollSync = true;
+        screenScroll.scrollTop = top;
+        scrollSync = false;
     });
     const contentSizeListener = editor.onDidContentSizeChange(fitContent);
     const cursorRevealListener = editor.onDidChangeCursorPosition((event) => {
@@ -695,6 +767,12 @@ export function mountInlineEditor(
             window.removeEventListener("resize", placeFindWidget);
             findVisibilityListener?.dispose();
             parent.classList.remove("inline-md-editor-scroll");
+            screenScroll.removeEventListener("scroll", onScreenScroll);
+            if (screenFrame !== 0) {
+                cancelAnimationFrame(screenFrame);
+            }
+            editorScrollListener.dispose();
+            screenScroll.remove();
             contentSizeListener.dispose();
             cursorRevealListener.dispose();
             removeKeybindings();

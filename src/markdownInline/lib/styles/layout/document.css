@@ -16,6 +16,7 @@ body {
 }
 
 .inline-md-root {
+    position: relative;
     overflow: auto;
     cursor: default;
     box-sizing: border-box;
@@ -65,6 +66,47 @@ body {
     height: auto;
     margin-inline: auto;
     padding-inline: var(--ib-md-inline-pad);
+}
+
+.inline-md-root.inline-md-editor-scroll {
+    overflow: hidden;
+}
+
+.inline-md-screen-scroll {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 20;
+    width: 10px;
+    overflow-x: hidden;
+    overflow-y: scroll;
+    scrollbar-color: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4)) transparent;
+}
+
+.inline-md-root.inline-md-editor-scroll .inline-md-screen-scroll {
+    display: block;
+}
+
+.inline-md-screen-scroll::-webkit-scrollbar {
+    width: 10px;
+}
+
+.inline-md-screen-scroll::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.inline-md-screen-scroll::-webkit-scrollbar-thumb {
+    background-color: var(--vscode-scrollbarSlider-background, rgba(121, 121, 121, 0.4));
+    border-radius: 10px;
+    border: 3px solid transparent;
+    border-right-width: 0;
+    background-clip: padding-box;
+}
+
+.inline-md-screen-scroll-spacer {
+    width: 1px;
 }
 
 .inline-md-root.inline-md-editor-scroll .inline-md-column > .monaco-editor {

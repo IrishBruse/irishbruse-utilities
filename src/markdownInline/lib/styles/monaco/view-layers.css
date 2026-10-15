@@ -8,11 +8,6 @@
     display: none !important;
 }
 
-.inline-md-root.inline-md-editor-scroll .monaco-scrollable-element > .scrollbar.vertical,
-.inline-md-root.inline-md-editor-scroll .monaco-scrollable-element > .invisible.scrollbar.vertical {
-    display: block !important;
-}
-
 .inline-md-root .monaco-editor .view-zones > [monaco-view-zone] {
     width: 100% !important;
 }

@@ -23,7 +23,10 @@ import {
     headingLevel,
     imageZoneKey,
     tableZone as buildTableZone,
+    tableZoneKey,
+    updateTableZone,
     type BlockZoneHost,
+    type TableZonePaint,
 } from "./preview/blockZone";
 import { mermaidDiagramSource } from "../../lib/mermaid/mermaidDiagramSource";
 import { isMermaidCodeBlock } from "./preview/mermaid";
@@ -33,6 +36,7 @@ import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "
 import { reveal, revealCode, showFormatted } from "./reveal";
 import { scopesOverlapping } from "./document/scopes";
 import { cachedScopes, fullPaintLineLimit, releaseScopes } from "./document/scopeCache";
+import { paintLineSpan } from "./document/paintWindow";
 import {
     clipSelectionToText,
     extendHeadingSelectionPastText,
@@ -66,6 +70,31 @@ import {
 
 export const paintedWindowScrollPad = 40;
 export const paintedWindowPaintDelayMs = 100;
+
+function tableOverlayLines(
+    model: monaco.editor.ITextModel,
+    source: string,
+    bounds: TextRange,
+    lineSpan: LineSpan,
+    partial: boolean,
+): number[] {
+    const all = lineNumbersCovering(model, source, bounds);
+    if (!partial || all.length <= 2) {
+        return all;
+    }
+    const header = all[0];
+    const separator = all[1];
+    const data = all
+        .slice(2)
+        .filter((line) => line >= lineSpan.startLine && line <= lineSpan.endLine);
+    if (header === undefined) {
+        return data;
+    }
+    if (separator === undefined) {
+        return [header, ...data];
+    }
+    return [header, separator, ...data];
+}
 
 export function paintedWindowNeedsRebuild(
     visibleFirstLine: number,
@@ -154,6 +183,8 @@ class TableOverlayWidget implements monaco.editor.IContentWidget {
     readonly allowEditorOverflow = false;
     readonly suppressMouseDown = true;
     private lines: readonly number[];
+    private lastFitWidth = -1;
+    private lastFitLines = "";
 
     constructor(
         private readonly id: string,
@@ -186,6 +217,8 @@ class TableOverlayWidget implements monaco.editor.IContentWidget {
 
     setLines(lines: readonly number[]): void {
         this.lines = lines;
+        this.lastFitLines = "";
+        this.lastFitWidth = -1;
     }
 
     afterRender(): void {
@@ -216,7 +249,17 @@ class TableOverlayWidget implements monaco.editor.IContentWidget {
         this.node.style.top = `${editorBox.top + top - parentBox.top}px`;
         this.node.style.fontSize = `${fontSize}px`;
         this.node.style.lineHeight = `${lineHeight}px`;
-        this.fitColumns(Math.max(0, linesBox.width));
+        if ((this.editor.getModel()?.getLineCount() ?? 0) > fullPaintLineLimit) {
+            return;
+        }
+        const available = Math.max(0, linesBox.width);
+        const linesKey = this.lines.join(",");
+        if (linesKey === this.lastFitLines && available === this.lastFitWidth) {
+            return;
+        }
+        this.lastFitLines = linesKey;
+        this.lastFitWidth = available;
+        this.fitColumns(available);
         this.fitRows(lineHeight);
     }
 
@@ -474,12 +517,6 @@ export class InlinePresentation {
         if (!model || model.getLineCount() <= fullPaintLineLimit) {
             return;
         }
-        const visible = this.editor.getVisibleRanges();
-        const first = visible[0]?.startLineNumber ?? 1;
-        const last = visible[visible.length - 1]?.endLineNumber ?? first;
-        if (!paintedWindowNeedsRebuild(first, last, this.paintedWindow)) {
-            return;
-        }
         if (this.windowPaintTimer !== undefined) {
             clearTimeout(this.windowPaintTimer);
         }
@@ -489,29 +526,44 @@ export class InlinePresentation {
         }, paintedWindowPaintDelayMs);
     }
 
+    private visibleLineSpan(model: monaco.editor.ITextModel): LineSpan {
+        const lineCount = model.getLineCount();
+        const ranges = this.editor.getVisibleRanges();
+        const scrollTop = this.editor.getScrollTop();
+        const viewHeight = Math.max(1, this.editor.getLayoutInfo().height);
+        const lineHeight = Math.max(
+            1,
+            this.editor.getOption(monaco.editor.EditorOption.lineHeight),
+        );
+        const reportedFirst = ranges[0]?.startLineNumber;
+        const reportedLast = ranges.at(-1)?.endLineNumber;
+        if (reportedFirst !== undefined && reportedLast !== undefined) {
+            const top = this.editor.getTopForLineNumber(reportedFirst);
+            if (top >= scrollTop - viewHeight && top <= scrollTop + viewHeight) {
+                return { startLine: reportedFirst, endLine: reportedLast };
+            }
+        }
+        const first = Math.min(lineCount, Math.max(1, Math.floor(scrollTop / lineHeight) + 1));
+        const count = Math.ceil(viewHeight / lineHeight) + 2;
+        return { startLine: first, endLine: Math.min(lineCount, first + count) };
+    }
+
     private lineWindow(model: monaco.editor.ITextModel): LineSpan {
         const lineCount = model.getLineCount();
         if (lineCount <= fullPaintLineLimit) {
             return { startLine: 1, endLine: lineCount };
         }
-        const visible = this.editor.getVisibleRanges();
-        const first = visible[0]?.startLineNumber ?? 1;
-        const last = visible.at(-1)?.endLineNumber ?? Math.min(lineCount, first + 80);
-        const margin = 120;
-        let startLine = Math.max(1, first - margin);
-        let endLine = Math.min(lineCount, last + margin);
+        const visible = this.visibleLineSpan(model);
+        const first = visible.startLine;
+        const last = visible.endLine;
         const selection = this.editor.getSelection();
-        if (selection) {
-            const caret = selection.positionLineNumber;
-            if (selection.endLineNumber - selection.startLineNumber < 400) {
-                startLine = Math.min(startLine, selection.startLineNumber);
-                endLine = Math.max(endLine, selection.endLineNumber);
-            } else {
-                startLine = Math.min(startLine, caret);
-                endLine = Math.max(endLine, caret);
-            }
-        }
-        return { startLine, endLine };
+        return paintLineSpan(
+            first,
+            last,
+            selection?.startLineNumber,
+            selection?.endLineNumber,
+            lineCount,
+        );
     }
 
     private render(): void {
@@ -605,9 +657,32 @@ export class InlinePresentation {
                     continue;
                 }
                 if (decision.zone && scope.kind === "table") {
-                    const lines = lineNumbersCovering(model, text, bounds);
-                    const record = this.tableZone(scope, text, scopes, bounds.start);
-                    tables.push({ key: record.key, domNode: record.domNode, lines });
+                    const partial = model.getLineCount() > fullPaintLineLimit;
+                    const lines = tableOverlayLines(model, text, bounds, lineSpan, partial);
+                    const paint: TableZonePaint | undefined = partial
+                        ? {
+                              partial: true,
+                              model,
+                              bodyLineNumbers: new Set(lines.slice(2)),
+                          }
+                        : undefined;
+                    const key = tableZoneKey(scope);
+                    const existing = this.tableWidgets.get(key);
+                    let domNode: HTMLElement;
+                    if (existing) {
+                        domNode = existing.getDomNode();
+                        updateTableZone(domNode, scope, text, scopes, paint);
+                    } else {
+                        domNode = buildTableZone(
+                            scope,
+                            text,
+                            scopes,
+                            bounds.start,
+                            this.zoneHost(),
+                            paint,
+                        ).domNode;
+                    }
+                    tables.push({ key, domNode, lines });
                     const lineHeight = this.editor.getOption(monaco.editor.EditorOption.lineHeight);
                     for (const line of lines) {
                         const scale = this.tableLineHeights.get(line);
@@ -615,7 +690,7 @@ export class InlinePresentation {
                             isWholeLine: true,
                             className: "inline-md-table-source",
                         };
-                        if (scale !== undefined && lineHeight > 0 && scale > 1.05) {
+                        if (!partial && scale !== undefined && lineHeight > 0 && scale > 1.05) {
                             options.lineHeight = scale;
                         }
                         decorations.push({
@@ -915,14 +990,20 @@ export class InlinePresentation {
         const tabSize = model.getOptions().tabSize;
         const lineModel = monacoLineModel(model);
         const listLineHeight = listLineHeightMultiplier(lineHeight);
+        const variableLines = model.getLineCount() <= fullPaintLineLimit;
         for (const gap of listGapPaints(lineModel, visibleScopes, tabSize, lineSpan)) {
             decorations.push({
                 range: new monaco.Range(gap.lineNumber, 1, gap.lineNumber, 1),
-                options: {
-                    isWholeLine: true,
-                    className: gap.className,
-                    lineHeight: listLineHeight,
-                },
+                options: variableLines
+                    ? {
+                          isWholeLine: true,
+                          className: gap.className,
+                          lineHeight: listLineHeight,
+                      }
+                    : {
+                          isWholeLine: true,
+                          className: gap.className,
+                      },
             });
         }
 
@@ -1108,10 +1189,6 @@ export class InlinePresentation {
         lineNumber: number,
     ): ZoneRecord {
         return buildMermaidZone(scope, content, key, lineNumber, this.zoneHost());
-    }
-
-    private tableZone(scope: Scope, source: string, scopes: readonly Scope[], from: number) {
-        return buildTableZone(scope, source, scopes, from, this.zoneHost());
     }
 
     private applyTableHeights(

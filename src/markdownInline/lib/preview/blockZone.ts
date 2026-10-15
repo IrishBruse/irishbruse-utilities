@@ -414,15 +414,71 @@ export interface TableOverlayRecord {
     readonly domNode: HTMLElement;
 }
 
-export function tableZone(
+export interface TableZonePaint {
+    readonly partial: boolean;
+    readonly model: monaco.editor.ITextModel;
+    readonly bodyLineNumbers: ReadonlySet<number>;
+}
+
+export function tableZoneKey(scope: Scope): string {
+    return `table:${scope.start}:${scope.end}`;
+}
+
+function rowSourceLine(
+    model: monaco.editor.ITextModel,
+    source: string,
+    cells: readonly TextRange[],
+): number {
+    const cell = cells[0];
+    if (!cell) {
+        return 1;
+    }
+    const offset = Math.max(0, Math.min(cell.start, source.length));
+    return model.getPositionAt(offset).lineNumber;
+}
+
+function filteredBodyRows(
+    bodyRows: readonly (readonly TextRange[])[],
+    source: string,
+    paint: TableZonePaint | undefined,
+): readonly (readonly TextRange[])[] {
+    if (!paint?.partial) {
+        return bodyRows;
+    }
+    return bodyRows.filter((cells) => {
+        const line = rowSourceLine(paint.model, source, cells);
+        return paint.bodyLineNumbers.has(line);
+    });
+}
+
+function fillTableElement(
+    table: HTMLTableElement,
     scope: Scope,
     source: string,
     scopes: readonly Scope[],
-    from: number,
-    host: BlockZoneHost,
-): TableOverlayRecord {
-    const frame = document.createElement("div");
-    frame.className = "inline-md-table";
+    paint: TableZonePaint | undefined,
+): void {
+    const rows = scope.rows ?? [];
+    const aligns = tableAlignments(source, scope.start, scope.end);
+    const head = rows[0];
+    const bodyRows = filteredBodyRows(rows.slice(1), source, paint);
+    const columns = Math.max(head?.length ?? 0, ...rows.map((row) => row.length));
+    if (head) {
+        const thead = document.createElement("thead");
+        thead.append(tableRow(source, scopes, head, "th", aligns));
+        table.append(thead);
+    }
+    if (columns > 0) {
+        const tbody = document.createElement("tbody");
+        tbody.append(ruleRow(columns));
+        for (const cells of bodyRows) {
+            tbody.append(tableRow(source, scopes, cells, "td", aligns));
+        }
+        table.append(tbody);
+    }
+}
+
+function attachTableFrameListeners(frame: HTMLElement, from: number, host: BlockZoneHost): void {
     frame.addEventListener("mousedown", (event) => {
         const element =
             event.target instanceof Element
@@ -443,25 +499,43 @@ export function tableZone(
             cell instanceof HTMLElement ? tableCellOffset(event, cell, from + 1) : from + 1;
         host.onReveal(offset);
     });
+}
+
+export function updateTableZone(
+    frame: HTMLElement,
+    scope: Scope,
+    source: string,
+    scopes: readonly Scope[],
+    paint: TableZonePaint | undefined,
+): void {
+    const signature = paint?.partial
+        ? [...paint.bodyLineNumbers].sort((left, right) => left - right).join(",")
+        : "all";
+    if (frame.dataset.paintLines === signature) {
+        return;
+    }
+    frame.dataset.paintLines = signature;
+    const table = frame.querySelector("table");
+    if (!(table instanceof HTMLTableElement)) {
+        return;
+    }
+    table.replaceChildren();
+    fillTableElement(table, scope, source, scopes, paint);
+}
+
+export function tableZone(
+    scope: Scope,
+    source: string,
+    scopes: readonly Scope[],
+    from: number,
+    host: BlockZoneHost,
+    paint?: TableZonePaint,
+): TableOverlayRecord {
+    const frame = document.createElement("div");
+    frame.className = "inline-md-table";
+    attachTableFrameListeners(frame, from, host);
     const table = document.createElement("table");
-    const rows = scope.rows ?? [];
-    const aligns = tableAlignments(source, scope.start, scope.end);
-    const head = rows[0];
-    const columns = Math.max(head?.length ?? 0, ...rows.map((row) => row.length));
-    if (head) {
-        const thead = document.createElement("thead");
-        thead.append(tableRow(source, scopes, head, "th", aligns));
-        table.append(thead);
-    }
-    if (columns > 0) {
-        const tbody = document.createElement("tbody");
-        tbody.append(ruleRow(columns));
-        for (const cells of rows.slice(1)) {
-            tbody.append(tableRow(source, scopes, cells, "td", aligns));
-        }
-        table.append(tbody);
-    }
+    fillTableElement(table, scope, source, scopes, paint);
     frame.append(table);
-    const key = `table:${scope.start}:${scope.end}:${source.slice(scope.start, scope.end)}`;
-    return { key, domNode: frame };
+    return { key: tableZoneKey(scope), domNode: frame };
 }

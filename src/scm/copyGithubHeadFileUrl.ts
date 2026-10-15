@@ -81,7 +81,7 @@ async function copyResourcesGithubHeadFileUrl(resources: ScmResourceContext[]): 
 
 export async function copyGithubHeadFileUrl(
     arg?: Uri | Parameters<typeof resolveCommandFileResources>[0],
-    selectedResources?: Uri | Uri[]
+    selectedResources?: Uri | Uri[],
 ): Promise<void> {
     await copyResourcesGithubHeadFileUrl(resolveCommandFileResources(arg, selectedResources));
 }

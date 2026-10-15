@@ -8,7 +8,7 @@ draft: false
 
 Open this file with **Reopen Editor With... → Markdown Editor (ib-utilities)**. YAML front matter is the first block. See [README.md](./README.md) for the full fixture list and checklist.
 
-Theme colors: **H1–H6**, **bold**, *italic*, ***both***, ~~strike~~, `inline code`, and [links](https://example.com). Escapes: \*not italic\*, \`not code\`. Mix: call `getValue()` on **MyClass**.
+Theme colors: **H1–H6**, **bold**, _italic_, _**both**_, ~~strike~~, `inline code`, and [links](https://example.com). Escapes: \*not italic\*, \`not code\`. Mix: call `getValue()` on **MyClass**.
 
 [Link](https://github.com/IrishBruse/)
 
@@ -36,27 +36,27 @@ Duplicate later: # this is not a heading because it is mid-paragraph.
 ## Lists, tasks, quotes
 
 - Unordered
-  - Nested
-    - Deep
+    - Nested
+        - Deep
 - Mix with `code`
 
 1. Ordered
-   1. Nested A
-   2. Nested B
+    1. Nested A
+    2. Nested B
 2. Next
-   - Child bullet
+    - Child bullet
 
 - [ ] Unchecked
 - [x] Checked
 - [ ] Parent
-  - [x] Done child
-  - [ ] Open child
+    - [x] Done child
+    - [ ] Open child
 
-> Quote with **bold**, *italic*, and `code`.
+> Quote with **bold**, _italic_, and `code`.
 >
 > > Nested quote
 >
->  - List in a quote
+> - List in a quote
 
 Above a rule.
 
@@ -68,22 +68,22 @@ Below a rule.
 
 Click a cell. Cells accept Markdown. Wide text wraps when `markdownInlineEditor.tables.style` is `wrapped`. Short columns keep one word on one line. Use [table-columns.md](./table-columns.md) to check that wrap.
 
-| Name | Role | Notes |
-| :--- | :---: | ---: |
-| Ada | **Engineer** | `inline` and a [link](https://example.com) |
-| Grace | Architect | Long description that should wrap instead of stretching the column forever |
-| Alan | Researcher | Empty next → |
-| | | |
+| Name  |     Role     |                                                                      Notes |
+| :---- | :----------: | -------------------------------------------------------------------------: |
+| Ada   | **Engineer** |                                 `inline` and a [link](https://example.com) |
+| Grace |  Architect   | Long description that should wrap instead of stretching the column forever |
+| Alan  |  Researcher  |                                                               Empty next → |
+|       |              |                                                                            |
 
-| Left | Center | Right |
-| :--- | :----: | ----: |
-| a | b | 1 |
-| longer left | mid | 999 |
+| Left        | Center | Right |
+| :---------- | :----: | ----: |
+| a           |   b    |     1 |
+| longer left |  mid   |   999 |
 
 | Only |
 | ---- |
-| one |
-| two |
+| one  |
+| two  |
 
 ## Code fences and language badges
 
@@ -91,14 +91,14 @@ Idle blocks show a language label. Highlighting follows the active color theme. 
 
 ```typescript
 export function greet(name: string): string {
-	return `Hello, ${name}!`;
+    return `Hello, ${name}!`;
 }
 console.log(greet("world"));
 ```
 
 ```javascript
 function add(a, b) {
-	return a + b;
+    return a + b;
 }
 ```
 
@@ -118,7 +118,7 @@ def fib(n: int) -> list[int]:
 
 ```css
 .md-theme-vscode-default h1.md-heading {
-	color: var(--ib-md-heading-1, #d19a66);
+    color: var(--ib-md-heading-1, #d19a66);
 }
 ```
 
@@ -140,10 +140,12 @@ plain fence without a language tag
 
 ```json
 {
-  "test": 123
+    "test": 123
 }
 ```
+
 ```typescript
+
 ```
 
 ## Mermaid (Open Preview)

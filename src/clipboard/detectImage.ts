@@ -20,16 +20,13 @@ function macClipboardInfoHasImage(info: string): boolean {
 function isWayland(): boolean {
     const wayland = process.env.WAYLAND_DISPLAY;
     return (
-        (wayland !== undefined && wayland.length > 0) ||
-        process.env.XDG_SESSION_TYPE === "wayland"
+        (wayland !== undefined && wayland.length > 0) || process.env.XDG_SESSION_TYPE === "wayland"
     );
 }
 
 async function linuxWaylandClipboardHasImage(): Promise<boolean | null> {
     try {
-        const { stdout, stderr, status } = await asyncSpawn("wl-paste", [
-            "--list-types",
-        ]);
+        const { stdout, stderr, status } = await asyncSpawn("wl-paste", ["--list-types"]);
         if (status !== 0) {
             return null;
         }
@@ -41,10 +38,7 @@ async function linuxWaylandClipboardHasImage(): Promise<boolean | null> {
 
 async function macClipboardHasImage(): Promise<boolean | null> {
     try {
-        const { stdout, stderr, status } = await asyncSpawn("osascript", [
-            "-e",
-            "clipboard info",
-        ]);
+        const { stdout, stderr, status } = await asyncSpawn("osascript", ["-e", "clipboard info"]);
         if (status !== 0) {
             return null;
         }
@@ -53,7 +47,6 @@ async function macClipboardHasImage(): Promise<boolean | null> {
         return null;
     }
 }
-
 
 export async function clipboardHasImage(): Promise<boolean | null> {
     const os = platform();

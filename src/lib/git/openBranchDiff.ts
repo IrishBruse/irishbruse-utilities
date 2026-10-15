@@ -41,13 +41,15 @@ export async function openBranchDiff(repoRoot: string): Promise<void> {
             scheme: "git-ref-compare",
             path: `${repository.rootUri.fsPath}/${mergeBase}..HEAD`,
         });
-        const resources = changes.map((change) => toMultiFileDiffEditorUris(change, mergeBase, "HEAD"));
+        const resources = changes.map((change) =>
+            toMultiFileDiffEditorUris(change, mergeBase, "HEAD"),
+        );
         setBranchDiffSession(
             repository.rootUri.fsPath,
             mergeBase,
             resources
                 .map((resource) => resource.modifiedUri?.fsPath)
-                .filter((filePath): filePath is string => filePath !== undefined)
+                .filter((filePath): filePath is string => filePath !== undefined),
         );
 
         await commands.executeCommand("_workbench.openMultiDiffEditor", {

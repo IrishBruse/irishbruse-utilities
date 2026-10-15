@@ -8,7 +8,11 @@ export function isGitHelpersDebugMode(): boolean {
 }
 
 export async function syncGitHelpersDebugModeContext(): Promise<void> {
-    await commands.executeCommand("setContext", GIT_HELPERS_DEBUG_MODE_CONTEXT, isGitHelpersDebugMode());
+    await commands.executeCommand(
+        "setContext",
+        GIT_HELPERS_DEBUG_MODE_CONTEXT,
+        isGitHelpersDebugMode(),
+    );
 }
 
 export function showGitHelpersDebugAction(action: string): void {

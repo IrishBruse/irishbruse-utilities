@@ -8,13 +8,13 @@ Related: [lists-tasks.md](./lists-tasks.md), [README.md](./README.md).
 
 These keys apply in the Inline Markdown editor in VS Code and in the playground.
 
-| Shortcut | Action |
-| :--- | :--- |
-| Ctrl+D | Add the next matching word to the selection (multi-cursor) |
-| Ctrl+F | Open the editor find widget |
-| Ctrl+B | Wrap the selection with `**` bold markers (toggle unwrap) |
-| Ctrl+I | Wrap the selection with `*` emphasis markers (toggle unwrap) |
-| Ctrl+U | Wrap the selection with `<u>` / `</u>` (raw HTML in source) |
+| Shortcut | Action                                                       |
+| :------- | :----------------------------------------------------------- |
+| Ctrl+D   | Add the next matching word to the selection (multi-cursor)   |
+| Ctrl+F   | Open the editor find widget                                  |
+| Ctrl+B   | Wrap the selection with `**` bold markers (toggle unwrap)    |
+| Ctrl+I   | Wrap the selection with `*` emphasis markers (toggle unwrap) |
+| Ctrl+U   | Wrap the selection with `<u>` / `</u>` (raw HTML in source)  |
 
 Select text before B, I, or U. With multiple cursors, exercise inline preview and marker hiding on the active line.
 
@@ -56,12 +56,12 @@ Second line after a hard break (two trailing spaces before this line).
 
 Only **end-of-line** spaces before a newline should render as middle dots (`·`). Spaces between words must stay invisible.
 
-| Case | Source hint | Expected |
-| :--- | :--- | :--- |
-| Mid-sentence | `word word` (single space) | No dot between words |
-| Hard break | two spaces before newline | Two `·` before the line break |
+| Case          | Source hint                      | Expected                           |
+| :------------ | :------------------------------- | :--------------------------------- |
+| Mid-sentence  | `word word` (single space)       | No dot between words               |
+| Hard break    | two spaces before newline        | Two `·` before the line break      |
 | Paragraph end | spaces after last word on a line | `·` only at line end, not mid-line |
-| List item end | spaces after list text | `·` at end of item line only |
+| List item end | spaces after list text           | `·` at end of item line only       |
 
 Editable samples (add or remove trailing spaces to test):
 
@@ -70,7 +70,7 @@ Line with no trailing spaces.
 Line with two trailing spaces before break.  
 Next line after hard break.
 
-- List item with trailing spaces at end.   
+- List item with trailing spaces at end.
 - Second item normal.
 
 ## Caret at block end

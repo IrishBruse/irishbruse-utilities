@@ -1,7 +1,11 @@
 import { env, SourceControlResourceState, Uri, workspace } from "vscode";
-import { gitRepositoryRootForUri, gitRepositoryRootForUriSync, pathLooksRelative, relativePathFromRepoRoot } from "../lib/git/gitRepositoryRoot";
+import {
+    gitRepositoryRootForUri,
+    gitRepositoryRootForUriSync,
+    pathLooksRelative,
+    relativePathFromRepoRoot,
+} from "../lib/git/gitRepositoryRoot";
 import { parseGitDocumentUri } from "../lib/git/gitDocument";
-
 
 type ScmResourceLike =
     | SourceControlResourceState
@@ -34,7 +38,12 @@ function coerceUri(value: unknown): Uri | undefined {
         return value;
     }
     if (typeof value === "object" && "scheme" in value && "path" in value) {
-        const components = value as { scheme: string; path: string; fsPath?: string; query?: string };
+        const components = value as {
+            scheme: string;
+            path: string;
+            fsPath?: string;
+            query?: string;
+        };
         return {
             scheme: components.scheme,
             path: components.path,
@@ -56,9 +65,11 @@ export function resolveFileUri(uri: Uri): Uri {
     return uri;
 }
 
-function repoRootFromScmResource(resource: ScmResourceLike | Record<string, unknown>): string | undefined {
-    const rootUri = (resource as { resourceGroup?: { provider?: { rootUri?: Uri } } }).resourceGroup?.provider
-        ?.rootUri;
+function repoRootFromScmResource(
+    resource: ScmResourceLike | Record<string, unknown>,
+): string | undefined {
+    const rootUri = (resource as { resourceGroup?: { provider?: { rootUri?: Uri } } }).resourceGroup
+        ?.provider?.rootUri;
     return rootUri ? resolveFileUri(rootUri).fsPath : undefined;
 }
 
@@ -83,21 +94,25 @@ function scmResourceContextFromArg(arg: unknown): ScmResourceContext | undefined
 }
 
 export function normalizeScmResources(
-    state?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[]
+    state?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[],
 ): ScmResourceContext[] {
     if (!state) {
         return [];
     }
     const items = Array.isArray(state) ? state : [state];
-    return items.map(scmResourceContextFromArg).filter((item): item is ScmResourceContext => item !== undefined);
+    return items
+        .map(scmResourceContextFromArg)
+        .filter((item): item is ScmResourceContext => item !== undefined);
 }
 
 export function resolveCommandFileResources(
     arg?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[],
-    selectedResources?: Uri | Uri[]
+    selectedResources?: Uri | Uri[],
 ): ScmResourceContext[] {
     if (selectedResources) {
-        const resources = Array.isArray(selectedResources) ? selectedResources : [selectedResources];
+        const resources = Array.isArray(selectedResources)
+            ? selectedResources
+            : [selectedResources];
         if (resources.length) {
             return normalizeScmResources(resources);
         }
@@ -110,14 +125,18 @@ export function pathsFromScmResources(resources: ScmResourceContext[]): string[]
     return resources.map((item) => item.uri.fsPath);
 }
 
-export function relativePathForScmResource(resource: ScmResourceContext, resolvedRepoRoot?: string): string {
+export function relativePathForScmResource(
+    resource: ScmResourceContext,
+    resolvedRepoRoot?: string,
+): string {
     const absolutePath = resource.uri.fsPath;
     const workspaceRelative = workspace.asRelativePath(resource.uri, false).replace(/\\/g, "/");
     if (pathLooksRelative(workspaceRelative, absolutePath)) {
         return workspaceRelative;
     }
 
-    const repoRoot = resolvedRepoRoot ?? resource.repoRoot ?? gitRepositoryRootForUriSync(resource.uri);
+    const repoRoot =
+        resolvedRepoRoot ?? resource.repoRoot ?? gitRepositoryRootForUriSync(resource.uri);
     if (repoRoot) {
         const repoRelative = relativePathFromRepoRoot(resource.uri, repoRoot);
         if (pathLooksRelative(repoRelative, absolutePath)) {
@@ -128,7 +147,9 @@ export function relativePathForScmResource(resource: ScmResourceContext, resolve
     return workspaceRelative;
 }
 
-export async function relativePathsForScmResources(resources: ScmResourceContext[]): Promise<string[]> {
+export async function relativePathsForScmResources(
+    resources: ScmResourceContext[],
+): Promise<string[]> {
     return Promise.all(
         resources.map(async (resource) => {
             const repoRoot =
@@ -136,13 +157,13 @@ export async function relativePathsForScmResources(resources: ScmResourceContext
                 gitRepositoryRootForUriSync(resource.uri) ??
                 (await gitRepositoryRootForUri(resource.uri));
             return relativePathForScmResource(resource, repoRoot);
-        })
+        }),
     );
 }
 
 export async function copyScmResourcePath(
     arg?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[],
-    selectedResources?: Uri | Uri[]
+    selectedResources?: Uri | Uri[],
 ): Promise<void> {
     const paths = pathsFromScmResources(resolveCommandFileResources(arg, selectedResources));
     if (!paths.length) {
@@ -153,7 +174,7 @@ export async function copyScmResourcePath(
 
 export async function copyScmResourceRelativePath(
     arg?: ScmResourceLike | ScmResourceLike[] | Uri | Uri[],
-    selectedResources?: Uri | Uri[]
+    selectedResources?: Uri | Uri[],
 ): Promise<void> {
     const resources = resolveCommandFileResources(arg, selectedResources);
     const paths = await relativePathsForScmResources(resources);

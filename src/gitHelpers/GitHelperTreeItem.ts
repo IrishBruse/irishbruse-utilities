@@ -22,7 +22,7 @@ export class GitHelperTreeItem extends TreeItem {
             | "openPrChecks"
             | "showChanges",
         description?: string,
-        command?: Command
+        command?: Command,
     ) {
         super(label, collapsibleState);
         this.id = id;

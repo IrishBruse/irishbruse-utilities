@@ -72,7 +72,7 @@ export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelp
         TreeItemCollapsibleState.None,
         `${repoRoot}:openPr:${pr.number}`,
         "openPr",
-        pr.title
+        pr.title,
     );
     prItem.isDraftPr = pr.isDraft;
     prItem.contextValue = "action-openPr-draft";
@@ -89,8 +89,8 @@ export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelp
             `${repoRoot}:diffWithBase`,
             "diffWithBase",
             baseBranch,
-            { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] }
-        )
+            { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] },
+        ),
     );
 
     items.push(
@@ -102,8 +102,8 @@ export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelp
             `${repoRoot}:showChanges`,
             "showChanges",
             formatPrLineChangeDescription(changesSummary.additions, changesSummary.deletions),
-            { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] }
-        )
+            { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] },
+        ),
     );
 
     items.push(checksTreeItem(repoRoot, pr.number, state.checkStatus));
@@ -120,7 +120,7 @@ export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelp
             command: Commands.OpenPrReview,
             title: "Open PR review",
             arguments: [repoRoot],
-        }
+        },
     );
     reviewItem.reviewUrl = reviewStatus.url;
     items.push(reviewItem);

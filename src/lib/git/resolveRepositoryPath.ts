@@ -14,8 +14,9 @@ async function gitToplevelFrom(cwd: string): Promise<string | undefined> {
     return undefined;
 }
 
-
-export async function resolveRepositoryPath(sourceControl?: SourceControl): Promise<string | undefined> {
+export async function resolveRepositoryPath(
+    sourceControl?: SourceControl,
+): Promise<string | undefined> {
     if (sourceControl?.rootUri) {
         return sourceControl.rootUri.fsPath;
     }

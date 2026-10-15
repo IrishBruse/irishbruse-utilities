@@ -11,14 +11,13 @@ export function isBaseGitEditorForFile(uri: Uri, filePath: string, mergeBaseRef:
         return false;
     }
     const sameFile = path.normalize(parsed.filePath) === path.normalize(filePath);
-    const sameRef =
-        parsed.ref === mergeBaseRef || parsed.ref.startsWith(mergeBaseRef.slice(0, 7));
+    const sameRef = parsed.ref === mergeBaseRef || parsed.ref.startsWith(mergeBaseRef.slice(0, 7));
     return sameFile && sameRef;
 }
 
 export function findBaseGitEditor(filePath: string, mergeBaseRef: string): TextEditor | undefined {
     const normalizedPath = path.normalize(filePath);
     return window.visibleTextEditors.find((editor) =>
-        isBaseGitEditorForFile(editor.document.uri, normalizedPath, mergeBaseRef)
+        isBaseGitEditorForFile(editor.document.uri, normalizedPath, mergeBaseRef),
     );
 }

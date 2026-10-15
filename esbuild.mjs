@@ -49,7 +49,6 @@ function printHelp() {
     process.exit(0);
 }
 
-
 const extensionConfig = {
     entryPoints: ["src/extension.ts"],
     bundle: true,
@@ -62,7 +61,6 @@ const extensionConfig = {
     logLevel: "info",
     outfile: "dist/extension.js",
 };
-
 
 const mermaidThemeConfig = {
     entryPoints: ["src/lib/mermaid/vsCodeTheme.browser.ts"],

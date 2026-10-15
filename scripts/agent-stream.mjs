@@ -83,7 +83,9 @@ function resultNote(result) {
     if (typeof result.case === "string") {
         return result.case === "success" ? "" : result.case;
     }
-    const key = Object.keys(result).find((name) => name !== "sandboxPolicy" && name !== "isBackground");
+    const key = Object.keys(result).find(
+        (name) => name !== "sandboxPolicy" && name !== "isBackground",
+    );
     if (!key || key === "success") {
         return "";
     }
@@ -154,7 +156,10 @@ export function createAgentPrinter(write, options = {}) {
                 return;
             }
             if (event.type === "system" && event.subtype === "init") {
-                const model = typeof event.model === "string" && event.model.length > 0 ? event.model : "agent";
+                const model =
+                    typeof event.model === "string" && event.model.length > 0
+                        ? event.model
+                        : "agent";
                 writeLine(paint(`model  ${model}`, "2", color));
                 return;
             }
@@ -165,7 +170,11 @@ export function createAgentPrinter(write, options = {}) {
                 writeText(assistantText(event), "text");
                 return;
             }
-            if (event.type === "thinking" && event.subtype === "delta" && typeof event.text === "string") {
+            if (
+                event.type === "thinking" &&
+                event.subtype === "delta" &&
+                typeof event.text === "string"
+            ) {
                 if (mode !== "think") {
                     closeOpen();
                     write(paint("thinking  ", "2", color));
@@ -187,19 +196,31 @@ export function createAgentPrinter(write, options = {}) {
                 const completed = event.subtype === "completed";
                 const mark = completed ? "←" : "→";
                 const note = completed ? resultNote(parts.result) : "";
-                const tail = [completed ? "" : detail, note].filter((part) => part.length > 0).join("  ");
-                writeLine(paint(`${mark} ${label}${tail.length > 0 ? `  ${tail}` : ""}`, "36", color));
+                const tail = [completed ? "" : detail, note]
+                    .filter((part) => part.length > 0)
+                    .join("  ");
+                writeLine(
+                    paint(`${mark} ${label}${tail.length > 0 ? `  ${tail}` : ""}`, "36", color),
+                );
                 return;
             }
             if (event.type === "result") {
                 const elapsed = seconds(event.duration_ms);
-                const bad = event.is_error === true || (event.subtype && event.subtype !== "success");
-                writeLine(paint(bad ? `failed  ${elapsed}`.trim() : `done  ${elapsed}`.trim(), bad ? "31" : "2", color));
+                const bad =
+                    event.is_error === true || (event.subtype && event.subtype !== "success");
+                writeLine(
+                    paint(
+                        bad ? `failed  ${elapsed}`.trim() : `done  ${elapsed}`.trim(),
+                        bad ? "31" : "2",
+                        color,
+                    ),
+                );
                 if (bad) {
                     failed = true;
-                    failureMessage = typeof event.result === "string" && event.result.length > 0
-                        ? event.result
-                        : "agent --print failed";
+                    failureMessage =
+                        typeof event.result === "string" && event.result.length > 0
+                            ? event.result
+                            : "agent --print failed";
                     if (typeof event.result === "string" && event.result.length > 0) {
                         writeLine(event.result);
                     }

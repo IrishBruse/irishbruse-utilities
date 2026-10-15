@@ -78,7 +78,10 @@ export default defineConfig({
             },
         ],
     },
-    fmt: {},
+    fmt: {
+        semi: true,
+        tabWidth: 4,
+    },
     lint: {
         plugins: ["oxc", "typescript", "unicorn", "import"],
         categories: {

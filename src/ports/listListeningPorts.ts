@@ -46,7 +46,7 @@ export function killListeningProcess(pid: number): void {
 
 export async function listListeningPorts(
     run: RunCommand = asyncSpawn,
-    readCwd: (pid: number) => string | undefined = readProcCwd
+    readCwd: (pid: number) => string | undefined = readProcCwd,
 ): Promise<ListeningPort[]> {
     const listeners = await readListeners(run);
     return listeners

@@ -8,7 +8,9 @@ source: text
 # Implement outline provider for the inline view
 
 ## Description
+
 Implement outline provider for the inline view.
 
 ## Done when
+
 - Not in the source

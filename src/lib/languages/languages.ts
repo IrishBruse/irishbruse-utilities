@@ -76,7 +76,8 @@ function contributedLanguageEntries(extension: Extension<unknown>): ContributedL
             continue;
         }
         const configuration =
-            "configuration" in item && typeof (item as { configuration: unknown }).configuration === "string"
+            "configuration" in item &&
+            typeof (item as { configuration: unknown }).configuration === "string"
                 ? (item as { configuration: string }).configuration
                 : undefined;
         entries.push({ id, configuration });

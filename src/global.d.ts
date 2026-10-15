@@ -3,7 +3,10 @@ interface Thenable<T> extends Promise<T> {}
 declare module "vscode" {
     export namespace commands {
         export function executeCommand<T = unknown>(command: Command, ...rest: any[]): Thenable<T>;
-        export function executeCommand<T = unknown>(command: BuiltinCommand, ...rest: any[]): Thenable<T>;
+        export function executeCommand<T = unknown>(
+            command: BuiltinCommand,
+            ...rest: any[]
+        ): Thenable<T>;
         export type BuiltinCommand =
             | "EditorConfig.generate"
             | "acceptSelectedSuggestionOnEnter"

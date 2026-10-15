@@ -92,7 +92,9 @@ function parseReviewStatusPayload(stdout: string): ReviewStatusPayload | undefin
                 isOutdated: thread.isOutdated ?? false,
                 comments:
                     thread.comments?.nodes
-                        ?.filter((comment) => comment.author?.login && comment.url && comment.createdAt)
+                        ?.filter(
+                            (comment) => comment.author?.login && comment.url && comment.createdAt,
+                        )
                         .map((comment) => ({
                             authorLogin: comment.author!.login!,
                             url: comment.url!,
@@ -114,7 +116,7 @@ function parseReviewStatusPayload(stdout: string): ReviewStatusPayload | undefin
 
 function viewerHasUnansweredReplies(
     viewerLogin: string,
-    threads: readonly ReviewThread[]
+    threads: readonly ReviewThread[],
 ): { count: number; url: string } | undefined {
     let count = 0;
     let latestUrl = "";
@@ -125,7 +127,9 @@ function viewerHasUnansweredReplies(
             continue;
         }
 
-        const viewerParticipated = thread.comments.some((comment) => comment.authorLogin === viewerLogin);
+        const viewerParticipated = thread.comments.some(
+            (comment) => comment.authorLogin === viewerLogin,
+        );
         if (!viewerParticipated) {
             continue;
         }
@@ -193,7 +197,7 @@ export function buildPrReviewStatus(payload: ReviewStatusPayload): PrReviewStatu
 
 export async function getPrReviewStatus(
     repoRoot: string,
-    prNumber: number
+    prNumber: number,
 ): Promise<PrReviewStatus | undefined> {
     const origin = await getOriginUrl(repoRoot);
     const github = origin ? parseGithubOwnerRepo(origin) : undefined;

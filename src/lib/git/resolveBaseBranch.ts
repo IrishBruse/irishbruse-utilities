@@ -3,9 +3,8 @@ import { asyncSpawn } from "../asyncSpawn/asyncSpawn";
 import { getBaseBranchOverride } from "./baseBranchOverride";
 
 export type ResolvedBaseBranch = {
-    
     name: string;
-    
+
     ref: string;
 };
 
@@ -36,7 +35,7 @@ export function isMainlineBranch(branch: string | undefined): boolean {
 export async function resolveRefTarget(
     repository: Repository,
     repoRoot: string,
-    ref: string
+    ref: string,
 ): Promise<ResolvedBaseBranch | undefined> {
     const headName = repository.state.HEAD?.name;
     if (isSameBranch(headName, ref)) {
@@ -49,9 +48,7 @@ export async function resolveRefTarget(
             name: formatBranchName(branch),
             ref: branch.commit ?? ref,
         };
-    } catch {
-        
-    }
+    } catch {}
 
     const result = await asyncSpawn("git", ["rev-parse", "--verify", ref], { cwd: repoRoot });
     if (result.status !== 0) {
@@ -63,8 +60,9 @@ export async function resolveRefTarget(
     return { name, ref: sha };
 }
 
-
-export async function resolveAutoBaseBranch(repository: Repository): Promise<ResolvedBaseBranch | undefined> {
+export async function resolveAutoBaseBranch(
+    repository: Repository,
+): Promise<ResolvedBaseBranch | undefined> {
     const head = repository.state.HEAD;
     if (!head?.name) {
         return undefined;
@@ -78,9 +76,7 @@ export async function resolveAutoBaseBranch(repository: Repository): Promise<Res
                 ref: base.commit ?? formatBranchName(base),
             };
         }
-    } catch {
-        
-    }
+    } catch {}
 
     for (const candidate of FALLBACK_CANDIDATES) {
         try {
@@ -99,7 +95,9 @@ export async function resolveAutoBaseBranch(repository: Repository): Promise<Res
     return undefined;
 }
 
-export async function resolveBaseBranch(repository: Repository): Promise<ResolvedBaseBranch | undefined> {
+export async function resolveBaseBranch(
+    repository: Repository,
+): Promise<ResolvedBaseBranch | undefined> {
     const override = getBaseBranchOverride(repository.rootUri.fsPath);
     if (override) {
         const resolved = await resolveRefTarget(repository, repository.rootUri.fsPath, override);
@@ -113,7 +111,7 @@ export async function resolveBaseBranch(repository: Repository): Promise<Resolve
 
 export async function resolveMergeBaseSha(
     repository: Repository,
-    base: ResolvedBaseBranch
+    base: ResolvedBaseBranch,
 ): Promise<string | undefined> {
     try {
         return await repository.getMergeBase(base.ref, "HEAD");

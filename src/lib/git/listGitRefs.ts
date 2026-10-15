@@ -10,7 +10,7 @@ export async function listGitRefs(repoRoot: string): Promise<string[]> {
             "refs/heads",
             "refs/remotes",
         ],
-        { cwd: repoRoot }
+        { cwd: repoRoot },
     );
     if (result.status !== 0) {
         return [];

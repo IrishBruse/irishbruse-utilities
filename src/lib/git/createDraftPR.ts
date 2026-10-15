@@ -12,11 +12,10 @@ export async function pushBranchToOrigin(repoRoot: string, branch: string): Prom
     return true;
 }
 
-
 export async function createBlankDraftPullRequest(
     repoRoot: string,
     branch: string,
-    baseBranch: string
+    baseBranch: string,
 ): Promise<GhPrInfo | undefined> {
     if (!(await pushBranchToOrigin(repoRoot, branch))) {
         return undefined;
@@ -35,7 +34,9 @@ export async function createBlankDraftPullRequest(
     ]);
 
     if (result.status !== 0) {
-        void window.showErrorMessage(`Failed to create draft PR: ${result.stderr || result.stdout}`);
+        void window.showErrorMessage(
+            `Failed to create draft PR: ${result.stderr || result.stdout}`,
+        );
         return undefined;
     }
 

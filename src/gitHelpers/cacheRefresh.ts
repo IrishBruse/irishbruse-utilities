@@ -11,7 +11,7 @@ export function planGitHelperRefresh(hasCachedChildren: boolean): GitHelperRefre
 export function refreshVisualHoldMs(
     startedAt: number,
     now: number,
-    minimumMs = GIT_HELPER_REFRESH_VISUAL_MS
+    minimumMs = GIT_HELPER_REFRESH_VISUAL_MS,
 ): number {
     return Math.max(0, minimumMs - (now - startedAt));
 }

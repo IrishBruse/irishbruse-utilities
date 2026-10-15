@@ -6,7 +6,6 @@ export type Process = {
     status: number | null;
 };
 
-
 export type AsyncSpawnOptions = SpawnOptionsWithoutStdio & {
     input?: string;
 };
@@ -14,7 +13,7 @@ export type AsyncSpawnOptions = SpawnOptionsWithoutStdio & {
 export async function asyncSpawn(
     command: string,
     args: readonly string[] = [],
-    options: AsyncSpawnOptions = {}
+    options: AsyncSpawnOptions = {},
 ): Promise<Process> {
     const { input, ...spawnOptions } = options;
     return new Promise((resolve, reject) => {

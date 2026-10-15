@@ -29,7 +29,7 @@ function workingTreeUri(change: Change): Uri | undefined {
 export function toMultiFileDiffEditorUris(
     change: Change,
     originalRef: string,
-    _modifiedRef: string
+    _modifiedRef: string,
 ): { originalUri: Uri | undefined; modifiedUri: Uri | undefined } {
     const modifiedUri = workingTreeUri(change);
 

@@ -72,15 +72,23 @@ export class LocalPortsViewProvider implements TreeDataProvider<TreeItem> {
                 } else {
                     provider.stopPolling();
                 }
-            })
+            }),
         );
         if (treeView.visible) {
             provider.startPolling();
         }
 
         registerCommandIB(Commands.RefreshLocalPorts, () => provider.refresh(), context);
-        registerCommandIB(Commands.OpenLocalPort, (port?: ListeningPort) => provider.open(port), context);
-        registerCommandIB(Commands.KillLocalPort, (item?: PortTreeItem) => provider.kill(item), context);
+        registerCommandIB(
+            Commands.OpenLocalPort,
+            (port?: ListeningPort) => provider.open(port),
+            context,
+        );
+        registerCommandIB(
+            Commands.KillLocalPort,
+            (item?: PortTreeItem) => provider.kill(item),
+            context,
+        );
         context.subscriptions.push({ dispose: () => provider.stopPolling() });
     }
 

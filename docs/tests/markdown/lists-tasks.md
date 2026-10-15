@@ -10,11 +10,12 @@ List bullets and numbers must **not** use the H2 heading color. Compare with the
 
 - Bullet A
 - Bullet B
-  - Nested bullet
-  - Another nested
+    - Nested bullet
+    - Another nested
+
 1. Ordered one
 2. Ordered two
-   1. Nested ordered
+    1. Nested ordered
 
 ## Task checkboxes (toggle on click)
 
@@ -23,8 +24,8 @@ Click each box. `[ ]` and `[x]` must stay on **one line** (no line break between
 - [ ] Unchecked — click to check
 - [x] Checked — click to uncheck
 - [ ] Parent task
-  - [x] Done child
-  - [ ] Open child
+    - [x] Done child
+    - [ ] Open child
 - [ ] Mixed with **bold** and `code` in the same line
 
 ## Task list inside a quote

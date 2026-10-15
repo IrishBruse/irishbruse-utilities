@@ -20,14 +20,14 @@ Files land in this folder (`docs/tests/markdown/large/`). They are gitignored af
 
 ## Fixtures
 
-| File | ~Size | Source | Good for |
-| :--- | :--- | :--- | :--- |
-| `reltio-docs.md` | 14 MB | [reltio-ai/reltio-ai-ready-docs](https://github.com/reltio-ai/reltio-ai-ready-docs) | Full-doc scroll, thousands of headings, API tables, code fences |
-| `reltio-index.md` | 3.7 MB | same repo | Dense link/index structure, mid-size parse |
-| `awesome-selfhosted.md` | 320 KB | [awesome-selfhosted/awesome-selfhosted](https://github.com/awesome-selfhosted/awesome-selfhosted) | Huge tables, nested TOC, thousands of links |
-| `stylelint-changelog.md` | 265 KB | [stylelint/stylelint](https://github.com/stylelint/stylelint) | Long changelog lists, version headings, issue links |
-| `cirosantilli-readme-large.md` | 1 MB | [cirosantilli/test-md-readme-large](https://github.com/cirosantilli/test-md-readme-large) | ~128k short lines (GitHub’s 512 KB render cap stress test) |
-| `mdn-array.md` | 50 KB | [mdn/content](https://github.com/mdn/content) | MDN front matter, spec tables, syntax examples |
+| File                           | ~Size  | Source                                                                                            | Good for                                                        |
+| :----------------------------- | :----- | :------------------------------------------------------------------------------------------------ | :-------------------------------------------------------------- |
+| `reltio-docs.md`               | 14 MB  | [reltio-ai/reltio-ai-ready-docs](https://github.com/reltio-ai/reltio-ai-ready-docs)               | Full-doc scroll, thousands of headings, API tables, code fences |
+| `reltio-index.md`              | 3.7 MB | same repo                                                                                         | Dense link/index structure, mid-size parse                      |
+| `awesome-selfhosted.md`        | 320 KB | [awesome-selfhosted/awesome-selfhosted](https://github.com/awesome-selfhosted/awesome-selfhosted) | Huge tables, nested TOC, thousands of links                     |
+| `stylelint-changelog.md`       | 265 KB | [stylelint/stylelint](https://github.com/stylelint/stylelint)                                     | Long changelog lists, version headings, issue links             |
+| `cirosantilli-readme-large.md` | 1 MB   | [cirosantilli/test-md-readme-large](https://github.com/cirosantilli/test-md-readme-large)         | ~128k short lines (GitHub’s 512 KB render cap stress test)      |
+| `mdn-array.md`                 | 50 KB  | [mdn/content](https://github.com/mdn/content)                                                     | MDN front matter, spec tables, syntax examples                  |
 
 ## Suggested test order
 

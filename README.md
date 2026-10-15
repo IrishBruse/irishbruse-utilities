@@ -48,7 +48,7 @@ The editor shows WYSIWYG Markdown with colors from the active theme, fenced-code
 
 Tables open as a grid. Edit a cell, add a row or column from the gap controls, and select a row or column from the cell border. Then press Backspace or Delete to remove that row or column. Wide cells wrap inside the editor; short columns stay narrow. Click a link in a table to open it.
 
-Idle `` ```mermaid `` `` fences render a themed diagram and show an **Open Preview** button that opens the same Mermaid Preview as the CodeLens in the text editor.
+Idle ` ```mermaid ` `` fences render a themed diagram and show an **Open Preview** button that opens the same Mermaid Preview as the CodeLens in the text editor.
 
 ### Inline Markdown (ib-utilities)
 
@@ -60,7 +60,7 @@ The view uses your theme for headings, emphasis, links, blockquotes, and code bl
 
 Open `.mmd` or `.mermaid` files as **source text** by default (including branch diffs and `vscode.diff`). Use **Open Preview** from the editor title bar or the `ib-utilities.openMermaidPreview` command for live diagram rendering that follows your VS Code color theme. In preview, use the toolbar to zoom, pan, fit to view, or copy the diagram as PNG. Switch back to source with **Open Source**.
 
-In Markdown files, `` ```mermaid `` `` blocks get embedded syntax highlighting. Use the **Open Preview** CodeLens above a block, or Ctrl/Cmd+click the `mermaid` language tag, to open the same preview (edits to the block in markdown stay in sync while the preview is open).
+In Markdown files, ` ```mermaid ` `` blocks get embedded syntax highlighting. Use the **Open Preview** CodeLens above a block, or Ctrl/Cmd+click the `mermaid` language tag, to open the same preview (edits to the block in markdown stay in sync while the preview is open).
 
 Clickable nodes (flowchart `click … href`, Gantt task links, and similar) open in the editor. Location formats (tooltip is preferred when present):
 
@@ -76,10 +76,10 @@ Map snippet file labels to VS Code language IDs:
 
 ```json
 {
-  "ib-utilities.languageIdMappings": {
-    "node": "typescript",
-    "react": "typescriptreact"
-  }
+    "ib-utilities.languageIdMappings": {
+        "node": "typescript",
+        "react": "typescriptreact"
+    }
 }
 ```
 
@@ -87,30 +87,30 @@ Control auto-generated snippet languages (left: target language ID; right: comma
 
 ```json
 {
-  "ib-utilities.generatedLanguageMappings": {
-    "typescriptreact": "node,react"
-  }
+    "ib-utilities.generatedLanguageMappings": {
+        "typescriptreact": "node,react"
+    }
 }
 ```
 
 ## Commands
 
-| Command | Title |
-| --- | --- |
-| `ib-utilities.relativeGoTo` | Relative goto |
-| `ib-utilities.openSnippet` | Open Snippet |
-| `ib-utilities.showSnippetView` | Show Snippet View |
-| `ib-utilities.openPR` | Open Pull Request |
-| `ib-utilities.refreshSnippetView` | Refresh Snippets |
-| `ib-utilities.addSnippet` | Add new snippet |
-| `ib-utilities.editSnippet` | Edit snippet |
-| `ib-utilities.deleteSnippet` | Delete snippet |
-| `ib-utilities.openMermaidPreview` | Open Preview |
-| `ib-utilities.openMermaidSource` | Open Source |
-| `ib-utilities.showGitHelpers` | Show Git Helpers |
-| `ib-utilities.createDraftPR` | Create Draft Pull Request |
-| `ib-utilities.diffWithBase` | Diff vs Base Branch |
-| `ib-utilities.setBaseBranch` | Set base branch for diffs |
+| Command                           | Title                     |
+| --------------------------------- | ------------------------- |
+| `ib-utilities.relativeGoTo`       | Relative goto             |
+| `ib-utilities.openSnippet`        | Open Snippet              |
+| `ib-utilities.showSnippetView`    | Show Snippet View         |
+| `ib-utilities.openPR`             | Open Pull Request         |
+| `ib-utilities.refreshSnippetView` | Refresh Snippets          |
+| `ib-utilities.addSnippet`         | Add new snippet           |
+| `ib-utilities.editSnippet`        | Edit snippet              |
+| `ib-utilities.deleteSnippet`      | Delete snippet            |
+| `ib-utilities.openMermaidPreview` | Open Preview              |
+| `ib-utilities.openMermaidSource`  | Open Source               |
+| `ib-utilities.showGitHelpers`     | Show Git Helpers          |
+| `ib-utilities.createDraftPR`      | Create Draft Pull Request |
+| `ib-utilities.diffWithBase`       | Diff vs Base Branch       |
+| `ib-utilities.setBaseBranch`      | Set base branch for diffs |
 
 ## Development
 

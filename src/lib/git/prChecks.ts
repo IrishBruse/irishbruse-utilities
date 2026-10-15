@@ -12,9 +12,21 @@ export type PrCheckStatus = {
     isFailing: boolean;
 };
 
-const FAILED_CHECK_CONCLUSIONS = new Set(["failure", "timed_out", "action_required", "startup_failure"]);
+const FAILED_CHECK_CONCLUSIONS = new Set([
+    "failure",
+    "timed_out",
+    "action_required",
+    "startup_failure",
+]);
 const SUCCESS_CHECK_CONCLUSIONS = new Set(["success", "neutral", "skipped"]);
-const PENDING_CHECK_CONCLUSIONS = new Set(["", "pending", "queued", "in_progress", "waiting", "requested"]);
+const PENDING_CHECK_CONCLUSIONS = new Set([
+    "",
+    "pending",
+    "queued",
+    "in_progress",
+    "waiting",
+    "requested",
+]);
 const FAILED_STATUS_STATES = new Set(["failure", "error"]);
 const PENDING_STATUS_STATES = new Set(["pending"]);
 
@@ -39,7 +51,9 @@ function checksPageUrl(prUrl: string): string {
 }
 
 function pickFailedCheckRun(checkRuns: CheckRun[]): FailedPrCheck | undefined {
-    const failed = checkRuns.find((run) => run.conclusion && FAILED_CHECK_CONCLUSIONS.has(run.conclusion));
+    const failed = checkRuns.find(
+        (run) => run.conclusion && FAILED_CHECK_CONCLUSIONS.has(run.conclusion),
+    );
     if (!failed) {
         return undefined;
     }
@@ -73,7 +87,7 @@ function pickFailedCommitStatus(status: CommitStatus): FailedPrCheck | undefined
 export function buildPrCheckStatus(
     checkRuns: readonly CheckRun[],
     commitStatus: CommitStatus | undefined,
-    prUrl: string
+    prUrl: string,
 ): PrCheckStatus | undefined {
     const checksUrl = checksPageUrl(prUrl);
 
@@ -89,7 +103,7 @@ export function buildPrCheckStatus(
         }
 
         const pending = checkRuns.some(
-            (run) => !run.conclusion || PENDING_CHECK_CONCLUSIONS.has(run.conclusion)
+            (run) => !run.conclusion || PENDING_CHECK_CONCLUSIONS.has(run.conclusion),
         );
         if (pending) {
             return {
@@ -101,7 +115,7 @@ export function buildPrCheckStatus(
         }
 
         const passing = checkRuns.filter(
-            (run) => run.conclusion && SUCCESS_CHECK_CONCLUSIONS.has(run.conclusion)
+            (run) => run.conclusion && SUCCESS_CHECK_CONCLUSIONS.has(run.conclusion),
         ).length;
         const total = checkRuns.length;
         return {
@@ -147,7 +161,7 @@ export function buildPrCheckStatus(
 
 async function fetchCheckRuns(
     repoRoot: string,
-    headRefOid: string
+    headRefOid: string,
 ): Promise<{ checkRuns: CheckRun[]; commitStatus?: CommitStatus } | undefined> {
     const origin = await getOriginUrl(repoRoot);
     const github = origin ? parseGithubOwnerRepo(origin) : undefined;
@@ -190,7 +204,7 @@ async function fetchCheckRuns(
 export async function getPrCheckStatus(
     repoRoot: string,
     headRefOid: string,
-    prUrl: string
+    prUrl: string,
 ): Promise<PrCheckStatus | undefined> {
     const payload = await fetchCheckRuns(repoRoot, headRefOid);
     if (!payload) {
@@ -200,7 +214,10 @@ export async function getPrCheckStatus(
     return buildPrCheckStatus(payload.checkRuns, payload.commitStatus, prUrl);
 }
 
-export async function getFailedPrCheck(repoRoot: string, headRefOid: string): Promise<FailedPrCheck | undefined> {
+export async function getFailedPrCheck(
+    repoRoot: string,
+    headRefOid: string,
+): Promise<FailedPrCheck | undefined> {
     const origin = await getOriginUrl(repoRoot);
     const github = origin ? parseGithubOwnerRepo(origin) : undefined;
     if (!github) {
@@ -220,9 +237,7 @@ export async function getFailedPrCheck(repoRoot: string, headRefOid: string): Pr
             if (failed) {
                 return failed;
             }
-        } catch {
-            
-        }
+        } catch {}
     }
 
     const combinedStatus = await runGh(repoRoot, [

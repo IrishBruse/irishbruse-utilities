@@ -36,21 +36,27 @@ source: <text | image | both>
 # <same title>
 
 ## Description
+
 <What is wrong, in the source's terms.>
 
 ## Steps
+
 1. <Only steps the source states or the image shows>
 
 ## Expected
+
 <Stated expectation, or "Not in the source">
 
 ## Actual
+
 <What the source shows or says happened>
 
 ## Evidence
+
 - <Quoted text or a visible detail from the image>
 
 ## Images
+
 - ![](./image-1.<ext>)
 ```
 

@@ -36,14 +36,17 @@ source: <text | image | both>
 # <same title>
 
 ## Description
+
 <Outcome in one sentence, in the source's words.>
 
 <The details that make the task doable without the original message: where it applies, what to change, and any constraint the source states. Quote on-screen text. Keep the source's order.>
 
 ## Done when
+
 - <Only completion conditions the source states or the image shows>
 
 ## Images
+
 - ![](./image-1.<ext>)
 ```
 

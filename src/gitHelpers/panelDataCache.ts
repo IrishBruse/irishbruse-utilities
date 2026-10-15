@@ -10,7 +10,7 @@ export class PanelDataCache {
 
     constructor(
         private readonly freshMs: number,
-        private readonly now: () => number
+        private readonly now: () => number,
     ) {}
 
     async load<T>(key: string, fetcher: () => Promise<T>): Promise<T> {

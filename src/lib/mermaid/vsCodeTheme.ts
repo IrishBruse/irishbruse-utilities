@@ -110,7 +110,6 @@ const GIT_PALETTE_VARS = CHART_PALETTE_VARS.slice(0, 8);
 
 const C_SCALE_LIMIT = 12;
 
-
 export function buildMutedCScaleColors(tokens: MermaidTokens): string[] {
     const { surface, surfaceAlt, sidebar, accent, chartBlue, chartPurple, muted } = tokens;
     const recipes = [
@@ -126,7 +125,7 @@ export function buildMutedCScaleColors(tokens: MermaidTokens): string[] {
 
 function applyCScaleTheme(
     variables: Record<string, string | boolean>,
-    tokens: MermaidTokens
+    tokens: MermaidTokens,
 ): void {
     const scales = buildMutedCScaleColors(tokens);
     for (let i = 0; i < C_SCALE_LIMIT; i++) {
@@ -162,7 +161,7 @@ export function blendHex(base: string, accent: string, accentWeight: number): st
     const toHex = (n: number) => Math.max(0, Math.min(255, n)).toString(16).padStart(2, "0");
 
     return `#${toHex(Math.round(baseRgb.r * inverse + accentRgb.r * weight))}${toHex(
-        Math.round(baseRgb.g * inverse + accentRgb.g * weight)
+        Math.round(baseRgb.g * inverse + accentRgb.g * weight),
     )}${toHex(Math.round(baseRgb.b * inverse + accentRgb.b * weight))}`;
 }
 
@@ -170,7 +169,7 @@ export function pickBlended(
     pickColor: ColorPicker,
     baseVars: string[],
     accentVars: string[],
-    weight: number
+    weight: number,
 ): string | undefined {
     const base = pickColor(...baseVars);
     const accent = pickColor(...accentVars);
@@ -184,11 +183,10 @@ function requireColor(pickColor: ColorPicker, ...varNames: string[]): string {
     return pickColor(...varNames) ?? "#000000";
 }
 
-
 export function getTokens(
     pickColor: ColorPicker,
     readCssVar: CssVarReader,
-    isDark: () => boolean
+    isDark: () => boolean,
 ): MermaidTokens {
     const dark = isDark();
     const fg = requireColor(pickColor, ...TEXT_VARS);
@@ -201,16 +199,28 @@ export function getTokens(
     const accent = requireColor(pickColor, ...ACCENT_VARS);
     const selection = requireColor(pickColor, ...SELECTION_VARS);
     const connectorMuted = pickBlended(pickColor, BORDER_VARS, TEXT_VARS, 0.6) ?? muted ?? border;
-    const chartBlue = requireColor(pickColor, "--vscode-charts-blue", "--vscode-textLink-foreground");
+    const chartBlue = requireColor(
+        pickColor,
+        "--vscode-charts-blue",
+        "--vscode-textLink-foreground",
+    );
     const chartPurple = requireColor(pickColor, "--vscode-charts-purple", "--vscode-focusBorder");
-    const chartRed = requireColor(pickColor, "--vscode-charts-red", "--vscode-editorError-foreground");
+    const chartRed = requireColor(
+        pickColor,
+        "--vscode-charts-red",
+        "--vscode-editorError-foreground",
+    );
     const chartYellow = pickColor("--vscode-charts-yellow") ?? chartBlue;
     const warning = requireColor(
         pickColor,
         "--vscode-editorWarning-background",
-        "--vscode-editorWidget-background"
+        "--vscode-editorWidget-background",
     );
-    const warningBorder = requireColor(pickColor, "--vscode-editorWarning-border", "--vscode-focusBorder");
+    const warningBorder = requireColor(
+        pickColor,
+        "--vscode-editorWarning-border",
+        "--vscode-focusBorder",
+    );
     const fontFamily = readCssVar("--vscode-font-family") || "sans-serif";
     const charts = CHART_PALETTE_VARS.map((name) => requireColor(pickColor, name));
 
@@ -240,7 +250,7 @@ export function getTokens(
 
 export function getThemeVariables(
     tokens: MermaidTokens,
-    pickColor: ColorPicker
+    pickColor: ColorPicker,
 ): Record<string, string | boolean> {
     const variables: Record<string, string | boolean> = {
         darkMode: tokens.dark,
@@ -365,9 +375,18 @@ export function getThemeVariables(
     setValue("edgeLabelColor", foreground);
 
     setValue("rowOdd", sidebar);
-    set("rowEven", "--vscode-input-background", "--vscode-sideBarSectionHeader-background", ...NODE_SURFACE_VARS);
+    set(
+        "rowEven",
+        "--vscode-input-background",
+        "--vscode-sideBarSectionHeader-background",
+        ...NODE_SURFACE_VARS,
+    );
 
-    set("errorBkgColor", "--vscode-inputValidation-errorBackground", "--vscode-editorError-background");
+    set(
+        "errorBkgColor",
+        "--vscode-inputValidation-errorBackground",
+        "--vscode-editorError-background",
+    );
     set("errorTextColor", "--vscode-editorError-foreground", ...TEXT_VARS);
 
     setValue("branchLabelColor", foreground);
@@ -428,7 +447,7 @@ export function getThemeCSS(tokens: MermaidTokens): string {
     const sectionBkg = blendHex(bg, surface, 0.35) ?? surface;
     const altSectionBkg = blendHex(bg, sidebar, 0.25) ?? sidebar;
 
-  const nodeShape = `
+    const nodeShape = `
 .node:not(:has(.divider)) rect,
 .node:not(:has(.divider)) circle,
 .node:not(:has(.divider)) ellipse,
@@ -604,7 +623,7 @@ rect.task.milestone {
 
 export function applyDiagramTokens(
     element: { style: { setProperty(name: string, value: string): void } },
-    tokens: MermaidTokens
+    tokens: MermaidTokens,
 ): void {
     for (const [key, cssVar] of Object.entries(TOKEN_CSS_VARS)) {
         if (!cssVar) {

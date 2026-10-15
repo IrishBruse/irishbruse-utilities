@@ -22,7 +22,7 @@ type ProbeRead = {
 export function responseLooksLikeWebsite(
     statusCode: number,
     headers: http.IncomingHttpHeaders,
-    bodyStart: string
+    bodyStart: string,
 ): boolean {
     if (statusCode < 200 || statusCode >= 300) {
         return false;
@@ -62,7 +62,7 @@ export function listenerKey(port: Pick<ListeningPort, "pid" | "port">): string {
 export async function selectWebsites(
     ports: readonly ListeningPort[],
     cache: Map<string, WebsiteHit>,
-    probe: (url: string) => Promise<WebsiteHit> = probeWebsite
+    probe: (url: string) => Promise<WebsiteHit> = probeWebsite,
 ): Promise<ListeningPort[]> {
     const live = new Set(ports.map((port) => listenerKey(port)));
     for (const key of cache.keys()) {
@@ -87,7 +87,7 @@ export async function selectWebsites(
             } catch {
                 cache.set(key, { website: false });
             }
-        })
+        }),
     );
 
     return ports.flatMap((port) => {
@@ -129,11 +129,13 @@ function headerValue(headers: http.IncomingHttpHeaders, name: string): string {
 function decodeHtml(value: string): string {
     return value
         .replace(/&#(\d+);/g, (_, digits: string) => String.fromCodePoint(Number(digits)))
-        .replace(/&#x([0-9a-f]+);/gi, (_, digits: string) => String.fromCodePoint(Number.parseInt(digits, 16)))
+        .replace(/&#x([0-9a-f]+);/gi, (_, digits: string) =>
+            String.fromCodePoint(Number.parseInt(digits, 16)),
+        )
         .replaceAll("&nbsp;", " ")
         .replaceAll("&lt;", "<")
         .replaceAll("&gt;", ">")
-        .replaceAll("&quot;", "\"")
+        .replaceAll("&quot;", '"')
         .replaceAll("&#39;", "'")
         .replaceAll("&apos;", "'")
         .replaceAll("&amp;", "&");
@@ -151,7 +153,14 @@ function probeOnce(url: string, timeoutMs: number): Promise<ProbeRead> {
         };
 
         const request = url.startsWith("https:")
-            ? https.get(url, { rejectUnauthorized: false, headers: { Accept: "text/html", Connection: "close" } }, onResponse)
+            ? https.get(
+                  url,
+                  {
+                      rejectUnauthorized: false,
+                      headers: { Accept: "text/html", Connection: "close" },
+                  },
+                  onResponse,
+              )
             : http.get(url, { headers: { Accept: "text/html", Connection: "close" } }, onResponse);
 
         request.setTimeout(timeoutMs, () => {
@@ -180,7 +189,7 @@ function probeOnce(url: string, timeoutMs: number): Promise<ProbeRead> {
                         ? "website"
                         : "not-website",
                     response.headers,
-                    body
+                    body,
                 );
             };
             response.on("end", done);

@@ -5,7 +5,7 @@ draft: false
 
 # Hello
 
-A paragraph with **bold**, *italic*, ~~strike~~, and `inline code`.
+A paragraph with **bold**, _italic_, ~~strike~~, and `inline code`.
 
 [Example link](https://example.com)
 
@@ -28,11 +28,11 @@ flowchart LR
   A[Edit] --> B[Preview]
 ```
 
-| Case | Source hint | Expected |
-| :--- | :--- | :--- |
+| Case         | Source hint                | Expected             |
+| :----------- | :------------------------- | :------------------- |
 | Mid-sentence | `word word` (single space) | No dot between words |
 
 - Wrapped list item that keeps going so the continuation line sits under the words instead of under the marker.
 
 - Parent item
-  - Nested item
+    - Nested item

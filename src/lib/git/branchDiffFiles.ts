@@ -19,7 +19,11 @@ function isMultiDiffTabInput(input: unknown): input is MultiDiffTabInput {
     return typeof input === "object" && input !== null && "multiDiffSourceUri" in input;
 }
 
-export function setBranchDiffSession(repoRoot: string, mergeBaseRef: string, paths: string[]): void {
+export function setBranchDiffSession(
+    repoRoot: string,
+    mergeBaseRef: string,
+    paths: string[],
+): void {
     session = {
         repoRoot,
         mergeBaseRef,
@@ -58,7 +62,10 @@ export function isBranchDiffWorkingTreeFile(uri: Uri): boolean {
     return uri.scheme === "file" && (session?.files.has(path.normalize(uri.fsPath)) ?? false);
 }
 
-export function workingTreeUriForBranchDiffFile(repoRoot: string, relativePath: string): Uri | undefined {
+export function workingTreeUriForBranchDiffFile(
+    repoRoot: string,
+    relativePath: string,
+): Uri | undefined {
     if (!session || session.repoRoot !== repoRoot) {
         return undefined;
     }

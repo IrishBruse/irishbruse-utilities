@@ -8,7 +8,9 @@ export type BranchChangesSummary = {
     changedFiles: number;
 };
 
-export async function loadBranchChanges(repoRoot: string): Promise<BranchChangesSummary | undefined> {
+export async function loadBranchChanges(
+    repoRoot: string,
+): Promise<BranchChangesSummary | undefined> {
     let repository = getRepositoryByRoot(repoRoot);
     if (!repository) {
         const active = await getActiveRepository();
@@ -34,7 +36,7 @@ export async function loadBranchChanges(repoRoot: string): Promise<BranchChanges
                 deletions: totals.deletions + change.deletions,
                 changedFiles: totals.changedFiles + 1,
             }),
-            { additions: 0, deletions: 0, changedFiles: 0 }
+            { additions: 0, deletions: 0, changedFiles: 0 },
         );
     } catch {
         return undefined;

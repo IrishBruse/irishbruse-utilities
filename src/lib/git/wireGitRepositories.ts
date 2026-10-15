@@ -7,7 +7,10 @@ export type WireGitRepositoriesOptions = {
     onRepositoryUiChange?: (repository: Repository) => void;
 };
 
-export function wireGitRepositories(context: ExtensionContext, options: WireGitRepositoriesOptions): void {
+export function wireGitRepositories(
+    context: ExtensionContext,
+    options: WireGitRepositoriesOptions,
+): void {
     const tracked = new WeakSet<Repository>();
 
     const trackRepository = (repository: Repository): void => {
@@ -20,7 +23,7 @@ export function wireGitRepositories(context: ExtensionContext, options: WireGitR
             repository.ui.onDidChange(() => {
                 options.onRepositoryUiChange?.(repository);
                 options.onChange();
-            })
+            }),
         );
     };
 
@@ -37,7 +40,7 @@ export function wireGitRepositories(context: ExtensionContext, options: WireGitR
             api.onDidOpenRepository((event) => {
                 trackRepository(event.repository);
                 options.onChange();
-            })
+            }),
         );
         context.subscriptions.push(api.onDidCloseRepository(() => options.onChange()));
         syncRepositories(api);

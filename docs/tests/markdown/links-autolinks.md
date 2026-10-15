@@ -44,10 +44,10 @@ Body text after the definition. Use [hidden-ref] here if the editor resolves sho
 
 Click the link in the table cell (not the cell edit chrome):
 
-| Label | URL |
-| :--- | :--- |
-| Example | [open](https://example.com) |
-| Relative | [showcase](./showcase.md) |
+| Label    | URL                         |
+| :------- | :-------------------------- |
+| Example  | [open](https://example.com) |
+| Relative | [showcase](./showcase.md)   |
 | Autolink | <https://example.com/table> |
 
 ## Links in HTML preview block

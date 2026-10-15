@@ -27,16 +27,20 @@ export function activateBranchDiffRevert(context: ExtensionContext): void {
     context.subscriptions.push(
         window.onDidChangeActiveTextEditor((editor) => {
             void updateBranchDiffFileContext(editor);
-        })
+        }),
     );
     context.subscriptions.push(
         workspace.onDidChangeTextDocument((event) => {
             scheduleAutoSave(event.document);
-        })
+        }),
     );
 
     registerCommandIB(Commands.RevertBranchDiffHunk, () => revertBranchDiffHunk(), context);
-    registerCommandIB(Commands.RevertBranchDiffSelection, () => revertBranchDiffSelection(), context);
+    registerCommandIB(
+        Commands.RevertBranchDiffSelection,
+        () => revertBranchDiffSelection(),
+        context,
+    );
 
     void updateBranchDiffFileContext(window.activeTextEditor);
 }
@@ -62,7 +66,7 @@ function scheduleAutoSave(document: TextDocument): void {
         setTimeout(() => {
             pendingAutoSaves.delete(key);
             void saveIfDirty(document);
-        }, 75)
+        }, 75),
     );
 }
 
@@ -106,7 +110,9 @@ export async function revertBranchDiffSelection(): Promise<void> {
     }
 
     if (editor.selection.isEmpty) {
-        void window.showInformationMessage("Select the lines you want to revert to the base branch.");
+        void window.showInformationMessage(
+            "Select the lines you want to revert to the base branch.",
+        );
         return;
     }
 
@@ -117,7 +123,11 @@ export async function revertBranchDiffSelection(): Promise<void> {
     }
 
     const range = fullLineRange(editor.document, editor.selection);
-    const baseText = await readBaseFileText(session.repoRoot, session.mergeBaseRef, editor.document.uri.fsPath);
+    const baseText = await readBaseFileText(
+        session.repoRoot,
+        session.mergeBaseRef,
+        editor.document.uri.fsPath,
+    );
     const modifiedText = editor.document.getText();
     const eol = editor.document.eol === 1 ? "\r\n" : "\n";
     const baseLines = splitLines(baseText);
@@ -127,7 +137,7 @@ export async function revertBranchDiffSelection(): Promise<void> {
         modLines,
         range.start.line,
         range.end.line,
-        eol
+        eol,
     );
 
     const applied = await editor.edit((editBuilder) => {
@@ -148,7 +158,7 @@ function fullLineRange(document: TextDocument, selection: Selection): Range {
         selection.start.line,
         0,
         safeEndLine,
-        document.lineAt(safeEndLine).text.length
+        document.lineAt(safeEndLine).text.length,
     );
 }
 
@@ -159,16 +169,24 @@ function splitLines(text: string): string[] {
     return text.split(/\r?\n/);
 }
 
-async function readBaseFileText(repoRoot: string, mergeBaseRef: string, filePath: string): Promise<string> {
+async function readBaseFileText(
+    repoRoot: string,
+    mergeBaseRef: string,
+    filePath: string,
+): Promise<string> {
     const baseEditor = findBaseGitEditor(filePath, mergeBaseRef);
     if (baseEditor) {
         return baseEditor.document.getText();
     }
 
     const relativePath = path.relative(repoRoot, filePath).replace(/\\/g, "/");
-    const result = await asyncSpawn("git", ["show", `${mergeBaseRef}:${relativePath}`], { cwd: repoRoot });
+    const result = await asyncSpawn("git", ["show", `${mergeBaseRef}:${relativePath}`], {
+        cwd: repoRoot,
+    });
     if (result.status !== 0) {
-        throw new Error(result.stderr.trim() || `Could not read ${relativePath} at ${mergeBaseRef}.`);
+        throw new Error(
+            result.stderr.trim() || `Could not read ${relativePath} at ${mergeBaseRef}.`,
+        );
     }
     return result.stdout;
 }

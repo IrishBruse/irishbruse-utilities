@@ -70,14 +70,12 @@ export const Commands = {
     KillLocalPort: `ib-utilities.killLocalPort`,
 
     ViewSnippetContainer: `workbench.view.snippetContainer`,
-
 } as const;
 
 export type Commands = (typeof Commands)[keyof typeof Commands];
 
 export const ViewContainers = {
-      SnippetContainer: `snippetContainer`,
-
+    SnippetContainer: `snippetContainer`,
 } as const;
 
 export const Views = {
@@ -86,7 +84,6 @@ export const Views = {
     IbUtilitiesGitHelpers: `ib-utilities.gitHelpers`,
 
     LocalPorts: `ib-utilities.localPorts`,
-
 } as const;
 
 export const Configuration = {
@@ -97,10 +94,9 @@ export const Configuration = {
     GithubGhPath: `ib-utilities.github.ghPath`,
 
     GitHelpersDebugMode: `ib-utilities.gitHelpers.debugMode`,
-
 } as const;
 
 export const contributedLanguageIdToExtension: Record<string, string> = {
-    "mermaid": ".mmd",
-    "gherkin": ".feature",
+    mermaid: ".mmd",
+    gherkin: ".feature",
 };

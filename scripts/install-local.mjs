@@ -1,4 +1,3 @@
-
 import { execSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -22,9 +21,7 @@ function resolveCli() {
         try {
             execSync(`command -v ${candidate}`, { stdio: "pipe" });
             return candidate;
-        } catch {
-            
-        }
+        } catch {}
     }
     return null;
 }

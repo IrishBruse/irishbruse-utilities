@@ -16,15 +16,13 @@ This line is intentionally long so wrap and horizontal overflow can be checked w
 
 ## Blanks and unclosed emphasis
 
-
-
 Paragraph after multiple blanks.
 
 *open italic without close
 
 **open bold without close
 
-Talk about ``` fences ``` without opening a real block.
+Talk about `fences` without opening a real block.
 
 <!-- HTML comment should stay out of the painted preview -->
 
@@ -40,17 +38,17 @@ Bare URL in a sentence: see https://example.com/bare for autolink behavior.
 
 ## Weird tables
 
-| |
-| - |
-| |
+|     |
+| --- |
+|     |
 
-| A | B | C |
-| - | - | - |
+| A     | B                                           | C                                                                                                             |
+| ----- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
 | short | **bold** `code` [link](https://example.com) | very long cell text that stresses maxColumnWidth wrap in wrapped table style and nested cell Markdown editing |
 
 ## Tabs, Unicode, voids
 
--	tab-indented item
+- tab-indented item
 - normal item
 
 ```typescript

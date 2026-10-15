@@ -1,5 +1,3 @@
-
-
 import type { Event, Uri } from "vscode";
 
 export const enum RefType {

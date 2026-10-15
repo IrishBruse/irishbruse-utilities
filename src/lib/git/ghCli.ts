@@ -28,7 +28,7 @@ export function ghSpawnEnv(): NodeJS.ProcessEnv {
 
 export function ghSpawnOptions(
     repoRoot: string,
-    extra: Omit<AsyncSpawnOptions, "cwd" | "env"> = {}
+    extra: Omit<AsyncSpawnOptions, "cwd" | "env"> = {},
 ): AsyncSpawnOptions {
     return { cwd: repoRoot, env: ghSpawnEnv(), ...extra };
 }
@@ -36,12 +36,15 @@ export function ghSpawnOptions(
 export async function spawnGh(
     repoRoot: string,
     args: readonly string[],
-    options: Omit<AsyncSpawnOptions, "cwd" | "env"> = {}
+    options: Omit<AsyncSpawnOptions, "cwd" | "env"> = {},
 ): Promise<Process> {
     return asyncSpawn(getGhCommand(), args, ghSpawnOptions(repoRoot, options));
 }
 
-export async function runGh(repoRoot: string, args: readonly string[]): Promise<Process | undefined> {
+export async function runGh(
+    repoRoot: string,
+    args: readonly string[],
+): Promise<Process | undefined> {
     try {
         return await spawnGh(repoRoot, args);
     } catch {

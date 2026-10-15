@@ -19,7 +19,10 @@ body {
     overflow: hidden;
     touch-action: none;
     cursor: grab;
-    background-image: radial-gradient(var(--vscode-editorIndentGuide-background) 1px, transparent 1px);
+    background-image: radial-gradient(
+        var(--vscode-editorIndentGuide-background) 1px,
+        transparent 1px
+    );
     background-size: 24px 24px;
 }
 
@@ -48,7 +51,10 @@ body {
 #diagram svg {
     display: block;
     max-width: none;
-    font-family: var(--ib-font-family, var(--vscode-font-family, var(--vscode-editor-font-family, sans-serif))) !important;
+    font-family: var(
+        --ib-font-family,
+        var(--vscode-font-family, var(--vscode-editor-font-family, sans-serif))
+    ) !important;
 }
 
 #diagram svg text {
@@ -249,7 +255,9 @@ body {
     font-size: 14px;
     line-height: 1;
     cursor: pointer;
-    transition: transform 0.15s ease, opacity 0.15s ease;
+    transition:
+        transform 0.15s ease,
+        opacity 0.15s ease;
 }
 
 #toolbar button:hover:not(:disabled) {
@@ -296,7 +304,9 @@ body {
 #diagram .node:not(:has(.divider)) polygon,
 #diagram .node:not(:has(.divider)) path {
     filter: drop-shadow(0 2px 4px var(--vscode-widget-shadow, rgba(0, 0, 0, 0.12)));
-    transition: fill 0.2s ease, stroke 0.2s ease;
+    transition:
+        fill 0.2s ease,
+        stroke 0.2s ease;
 }
 
 /* Sequence autonumber markers */

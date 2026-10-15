@@ -82,17 +82,57 @@ describe("scroll", () => {
                 !(column instanceof HTMLElement) ||
                 !(editor instanceof HTMLElement)
             ) {
-                return { root: 0, column: 0, editor: 0, scrollHeight: 0 };
+                return { root: 0, column: 0, editor: 0 };
             }
             return {
                 root: root.clientHeight,
                 column: column.clientHeight,
                 editor: editor.clientHeight,
-                scrollHeight: root.scrollHeight,
             };
         });
+        expect(box.column).toBeGreaterThan(200);
+        expect(box.column).toBeLessThanOrEqual(box.root + 2);
         expect(box.editor).toBeGreaterThan(200);
         expect(box.editor).toBeLessThanOrEqual(box.root + 2);
-        expect(box.scrollHeight).toBeGreaterThan(box.root + 100);
+        const lastLine = "Line 2500";
+        const lastLineOffset = text.lastIndexOf(lastLine);
+        await page.evaluate((offset) => {
+            (
+                window as unknown as {
+                    __inlineMarkdown: { setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown.setCursor(offset);
+        }, lastLineOffset);
+        await page.evaluate(
+            () =>
+                new Promise((resolve) => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => resolve(undefined));
+                    });
+                }),
+        );
+        const visibleLastLine = await page.evaluate((line) => {
+            const root = document.querySelector(".inline-md-root");
+            if (!(root instanceof HTMLElement)) {
+                return false;
+            }
+            const rect = root.getBoundingClientRect();
+            const lines = root.querySelectorAll(".view-line");
+            for (const node of lines) {
+                if (!(node instanceof HTMLElement)) {
+                    continue;
+                }
+                const text = (node.textContent ?? "").replaceAll("\u00a0", " ");
+                if (!text.includes(line)) {
+                    continue;
+                }
+                const lineRect = node.getBoundingClientRect();
+                if (lineRect.bottom >= rect.top && lineRect.top <= rect.bottom) {
+                    return true;
+                }
+            }
+            return false;
+        }, lastLine);
+        expect(visibleLastLine).toBe(true);
     });
 });

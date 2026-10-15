@@ -64,6 +64,21 @@ import {
     withoutTrailingLineBreak,
 } from "./markdown/shared/range";
 
+export const paintedWindowScrollPad = 40;
+export const paintedWindowPaintDelayMs = 100;
+
+export function paintedWindowNeedsRebuild(
+    visibleFirstLine: number,
+    visibleLastLine: number,
+    painted: LineSpan,
+    pad = paintedWindowScrollPad,
+): boolean {
+    if (painted.startLine === 0 && painted.endLine === 0) {
+        return true;
+    }
+    return visibleFirstLine < painted.startLine + pad || visibleLastLine > painted.endLine - pad;
+}
+
 export interface InlinePresentationHandlers {
     onToggleTask(from: number, to: number): void;
     onReveal(offset: number): void;
@@ -390,13 +405,13 @@ export class InlinePresentation {
     private readonly tableLineHeights = new Map<number, number>();
     private findListener: monaco.IDisposable | undefined;
     private scrollListener: monaco.IDisposable | undefined;
+    private windowPaintTimer: ReturnType<typeof setTimeout> | undefined;
     private updating = false;
     private updateQueued = false;
     private sourceText = "";
     private scopeVersion = -1;
     private hiddenSignature = "";
     private paintedWindow: LineSpan = { startLine: 0, endLine: 0 };
-    private windowFrame = 0;
 
     constructor(
         private readonly editor: monaco.editor.IStandaloneCodeEditor,
@@ -456,23 +471,22 @@ export class InlinePresentation {
 
     private scheduleWindow(): void {
         const model = this.editor.getModel();
-        if (!model || model.getLineCount() <= fullPaintLineLimit || this.windowFrame !== 0) {
+        if (!model || model.getLineCount() <= fullPaintLineLimit) {
             return;
         }
-        this.windowFrame = requestAnimationFrame(() => {
-            this.windowFrame = 0;
-            const visible = this.editor.getVisibleRanges();
-            const first = visible[0]?.startLineNumber ?? 1;
-            const last = visible[visible.length - 1]?.endLineNumber ?? first;
-            const pad = 40;
-            if (
-                first >= this.paintedWindow.startLine + pad &&
-                last <= this.paintedWindow.endLine - pad
-            ) {
-                return;
-            }
+        const visible = this.editor.getVisibleRanges();
+        const first = visible[0]?.startLineNumber ?? 1;
+        const last = visible[visible.length - 1]?.endLineNumber ?? first;
+        if (!paintedWindowNeedsRebuild(first, last, this.paintedWindow)) {
+            return;
+        }
+        if (this.windowPaintTimer !== undefined) {
+            clearTimeout(this.windowPaintTimer);
+        }
+        this.windowPaintTimer = setTimeout(() => {
+            this.windowPaintTimer = undefined;
             this.update();
-        });
+        }, paintedWindowPaintDelayMs);
     }
 
     private lineWindow(model: monaco.editor.ITextModel): LineSpan {
@@ -978,13 +992,13 @@ export class InlinePresentation {
         this.selectionListener = undefined;
         this.scrollListener?.dispose();
         this.scrollListener = undefined;
+        if (this.windowPaintTimer !== undefined) {
+            clearTimeout(this.windowPaintTimer);
+            this.windowPaintTimer = undefined;
+        }
         if (this.selectionFrame !== 0) {
             cancelAnimationFrame(this.selectionFrame);
             this.selectionFrame = 0;
-        }
-        if (this.windowFrame !== 0) {
-            cancelAnimationFrame(this.windowFrame);
-            this.windowFrame = 0;
         }
     }
 

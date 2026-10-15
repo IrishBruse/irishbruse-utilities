@@ -286,13 +286,38 @@ export function mountInlineEditor(
         editor.focus();
     };
 
+    const hiddenScrollbar = {
+        vertical: "hidden" as const,
+        horizontal: "hidden" as const,
+        useShadows: false,
+        verticalScrollbarSize: 0,
+        horizontalScrollbarSize: 0,
+        handleMouseWheel: false,
+        alwaysConsumeMouseWheel: false,
+    };
+    const visibleScrollbar = {
+        vertical: "visible" as const,
+        horizontal: "hidden" as const,
+        useShadows: false,
+        verticalScrollbarSize: 10,
+        horizontalScrollbarSize: 0,
+        handleMouseWheel: true,
+        alwaysConsumeMouseWheel: false,
+    };
+
     const placeScroll = (scrollTop: number): void => {
+        if (editorOwnsScroll) {
+            const layout = editor.getLayoutInfo();
+            const max = Math.max(0, editor.getScrollHeight() - layout.height);
+            editor.setScrollTop(Math.min(scrollTop, max));
+            return;
+        }
         const max = Math.max(0, parent.scrollHeight - parent.clientHeight);
         parent.scrollTop = Math.min(scrollTop, max);
     };
 
     const revealInParent = (position: monaco.IPosition, center: boolean): void => {
-        if (scrollHold !== 0) {
+        if (scrollHold !== 0 && !center) {
             return;
         }
         const node = editor.getDomNode();
@@ -300,6 +325,23 @@ export function mountInlineEditor(
             return;
         }
         const lineHeight = editor.getOption(monaco.editor.EditorOption.lineHeight);
+        if (editorOwnsScroll) {
+            if (center) {
+                editor.revealLineInCenter(position.lineNumber, monaco.editor.ScrollType.Immediate);
+                return;
+            }
+            const lineTop = editor.getTopForPosition(position.lineNumber, position.column);
+            const layout = editor.getLayoutInfo();
+            const viewTop = editor.getScrollTop();
+            const viewBottom = viewTop + layout.height;
+            const margin = lineHeight;
+            if (lineTop < viewTop + margin) {
+                editor.setScrollTop(Math.max(0, lineTop - margin));
+            } else if (lineTop + lineHeight > viewBottom - margin) {
+                editor.setScrollTop(lineTop + lineHeight - layout.height + margin);
+            }
+            return;
+        }
         const top =
             editor.getTopForPosition(position.lineNumber, position.column) - editor.getScrollTop();
         const lineTop =
@@ -561,13 +603,15 @@ export function mountInlineEditor(
                 (editor.getModel()?.getLineCount() ?? 0) > fullPaintLineLimit &&
                 contentHeight > viewHeight;
             const editorHeight = ownsScroll ? viewHeight : contentHeight;
+            const columnHeight = editorHeight;
             const info = editor.getLayoutInfo();
-            const heightMatches = column.style.height === `${contentHeight}px`;
+            const heightMatches = column.style.height === `${columnHeight}px`;
             if (ownsScroll !== editorOwnsScroll) {
                 editorOwnsScroll = ownsScroll;
                 parent.classList.toggle("inline-md-editor-scroll", ownsScroll);
                 editor.updateOptions({
                     wrappingStrategy: ownsScroll ? "simple" : "advanced",
+                    scrollbar: ownsScroll ? visibleScrollbar : hiddenScrollbar,
                 });
             }
             if (
@@ -578,7 +622,7 @@ export function mountInlineEditor(
                 return;
             }
             if (!heightMatches) {
-                column.style.height = `${contentHeight}px`;
+                column.style.height = `${columnHeight}px`;
             }
             editor.layout({ width, height: editorHeight });
         } finally {
@@ -609,41 +653,6 @@ export function mountInlineEditor(
     } | null;
     const findVisibilityListener = findController?.getState().onFindReplaceStateChange(() => {
         placeFindWidget();
-    });
-    let aligningScroll = false;
-    const alignEditorToPage = (): void => {
-        if (!editorOwnsScroll || aligningScroll) {
-            return;
-        }
-        const top = parent.scrollTop;
-        if (Math.abs(editor.getScrollTop() - top) <= 1) {
-            return;
-        }
-        aligningScroll = true;
-        editor.setScrollTop(top);
-        aligningScroll = false;
-    };
-    const alignPageToEditor = (): void => {
-        if (!editorOwnsScroll || aligningScroll) {
-            return;
-        }
-        const top = editor.getScrollTop();
-        if (Math.abs(parent.scrollTop - top) <= 1) {
-            return;
-        }
-        aligningScroll = true;
-        parent.scrollTop = top;
-        aligningScroll = false;
-    };
-    const pageScrollListener = (): void => {
-        alignEditorToPage();
-    };
-    parent.addEventListener("scroll", pageScrollListener, { passive: true });
-    const editorScrollListener = editor.onDidScrollChange((event) => {
-        if (!event.scrollTopChanged) {
-            return;
-        }
-        alignPageToEditor();
     });
     const contentSizeListener = editor.onDidContentSizeChange(fitContent);
     const cursorRevealListener = editor.onDidChangeCursorPosition((event) => {
@@ -685,8 +694,6 @@ export function mountInlineEditor(
             }
             window.removeEventListener("resize", placeFindWidget);
             findVisibilityListener?.dispose();
-            parent.removeEventListener("scroll", pageScrollListener);
-            editorScrollListener.dispose();
             parent.classList.remove("inline-md-editor-scroll");
             contentSizeListener.dispose();
             cursorRevealListener.dispose();
@@ -715,7 +722,7 @@ export function mountInlineEditor(
             const selection = editor.getSelection();
             const anchor = selection ? model.getOffsetAt(selection.getSelectionStart()) : 0;
             const head = selection ? model.getOffsetAt(selection.getPosition()) : 0;
-            const scrollTop = parent.scrollTop;
+            const scrollTop = editorOwnsScroll ? editor.getScrollTop() : parent.scrollTop;
             const hold = ++scrollHold;
             const restoreScroll = (): void => {
                 if (scrollHold !== hold) {
@@ -733,10 +740,13 @@ export function mountInlineEditor(
                 editor.setSelection(monaco.Selection.fromPositions(start, end));
             } finally {
                 applyingHostUpdate = false;
+                fitNow();
                 restoreScroll();
                 requestAnimationFrame(() => {
+                    fitNow();
                     restoreScroll();
                     requestAnimationFrame(() => {
+                        fitNow();
                         restoreScroll();
                         if (scrollHold === hold) {
                             scrollHold = 0;

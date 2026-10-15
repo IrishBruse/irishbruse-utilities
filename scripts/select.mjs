@@ -61,7 +61,7 @@ export async function select(message, choices) {
             resolve(choice.value);
         };
 
-        const onKeypress = (str, key) => {
+        const onKeypress = (_str, key) => {
             if (key.ctrl && key.name === "c") {
                 clear(printedLines);
                 cleanup();

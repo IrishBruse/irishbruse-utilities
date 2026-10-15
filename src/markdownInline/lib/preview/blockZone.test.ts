@@ -99,16 +99,16 @@ class TestElement extends TestNode {
         this.listeners.set(type, bucket);
     }
 
-    fire(type: string, event: Partial<MouseEvent> & { target?: unknown }): void {
-        const mouse = {
+    fire(type: string, event: Partial<ReturnType<typeof mouse>> & { button?: number }): void {
+        const fired = {
             preventDefault: vi.fn(),
             stopPropagation: vi.fn(),
             clientX: 0,
             clientY: 0,
             ...event,
-        } as MouseEvent;
+        } as unknown as MouseEvent;
         for (const listener of this.listeners.get(type) ?? []) {
-            listener(mouse);
+            listener(fired);
         }
     }
 
@@ -185,6 +185,7 @@ class TestImage extends TestElement {
 
 const probes: TestImage[] = [];
 const created: TestElement[] = [];
+const elementFromPoint = vi.fn((_x?: number, _y?: number) => null as Element | null);
 const computedStyle = {
     paddingTop: "0px",
     paddingBottom: "0px",
@@ -275,7 +276,7 @@ function installRichDom(): void {
         },
         caretPositionFromPoint: () => null,
         caretRangeFromPoint: () => null,
-        elementFromPoint: vi.fn(() => null),
+        elementFromPoint,
     } as unknown as Document);
 }
 
@@ -290,10 +291,12 @@ function scope(overrides: Partial<Scope> & Pick<Scope, "kind">): Scope {
     };
 }
 
-function createHost(overrides: Partial<BlockZoneHost> = {}): BlockZoneHost {
+function createHost(overrides: Partial<BlockZoneHost> = {}) {
+    const onReveal = vi.fn<(offset: number) => void>();
+    const onLayout = vi.fn<(key: string) => void>();
     return {
-        onReveal: vi.fn(),
-        onLayout: vi.fn(),
+        onReveal,
+        onLayout,
         documentUrl: "http://doc.test/readme.md",
         lineHeight: 20,
         ...overrides,
@@ -304,14 +307,16 @@ function element(node: unknown): TestElement {
     return node as unknown as TestElement;
 }
 
-function mouse(target?: unknown): MouseEvent {
+function mouse(target?: unknown) {
+    const preventDefault = vi.fn<() => void>();
+    const stopPropagation = vi.fn<() => void>();
     return {
-        preventDefault: vi.fn(),
-        stopPropagation: vi.fn(),
+        preventDefault,
+        stopPropagation,
         clientX: 3,
         clientY: 4,
         target,
-    } as unknown as MouseEvent;
+    };
 }
 
 async function flush(): Promise<void> {
@@ -688,13 +693,10 @@ describe("blockZone", () => {
         expect(record.zone.suppressMouseDown).toBe(true);
         expect(element(record.zone.marginDomNode).textContent).toBe("3");
         const below = { dispatchEvent: vi.fn() };
-        vi.mocked(document.elementFromPoint).mockReturnValue(below as unknown as Element);
+        elementFromPoint.mockReturnValue(below as unknown as Element);
         const event = mouse(record.zone.domNode);
         element(record.zone.domNode).fire("mousedown", {
-            preventDefault: event.preventDefault,
-            stopPropagation: event.stopPropagation,
-            clientX: event.clientX,
-            clientY: event.clientY,
+            ...event,
             button: 0,
         });
         expect(event.preventDefault).toHaveBeenCalled();

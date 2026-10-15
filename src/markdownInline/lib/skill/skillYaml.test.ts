@@ -98,14 +98,19 @@ describe("paintYamlFrontMatter", () => {
     });
 
     it("covers defensive regex and comment fallbacks", () => {
-        const originalExec = RegExp.prototype.exec;
-        const originalIndexOf = String.prototype.indexOf;
+        const savedExec = Object.getOwnPropertyDescriptor(RegExp.prototype, "exec")!
+            .value as typeof RegExp.prototype.exec;
+        const savedIndexOf = Object.getOwnPropertyDescriptor(String.prototype, "indexOf")!
+            .value as typeof String.prototype.indexOf;
+        const callExec = (regexp: RegExp, string: string) => savedExec.call(regexp, string);
+        const callIndexOf = (str: string, search: string, position?: number) =>
+            savedIndexOf.call(str, search, position);
         try {
             String.prototype.indexOf = function (this: string, search: string, position?: number) {
                 if (search === "#") {
                     return -1;
                 }
-                return originalIndexOf.call(this, search, position);
+                return callIndexOf(this, search, position);
             };
             paintYamlFrontMatter("name: value # note\n", 0, "name: value # note\n".length);
 
@@ -113,12 +118,12 @@ describe("paintYamlFrontMatter", () => {
                 if (this.source === "^ *") {
                     return null;
                 }
-                return originalExec.call(this, string);
+                return callExec(this, string);
             } as typeof RegExp.prototype.exec;
             paintYamlFrontMatter("body: |\n  line\n", 0, "body: |\n  line\n".length);
 
             RegExp.prototype.exec = function (this: RegExp, string: string) {
-                const match = originalExec.call(this, string);
+                const match = callExec(this, string);
                 if (match && this.source.includes("[^:#")) {
                     for (let group = 1; group <= 6; group++) {
                         delete match[group];
@@ -130,8 +135,8 @@ describe("paintYamlFrontMatter", () => {
                 paintYamlFrontMatter("name: value\n", 0, "name: value\n".length).length,
             ).toBeGreaterThan(0);
         } finally {
-            RegExp.prototype.exec = originalExec;
-            String.prototype.indexOf = originalIndexOf;
+            RegExp.prototype.exec = savedExec;
+            String.prototype.indexOf = savedIndexOf;
         }
     });
 });

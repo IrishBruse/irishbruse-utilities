@@ -1,9 +1,6 @@
 {
     "task.allowAutomaticTasks": "on",
-    "eslint.useFlatConfig": true,
-    "eslint.validate": ["javascript", "typescript"],
     "editor.codeActionsOnSave": {
-        "source.fixAll.eslint": "explicit",
         "source.fixAll.oxc": "explicit"
     },
     "editor.defaultFormatter": "oxc.oxc-vscode",
@@ -21,6 +18,7 @@
     },
     "oxc.disableNestedConfig": true,
     "oxc.fmt.disableNestedConfig": true,
+    "oxc.typeAware": true,
     "editor.formatOnSave": true,
     "editor.formatOnSaveMode": "file"
 }

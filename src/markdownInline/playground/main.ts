@@ -11,10 +11,13 @@ const docsLoaders = import.meta.glob("../../../docs/tests/markdown/**/*.md", {
     import: "default",
 });
 
-const testLoaders = import.meta.glob("../lib/test/**/fixtures/**/*.md", {
-    query: "?raw",
-    import: "default",
-});
+const testLoaders = import.meta.glob(
+    ["../lib/test/**/fixtures/**/*.md", "../lib/**/test/fixtures/**/*.md"],
+    {
+        query: "?raw",
+        import: "default",
+    },
+);
 
 declare global {
     interface Window {
@@ -105,18 +108,23 @@ async function main(): Promise<void> {
     });
     const tests = collectFixtures(testLoaders, LIB_PREFIX, "tests", "lib").sort(byName);
     const fixtures = [...docs, ...tests];
-    const requested = new URLSearchParams(window.location.search).get("fixture") ?? DEFAULT_FIXTURE;
-    const selected =
-        fixtures.find((fixture) => fixture.id === requested) ??
-        fixtures.find((fixture) => fixture.id === DEFAULT_FIXTURE);
+    const search = new URLSearchParams(window.location.search);
+    const fixtureParam = search.get("fixture");
+    const requested = fixtureParam ?? DEFAULT_FIXTURE;
+    const selected = fixtures.find((fixture) => fixture.id === requested);
+    if (!selected) {
+        if (fixtureParam) {
+            throw new Error(`Unknown playground fixture: ${fixtureParam}`);
+        }
+        throw new Error(`Default playground fixture is missing: ${DEFAULT_FIXTURE}`);
+    }
     const parent = document.querySelector("#editor");
     const select = document.querySelector("#fixture");
     const source = document.querySelector("#source");
     if (
         !(parent instanceof HTMLElement) ||
         !(select instanceof HTMLSelectElement) ||
-        !(source instanceof HTMLElement) ||
-        !selected
+        !(source instanceof HTMLElement)
     ) {
         throw new Error("Inline markdown playground failed to start");
     }

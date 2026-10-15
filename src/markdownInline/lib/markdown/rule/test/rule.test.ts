@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vite-plus/test";
+import { describe, expect, it, vi } from "vite-plus/test";
 import type { CursorContext, TextRange } from "../../../document/types";
 import { ruleShowsRaw } from "../raw";
 import { createRuleZoneBody } from "../style";
@@ -58,7 +58,124 @@ describe("createRuleZoneBody", () => {
         expect(line?.className).toBe("inline-md-hr");
         globalThis.document = previous;
     });
+
+    it("reveals on click but not on mousedown alone", () => {
+        const onReveal = vi.fn();
+        const below = { dispatchEvent: vi.fn() };
+        vi.stubGlobal(
+            "MouseEvent",
+            class MouseEvent {
+                type: string;
+                clientX: number;
+                clientY: number;
+                constructor(type: string, init?: MouseEventInit) {
+                    this.type = type;
+                    this.clientX = init?.clientX ?? 0;
+                    this.clientY = init?.clientY ?? 0;
+                }
+            } as unknown as typeof MouseEvent,
+        );
+        viStubWindow();
+        vi.stubGlobal("document", {
+            createElement(tag: string): FakeElement {
+                return new FakeElement(tag);
+            },
+            elementFromPoint: () => below,
+        });
+        const frame = createRuleZoneBody(8, onReveal) as unknown as FakeElement;
+        const down = {
+            button: 0,
+            clientX: 1,
+            clientY: 2,
+            screenX: 1,
+            screenY: 2,
+            buttons: 1,
+            preventDefault: vi.fn(),
+            stopPropagation: vi.fn(),
+            ctrlKey: false,
+            shiftKey: false,
+            altKey: false,
+            metaKey: false,
+        } as unknown as MouseEvent;
+        frame.listener?.(down);
+        expect(onReveal).not.toHaveBeenCalled();
+        expect(below.dispatchEvent).toHaveBeenCalled();
+        window.dispatchEvent(new MouseEvent("mouseup"));
+        expect(onReveal).toHaveBeenCalledWith(8);
+        vi.unstubAllGlobals();
+    });
+
+    it("does not reveal after a drag", () => {
+        const onReveal = vi.fn();
+        const below = { dispatchEvent: vi.fn() };
+        vi.stubGlobal(
+            "MouseEvent",
+            class MouseEvent {
+                type: string;
+                clientX: number;
+                clientY: number;
+                constructor(type: string, init?: MouseEventInit) {
+                    this.type = type;
+                    this.clientX = init?.clientX ?? 0;
+                    this.clientY = init?.clientY ?? 0;
+                }
+            } as unknown as typeof MouseEvent,
+        );
+        viStubWindow();
+        vi.stubGlobal("document", {
+            createElement(tag: string): FakeElement {
+                return new FakeElement(tag);
+            },
+            elementFromPoint: () => below,
+        });
+        const frame = createRuleZoneBody(8, onReveal) as unknown as FakeElement;
+        const down = {
+            button: 0,
+            clientX: 0,
+            clientY: 0,
+            screenX: 0,
+            screenY: 0,
+            buttons: 1,
+            preventDefault: vi.fn(),
+            stopPropagation: vi.fn(),
+            ctrlKey: false,
+            shiftKey: false,
+            altKey: false,
+            metaKey: false,
+        } as unknown as MouseEvent;
+        frame.listener?.(down);
+        window.dispatchEvent(new MouseEvent("mousemove", { clientX: 20, clientY: 0 }));
+        window.dispatchEvent(new MouseEvent("mouseup"));
+        expect(onReveal).not.toHaveBeenCalled();
+        vi.unstubAllGlobals();
+    });
 });
+
+function viStubWindow(): void {
+    const listeners = new Map<string, Array<(event: MouseEvent) => void>>();
+    vi.stubGlobal("window", {
+        addEventListener(type: string, listener: (event: MouseEvent) => void): void {
+            const bucket = listeners.get(type) ?? [];
+            bucket.push(listener);
+            listeners.set(type, bucket);
+        },
+        removeEventListener(type: string, listener: (event: MouseEvent) => void): void {
+            const bucket = listeners.get(type);
+            if (!bucket) {
+                return;
+            }
+            listeners.set(
+                type,
+                bucket.filter((entry) => entry !== listener),
+            );
+        },
+        dispatchEvent(event: MouseEvent): void {
+            for (const listener of listeners.get(event.type) ?? []) {
+                listener(event);
+            }
+        },
+    });
+}
 
 function viStubDocument(): void {
     Object.defineProperty(globalThis, "document", {

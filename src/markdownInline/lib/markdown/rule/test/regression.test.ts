@@ -207,4 +207,59 @@ describe("horizontal rule editing", () => {
         expect(shown).toBe(true);
         expect(landed.offset).toBe(landed.end);
     });
+
+    it("selects text when a drag starts on the rule preview", async () => {
+        await page.evaluate(() => {
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
+            api.setCursor(0);
+        });
+        await page.waitForFunction(() => {
+            const rule = document.querySelector(".inline-md-hr-line");
+            if (!(rule instanceof HTMLElement)) {
+                return false;
+            }
+            const rect = rule.getBoundingClientRect();
+            return rect.width > 0 && rect.height > 0;
+        });
+        const path = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const rule = document.querySelector(".inline-md-hr-line");
+            const after = [...document.querySelectorAll("#editor .view-line")].find((line) =>
+                fold(line.textContent).includes("After the rule"),
+            );
+            if (!(rule instanceof HTMLElement) || !(after instanceof HTMLElement)) {
+                return null;
+            }
+            const from = rule.getBoundingClientRect();
+            const to = after.getBoundingClientRect();
+            return {
+                startX: from.left + 40,
+                startY: from.top + from.height / 2,
+                endX: to.left + 60,
+                endY: to.top + to.height / 2,
+            };
+        });
+        expect(path).not.toBeNull();
+        await page.mouse.move(path!.startX, path!.startY);
+        await page.mouse.down();
+        await page.mouse.move(path!.endX, path!.endY, { steps: 8 });
+        await page.mouse.up();
+        await page.evaluate(
+            () =>
+                new Promise((resolve) => {
+                    requestAnimationFrame(() => requestAnimationFrame(resolve));
+                }),
+        );
+        const bands = await page.evaluate(
+            () =>
+                [...document.querySelectorAll<HTMLElement>(".selected-text")].filter(
+                    (piece) => piece.getBoundingClientRect().width > 12,
+                ).length,
+        );
+        expect(bands).toBeGreaterThan(0);
+    });
 });

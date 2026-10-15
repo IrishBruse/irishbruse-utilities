@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
-import { parseScopes } from "./scopes";
+import { parseScopes, scopesOverlapping } from "./scopes";
 import type { Scope, TextRange } from "./types";
 
 const synthetic = vi.hoisted(() => ({
@@ -201,6 +201,7 @@ describe("parseScopes", () => {
     it("falls back when tokens omit the pieces a construct usually has", () => {
         const source = "x".repeat(140);
         synthetic.events = [
+            mark("exit", "orphan", 1, 2),
             mark("enter", "data", 0, 0, false),
             mark("exit", "data", 0, 0, false),
             mark("enter", "strong", 0, 2),
@@ -252,5 +253,21 @@ describe("parseScopes", () => {
         expect(autolink?.markers).toEqual([]);
         expect(code).toMatchObject({ language: "", contentStart: 90, contentEnd: 95, markers: [] });
         expect(table).toMatchObject({ contentStart: 120, rows: [[]] });
+    });
+
+    it("returns scopes that overlap a window", () => {
+        const source = "# One\n\n# Two\n";
+        const scopes = parseScopes(source);
+        const first = scopesOverlapping(scopes, 0, 6);
+        const second = scopesOverlapping(scopes, source.indexOf("# Two"), source.length);
+        expect(first.some((scope) => source.slice(scope.start, scope.end).includes("One"))).toBe(
+            true,
+        );
+        expect(first.some((scope) => source.slice(scope.start, scope.end).includes("Two"))).toBe(
+            false,
+        );
+        expect(second.some((scope) => source.slice(scope.start, scope.end).includes("Two"))).toBe(
+            true,
+        );
     });
 });

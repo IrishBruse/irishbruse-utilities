@@ -7,7 +7,7 @@ import {
     installMonaco,
     readEditorFontSize,
 } from "./monaco";
-import { parseScopes } from "./document/scopes";
+import { cachedScopes, fullPaintLineLimit } from "./document/scopeCache";
 import { skillMarkdownLanguageId } from "./skill";
 import type { Scope } from "./document/types";
 
@@ -65,9 +65,12 @@ function toggledTaskMarker(source: string): string {
     return source.replace("[ ]", "[x]");
 }
 
-function linkHref(source: string, position: number): string | undefined {
+function linkHref(model: monaco.editor.ITextModel, position: number): string | undefined {
     let found: Scope | undefined;
-    for (const scope of parseScopes(source)) {
+    const { scopes } = cachedScopes(model.uri.toString(), model.getVersionId(), () =>
+        model.getValue(),
+    );
+    for (const scope of scopes) {
         if (scope.kind !== "link" || !scope.url) {
             continue;
         }
@@ -107,6 +110,7 @@ export function mountInlineEditor(
     const languageId = usesSkillMarkdown() ? skillMarkdownLanguageId : "markdown";
     const model = monaco.editor.createModel(options.text, languageId);
     model.setEOL(endOfLine(options.text));
+    const largeDocument = model.getLineCount() > fullPaintLineLimit;
     const editor = monaco.editor.create(column, {
         model,
         theme: "inline-markdown",
@@ -114,7 +118,7 @@ export function mountInlineEditor(
         automaticLayout: false,
         wordWrap: "on",
         wrappingIndent: "same",
-        wrappingStrategy: "advanced",
+        wrappingStrategy: largeDocument ? "simple" : "advanced",
         scrollBeyondLastColumn: 0,
         lineNumbers: "on",
         glyphMargin: false,
@@ -417,7 +421,7 @@ export function mountInlineEditor(
             if (!position || !currentModel) {
                 return;
             }
-            href = linkHref(currentModel.getValue(), currentModel.getOffsetAt(position));
+            href = linkHref(currentModel, currentModel.getOffsetAt(position));
         }
         if (!href) {
             return;
@@ -530,6 +534,7 @@ export function mountInlineEditor(
         editor.setPosition({ lineNumber: armed.lineNumber, column: armed.column });
     });
 
+    let editorOwnsScroll = false;
     let fitting = false;
     let fitFrame = 0;
     const placeBelow = (): void => {
@@ -550,20 +555,32 @@ export function mountInlineEditor(
                 (Number.parseFloat(style.paddingLeft) || 0) +
                 (Number.parseFloat(style.paddingRight) || 0);
             const width = Math.max(0, column.clientWidth - pad);
-            const height = Math.max(1, Math.ceil(editor.getContentHeight()));
+            const contentHeight = Math.max(1, Math.ceil(editor.getContentHeight()));
+            const viewHeight = Math.max(1, parent.clientHeight);
+            const ownsScroll =
+                (editor.getModel()?.getLineCount() ?? 0) > fullPaintLineLimit &&
+                contentHeight > viewHeight;
+            const editorHeight = ownsScroll ? viewHeight : contentHeight;
             const info = editor.getLayoutInfo();
-            const heightMatches = column.style.height === `${height}px`;
+            const heightMatches = column.style.height === `${contentHeight}px`;
+            if (ownsScroll !== editorOwnsScroll) {
+                editorOwnsScroll = ownsScroll;
+                parent.classList.toggle("inline-md-editor-scroll", ownsScroll);
+                editor.updateOptions({
+                    wrappingStrategy: ownsScroll ? "simple" : "advanced",
+                });
+            }
             if (
                 Math.abs(info.width - width) <= 1 &&
-                Math.abs(info.height - height) <= 1 &&
+                Math.abs(info.height - editorHeight) <= 1 &&
                 heightMatches
             ) {
                 return;
             }
             if (!heightMatches) {
-                column.style.height = `${height}px`;
+                column.style.height = `${contentHeight}px`;
             }
-            editor.layout({ width, height });
+            editor.layout({ width, height: editorHeight });
         } finally {
             fitting = false;
             placeBelow();
@@ -593,6 +610,41 @@ export function mountInlineEditor(
     const findVisibilityListener = findController?.getState().onFindReplaceStateChange(() => {
         placeFindWidget();
     });
+    let aligningScroll = false;
+    const alignEditorToPage = (): void => {
+        if (!editorOwnsScroll || aligningScroll) {
+            return;
+        }
+        const top = parent.scrollTop;
+        if (Math.abs(editor.getScrollTop() - top) <= 1) {
+            return;
+        }
+        aligningScroll = true;
+        editor.setScrollTop(top);
+        aligningScroll = false;
+    };
+    const alignPageToEditor = (): void => {
+        if (!editorOwnsScroll || aligningScroll) {
+            return;
+        }
+        const top = editor.getScrollTop();
+        if (Math.abs(parent.scrollTop - top) <= 1) {
+            return;
+        }
+        aligningScroll = true;
+        parent.scrollTop = top;
+        aligningScroll = false;
+    };
+    const pageScrollListener = (): void => {
+        alignEditorToPage();
+    };
+    parent.addEventListener("scroll", pageScrollListener, { passive: true });
+    const editorScrollListener = editor.onDidScrollChange((event) => {
+        if (!event.scrollTopChanged) {
+            return;
+        }
+        alignPageToEditor();
+    });
     const contentSizeListener = editor.onDidContentSizeChange(fitContent);
     const cursorRevealListener = editor.onDidChangeCursorPosition((event) => {
         revealInParent(event.position, false);
@@ -607,8 +659,15 @@ export function mountInlineEditor(
     });
     resizeObserver.observe(parent);
 
-    refresh();
-    fitNow();
+    if (model.getLineCount() > fullPaintLineLimit) {
+        fitNow();
+        requestAnimationFrame(() => {
+            refresh();
+        });
+    } else {
+        refresh();
+        fitNow();
+    }
     placeFindWidget();
 
     if (options.text.length === 0 && options.readOnly !== true) {
@@ -626,6 +685,9 @@ export function mountInlineEditor(
             }
             window.removeEventListener("resize", placeFindWidget);
             findVisibilityListener?.dispose();
+            parent.removeEventListener("scroll", pageScrollListener);
+            editorScrollListener.dispose();
+            parent.classList.remove("inline-md-editor-scroll");
             contentSizeListener.dispose();
             cursorRevealListener.dispose();
             removeKeybindings();

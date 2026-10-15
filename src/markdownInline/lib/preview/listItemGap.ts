@@ -3,6 +3,7 @@ export {
     lineModelFromSource,
     listGapAfterClass,
     listGapPaints,
+    type LineSpan,
     listItemGapAfterLines,
     listItemStartLines,
     listLineHeightMultiplier,

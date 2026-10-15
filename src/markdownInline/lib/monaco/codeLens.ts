@@ -1,6 +1,6 @@
 import * as monaco from "monaco-editor/editor/editor.api";
 import { isMermaidCodeBlock } from "../preview/mermaid";
-import { parseScopes } from "../document/scopes";
+import { cachedScopes } from "../document/scopeCache";
 import { skillMarkdownLanguageId } from "../skill";
 
 const openCommandId = "inline-md.openMermaidPreview";
@@ -14,9 +14,11 @@ const lensProvider: monaco.languages.CodeLensProvider = {
         if (!handler) {
             return { lenses: [], dispose() {} };
         }
-        const text = model.getValue();
+        const { scopes } = cachedScopes(model.uri.toString(), model.getVersionId(), () =>
+            model.getValue(),
+        );
         const lenses: monaco.languages.CodeLens[] = [];
-        for (const scope of parseScopes(text)) {
+        for (const scope of scopes) {
             if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
                 continue;
             }

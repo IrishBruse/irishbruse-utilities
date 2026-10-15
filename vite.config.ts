@@ -39,6 +39,11 @@ export default defineConfig({
                 "src/markdownInline/lib/monaco/codeLens.ts",
                 "src/markdownInline/lib/monaco/keybindings.ts",
                 "src/markdownInline/lib/monaco/setup.ts",
+                "src/markdownInline/lib/test/**",
+                "src/markdownInline/lib/markdown/table/style.ts",
+                "src/markdownInline/lib/markdown/image/style.ts",
+                "src/markdownInline/lib/markdown/fence/mermaid/style.ts",
+                "src/markdownInline/lib/markdown/shared/range.ts",
             ],
             reporter: ["text", "text-summary"],
             thresholds: {

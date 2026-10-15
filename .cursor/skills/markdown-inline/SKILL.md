@@ -12,7 +12,8 @@ Imports from `lib/` stay inside this package. `npm run lint` at the repo root en
 | Behavior                                                                               | File                                                |
 | -------------------------------------------------------------------------------------- | --------------------------------------------------- |
 | Which mark is raw or hidden                                                            | `lib/visibility.ts`, `lib/reveal.ts`                |
-| Rule, image, and table zones                                                           | `lib/preview/blockZone.ts`                          |
+| Rule, image, and table zone wiring                                                     | `lib/preview/blockZone.ts`                          |
+| Horizontal-rule zone body (click, drag)                                                | `lib/markdown/rule/style.ts` (`createRuleZoneBody`) |
 | Bullets and task marks                                                                 | `lib/decorations.ts`, `lib/styles/preview/list.css` |
 | Caret and click                                                                        | `lib/editor.ts`, `lib/selection.ts`                 |
 | 10px `.cslr.selected-text` corner. The next `.cslr.monaco-editor-background` covers it | `lib/styles/monaco/view-layers.css`                 |

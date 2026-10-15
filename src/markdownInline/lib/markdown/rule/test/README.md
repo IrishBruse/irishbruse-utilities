@@ -5,5 +5,6 @@ The rule is one normal line tall.
 Those blank lines stay visible in preview.
 The dashes stay hidden.
 Clicking the rule shows the dashes and places the caret at the end of that line.
+A click-drag that starts on the rule preview selects text through that line.
 The down arrow from the blank line above the rule stops on the dashes.
 The up arrow from the blank line below the rule stops on the dashes.

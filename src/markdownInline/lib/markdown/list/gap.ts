@@ -42,12 +42,18 @@ export interface ListGapPaint {
     readonly className: string;
 }
 
+export interface LineSpan {
+    readonly startLine: number;
+    readonly endLine: number;
+}
+
 export function listGapPaints(
     model: TextLineModel,
     scopes: readonly Scope[],
     tabSize: number,
+    span?: LineSpan,
 ): ListGapPaint[] {
-    const starts = listItemStartLines(model, scopes, tabSize);
+    const starts = listItemStartLines(model, scopes, tabSize, span);
     return listItemGapAfterLines(model, starts, tabSize).map((lineNumber) => ({
         lineNumber,
         className: listGapAfterClass,
@@ -162,10 +168,18 @@ function startFromOrderedLine(lineNumber: number, line: string, tabSize: number)
     };
 }
 
+function lineInSpan(lineNumber: number, span: LineSpan | undefined): boolean {
+    if (!span) {
+        return true;
+    }
+    return lineNumber >= span.startLine && lineNumber <= span.endLine;
+}
+
 export function listItemStartLines(
     model: TextLineModel,
     scopes: readonly Scope[],
     tabSize: number,
+    span?: LineSpan,
 ): ListItemStart[] {
     const keyed = new Map<number, ListItemStart>();
 
@@ -176,6 +190,9 @@ export function listItemStartLines(
                 continue;
             }
             const start = startFromListMarker(model, marker, tabSize);
+            if (!lineInSpan(start.lineNumber, span)) {
+                continue;
+            }
             keyed.set(start.lineNumber, start);
         }
     }
@@ -188,10 +205,15 @@ export function listItemStartLines(
             continue;
         }
         const start = startFromTask(model, marker, tabSize);
+        if (!lineInSpan(start.lineNumber, span)) {
+            continue;
+        }
         keyed.set(start.lineNumber, start);
     }
 
-    for (let lineNumber = 1; lineNumber <= model.getLineCount(); lineNumber += 1) {
+    const firstLine = span?.startLine ?? 1;
+    const lastLine = span?.endLine ?? model.getLineCount();
+    for (let lineNumber = firstLine; lineNumber <= lastLine; lineNumber += 1) {
         if (keyed.has(lineNumber)) {
             continue;
         }

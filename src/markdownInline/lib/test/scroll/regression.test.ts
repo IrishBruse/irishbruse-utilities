@@ -57,4 +57,42 @@ describe("scroll", () => {
         });
         expect(Math.abs(after - before)).toBeLessThan(8);
     });
+
+    it("keeps a long document inside the visible page", async () => {
+        const text = Array.from({ length: 2500 }, (_, index) => `Line ${index + 1}`).join("\n");
+        await page.evaluate((value) => {
+            (
+                window as unknown as { __inlineMarkdown: { setDocument(next: string): void } }
+            ).__inlineMarkdown.setDocument(value);
+        }, text);
+        await page.evaluate(
+            () =>
+                new Promise((resolve) => {
+                    requestAnimationFrame(() => {
+                        requestAnimationFrame(() => resolve(undefined));
+                    });
+                }),
+        );
+        const box = await page.evaluate(() => {
+            const root = document.querySelector(".inline-md-root");
+            const column = document.querySelector(".inline-md-column");
+            const editor = document.querySelector(".inline-md-column .monaco-editor");
+            if (
+                !(root instanceof HTMLElement) ||
+                !(column instanceof HTMLElement) ||
+                !(editor instanceof HTMLElement)
+            ) {
+                return { root: 0, column: 0, editor: 0, scrollHeight: 0 };
+            }
+            return {
+                root: root.clientHeight,
+                column: column.clientHeight,
+                editor: editor.clientHeight,
+                scrollHeight: root.scrollHeight,
+            };
+        });
+        expect(box.editor).toBeGreaterThan(200);
+        expect(box.editor).toBeLessThanOrEqual(box.root + 2);
+        expect(box.scrollHeight).toBeGreaterThan(box.root + 100);
+    });
 });

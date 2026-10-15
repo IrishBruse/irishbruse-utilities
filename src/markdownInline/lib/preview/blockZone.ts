@@ -1,4 +1,5 @@
 import * as monaco from "monaco-editor/editor/editor.api";
+import { createRuleZoneBody } from "../markdown/rule/style";
 import { resolveImageUrl } from "./imageUrl";
 import { renderMermaidDiagram } from "./mermaid";
 import type { Scope, TextRange } from "../document/types";
@@ -203,16 +204,7 @@ export function blockZone(
     host: BlockZoneHost,
 ): BlockZoneRecord {
     if (scope.kind === "thematicBreak") {
-        const frame = document.createElement("div");
-        frame.className = "inline-md-hr-line";
-        const rule = document.createElement("hr");
-        rule.className = "inline-md-hr";
-        frame.append(rule);
-        frame.addEventListener("mousedown", (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            host.onReveal(scope.end);
-        });
+        const frame = createRuleZoneBody(scope.end, host.onReveal);
         return {
             key: `hr:${from}`,
             zone: {

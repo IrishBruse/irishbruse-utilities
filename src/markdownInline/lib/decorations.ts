@@ -15,6 +15,7 @@ import {
     listLineHeightMultiplier,
     listMarkerIsTask,
     monacoLineModel,
+    type LineSpan,
 } from "./preview/listItemGap";
 import {
     blockZone as buildBlockZone,
@@ -30,7 +31,8 @@ import { previewContentClass, previewContentRange } from "./preview/paint";
 import { refreshMermaidCodeLens, setHiddenAreas } from "./monaco";
 import { rawGhostClass, rawHeadingBounds, rawHeadingClass, rawLinkSpans } from "./raw/paint";
 import { reveal, revealCode, showFormatted } from "./reveal";
-import { parseScopes } from "./document/scopes";
+import { scopesOverlapping } from "./document/scopes";
+import { cachedScopes, fullPaintLineLimit, releaseScopes } from "./document/scopeCache";
 import {
     clipSelectionToText,
     extendHeadingSelectionPastText,
@@ -382,13 +384,19 @@ export class InlinePresentation {
     private yamlLabel: YamlLabelWidget | undefined;
     private readonly mermaidZones = new Map<string, ZoneRecord>();
     private readonly imageZones = new Map<string, ZoneRecord>();
-    private mermaidLensKey = "";
+    private liveMermaidKeys = new Set<string>();
     private hiddenLineNumbers = new Set<number>();
     private readonly tableWidgets = new Map<string, TableOverlayWidget>();
     private readonly tableLineHeights = new Map<number, number>();
     private findListener: monaco.IDisposable | undefined;
+    private scrollListener: monaco.IDisposable | undefined;
     private updating = false;
     private updateQueued = false;
+    private sourceText = "";
+    private scopeVersion = -1;
+    private hiddenSignature = "";
+    private paintedWindow: LineSpan = { startLine: 0, endLine: 0 };
+    private windowFrame = 0;
 
     constructor(
         private readonly editor: monaco.editor.IStandaloneCodeEditor,
@@ -405,6 +413,9 @@ export class InlinePresentation {
         });
         this.selectionListener = editor.onDidChangeCursorSelection(() => {
             this.scheduleSelectionHeights();
+        });
+        this.scrollListener = editor.onDidScrollChange(() => {
+            this.scheduleWindow();
         });
     }
 
@@ -443,16 +454,74 @@ export class InlinePresentation {
         }
     }
 
+    private scheduleWindow(): void {
+        const model = this.editor.getModel();
+        if (!model || model.getLineCount() <= fullPaintLineLimit || this.windowFrame !== 0) {
+            return;
+        }
+        this.windowFrame = requestAnimationFrame(() => {
+            this.windowFrame = 0;
+            const visible = this.editor.getVisibleRanges();
+            const first = visible[0]?.startLineNumber ?? 1;
+            const last = visible[visible.length - 1]?.endLineNumber ?? first;
+            const pad = 40;
+            if (
+                first >= this.paintedWindow.startLine + pad &&
+                last <= this.paintedWindow.endLine - pad
+            ) {
+                return;
+            }
+            this.update();
+        });
+    }
+
+    private lineWindow(model: monaco.editor.ITextModel): LineSpan {
+        const lineCount = model.getLineCount();
+        if (lineCount <= fullPaintLineLimit) {
+            return { startLine: 1, endLine: lineCount };
+        }
+        const visible = this.editor.getVisibleRanges();
+        const first = visible[0]?.startLineNumber ?? 1;
+        const last = visible.at(-1)?.endLineNumber ?? Math.min(lineCount, first + 80);
+        const margin = 120;
+        let startLine = Math.max(1, first - margin);
+        let endLine = Math.min(lineCount, last + margin);
+        const selection = this.editor.getSelection();
+        if (selection) {
+            const caret = selection.positionLineNumber;
+            if (selection.endLineNumber - selection.startLineNumber < 400) {
+                startLine = Math.min(startLine, selection.startLineNumber);
+                endLine = Math.max(endLine, selection.endLineNumber);
+            } else {
+                startLine = Math.min(startLine, caret);
+                endLine = Math.max(endLine, caret);
+            }
+        }
+        return { startLine, endLine };
+    }
+
     private render(): void {
         const model = this.editor.getModel();
         if (!model) {
             return;
         }
-        const text = model.getValue();
+        const entry = cachedScopes(model.uri.toString(), model.getVersionId(), () =>
+            model.getValue(),
+        );
+        const text = entry.text;
+        this.sourceText = text;
+        const scopes = entry.scopes;
         this.frontMatter = this.skillFrontMatter ? readFrontMatter(text) : undefined;
         const cursor = cursorContext(this.editor, model);
         const finds = findRevealRanges(this.editor, model);
-        const scopes = parseScopes(text);
+        const lineSpan = this.lineWindow(model);
+        this.paintedWindow = lineSpan;
+        const startOffset = model.getOffsetAt({ lineNumber: lineSpan.startLine, column: 1 });
+        const endOffset = model.getOffsetAt({
+            lineNumber: lineSpan.endLine,
+            column: model.getLineMaxColumn(lineSpan.endLine),
+        });
+        const visibleScopes = scopesOverlapping(scopes, startOffset, endOffset);
         const decorations: monaco.editor.IModelDeltaDecoration[] = [];
         const replaced: TextRange[] = [];
         const hiddenLines = new Set<number>();
@@ -568,18 +637,18 @@ export class InlinePresentation {
             }
         };
 
-        for (const scope of scopes) {
+        for (const scope of visibleScopes) {
             if (scope.kind === "image" || scope.kind === "thematicBreak") {
                 addHidden(scope);
             }
         }
-        for (const scope of scopes) {
+        for (const scope of visibleScopes) {
             if (scope.kind !== "image" && scope.kind !== "thematicBreak") {
                 addHidden(scope);
             }
         }
 
-        for (const scope of scopes) {
+        for (const scope of visibleScopes) {
             if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
                 continue;
             }
@@ -613,16 +682,26 @@ export class InlinePresentation {
             }
         }
 
-        const activeMermaidKeys = new Set(
-            zones.filter((zone) => zone.key.startsWith("mermaid:")).map((zone) => zone.key),
-        );
+        if (entry.version !== this.scopeVersion) {
+            const live = new Set<string>();
+            for (const scope of scopes) {
+                if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
+                    continue;
+                }
+                const content = mermaidDiagramSource(
+                    text.slice(scope.contentStart, scope.contentEnd),
+                );
+                live.add(`mermaid:${scope.start}:${scope.end}:${content}`);
+            }
+            this.liveMermaidKeys = live;
+        }
         for (const key of this.mermaidZones.keys()) {
-            if (!activeMermaidKeys.has(key)) {
+            if (!this.liveMermaidKeys.has(key)) {
                 this.mermaidZones.delete(key);
             }
         }
 
-        for (const scope of scopes) {
+        for (const scope of visibleScopes) {
             const formatted = showFormatted(scope, cursor, findHits(scope, finds));
             const sourceLink =
                 scope.kind === "link" &&
@@ -707,7 +786,7 @@ export class InlinePresentation {
                     });
                 }
             }
-            this.addLineDecorations(model, scope, decorations);
+            this.addLineDecorations(model, scope, decorations, lineSpan);
             if (
                 scope.kind === "codeBlock" &&
                 scope.markers.some((marker) => {
@@ -745,7 +824,7 @@ export class InlinePresentation {
             applyHeadingFontScales(listRoot);
         }
         const quoteDepths = new Map<number, number>();
-        for (const scope of scopes) {
+        for (const scope of visibleScopes) {
             if (scope.kind !== "blockquote") {
                 continue;
             }
@@ -753,7 +832,9 @@ export class InlinePresentation {
             const quoteEnd = model.getPositionAt(
                 clampOffset(Math.max(scope.start, scope.end - 1), text.length),
             );
-            for (let line = quoteStart.lineNumber; line <= quoteEnd.lineNumber; line += 1) {
+            const quoteFrom = Math.max(quoteStart.lineNumber, lineSpan.startLine);
+            const quoteTo = Math.min(quoteEnd.lineNumber, lineSpan.endLine);
+            for (let line = quoteFrom; line <= quoteTo; line += 1) {
                 const depth = blockquoteLineDepth(model.getLineContent(line));
                 if (depth <= 0) {
                     continue;
@@ -765,7 +846,7 @@ export class InlinePresentation {
             const content = model.getLineContent(lineNumber);
             const lineStart = model.getOffsetAt({ lineNumber, column: 1 });
             const lineEnd = lineStart + content.length;
-            const raw = scopes.some((scope) => {
+            const raw = visibleScopes.some((scope) => {
                 if (scope.kind !== "blockquoteMarker") {
                     return false;
                 }
@@ -820,7 +901,7 @@ export class InlinePresentation {
         const tabSize = model.getOptions().tabSize;
         const lineModel = monacoLineModel(model);
         const listLineHeight = listLineHeightMultiplier(lineHeight);
-        for (const gap of listGapPaints(lineModel, scopes, tabSize)) {
+        for (const gap of listGapPaints(lineModel, visibleScopes, tabSize, lineSpan)) {
             decorations.push({
                 range: new monaco.Range(gap.lineNumber, 1, gap.lineNumber, 1),
                 options: {
@@ -838,15 +919,8 @@ export class InlinePresentation {
         this.syncTables(tables);
         this.syncZones(zones);
         this.scheduleSelectionHeights();
-        const mermaidLensKey = scopes
-            .filter((scope) => scope.kind === "codeBlock" && isMermaidCodeBlock(scope.language))
-            .map(
-                (scope) =>
-                    `${scope.start}:${scope.end}:${mermaidDiagramSource(text.slice(scope.contentStart, scope.contentEnd))}`,
-            )
-            .join("|");
-        if (mermaidLensKey !== this.mermaidLensKey) {
-            this.mermaidLensKey = mermaidLensKey;
+        if (entry.version !== this.scopeVersion) {
+            this.scopeVersion = entry.version;
             refreshMermaidCodeLens();
         }
         this.hiddenLineNumbers = hiddenLines;
@@ -854,9 +928,15 @@ export class InlinePresentation {
     }
 
     private writeHiddenAreas(model: monaco.editor.ITextModel): void {
+        const lines = [...this.hiddenLineNumbers].sort((left, right) => left - right);
+        const signature = lines.join(",");
+        if (signature === this.hiddenSignature) {
+            return;
+        }
+        this.hiddenSignature = signature;
         setHiddenAreas(
             this.editor,
-            [...this.hiddenLineNumbers].map((lineNumber) => ({
+            lines.map((lineNumber) => ({
                 startLineNumber: lineNumber,
                 startColumn: 1,
                 endLineNumber: lineNumber,
@@ -886,15 +966,25 @@ export class InlinePresentation {
         this.tableLineHeights.clear();
         this.imageZones.clear();
         this.mermaidZones.clear();
-        this.mermaidLensKey = "";
+        this.liveMermaidKeys.clear();
+        const model = this.editor.getModel();
+        if (model) {
+            releaseScopes(model.uri.toString());
+        }
         setHiddenAreas(this.editor, []);
         this.findListener?.dispose();
         this.findListener = undefined;
         this.selectionListener?.dispose();
         this.selectionListener = undefined;
+        this.scrollListener?.dispose();
+        this.scrollListener = undefined;
         if (this.selectionFrame !== 0) {
             cancelAnimationFrame(this.selectionFrame);
             this.selectionFrame = 0;
+        }
+        if (this.windowFrame !== 0) {
+            cancelAnimationFrame(this.windowFrame);
+            this.windowFrame = 0;
         }
     }
 
@@ -914,7 +1004,7 @@ export class InlinePresentation {
     ): monaco.editor.InjectedTextOptions | undefined {
         switch (scope.kind) {
             case "listMarker":
-                if (listMarkerIsTask(scopes, marker.end, model.getValue())) {
+                if (listMarkerIsTask(scopes, marker.end, this.sourceText)) {
                     return undefined;
                 }
                 return injected("•", "inline-md-list-mark");
@@ -1146,6 +1236,7 @@ export class InlinePresentation {
         model: monaco.editor.ITextModel,
         scope: Scope,
         decorations: monaco.editor.IModelDeltaDecoration[],
+        span: LineSpan,
     ): void {
         const className = lineClass(scope);
         if (!className || scope.end <= scope.start) {
@@ -1154,7 +1245,9 @@ export class InlinePresentation {
         const length = model.getValueLength();
         const start = model.getPositionAt(clampOffset(scope.start, length));
         const end = model.getPositionAt(clampOffset(Math.max(scope.start, scope.end - 1), length));
-        for (let line = start.lineNumber; line <= end.lineNumber; line += 1) {
+        const from = Math.max(start.lineNumber, span.startLine);
+        const to = Math.min(end.lineNumber, span.endLine);
+        for (let line = from; line <= to; line += 1) {
             decorations.push({
                 range: new monaco.Range(line, 1, line, 1),
                 options: { isWholeLine: true, className },
@@ -1399,6 +1492,9 @@ export class InlinePresentation {
             for (const zone of this.zones) {
                 if (!nextKeys.has(zone.key) && zone.id) {
                     accessor.removeZone(zone.id);
+                    zone.id = undefined;
+                    zone.placedAfter = undefined;
+                    zone.placedHeight = undefined;
                 }
             }
             this.zones = zones.map((zone) => {

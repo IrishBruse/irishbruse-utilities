@@ -67,6 +67,11 @@ body {
     padding-inline: var(--ib-md-inline-pad);
 }
 
+.inline-md-root.inline-md-editor-scroll .inline-md-column > .monaco-editor {
+    position: sticky;
+    top: 0;
+}
+
 .inline-md-below {
     position: absolute;
     left: var(--ib-md-inline-pad);

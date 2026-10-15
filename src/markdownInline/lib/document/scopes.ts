@@ -33,26 +33,6 @@ function tokenize(source: string): MarkEvent[] {
     });
 }
 
-function matchingExit(events: readonly MarkEvent[], enterIndex: number): number {
-    const tokenType = events[enterIndex]?.tokenType;
-    let depth = 0;
-    for (let index = enterIndex; index < events.length; index++) {
-        const event = events[index];
-        if (event?.tokenType !== tokenType) {
-            continue;
-        }
-        if (event.type === "enter") {
-            depth++;
-        } else {
-            depth--;
-            if (depth === 0) {
-                return index;
-            }
-        }
-    }
-    return -1;
-}
-
 function enterRanges(inner: readonly MarkEvent[], tokenType: string): TextRange[] {
     return inner
         .filter((event) => event.type === "enter" && event.tokenType === tokenType)
@@ -398,24 +378,29 @@ function buildScope(
 export function parseScopes(source: string): Scope[] {
     const events = tokenize(source);
     const scopes: Scope[] = [];
-    for (let index = 0; index < events.length; index++) {
-        const event = events[index];
-        if (!event || event.type !== "enter") {
+    const stack: { event: MarkEvent; children: MarkEvent[] }[] = [];
+    for (const event of events) {
+        if (event.type === "enter") {
+            stack.push({ event, children: [] });
             continue;
         }
-        const exitIndex = matchingExit(events, index);
-        if (exitIndex < 0) {
+        const frame = stack.pop();
+        if (!frame) {
             continue;
         }
-        const exit = events[exitIndex];
-        if (!exit) {
-            continue;
+        const parent = stack[stack.length - 1];
+        if (parent) {
+            parent.children.push(frame.event);
+            for (const child of frame.children) {
+                parent.children.push(child);
+            }
+            parent.children.push(event);
         }
         const scope = buildScope(
-            event.tokenType,
-            event.start,
-            exit.end,
-            events.slice(index + 1, exitIndex),
+            frame.event.tokenType,
+            frame.event.start,
+            event.end,
+            frame.children,
             source,
         );
         if (scope && scope.end > scope.start) {
@@ -424,4 +409,21 @@ export function parseScopes(source: string): Scope[] {
     }
     scopes.sort((left, right) => left.start - right.start || right.end - left.end);
     return scopes;
+}
+
+export function scopesOverlapping(
+    scopes: readonly Scope[],
+    startOffset: number,
+    endOffset: number,
+): Scope[] {
+    const found: Scope[] = [];
+    for (const scope of scopes) {
+        if (scope.start >= endOffset) {
+            break;
+        }
+        if (scope.end > startOffset) {
+            found.push(scope);
+        }
+    }
+    return found;
 }

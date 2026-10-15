@@ -1,4 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vite-plus/test";
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import type { Scope } from "../document/types";
 
 vi.mock("./mermaid", () => ({
@@ -226,6 +229,44 @@ function installRichDom(): void {
         }
         return 1;
     }) as typeof requestAnimationFrame);
+    vi.stubGlobal(
+        "MouseEvent",
+        class MouseEvent {
+            type: string;
+            bubbles: boolean;
+            clientX: number;
+            clientY: number;
+            constructor(type: string, init?: MouseEventInit) {
+                this.type = type;
+                this.bubbles = init?.bubbles ?? false;
+                this.clientX = init?.clientX ?? 0;
+                this.clientY = init?.clientY ?? 0;
+            }
+        } as unknown as typeof MouseEvent,
+    );
+    const windowListeners = new Map<string, Array<(event: MouseEvent) => void>>();
+    vi.stubGlobal("window", {
+        addEventListener(type: string, listener: (event: MouseEvent) => void): void {
+            const bucket = windowListeners.get(type) ?? [];
+            bucket.push(listener);
+            windowListeners.set(type, bucket);
+        },
+        removeEventListener(type: string, listener: (event: MouseEvent) => void): void {
+            const bucket = windowListeners.get(type);
+            if (!bucket) {
+                return;
+            }
+            windowListeners.set(
+                type,
+                bucket.filter((entry) => entry !== listener),
+            );
+        },
+        dispatchEvent(event: MouseEvent): void {
+            for (const listener of windowListeners.get(event.type) ?? []) {
+                listener(event);
+            }
+        },
+    });
     vi.stubGlobal("document", {
         createElement: (tag: string) => {
             const node = new TestElement(tag);
@@ -234,6 +275,7 @@ function installRichDom(): void {
         },
         caretPositionFromPoint: () => null,
         caretRangeFromPoint: () => null,
+        elementFromPoint: vi.fn(() => null),
     } as unknown as Document);
 }
 
@@ -627,6 +669,14 @@ describe("tableRow", () => {
     });
 });
 
+describe("thematic break zone body ownership", () => {
+    it("delegates horizontal-rule body to createRuleZoneBody", () => {
+        const previewDir = dirname(fileURLToPath(import.meta.url));
+        const source = readFileSync(join(previewDir, "blockZone.ts"), "utf8");
+        expect(source).toContain("createRuleZoneBody(scope.end");
+    });
+});
+
 describe("blockZone", () => {
     it("builds a thematic break that reveals the source offset", () => {
         installRichDom();
@@ -637,10 +687,21 @@ describe("blockZone", () => {
         expect(record.zone.heightInPx).toBe(20);
         expect(record.zone.suppressMouseDown).toBe(true);
         expect(element(record.zone.marginDomNode).textContent).toBe("3");
+        const below = { dispatchEvent: vi.fn() };
+        vi.mocked(document.elementFromPoint).mockReturnValue(below as unknown as Element);
         const event = mouse(record.zone.domNode);
-        element(record.zone.domNode).fire("mousedown", event);
+        element(record.zone.domNode).fire("mousedown", {
+            preventDefault: event.preventDefault,
+            stopPropagation: event.stopPropagation,
+            clientX: event.clientX,
+            clientY: event.clientY,
+            button: 0,
+        });
         expect(event.preventDefault).toHaveBeenCalled();
         expect(event.stopPropagation).toHaveBeenCalled();
+        expect(below.dispatchEvent).toHaveBeenCalled();
+        expect(host.onReveal).not.toHaveBeenCalled();
+        window.dispatchEvent(new MouseEvent("mouseup"));
         expect(host.onReveal).toHaveBeenCalledWith(8);
     });
 

@@ -2,30 +2,32 @@ Packages are deep modules: see [src/markdownInline/README.md](./src/markdownInli
 
 Use `agent-browser` for testing markdownInline at http://localhost:5175/
 
-<!--VITE PLUS START-->
+## Vite+
 
-# Using Vite+, the Unified Toolchain for the Web
+The CLI is `vp`.
+`vp dev` and `vp build` run Vite.
+Docs are in `node_modules/vite-plus/docs` and at https://viteplus.dev/guide/.
 
-This project is using Vite+, a unified toolchain built on top of Vite, Rolldown, Vitest, tsdown, Oxlint, Oxfmt, and Vite Task. Vite+ wraps runtime management, package management, and frontend tooling in a single global CLI called `vp`. Vite+ is distinct from Vite, and it invokes Vite through `vp dev` and `vp build`. Run `vp help` to print a list of commands and `vp <command> --help` for information about a specific command.
+`vp <name>` runs a built-in.
+`vp run <name>` runs a `package.json` script or a `vite.config.ts` task.
+`vp dev` and `vp run dev` are different commands.
 
-Docs are local at `node_modules/vite-plus/docs` or online at https://viteplus.dev/guide/.
+`vp toolchain` shows tool versions. Add a tool name for one tool, for example `vp toolchain vite`.
+`vp toolchain --global` ignores the local `vite-plus` package.
+`vp why <package>` shows why that package is installed.
 
-## Built-in Commands vs Scripts
-
-`vp <name>` runs a built-in command. `vp run <name>` runs a `package.json` script or a `vite.config.ts` task. Scripts cannot overwrite built-ins, so `vp dev` and `vp run dev` may do different things. Check `package.json` and `vite.config.ts` first, and run `vp run <name>` when the project defines a script or task with that name.
-
-## Tool Versions
-
-Run `vp toolchain` to show versions and relationships in the active Vite+
-release. Add a tool name to select part of the graph. For example, run
-`vp toolchain vite`. Use `--global` to ignore the local `vite-plus` package. Use
-`vp why <package>` to show the package-manager dependency graph.
-
-## Review Checklist
-
-- [ ] Run `vp install` after pulling remote changes and before getting started.
-- [ ] Run `vp check` and `vp test` to format, lint, type check and test changes.
-- [ ] Check if there are `vite.config.ts` tasks or `package.json` scripts necessary for validation, run via `vp run <script>`.
-- [ ] If setup, runtime, or package-manager behavior looks wrong, run `vp env doctor` and include its output when asking for help.
-
-<!--VITE PLUS END-->
+After a pull, run `vp install`.
+`vp check` formats, lints, and type-checks.
+`npm run lint` runs `vp lint` and `tsc --noEmit`.
+It does not format.
+`npm run test` runs the unit project only (`vp test run --project unit`).
+`vp test` runs every Vitest project, including the browser project.
+`npm run test:markdown-inline` runs the unit tests under `src/markdownInline`.
+`npm run test:markdown-inline-browser` runs the Inline Markdown integration and regression tests.
+`npm run verify` builds, runs the unit tests, and lints.
+`npm run dev:markdown-inline` starts the playground.
+`npm run check:markdown-inline` type-checks Inline Markdown and runs the browser tests.
+`npm run e2e:markdown-inline` runs the playground end-to-end tests.
+`npm run verify:markdown-inline` runs that check, the Inline Markdown unit tests, and the end-to-end tests.
+If setup or the package manager looks wrong, run `vp env doctor`.
+Include that output when you ask for help.

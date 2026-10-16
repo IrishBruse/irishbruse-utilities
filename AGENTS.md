@@ -2,6 +2,8 @@ Packages are deep modules: see [src/markdownInline/README.md](./src/markdownInli
 
 Use `agent-browser` for testing markdownInline at http://localhost:5175/
 
+Update `CHANGELOG.md` with changes skip development only changes.
+
 ## Vite+
 
 The CLI is `vp`.

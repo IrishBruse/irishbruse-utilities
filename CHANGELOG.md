@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+## 0.29.0
+
+- **Change:** Code Cleanup and refactor
+
 ## 0.28.0
 
 - **Change**: Now use vite plus

@@ -87,4 +87,25 @@ describe("skill front matter looks like a code block", () => {
         });
         expect(clip.height).toBeLessThan(220);
     });
+
+    it("does not paint inline errors on the opening fence when required fields are missing", async () => {
+        await page.evaluate(() => {
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: {
+                        setDocument(text: string): void;
+                    };
+                }
+            ).__inlineMarkdown;
+            api.setDocument("---\nlicense: MIT\n---\n\n# Body\n");
+        });
+        await page.waitForFunction(() => {
+            const text = (
+                document.querySelector("#editor .view-lines")?.textContent ?? ""
+            ).replaceAll("\u00a0", " ");
+            return text.includes("license: MIT") && !text.includes("markdown-skill-fixture");
+        });
+        expect(await page.locator(".inline-md-skill-error-message").count()).toBe(0);
+        expect(await page.locator(".inline-md-skill-error").count()).toBe(0);
+    });
 });

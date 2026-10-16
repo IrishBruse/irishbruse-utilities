@@ -1396,8 +1396,11 @@ export class InlinePresentation {
             span.yaml,
             skillDirectoryName(this.documentUrl),
         )) {
-            const from = issue.start < 0 ? 0 : span.yamlStart + issue.start;
-            const to = issue.start < 0 ? Math.min(3, length) : span.yamlStart + issue.end;
+            if (issue.start < 0) {
+                continue;
+            }
+            const from = span.yamlStart + issue.start;
+            const to = span.yamlStart + issue.end;
             const issueStart = model.getPositionAt(clampOffset(from, length));
             const issueEnd = model.getPositionAt(clampOffset(Math.max(from, to), length));
             decorations.push({

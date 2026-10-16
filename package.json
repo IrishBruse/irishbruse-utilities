@@ -585,6 +585,6 @@
     ],
     "icon": "logo.png",
     "engines": {
-        "vscode": "^1.125.0"
+        "vscode": "^1.140.0"
     }
 }

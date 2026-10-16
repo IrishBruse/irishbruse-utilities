@@ -12,12 +12,16 @@ interface MarkEvent {
     readonly end: number;
 }
 
-function tokenize(source: string): MarkEvent[] {
+function tokenize(
+    source: string,
+    origin?: { line: number; column: number; offset: number },
+): MarkEvent[] {
     const parser = parse({
         extensions: [gfmStrikethrough(), gfmTaskListItem(), gfmAutolinkLiteral(), gfmTable()],
     });
     const chunks = preprocess()(source, undefined, true);
-    const events = postprocess(parser.document().write(chunks));
+    const document = origin ? parser.document(origin) : parser.document();
+    const events = postprocess(document.write(chunks));
     return events.map((event) => {
         const token = event[1] as {
             type: string;
@@ -376,7 +380,27 @@ function buildScope(
 }
 
 export function parseScopes(source: string): Scope[] {
-    const events = tokenize(source);
+    return scopesFromEvents(tokenize(source), source);
+}
+
+export function parseScopesRange(
+    source: string,
+    startOffset: number,
+    endOffset: number,
+    startLine: number,
+): Scope[] {
+    const start = Math.max(0, Math.min(startOffset, source.length));
+    const end = Math.max(start, Math.min(endOffset, source.length));
+    if (end === start) {
+        return [];
+    }
+    return scopesFromEvents(
+        tokenize(source.slice(start, end), { line: startLine, column: 1, offset: start }),
+        source,
+    );
+}
+
+function scopesFromEvents(events: readonly MarkEvent[], source: string): Scope[] {
     const scopes: Scope[] = [];
     const stack: { event: MarkEvent; children: MarkEvent[] }[] = [];
     for (const event of events) {

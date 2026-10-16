@@ -67,8 +67,25 @@ function toggledTaskMarker(source: string): string {
 
 function linkHref(model: monaco.editor.ITextModel, position: number): string | undefined {
     let found: Scope | undefined;
-    const { scopes } = cachedScopes(model.uri.toString(), model.getVersionId(), () =>
-        model.getValue(),
+    const lineCount = model.getLineCount();
+    const clamped = Math.max(0, Math.min(position, model.getValueLength()));
+    const line = model.getPositionAt(clamped).lineNumber;
+    const { scopes } = cachedScopes(
+        model.uri.toString(),
+        model.getVersionId(),
+        () => model.getValue(),
+        lineCount > fullPaintLineLimit
+            ? {
+                  startLine: line,
+                  endLine: line,
+                  startOffset: model.getOffsetAt({ lineNumber: line, column: 1 }),
+                  endOffset: model.getOffsetAt({
+                      lineNumber: line,
+                      column: model.getLineMaxColumn(line),
+                  }),
+                  lineCount,
+              }
+            : undefined,
     );
     for (const scope of scopes) {
         if (scope.kind !== "link" || !scope.url) {

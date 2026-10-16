@@ -487,6 +487,24 @@ function lineClass(scope: Scope): string | undefined {
     return undefined;
 }
 
+function zoneKeyOffset(key: string): number | undefined {
+    const match = /^(?:image|mermaid):(\d+):/.exec(key);
+    if (!match) {
+        return undefined;
+    }
+    const offset = Number(match[1]);
+    return Number.isFinite(offset) ? offset : undefined;
+}
+
+function offsetCovered(covered: readonly TextRange[], offset: number): boolean {
+    for (const range of covered) {
+        if (offset >= range.start && offset < range.end) {
+            return true;
+        }
+    }
+    return false;
+}
+
 export class InlinePresentation {
     private readonly decorations: monaco.editor.IEditorDecorationsCollection;
     private readonly widgets = new Map<string, TaskWidget>();
@@ -629,15 +647,6 @@ export class InlinePresentation {
         if (!model) {
             return;
         }
-        const entry = cachedScopes(model.uri.toString(), model.getVersionId(), () =>
-            model.getValue(),
-        );
-        const text = entry.text;
-        this.sourceText = text;
-        const scopes = entry.scopes;
-        this.frontMatter = this.skillFrontMatter ? readFrontMatter(text) : undefined;
-        const cursor = cursorContext(this.editor, model);
-        const finds = findRevealRanges(this.editor, model);
         const lineSpan = this.lineWindow(model);
         this.paintedWindow = lineSpan;
         const startOffset = model.getOffsetAt({ lineNumber: lineSpan.startLine, column: 1 });
@@ -645,6 +654,27 @@ export class InlinePresentation {
             lineNumber: lineSpan.endLine,
             column: model.getLineMaxColumn(lineSpan.endLine),
         });
+        const lineCount = model.getLineCount();
+        const entry = cachedScopes(
+            model.uri.toString(),
+            model.getVersionId(),
+            () => model.getValue(),
+            lineCount > fullPaintLineLimit
+                ? {
+                      startLine: lineSpan.startLine,
+                      endLine: lineSpan.endLine,
+                      startOffset,
+                      endOffset,
+                      lineCount,
+                  }
+                : undefined,
+        );
+        const text = entry.text;
+        this.sourceText = text;
+        const scopes = entry.scopes;
+        this.frontMatter = this.skillFrontMatter ? readFrontMatter(text) : undefined;
+        const cursor = cursorContext(this.editor, model);
+        const finds = findRevealRanges(this.editor, model);
         const visibleScopes = scopesOverlapping(scopes, startOffset, endOffset);
         const decorations: monaco.editor.IModelDeltaDecoration[] = [];
         const replaced: TextRange[] = [];
@@ -824,26 +854,44 @@ export class InlinePresentation {
             liveImageKeys.add(imageZoneKey(scope.url, bounds.start, this.documentUrl));
         }
         for (const key of this.imageZones.keys()) {
-            if (!liveImageKeys.has(key)) {
+            if (liveImageKeys.has(key)) {
+                continue;
+            }
+            const offset = zoneKeyOffset(key);
+            if (offset === undefined || offsetCovered(entry.covered, offset)) {
                 this.imageZones.delete(key);
             }
         }
 
-        if (entry.version !== this.scopeVersion) {
-            const live = new Set<string>();
-            for (const scope of scopes) {
-                if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
-                    continue;
-                }
-                const content = mermaidDiagramSource(
-                    text.slice(scope.contentStart, scope.contentEnd),
-                );
-                live.add(`mermaid:${scope.start}:${scope.end}:${content}`);
+        const liveMermaid = new Set<string>();
+        for (const scope of scopes) {
+            if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
+                continue;
             }
-            this.liveMermaidKeys = live;
+            const content = mermaidDiagramSource(text.slice(scope.contentStart, scope.contentEnd));
+            liveMermaid.add(`mermaid:${scope.start}:${scope.end}:${content}`);
+        }
+        if (entry.version !== this.scopeVersion) {
+            for (const key of this.liveMermaidKeys) {
+                const offset = zoneKeyOffset(key);
+                if (
+                    offset !== undefined &&
+                    offsetCovered(entry.covered, offset) &&
+                    !liveMermaid.has(key)
+                ) {
+                    this.liveMermaidKeys.delete(key);
+                }
+            }
+        }
+        for (const key of liveMermaid) {
+            this.liveMermaidKeys.add(key);
         }
         for (const key of this.mermaidZones.keys()) {
-            if (!this.liveMermaidKeys.has(key)) {
+            if (this.liveMermaidKeys.has(key)) {
+                continue;
+            }
+            const offset = zoneKeyOffset(key);
+            if (offset === undefined || offsetCovered(entry.covered, offset)) {
                 this.mermaidZones.delete(key);
             }
         }

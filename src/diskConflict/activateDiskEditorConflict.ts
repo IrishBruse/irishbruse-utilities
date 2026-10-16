@@ -89,8 +89,8 @@ function ensureWatcher(uri: Uri, context: ExtensionContext): void {
     }
 
     const watcher = workspace.createFileSystemWatcher(uri.fsPath);
+    context.subscriptions.push(watcher);
     const subscription = Disposable.from(
-        watcher,
         watcher.onDidChange((changed) => {
             void onDiskChange(changed);
         }),

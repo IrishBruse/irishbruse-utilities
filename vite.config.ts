@@ -71,7 +71,7 @@ export default defineConfig({
             {
                 test: {
                     name: "unit",
-                    include: ["src/**/*.test.ts"],
+                    include: ["src/**/*.test.ts", "lint/**/*.test.ts"],
                     exclude: [
                         "src/markdownInline/lib/**/integration.test.ts",
                         "src/markdownInline/lib/**/regression.test.ts",
@@ -119,7 +119,9 @@ export default defineConfig({
                     ignoreRestSiblings: true,
                 },
             ],
+            "vscode/contribution-sync": "error",
             "vscode/no-dropped-disposable": "error",
+            "vscode/activation-events": "error",
             "typescript/no-explicit-any": "error",
             "typescript/no-deprecated": [
                 "error",

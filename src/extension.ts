@@ -6,7 +6,7 @@ import { openMarkdownInline } from "./commands/openMarkdownInline";
 import { openMarkdownSource } from "./commands/openMarkdownSource";
 import { openMermaidPreview } from "./commands/openMermaidPreview";
 import { openMermaidSource } from "./commands/openMermaidSource";
-import { relativeGoTo } from "./commands/relativeGoTo";
+import { activateRelativeGoTo, relativeGoTo } from "./commands/relativeGoTo";
 import { terminalPaste } from "./commands/terminalPaste";
 import { GitHelpersViewProvider } from "./gitHelpers/GitHelpersView";
 import { registerMarkdownInlineEditor } from "./markdownInline/host";
@@ -23,6 +23,7 @@ import { Commands } from "./constants";
 export function activate(context: ExtensionContext) {
     setStoragePaths(context.globalStorageUri);
 
+    activateRelativeGoTo(context);
     registerCommandIB(Commands.RelativeGoTo, relativeGoTo, context);
     registerCommandIB(Commands.TerminalPaste, terminalPaste, context);
     registerCommandIB(Commands.OpenMarkdownInline, openMarkdownInline, context);

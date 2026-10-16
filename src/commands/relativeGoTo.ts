@@ -1,4 +1,5 @@
 import {
+    ExtensionContext,
     InputBoxValidationMessage,
     Position,
     Range,
@@ -48,10 +49,15 @@ export async function relativeGoTo(type: "up" | "down" | "absolute" = "down") {
     editor?.revealRange(editor.selection);
 }
 
-const lineHighlight: TextEditorDecorationType = window.createTextEditorDecorationType({
-    backgroundColor: new ThemeColor("editor.rangeHighlightBackground"),
-    isWholeLine: true,
-});
+let lineHighlight: TextEditorDecorationType;
+
+export function activateRelativeGoTo(context: ExtensionContext): void {
+    lineHighlight = window.createTextEditorDecorationType({
+        backgroundColor: new ThemeColor("editor.rangeHighlightBackground"),
+        isWholeLine: true,
+    });
+    context.subscriptions.push(lineHighlight);
+}
 
 function peek(value: string): string | InputBoxValidationMessage | undefined | null {
     const editor = window.activeTextEditor;

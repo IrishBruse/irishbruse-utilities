@@ -15,11 +15,11 @@
     cursor: text;
 }
 
-.inline-md-mermaid-open-preview {
+.inline-md-mermaid-open-preview,
+.inline-md-root .monaco-editor .inline-md-mermaid-open-preview-lens {
     display: block;
-    position: static;
     z-index: 2;
-    margin: 0 0 4px;
+    margin: 0;
     padding: 0;
     border: 0;
     background: transparent;
@@ -33,7 +33,14 @@
     pointer-events: auto;
 }
 
-.inline-md-mermaid-open-preview:hover {
+.inline-md-mermaid .inline-md-mermaid-open-preview {
+    position: absolute;
+    top: 4px;
+    right: 16px;
+}
+
+.inline-md-mermaid-open-preview:hover,
+.inline-md-root .monaco-editor .inline-md-mermaid-open-preview-lens:hover {
     color: var(--vscode-textLink-activeForeground, #98c379);
     text-decoration: underline;
 }

@@ -1,6 +1,4 @@
 import * as monaco from "monaco-editor/editor/editor.api";
-import { isMermaidCodeBlock } from "../preview/mermaid";
-import { cachedScopes } from "../document/scopeCache";
 import { skillMarkdownLanguageId } from "../skill";
 
 const openCommandId = "inline-md.openMermaidPreview";
@@ -9,31 +7,8 @@ const lensEmitter = new monaco.Emitter<monaco.languages.CodeLensProvider>();
 
 const lensProvider: monaco.languages.CodeLensProvider = {
     onDidChange: lensEmitter.event,
-    provideCodeLenses(model) {
-        const handler = openHandlers.get(model.uri.toString());
-        if (!handler) {
-            return { lenses: [], dispose() {} };
-        }
-        const { scopes } = cachedScopes(model.uri.toString(), model.getVersionId(), () =>
-            model.getValue(),
-        );
-        const lenses: monaco.languages.CodeLens[] = [];
-        for (const scope of scopes) {
-            if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
-                continue;
-            }
-            const lineNumber = model.getPositionAt(scope.start).lineNumber;
-            const openLine = lineNumber - 1;
-            lenses.push({
-                range: new monaco.Range(lineNumber, 1, lineNumber, 1),
-                command: {
-                    id: openCommandId,
-                    title: "Open Preview",
-                    arguments: [model.uri.toString(), openLine],
-                },
-            });
-        }
-        return { lenses, dispose() {} };
+    provideCodeLenses() {
+        return { lenses: [], dispose() {} };
     },
 };
 

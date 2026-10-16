@@ -41,7 +41,10 @@ describe("mermaid open preview", () => {
             return (
                 buttonBox.height > 0 &&
                 svgBox.height > 20 &&
-                buttonBox.bottom <= svgBox.top + 1 &&
+                buttonBox.top >= frameBox.top - 1 &&
+                buttonBox.right <= frameBox.right + 1 &&
+                frameBox.right - buttonBox.right <= 24 &&
+                buttonBox.top - frameBox.top <= 12 &&
                 svgBox.bottom <= frameBox.bottom + 1
             );
         });
@@ -51,7 +54,7 @@ describe("mermaid open preview", () => {
         await browser?.close();
     });
 
-    it("places Open Preview above the diagram", async () => {
+    it("floats Open Preview in the top right of the code block", async () => {
         const boxes = await page.evaluate(() => {
             const frame = document.querySelector(".inline-md-mermaid");
             const button = frame?.querySelector(".inline-md-mermaid-open-preview");
@@ -84,15 +87,16 @@ describe("mermaid open preview", () => {
                 },
             );
             return {
-                buttonBottom: buttonBox.bottom,
-                svgTop: svgBox.top,
+                rightGap: frameBox.right - buttonBox.right,
+                topGap: buttonBox.top - frameBox.top,
                 svgBottom: svgBox.bottom,
                 frameBottom: frameBox.bottom,
                 lensOverlap,
             };
         });
         expect(boxes).not.toBeNull();
-        expect(boxes!.buttonBottom).toBeLessThanOrEqual(boxes!.svgTop + 1);
+        expect(boxes!.rightGap).toBeLessThanOrEqual(24);
+        expect(boxes!.topGap).toBeLessThanOrEqual(12);
         expect(boxes!.svgBottom).toBeLessThanOrEqual(boxes!.frameBottom + 1);
         expect(boxes!.lensOverlap).toBe(false);
     });
@@ -130,10 +134,70 @@ describe("mermaid open preview", () => {
         expect(Math.abs(edges!.svgLeft - edges!.textLeft)).toBeLessThanOrEqual(1);
     });
 
-    it("shows Open Preview above the diagram", async () => {
+    it("shows Open Preview in the top right of the code block", async () => {
         await expectLocatorShot(
             page.locator(".inline-md-mermaid"),
             join(here, "screenshots", "mermaid.png"),
         );
+    });
+
+    it("keeps Open Preview in the top right while editing the fence", async () => {
+        await page.evaluate(() => {
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
+            api.setCursor(api.getDocument().indexOf("flowchart"));
+        });
+        await page.waitForFunction(() => {
+            const button = document.querySelector(".inline-md-mermaid-open-preview-lens");
+            const codeLine = [...document.querySelectorAll("#editor .view-line")].find((line) =>
+                (line.textContent ?? "").includes("```mermaid"),
+            );
+            if (!(button instanceof HTMLElement) || !(codeLine instanceof HTMLElement)) {
+                return false;
+            }
+            const buttonBox = button.getBoundingClientRect();
+            const lineBox = codeLine.getBoundingClientRect();
+            return (
+                buttonBox.height > 0 &&
+                Math.abs(buttonBox.top - lineBox.top) <= 4 &&
+                lineBox.right - buttonBox.right <= 24
+            );
+        });
+        const boxes = await page.evaluate(() => {
+            const button = document.querySelector(".inline-md-mermaid-open-preview-lens");
+            const codeLine = [...document.querySelectorAll("#editor .view-line")].find((line) =>
+                (line.textContent ?? "").includes("```mermaid"),
+            );
+            const lens = [...document.querySelectorAll(".codelens-decoration")].find((node) =>
+                node.textContent?.includes("Open Preview"),
+            );
+            if (!(button instanceof HTMLElement) || !(codeLine instanceof HTMLElement)) {
+                return null;
+            }
+            const buttonBox = button.getBoundingClientRect();
+            const lineBox = codeLine.getBoundingClientRect();
+            const lensBox =
+                lens instanceof HTMLElement ? lens.getBoundingClientRect() : { height: 0 };
+            return {
+                topGap: Math.abs(buttonBox.top - lineBox.top),
+                rightGap: lineBox.right - buttonBox.right,
+                lensHeight: lensBox.height,
+            };
+        });
+        expect(boxes).not.toBeNull();
+        expect(boxes!.topGap).toBeLessThanOrEqual(4);
+        expect(boxes!.rightGap).toBeLessThanOrEqual(24);
+        expect(boxes!.lensHeight).toBe(0);
+        await page.evaluate(() => {
+            const api = (
+                window as unknown as {
+                    __inlineMarkdown: { getDocument(): string; setCursor(offset: number): void };
+                }
+            ).__inlineMarkdown;
+            api.setCursor(api.getDocument().indexOf("Before"));
+        });
     });
 });

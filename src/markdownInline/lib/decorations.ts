@@ -50,7 +50,7 @@ import {
     skillFrontMatterIssues,
     type FrontMatterSpan,
 } from "./skill";
-import type { Scope, TextRange } from "./document/types";
+import type { CursorContext, Scope, TextRange } from "./document/types";
 import {
     clampOffset,
     coveredLine,
@@ -124,6 +124,28 @@ interface ZoneRecord {
     placedHeight?: number;
 }
 
+function pinRightOnLine(node: HTMLElement): void {
+    const editor = node.closest(".monaco-editor");
+    const parent = node.parentElement;
+    if (!(editor instanceof HTMLElement) || !(parent instanceof HTMLElement)) {
+        return;
+    }
+    const nodeBox = node.getBoundingClientRect();
+    const line = [...editor.querySelectorAll(".view-line")].find((entry) => {
+        const box = entry.getBoundingClientRect();
+        return nodeBox.top < box.bottom && nodeBox.bottom > box.top;
+    });
+    if (!(line instanceof HTMLElement)) {
+        return;
+    }
+    const lineBox = line.getBoundingClientRect();
+    const parentBox = parent.getBoundingClientRect();
+    const width = node.offsetWidth;
+    node.style.transform = "none";
+    node.style.left = `${lineBox.right - 16 - width - parentBox.left}px`;
+    node.style.top = `${lineBox.top - parentBox.top}px`;
+}
+
 class YamlLabelWidget implements monaco.editor.IContentWidget {
     readonly allowEditorOverflow = false;
     readonly suppressMouseDown = true;
@@ -157,25 +179,60 @@ class YamlLabelWidget implements monaco.editor.IContentWidget {
     }
 
     afterRender(): void {
-        const editor = this.node.closest(".monaco-editor");
-        const parent = this.node.parentElement;
-        if (!(editor instanceof HTMLElement) || !(parent instanceof HTMLElement)) {
-            return;
-        }
-        const nodeBox = this.node.getBoundingClientRect();
-        const line = [...editor.querySelectorAll(".view-line")].find((entry) => {
-            const box = entry.getBoundingClientRect();
-            return nodeBox.top < box.bottom && nodeBox.bottom > box.top;
+        pinRightOnLine(this.node);
+    }
+}
+
+class MermaidOpenPreviewWidget implements monaco.editor.IContentWidget {
+    readonly allowEditorOverflow = false;
+    readonly suppressMouseDown = true;
+    private lineNumber = 1;
+    private openLine = 0;
+    private readonly node: HTMLButtonElement;
+
+    constructor(
+        private readonly id: string,
+        private readonly onOpen: (openLine: number) => void,
+    ) {
+        const node = document.createElement("button");
+        node.type = "button";
+        node.className = "inline-md-mermaid-open-preview inline-md-mermaid-open-preview-lens";
+        node.textContent = "Open Preview";
+        node.title = "Open Mermaid preview";
+        node.addEventListener("mousedown", (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            this.onOpen(this.openLine);
         });
-        if (!(line instanceof HTMLElement)) {
+        this.node = node;
+    }
+
+    getId(): string {
+        return this.id;
+    }
+
+    getDomNode(): HTMLElement {
+        return this.node;
+    }
+
+    getPosition(): monaco.editor.IContentWidgetPosition {
+        return {
+            position: { lineNumber: this.lineNumber, column: 1 },
+            preference: [monaco.editor.ContentWidgetPositionPreference.EXACT],
+        };
+    }
+
+    setTarget(lineNumber: number, openLine: number): void {
+        this.lineNumber = lineNumber;
+        this.openLine = openLine;
+    }
+
+    afterRender(position: monaco.editor.ContentWidgetPositionPreference | null): void {
+        if (position === null) {
             return;
         }
-        const lineBox = line.getBoundingClientRect();
-        const parentBox = parent.getBoundingClientRect();
-        const width = this.node.offsetWidth;
-        this.node.style.transform = "none";
-        this.node.style.left = `${lineBox.right - 16 - width - parentBox.left}px`;
-        this.node.style.top = `${lineBox.top - parentBox.top}px`;
+        this.node.style.display = "block";
+        pinRightOnLine(this.node);
     }
 }
 
@@ -440,6 +497,7 @@ export class InlinePresentation {
     private selectionFrame = 0;
     private frontMatter: FrontMatterSpan | undefined;
     private yamlLabel: YamlLabelWidget | undefined;
+    private readonly mermaidOpenWidgets = new Map<string, MermaidOpenPreviewWidget>();
     private readonly mermaidZones = new Map<string, ZoneRecord>();
     private readonly imageZones = new Map<string, ZoneRecord>();
     private liveMermaidKeys = new Set<string>();
@@ -1020,6 +1078,7 @@ export class InlinePresentation {
         }
         this.hiddenLineNumbers = hiddenLines;
         this.writeHiddenAreas(model);
+        this.syncMermaidOpenPreview(model, visibleScopes, cursor, finds);
     }
 
     private writeHiddenAreas(model: monaco.editor.ITextModel): void {
@@ -1043,6 +1102,7 @@ export class InlinePresentation {
     dispose(): void {
         this.decorations.clear();
         this.syncYamlLabel(undefined);
+        this.clearMermaidOpenPreview();
         this.syncTasks([]);
         this.syncHits([]);
         this.zoneKey = "";
@@ -1117,7 +1177,7 @@ export class InlinePresentation {
                 return injected("☐ ", "inline-md-task-spacer");
             }
             case "codeBlock":
-                if (index !== 0) {
+                if (index !== 0 || isMermaidCodeBlock(scope.language)) {
                     return undefined;
                 }
                 return injected(
@@ -1321,6 +1381,56 @@ export class InlinePresentation {
         }
         this.yamlLabel.setLine(lineNumber);
         this.editor.layoutContentWidget(this.yamlLabel);
+    }
+
+    private clearMermaidOpenPreview(): void {
+        for (const widget of this.mermaidOpenWidgets.values()) {
+            this.editor.removeContentWidget(widget);
+        }
+        this.mermaidOpenWidgets.clear();
+    }
+
+    private syncMermaidOpenPreview(
+        model: monaco.editor.ITextModel,
+        scopes: readonly Scope[],
+        cursor: CursorContext,
+        finds: readonly TextRange[],
+    ): void {
+        const onOpen = this.handlers.onOpenMermaidPreview;
+        if (!onOpen) {
+            this.clearMermaidOpenPreview();
+            return;
+        }
+        const live = new Map<string, { lineNumber: number; openLine: number }>();
+        for (const scope of scopes) {
+            if (scope.kind !== "codeBlock" || !isMermaidCodeBlock(scope.language)) {
+                continue;
+            }
+            if (revealCode(scope, cursor, findHits(scope, finds)).surface === "preview") {
+                continue;
+            }
+            const lineNumber = model.getPositionAt(scope.start).lineNumber;
+            live.set(`mermaid-open-${scope.start}`, {
+                lineNumber,
+                openLine: lineNumber - 1,
+            });
+        }
+        for (const [id, widget] of this.mermaidOpenWidgets) {
+            if (!live.has(id)) {
+                this.editor.removeContentWidget(widget);
+                this.mermaidOpenWidgets.delete(id);
+            }
+        }
+        for (const [id, target] of live) {
+            let widget = this.mermaidOpenWidgets.get(id);
+            if (!widget) {
+                widget = new MermaidOpenPreviewWidget(id, onOpen);
+                this.mermaidOpenWidgets.set(id, widget);
+                this.editor.addContentWidget(widget);
+            }
+            widget.setTarget(target.lineNumber, target.openLine);
+            this.editor.layoutContentWidget(widget);
+        }
     }
 
     private addLineDecorations(

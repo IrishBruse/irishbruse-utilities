@@ -8,6 +8,7 @@ import {
     readEditorFontSize,
 } from "./monaco";
 import { cachedScopes, fullPaintLineLimit } from "./document/scopeCache";
+import { createLargeDocumentFit } from "./editorFit";
 import { skillMarkdownLanguageId } from "./skill";
 import type { Scope } from "./document/types";
 
@@ -748,13 +749,19 @@ export function mountInlineEditor(
         revealInParent(event.position, false);
     });
     window.addEventListener("resize", placeFindWidget, { passive: true });
+    let largeDocumentFit: ReturnType<typeof createLargeDocumentFit>;
     const resizeObserver = new ResizeObserver(() => {
         if (parent.clientWidth === 0 || parent.clientHeight === 0) {
             return;
         }
-        fitContent();
         placeFindWidget();
+        largeDocumentFit.onResize();
     });
+    largeDocumentFit = createLargeDocumentFit(
+        () => (editor.getModel()?.getLineCount() ?? 0) > fullPaintLineLimit,
+        fitContent,
+        fitNow,
+    );
     resizeObserver.observe(parent);
 
     if (model.getLineCount() > fullPaintLineLimit) {
@@ -777,6 +784,7 @@ export function mountInlineEditor(
     return {
         destroy() {
             unbindDragSelection();
+            largeDocumentFit.dispose();
             resizeObserver.disconnect();
             if (fitFrame !== 0) {
                 cancelAnimationFrame(fitFrame);

@@ -1,14 +1,9 @@
 import { TreeItemCollapsibleState } from "vscode";
 import { Commands } from "../constants";
-import {
-    formatPrFileChangeLabel,
-    formatPrLineChangeDescription,
-    type GhPrInfo,
-} from "../lib/git/githubUrl";
-import type { PrCheckStatus } from "../lib/git/prChecks";
+import type { GhPrInfo } from "../lib/git/githubUrl";
 import type { PrReviewStatus } from "../lib/git/prReviewStatus";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
-import { checksTreeItem } from "./checksTreeItem";
+import { formatDiffTreeDescription } from "./diffDescription";
 import type { BranchChangesSummary } from "./loadBranchChanges";
 
 export const MOCK_REPO_ROOT = "/mock/irishbruse-utilities";
@@ -19,7 +14,6 @@ export type GitHelpersMockState = {
     branch: string;
     baseBranch: string;
     pr: GhPrInfo;
-    checkStatus: PrCheckStatus;
     reviewStatus: PrReviewStatus;
     changesSummary: BranchChangesSummary;
 };
@@ -45,12 +39,6 @@ export function getGitHelpersMockState(): GitHelpersMockState {
             additions: changesSummary.additions,
             deletions: changesSummary.deletions,
             changedFiles: changesSummary.changedFiles,
-        },
-        checkStatus: {
-            label: "ci / build",
-            description: "Checks failing",
-            url: "https://github.com/IrishBruse/irishbruse-utilities/pull/42/checks",
-            isFailing: true,
         },
         reviewStatus: {
             label: "2 unresolved",
@@ -88,25 +76,10 @@ export function buildMockGitHelpersChildren(state: GitHelpersMockState): GitHelp
             TreeItemCollapsibleState.None,
             `${repoRoot}:diffWithBase`,
             "diffWithBase",
-            baseBranch,
+            formatDiffTreeDescription(baseBranch, changesSummary),
             { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] },
         ),
     );
-
-    items.push(
-        new GitHelperTreeItem(
-            "action",
-            repoRoot,
-            formatPrFileChangeLabel(changesSummary.changedFiles),
-            TreeItemCollapsibleState.None,
-            `${repoRoot}:showChanges`,
-            "showChanges",
-            formatPrLineChangeDescription(changesSummary.additions, changesSummary.deletions),
-            { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] },
-        ),
-    );
-
-    items.push(checksTreeItem(repoRoot, pr.number, state.checkStatus));
 
     const reviewItem = new GitHelperTreeItem(
         "action",

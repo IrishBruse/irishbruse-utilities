@@ -27,18 +27,13 @@ import { wireGitRepositories } from "../lib/git/wireGitRepositories";
 import { markPullRequestReady } from "../lib/git/markPrReady";
 import { openPR } from "../lib/git/openPR";
 import { openRepo } from "../lib/git/openRepo";
-import {
-    formatPrFileChangeLabel,
-    formatPrLineChangeDescription,
-    getPrInfo,
-} from "../lib/git/githubUrl";
+import { getPrInfo } from "../lib/git/githubUrl";
 import { openBranchDiff } from "../lib/git/openBranchDiff";
-import { getPrCheckStatus } from "../lib/git/prChecks";
 import { getPrReviewStatus } from "../lib/git/prReviewStatus";
 import { registerCommandIB } from "../lib/vscode/vscode";
-import { checksTreeItem } from "./checksTreeItem";
+import { formatDiffTreeDescription } from "./diffDescription";
 import { GitHelperTreeItem } from "./GitHelperTreeItem";
-import { loadBranchChanges, type BranchChangesSummary } from "./loadBranchChanges";
+import { loadBranchChanges } from "./loadBranchChanges";
 import {
     isGitHelpersDebugMode,
     showGitHelpersDebugAction,
@@ -103,7 +98,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     private buildGeneration = 0;
     private creatingDraftPrFor: string | undefined;
     private markingPrReadyFor: string | undefined;
-    private cachedChecksUrl: string | undefined;
     private refreshVisualToken = 0;
     private refreshVisualStartedAt = 0;
     private refreshVisualVisible = false;
@@ -184,7 +178,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         ++this.buildGeneration;
         this.cachedChildren = cached.children;
         this.childrenSignatureValue = cached.signature;
-        this.cachedChecksUrl = cached.checksUrl;
         this.displayedRepoRoot = repoRoot;
         this.changeEvent.fire(null);
     }
@@ -250,7 +243,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         const repoRoot = children.find((item) => item.repoRoot)?.repoRoot;
         if (signature === this.childrenSignatureValue) {
             if (repoRoot) {
-                this.repoChildrenCache.set(repoRoot, children, signature, this.cachedChecksUrl);
+                this.repoChildrenCache.set(repoRoot, children, signature);
             }
             return;
         }
@@ -258,7 +251,7 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         this.childrenSignatureValue = signature;
         if (repoRoot) {
             this.displayedRepoRoot = repoRoot;
-            this.repoChildrenCache.set(repoRoot, children, signature, this.cachedChecksUrl);
+            this.repoChildrenCache.set(repoRoot, children, signature);
         }
         this.changeEvent.fire(null);
     }
@@ -320,7 +313,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         registerCommandIB(Commands.MarkPrReady, (item) => provider.runMarkPrReady(item), context);
         registerCommandIB(Commands.CopyPrUrl, (item) => provider.runCopyPrUrl(item), context);
         registerCommandIB(Commands.OpenPrReview, (item) => provider.runOpenPrReview(item), context);
-        registerCommandIB(Commands.OpenPrChecks, (item) => provider.runOpenPrChecks(item), context);
 
         wireGitRepositories(context, {
             onChange: () => provider.refresh(),
@@ -499,51 +491,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         await env.openExternal(Uri.parse(reviewUrl));
     }
 
-    private async runOpenPrChecks(item: GitHelperTreeItem | string | undefined): Promise<void> {
-        if (guardGitHelpersDebugAction("Open PR checks (ci / build failing)")) {
-            return;
-        }
-
-        const repoRoot =
-            typeof item === "string"
-                ? item
-                : (item?.repoRoot ?? (await getActiveRepository())?.rootUri.fsPath);
-        if (!repoRoot) {
-            void window.showWarningMessage(
-                "No active git repository. Select one in Source Control.",
-            );
-            return;
-        }
-
-        let checksUrl = typeof item !== "string" ? item?.checksUrl : undefined;
-        if (!checksUrl && repoRoot === this.displayedRepoRoot) {
-            checksUrl = this.cachedChecksUrl;
-        }
-        if (!checksUrl) {
-            const repository = getRepositoryByRoot(repoRoot) ?? (await getActiveRepository());
-            const branch = repository?.state.HEAD?.name;
-            if (!branch) {
-                void window.showWarningMessage("No named branch checked out.");
-                return;
-            }
-
-            const pr = await getPrInfo(repoRoot, branch);
-            if (!pr) {
-                void window.showWarningMessage("No pull request found for the current branch.");
-                return;
-            }
-
-            checksUrl = (await getPrCheckStatus(repoRoot, pr.headRefOid, pr.url))?.url;
-        }
-
-        if (!checksUrl) {
-            void window.showWarningMessage("No PR checks available.");
-            return;
-        }
-
-        await env.openExternal(Uri.parse(checksUrl));
-    }
-
     private async runCopyPrUrl(item: GitHelperTreeItem | string | undefined): Promise<void> {
         if (isGitHelpersDebugMode()) {
             await env.clipboard.writeText(getGitHelpersMockState().pr.url);
@@ -666,19 +613,9 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
         this.treeView.description = this.refreshVisualVisible ? "Updating…" : undefined;
     }
 
-    private applyCheckStatus(checkStatus: { url: string } | undefined): void {
-        this.cachedChecksUrl = checkStatus?.url;
-    }
-
     private loadCachedPrInfo(repoRoot: string, branch: string) {
         return this.panelDataCache.load(`pr:${repoRoot}:${branch}`, () =>
             getPrInfo(repoRoot, branch),
-        );
-    }
-
-    private loadCachedCheckStatus(repoRoot: string, headRefOid: string, prUrl: string) {
-        return this.panelDataCache.load(`checks:${repoRoot}:${headRefOid}`, () =>
-            getPrCheckStatus(repoRoot, headRefOid, prUrl),
         );
     }
 
@@ -724,13 +661,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
             );
             return item;
         }
-        if (element.action === "openPrChecks") {
-            const item = element;
-            item.iconPath = new ThemeIcon(
-                element.contextValue === "action-openPrChecks-failing" ? "error" : "run-all",
-            );
-            return item;
-        }
         return element;
     }
 
@@ -753,7 +683,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     private async buildMockChildren(): Promise<GitHelperTreeItem[]> {
         const mock = getGitHelpersMockState();
         const items = buildMockGitHelpersChildren(mock);
-        this.applyCheckStatus(mock.checkStatus);
         await this.updateViewTitle();
         this.displayedRepoRoot = mock.repoRoot;
         return items;
@@ -827,16 +756,11 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                 };
                 items.push(prItem);
 
-                const [diffItems, checkStatus, reviewStatus] = await Promise.all([
-                    base ? diffAndChangesItems(repoRoot, base.name) : Promise.resolve([]),
-                    this.loadCachedCheckStatus(repoRoot, pr.headRefOid, pr.url),
+                const [diffItems, reviewStatus] = await Promise.all([
+                    base ? diffWithBaseItems(repoRoot, base.name) : Promise.resolve([]),
                     this.loadCachedReviewStatus(repoRoot, pr.number),
                 ]);
                 items.push(...diffItems);
-                this.applyCheckStatus(checkStatus);
-                if (checkStatus) {
-                    items.push(checksTreeItem(repoRoot, pr.number, checkStatus));
-                }
 
                 if (reviewStatus) {
                     const reviewItem = new GitHelperTreeItem(
@@ -857,7 +781,6 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                     items.push(reviewItem);
                 }
             } else {
-                this.applyCheckStatus(undefined);
                 if (
                     !isMainlineBranch(head.name) &&
                     (!base || !isSameBranch(head.name, base.name))
@@ -879,12 +802,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
                         ),
                     );
                     if (base) {
-                        items.push(...(await diffAndChangesItems(repoRoot, base.name)));
+                        items.push(...(await diffWithBaseItems(repoRoot, base.name)));
                     }
                 }
             }
-        } else {
-            this.applyCheckStatus(undefined);
         }
 
         await this.updateViewTitle();
@@ -893,31 +814,10 @@ export class GitHelpersViewProvider implements TreeDataProvider<GitHelperTreeIte
     }
 }
 
-async function diffAndChangesItems(
-    repoRoot: string,
-    baseName: string,
-): Promise<GitHelperTreeItem[]> {
-    const items: GitHelperTreeItem[] = [
-        actionItem(repoRoot, "Diff", "diffWithBase", Commands.DiffWithBase, baseName),
-    ];
+async function diffWithBaseItems(repoRoot: string, baseName: string): Promise<GitHelperTreeItem[]> {
     const changesData = await loadBranchChanges(repoRoot);
-    if (changesData) {
-        items.push(changesItem(repoRoot, changesData));
-    }
-    return items;
-}
-
-function changesItem(repoRoot: string, summary: BranchChangesSummary): GitHelperTreeItem {
-    return new GitHelperTreeItem(
-        "action",
-        repoRoot,
-        formatPrFileChangeLabel(summary.changedFiles),
-        TreeItemCollapsibleState.None,
-        `${repoRoot}:showChanges`,
-        "showChanges",
-        formatPrLineChangeDescription(summary.additions, summary.deletions),
-        { command: Commands.DiffWithBase, title: "Diff", arguments: [repoRoot] },
-    );
+    const description = formatDiffTreeDescription(baseName, changesData);
+    return [actionItem(repoRoot, "Diff", "diffWithBase", Commands.DiffWithBase, description)];
 }
 
 function delay(ms: number): Promise<void> {

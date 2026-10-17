@@ -4,7 +4,6 @@ export type GitHelperItemKind = "info" | "action";
 
 export class GitHelperTreeItem extends TreeItem {
     public prUrl?: string;
-    public checksUrl?: string;
     public reviewUrl?: string;
     public isDraftPr = false;
 
@@ -14,13 +13,7 @@ export class GitHelperTreeItem extends TreeItem {
         label: string,
         collapsibleState: TreeItemCollapsibleState,
         id: string,
-        public readonly action?:
-            | "diffWithBase"
-            | "openPr"
-            | "createDraftPr"
-            | "openPrReview"
-            | "openPrChecks"
-            | "showChanges",
+        public readonly action?: "diffWithBase" | "openPr" | "createDraftPr" | "openPrReview",
         description?: string,
         command?: Command,
     ) {
@@ -30,17 +23,13 @@ export class GitHelperTreeItem extends TreeItem {
         this.command = command;
         this.contextValue = action ? `action-${action}` : kind;
         if (action === "diffWithBase") {
-            this.iconPath = new ThemeIcon("git-pull-request");
+            this.iconPath = new ThemeIcon("git-compare");
         } else if (action === "openPr") {
             this.iconPath = new ThemeIcon("git-pull-request");
         } else if (action === "createDraftPr") {
             this.iconPath = new ThemeIcon("git-pull-request-create");
         } else if (action === "openPrReview") {
             this.iconPath = new ThemeIcon("comment-discussion");
-        } else if (action === "openPrChecks") {
-            this.iconPath = new ThemeIcon("run-all");
-        } else if (action === "showChanges") {
-            this.iconPath = new ThemeIcon("git-compare");
         }
     }
 }

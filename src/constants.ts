@@ -15,8 +15,6 @@ export const Commands = {
 
     CopyPrUrl: `ib-utilities.copyPrUrl`,
 
-    OpenPrChecks: `ib-utilities.openPrChecks`,
-
     OpenChangesFile: `ib-utilities.openChangesFile`,
 
     OpenPrReview: `ib-utilities.openPrReview`,

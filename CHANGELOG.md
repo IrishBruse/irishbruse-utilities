@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Change**: Git Helpers merges the Changes row into Diff and removes the Checks row.
+
 ## 0.29.0
 
 - **Change:** Code Cleanup and refactor

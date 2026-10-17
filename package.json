@@ -282,12 +282,6 @@
                 "icon": "$(copy)"
             },
             {
-                "command": "ib-utilities.openPrChecks",
-                "title": "Open Pull Request Checks",
-                "shortTitle": "Open checks",
-                "icon": "$(run-all)"
-            },
-            {
                 "command": "ib-utilities.openChangesFile",
                 "title": "Open Changed File Diff",
                 "shortTitle": "Open file diff"

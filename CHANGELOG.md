@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **Fix**: Inline Markdown shows trailing spaces as small gray circles.
+- **Fix**: Inline Markdown list continuation lines use the editor text color instead of the string token color.
 - **Change**: Git Helpers merges the Changes row into Diff and removes the Checks row.
 
 ## 0.29.0

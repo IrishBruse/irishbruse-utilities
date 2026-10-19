@@ -132,3 +132,58 @@ describe("list bullet column", () => {
         });
     });
 });
+
+describe("list continuation text color", () => {
+    let browser: Browser;
+    let page: Page;
+
+    beforeAll(async () => {
+        const opened = await openPlayground(
+            "markdown/list/bullet/test/fixtures/case-4.md",
+            "Older profile-based",
+        );
+        browser = opened.browser;
+        page = opened.page;
+    }, 45_000);
+
+    afterAll(async () => {
+        await browser?.close();
+    });
+
+    it("paints the continuation line in the editor foreground", async () => {
+        const colors = await page.evaluate(() => {
+            const fold = (value: string | null) => (value ?? "").replaceAll("\u00a0", " ");
+            const leaves = (line: Element) =>
+                [...line.querySelectorAll("span")].filter(
+                    (span) =>
+                        span.childElementCount === 0 && fold(span.textContent).trim().length > 0,
+                );
+            const lines = [...document.querySelectorAll("#editor .view-line")];
+            const first = lines.find((entry) =>
+                fold(entry.textContent).includes("Profile settings"),
+            );
+            const next = lines.find((entry) =>
+                fold(entry.textContent).includes("Older profile-based"),
+            );
+            if (!(first instanceof HTMLElement) || !(next instanceof HTMLElement)) {
+                return null;
+            }
+            const firstBody = leaves(first).find((span) =>
+                fold(span.textContent).includes("Profile"),
+            );
+            const code = leaves(first).find((span) => fold(span.textContent).includes("mods.json"));
+            const continuation = leaves(next).find((span) =>
+                fold(span.textContent).includes("Older"),
+            );
+            return {
+                firstColor: firstBody ? getComputedStyle(firstBody).color : "",
+                codeColor: code ? getComputedStyle(code).color : "",
+                continuationColor: continuation ? getComputedStyle(continuation).color : "",
+            };
+        });
+        expect(colors).not.toBeNull();
+        expect(colors!.continuationColor).toBe(colors!.firstColor);
+        expect(colors!.continuationColor).toBe("rgb(171, 178, 191)");
+        expect(colors!.codeColor).toBe("rgb(198, 120, 221)");
+    });
+});

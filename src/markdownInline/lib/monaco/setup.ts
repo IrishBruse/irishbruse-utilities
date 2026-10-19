@@ -222,7 +222,10 @@ export function installMonaco(): void {
             { token: "variable.md", foreground: "C678DD" },
             { token: "string.link.md", foreground: "35A854" },
             { token: "comment.md", foreground: "9DA5B4" },
-            { token: "string.md", foreground: "CE9178" },
+            {
+                token: "string.md",
+                foreground: cssColor("--vscode-editor-foreground", "#d4d4d4").replace(/^#/, ""),
+            },
             { token: "type.md", foreground: "56B6C2" },
             { token: "type.yaml", foreground: "E06C75" },
             { token: "string.yaml", foreground: "98C379" },
@@ -252,6 +255,10 @@ export function installMonaco(): void {
             ),
             "editor.lineHighlightBorder": "#00000000",
             "editorCursor.foreground": cssColor("--vscode-editorCursor-foreground", "#aeafad"),
+            "editorWhitespace.foreground": cssColor(
+                "--vscode-editorWhitespace-foreground",
+                "#e3e4e229",
+            ),
         },
     });
 }

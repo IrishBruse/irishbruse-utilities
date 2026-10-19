@@ -6,6 +6,7 @@ type Rule = monaco.languages.IMonarchLanguageRule;
 const backtickWithLanguage = "^\\s*```\\s*((?:\\w|[\\/\\-#])+).*$";
 const backtickBare = "^\\s*```\\s*$";
 const tildeOpen = "^\\s*~~~\\s*((?:\\w|[\\/\\-#])+)?\\s*$";
+const indentedCodeLine = "^(\\t|[ ]{4})[^ ].*$";
 const listMarkerLine = new RegExp("^\\s*([\\*\\-+:]|\\d+\\.)\\s");
 
 const languageName = "(?:\\w|[\\/\\-#])+";
@@ -71,6 +72,9 @@ export function markdownWithFenceColors(language: Language): Language {
     let opened = false;
     tokenizer.root = (tokenizer.root ?? []).flatMap((rule) => {
         const source = sourceOf(rule);
+        if (source === indentedCodeLine) {
+            return [];
+        }
         if (source === backtickWithLanguage || source === backtickBare) {
             if (opened) {
                 return [];

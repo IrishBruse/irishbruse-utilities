@@ -168,7 +168,7 @@ export function mountInlineEditor(
         padding: { top: 0, bottom: 48 },
         occurrencesHighlight: "off",
         selectionHighlight: false,
-        renderWhitespace: "none",
+        renderWhitespace: "trailing",
         guides: { indentation: false, bracketPairs: false },
         stickyScroll: { enabled: false },
         codeLens: true,

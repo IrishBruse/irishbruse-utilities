@@ -49,4 +49,15 @@ describe("markdownWithFenceColors", () => {
         );
         expect(listRule).toBeUndefined();
     });
+
+    it("drops the indented-code string rule so list continuations stay plain", () => {
+        const language = markdownWithFenceColors(markdownLanguage);
+        const indented = language.tokenizer.root?.find(
+            (rule) =>
+                Array.isArray(rule) &&
+                rule[0] instanceof RegExp &&
+                rule[0].source === "^(\\t|[ ]{4})[^ ].*$",
+        );
+        expect(indented).toBeUndefined();
+    });
 });
